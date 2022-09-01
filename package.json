@@ -1,0 +1,20 @@
+{
+  "name": "p5js-gui",
+  "version": "1.0.0",
+  "description": "GUI for p5.js",
+  "main": "main.js",
+  "scripts": {
+    "tsc": "tsc",
+    "typedoc": "npx typedoc",
+    "gcc": "npx google-closure-compiler src_js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2017 --language_out ECMASCRIPT_NEXT "
+  },
+  "author": "Peter Lager",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/p5": "^1.4.2",
+    "google-closure-compiler": "^20220803.0.0",
+    "p5": "^1.4.2",
+    "typedoc": "^0.23.10",
+    "typescript": "^4.7.4"
+  }
+}
