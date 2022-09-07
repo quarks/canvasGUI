@@ -94,12 +94,12 @@
   },
   "include": [
     "src_ts/**/*",
-    "libraries"
+    "libraries"  
   ],
   "typedocOptions": {
     "emit": "docs",
     "entryPoints": [
-      "src_ts/index.ts"
+      "src_ts/canvas_gui.ts"
     ],
     "out": "dist/ref/"
   }

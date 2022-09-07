@@ -6,11 +6,10 @@ export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
 export { CvsViewer, CvsText, CvsTextIcon };
 export { __Position, __Box, __Range, __EventInfo, __Overlap };
 
-
-// Comment out any import and export statements above before transpiling to 
-// Javascript. Otherwise it creates JS modules that don't work with the 
-// Processing IDE
-
+// Uncomment the above export statements should be uncommented for
+// --- When using TypeDoc
+// comment them out
+// --- when transpiling ts>js
 
 /**
  * <p>Core class for cGUI library </p>

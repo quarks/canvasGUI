@@ -17,7 +17,7 @@ class GUI {
         this._initMouseEventHandlers(p5c);
     }
     scroller(name, x, y, w, h) {
-        return this.addControl(new GScroller(this, name, x, y, w, h));
+        return this.addControl(new CvsScroller(this, name, x, y, w, h));
     }
     slider(name, x, y, w, h) {
         return this.addControl(new CvsSlider(this, name, x, y, w, h));
@@ -41,7 +41,7 @@ class GUI {
         return this.addControl(new CvsViewer(this, name, x, y, w, h));
     }
     __tooltip(name) {
-        return this.addControl(new GTooltip(this, name));
+        return this.addControl(new CvsTooltip(this, name));
     }
     pane(name, location, size) {
         let ctrl;
@@ -885,7 +885,7 @@ class CvsBufferedControl extends CvsBaseControl {
             .showTime(duration || 1600)
             .shrink();
         this.addChild(tt);
-        if (tt instanceof GTooltip) {
+        if (tt instanceof CvsTooltip) {
             tt._validatePosition();
             this._tooltip = tt;
         }
@@ -1893,7 +1893,7 @@ class CvsLabel extends CvsTextIcon {
         this._bufferInvalid = false;
     }
 }
-class GTooltip extends CvsText {
+class CvsTooltip extends CvsText {
     constructor(gui, name) {
         super(gui, name);
         this._gap = 1;
@@ -1983,7 +1983,7 @@ class GTooltip extends CvsText {
         return { w: sw, h: sh };
     }
 }
-class GScroller extends CvsBufferedControl {
+class CvsScroller extends CvsBufferedControl {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 100, h || 20);
         this._updateTrackInfo();
