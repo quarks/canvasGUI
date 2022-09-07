@@ -1,26 +1,861 @@
 import p5 from "../libraries/p5.min.js";
-import { GUI } from "./gui_controller";
-export { GPane, GPaneEast, GPaneNorth, GPaneSouth, GPaneWest };
-export { GObject, GControl, GScroller, GTooltip, GOptionGroup };
-export { GOption, GCheckbox, GSlider, GRanger, GButton, GLabel };
-export { GViewer, GText, GTextIcon };
-export { Position, Box, Range, EventInfo, Overlap }
+export { GUI };
+export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+export { CvsViewer, CvsText, CvsTextIcon };
+export { __Position, __Box, __Range, __EventInfo, __Overlap };
 
 
 // Comment out any import and export statements above before transpiling to 
 // Javascript. Otherwise it creates JS modules that don't work with the 
 // Processing IDE
 
+
+/**
+ * <p>Core class for cGUI library </p>
+ * <p>Use an instance of GUI to control all aspects of your gui</p>
+ * <ul>
+ * <li>Create the UI controls e.g. buttons, sliders</li>
+ * <li>Provides 7 color schemes for the controls</li>
+ * </ul>
+ * 
+ * @author Peter Lager
+ * @copyright 2022
+ * @license MIT
+ * @version 0.0.1
+ * 
+ */
+ class GUI {
+  /** @hidden */ private _renderer: any;
+  /** @hidden */  public _p: p5;
+  /** @hidden */ private _is3D: boolean;
+  /** @hidden */ private _controls: Map<string, CvsBaseControl>;
+  /** @hidden */ private _ctrls: Array<CvsBaseControl>;
+  /** @hidden */ private _corners: Array<number>;
+  /** @hidden */ private _optionGroups: Map<string, CvsOptionGroup>;
+  /** @hidden */ private _textSize: number;
+  /** @hidden */ private _tipTextSize: number;
+  /** @hidden */ public _panesEast: Array<CvsPane>;
+  /** @hidden */ public _panesSouth: Array<CvsPane>;
+  /** @hidden */ public _panesWest: Array<CvsPane>;
+  /** @hidden */ public _panesNorth: Array<CvsPane>;
+
+  /** @hidden */ private _schemes: Array<any>;
+  /** @hidden */ private _scheme: any;
+
+  /** 
+   * Create a GUI object to create and manage the GUI controls for
+   * an HTML canvaas.
+   * 
+   * @hidden
+   * @param p5c the renderer
+   * @param p the sketch instance
+   */
+  private constructor(p5c: p5.Renderer, p: p5 = p5.instance) {
+      this._renderer = p5c;
+      this._p = p;
+      this._is3D = false; // set when initialsing mouse event hadlers
+      this._controls = new Map(); // registered controls
+      this._ctrls = []; // controls in render order
+      this._corners = [4, 4, 4, 4];
+      this._optionGroups = new Map();
+      this._textSize = 12;
+      this._tipTextSize = 10;
+      // Side panes
+      this._panesEast = [];
+      this._panesSouth = [];
+      this._panesWest = [];
+      this._panesNorth = [];
+      // Colour schemes
+      this._initColorSchemes();
+      // Event handlers for canvas
+      this._initMouseEventHandlers(p5c);
+  }
+
+  // ##################################################################
+  // #########     Factory methods to create controls    ##############
+  /**
+   * Create a scroller control
+   * @param name unique identifier
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns scroller control
+   */
+  scroller(name: string, x: number, y: number, w: number, h: number) {
+      return this.addControl(new CvsScroller(this, name, x, y, w, h));
+  }
+  /**
+  * Create a slider control
+  * @param name unique identifier
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns slider control
+  */
+  slider(name: string, x: number, y: number, w: number, h: number) {
+      return this.addControl(new CvsSlider(this, name, x, y, w, h));
+  }
+  /**
+  * Create a ranger control
+  * @param name unique identifier
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns ranger control
+  */
+  ranger(name: string, x: number, y: number, w: number, h: number) {
+      return this.addControl(new CvsRanger(this, name, x, y, w, h));
+  }
+  /**
+  * Create a button control
+  * @param name unique identifier
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns control
+  */
+  button(name: string, x?: number, y?: number, w?: number, h?: number) {
+      return this.addControl(new CvsButton(this, name, x, y, w, h));
+  }
+  /**
+  * Create a checkbox control
+  * @param name unique identifier
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns control
+  */
+  checkbox(name: string, x: number, y: number, w: number, h: number) {
+      return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
+  }
+  /**
+  * Create an option (radio button) control
+  * @param name 
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns control
+  */
+  option(name: string, x: number, y: number, w: number, h: number) {
+      return this.addControl(new CvsOption(this, name, x, y, w, h));
+  }
+  /**
+  * Create a label control
+  * @param name unique identifier
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns button control
+  */
+  label(name: string, x: number, y: number, w: number, h: number) {
+      return this.addControl(new CvsLabel(this, name, x, y, w, h));
+  }
+  /**
+  * Create a viewer
+  * @param name unique identifier
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns viewer control
+  */
+  viewer(name: string, x: number, y: number, w: number, h: number) {
+      return this.addControl(new CvsViewer(this, name, x, y, w, h));
+  }
+  /**
+   * @hidden
+   * @param name auto generated unique identifier
+   * @returns tooltip control
+   */
+  __tooltip(name: string): CvsTooltip {
+      return this.addControl(new CvsTooltip(this, name));
+  }
+  /**
+   * Create a side pane. The pane location is either 'north', 'south',
+   * 'east' or 'west'
+   * @param name unique identifier
+   * @param location location for the pane
+   * @param size the maximum size the pane expands into the canvas
+   * @returns pane control for specified location
+   */
+  pane(name: string, location: string, size: number): CvsPane {
+      let ctrl: CvsPane;
+      switch (location) {
+          case 'north': ctrl = new CvsPaneNorth(this, name, size); break;
+          case 'south': ctrl = new CvsPaneSouth(this, name, size); break;
+          case 'west': ctrl = new CvsPaneWest(this, name, size); break;
+          case 'east':
+          default: ctrl = new CvsPaneEast(this, name, size);
+      }
+      return this.addControl(ctrl);
+  }
+
+  // ###########        End of factory methods             ############
+  // ##################################################################
+
+  // -----------------------------------------------------------------------
+  // id is a control or the name of a control
+  /**
+   * <p>Get the control given it's unique identifier.</p>
+   * @param id control's unique identifier
+   * @returns  get the associated control
+   */
+  getControl(id: string | CvsBaseControl): CvsBaseControl {
+      return (typeof id === "string") ? this._controls.get(id) : id;
+  }
+
+  /**
+   * <p>Get the control given it's unique identifier.</p>
+   * @param id control's unique identifier
+   * @returns  get the associated control
+  */
+  $(id: string | CvsBaseControl): CvsBaseControl {
+      return (typeof id === "string") ? this._controls.get(id) : id;
+  }
+
+  /**
+   * <p>Adds a child control to this one.</p>
+   * @param control the child control to add
+   * @returns the control just added
+   */
+  addControl(control) {
+      console.assert(!this._controls.has(control._name),
+          `Control '${control._name}' already exists and will be replaced.`);
+      this._controls.set(control._name, control);
+      // Now find render order
+      this._ctrls = [...this._controls.values()];
+      this._ctrls.sort((a, b) => { return a.z() - b.z() });
+      return control;
+  }
+
+  /**
+   * List the controls created so far
+   * @hidden
+   */
+  listControls() {
+      console.log("List of controls");
+      for (let c of this._ctrls) {
+          console.log(c.name());
+          //console.log(!c.parent, c.parent, Boolean(c.parent));
+      }
+      console.log('--------------------------------------------------------------');
+  }
+
+  /**
+   * <p>Gets the option group associated with a given name.</p>
+   * @param name the name of the oprion group
+   * @returns the option group
+   * @hidden
+   */
+  getOptionGroup(name: string): CvsOptionGroup {
+      if (!this._optionGroups.has(name))
+          this._optionGroups.set(name, new CvsOptionGroup(name));
+      return this._optionGroups.get(name);
+  }
+  /**
+   * <p>Sets or gets the global text size.</p>
+   * <p>If no parameter is passed then the global text size is returned 
+   * otherwise it returns this control.</p>
+   * @param gts new global text size
+   * @returns the global text size or this control
+   */
+  textSize(gts?: number) {
+      if (!Number.isFinite(gts)) {
+          return this._textSize;
+      }
+      this._textSize = gts;
+      // Update visual for all controls
+      this._controls.forEach((c) => { c.invalidateBuffer(); });
+      return this;
+  }
+
+  /**
+   * Sets or gets the global tip text size.
+   * If no parameter is passed then the global tip text size is returned 
+   * otherwise it returns this control
+   * @param gtts new global tip text size
+   * @returns the global tip text size or this control
+   */
+  tipTextSize(gtts?: number) {
+      if (gtts) {
+          this._tipTextSize = gtts;
+          return this;
+      }
+      return this._tipTextSize;
+  }
+  /**
+   * <p>Get the width of the HTML canvas tag</p>
+   * @returns the width of the canvas
+   */
+  canvasWidth() {
+      return this._renderer.width;
+  }
+
+  /**
+   * <p>Get the height of the HTML canvas tag</p>
+   * @returns the height of the canvas
+   */
+  canvasHeight() {
+      return this._renderer.height;
+  }
+
+  /**
+   * <p>Set or get the corner radii used for the controls</p>
+   * @param c an aaray of 4 corner radii
+   * @returns an array with the 4 corner radii
+   */
+  corners(c?: Array<number>): Array<number> {
+      if (Array.isArray(c) && c.length == 4) {
+          this._corners = Array.from(c);
+      }
+      return Array.from(this._corners);
+  }
+  /**
+   * <p>Get the associated HTML canvas tag</p>
+   * @hidden
+   * @returns the renderer used by this gui
+   */
+  context() {
+      return this._renderer;
+  }
+  /**
+   * <p>Determines whether the renderer is P2D</p>
+   * @returns true for WEBGL and false for P2D
+   */
+  is3D() {
+      return this._is3D;
+  }
+  /**
+   * Close all side panes
+   * @hidden
+   */
+  _closeAll() {
+      for (let pane of this._panesEast) pane.close();
+      for (let pane of this._panesWest) pane.close();
+      for (let pane of this._panesSouth) pane.close();
+      for (let pane of this._panesNorth) pane.close();
+  }
+  /**
+   * Hide all side panes. This will also close any pane that is open.
+   */
+  hideAll() {
+      this._closeAll();
+      for (let pane of this._panesEast) pane.hide();
+      for (let pane of this._panesWest) pane.hide();
+      for (let pane of this._panesSouth) pane.hide();
+      for (let pane of this._panesNorth) pane.hide();
+  }
+
+  /**
+   * Show all pane tabs. All panes will be shown closed.
+   */
+  showAll() {
+      for (let pane of this._panesEast) pane.show();
+      for (let pane of this._panesWest) pane.show();
+      for (let pane of this._panesSouth) pane.show();
+      for (let pane of this._panesNorth) pane.show();
+  }
+
+  /**
+   * Reposition all tabs attached to East side 
+   * @hidden
+   */
+  validateTabsEast() { // East
+      let panes = this._panesEast, n = panes.length;
+      // Find length of tabs
+      let sum = 2 * (n - 1);
+      panes.forEach(p => (sum += p.tab()._w));
+      // Now find start position for the first tab
+      let pos = (this.canvasHeight() - sum) / 2;
+      for (let i = 0; i < n; i++) {
+          let pane = panes[i];
+          let tab = pane.tab();
+          let x = -tab._h;
+          let y = pos;
+          pos += tab._w + 2;
+          tab._x = x;
+          tab._y = y;
+      }
+  }
+
+  /**
+   * Reposition all tabs attached to West side 
+   * @hidden
+   */
+  validateTabsWest() { // West
+      let panes = this._panesWest;
+      let n = panes.length;
+      // Find length of tabs
+      let sum = 2 * (n - 1);
+      panes.forEach(p => (sum += p.tab()._w));
+      // Now find start position for the first tab
+      let pos = (this.canvasHeight() - sum) / 2;
+      for (let i = 0; i < n; i++) {
+          let pane = panes[i];
+          let tab = pane.tab();
+          let x = pane.size();
+          let y = pos;
+          pos += tab._w + 2;
+          tab._x = x;
+          tab._y = y;
+      }
+  }
+
+  /**
+   * Reposition all tabs attached to South side 
+   * @hidden
+   */
+  validateTabsSouth() { // South
+      let panes = this._panesSouth;
+      let n = panes.length;
+      // Find length of tabs
+      let sum = 2 * (n - 1);
+      panes.forEach(p => (sum += p.tab()._w));
+      // Now find start position for the first tab
+      let pos = (this.canvasWidth() - sum) / 2;
+      for (let i = 0; i < n; i++) {
+          let pane = panes[i];
+          let tab = pane.tab();
+          let x = pos;
+          let y = -tab._h;
+          pos += tab._w + 2;
+          tab._x = x;
+          tab._y = y;
+      }
+  }
+
+  /**
+   * Reposition all tabs attached to North side 
+   * @hidden
+   */
+  validateTabsNorth() { // North
+      let panes = this._panesNorth, n = panes.length;
+      // Find length of tabs
+      let sum = 2 * (n - 1);
+      panes.forEach(p => (sum += p.tab()._w));
+      // Now find start position for the first tab
+      let pos = (this.canvasWidth() - sum) / 2;
+      for (let i = 0; i < n; i++) {
+          let pane = panes[i], tab = pane.tab();
+          let x = pos, y = pane.size();
+          pos += tab._w + 2;
+          tab._x = x;
+          tab._y = y;
+      }
+  }
+
+  private _initColorSchemes() {
+      this._schemes = [];
+      this._schemes['blue'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._blueScheme);
+      this._schemes['green'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._greenScheme);
+      this._schemes['red'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._redScheme);
+      this._schemes['cyan'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._cyanScheme);
+      this._schemes['yellow'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._yellowScheme);
+      this._schemes['purple'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._purpleScheme);
+      this._schemes['orange'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._orangeScheme);
+      this._schemes['dark'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._darkScheme);
+      this._scheme = this._schemes['blue'];
+  }
+
+  /**
+   * <p>Set or get an existing global color scheme.</p>
+   * @param schemename color scheme to set
+   * @returns this gui instance
+   */
+  scheme(schemename?: string) {
+      // get global scheme
+      if (!schemename) {
+          return this._scheme;
+      }
+      // set global scheme
+      if (this._schemes[schemename]) {
+          this._scheme = this._schemes[schemename];
+          // Update visual for all these using the global color scheme
+          this._controls.forEach((c) => {
+              if (!c.scheme())
+                  c.invalidateBuffer();
+          });
+      }
+      else
+          console.error(`'${schemename}' is not a valid color scheme`);
+      return this;
+  }
+
+  /**
+   * <p>Get a copy of the named color scheme.</p>
+   * @param schemename the color scheme name
+   * @returns the color scheme or undefined if it doesn't exist
+   */
+  getScheme(schemename: string): Array<string> | undefined {
+      if (schemename && this._schemes[schemename])
+          return Object.assign({}, this._schemes[schemename]);
+      console.warn(`Unable to retrieve color scheme '${schemename}'`);
+      return undefined;
+  }
+
+  /**
+   * <p>Deletes the named color scheme for the gui if it exists.</p>
+   * @param schemename the color scheme name
+   * @returns this gui instance
+   */
+  deleteScheme(schemename: string) {
+      if (schemename && this._schemes[schemename]) {
+          this._schemes[schemename] = undefined;
+          this._schemes = this._schemes.filter(Boolean);
+      }
+      return this;
+  }
+
+  /**
+   * <p>Adds a new color scheme to those already available. It does not replace an
+   * existing scheme.</p>
+   * @param schemename the name of the color schmem
+   * @param scheme  the color scheme
+   * @returns this gui instance
+   */
+  addScheme(schemename: string, scheme: any) {
+      if (typeof schemename === 'string' && !scheme) {
+          if (!this._schemes[schemename])
+              this._schemes[schemename] = scheme;
+          else
+              console.error(`Cannot add scheme '${schemename}' because it already exists.'`);
+      }
+      return this;
+  }
+
+  /**
+   * Adds event listeners to the HTML canvas object. It also sets the draw method
+   * based on whether the render is WEBGL or P2D
+   * @hidden
+   * @param p5c p5.Renderer
+   */
+  private _initMouseEventHandlers(p5c: p5.Renderer) {
+      let canvas = p5c.canvas;
+      // Add mouse events
+      canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e) });
+      canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e) });
+      canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e) });
+      canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e) });
+      // Leave canvas
+      canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e) });
+      // Initialise draw method based on P2D or WEBGL renderer
+      this._is3D = p5c.GL != undefined && p5c.GL != null;
+      this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
+  }
+
+  /**
+   * Called by the mouse event listeners
+   * @hidden
+   * @param e event
+   */
+  private _handleMouseEvents(e) {
+      // Find the currently active control and pass the evnt to it
+      let activeControl = undefined;
+      for (let c of this._ctrls) {
+          if (c.isActive()) {
+              activeControl = c;
+              c._handleMouse(e);
+              break;
+          }
+      }
+      // If there is no active control pass the event to each enabled control in 
+      // turn until one of them consumes the event
+      if (activeControl == undefined) {
+          for (let c of this._ctrls)
+              if (c.isEnabled())
+                  c._handleMouse(e);
+      }
+  }
+
+  /**
+   * The main draw method.
+   * @hidden
+   */
+  draw() { }
+
+  /**
+   * The P2D draw method
+   * @hidden
+   */
+  _drawControlsP2D() {
+      this._p.push();
+      for (let c of this._ctrls)
+          if (!c.getParent())
+              c._renderP2D();
+      this._p.pop();
+  }
+
+  /**
+   * The WEBGL draw method
+   * @hidden
+   */
+  _drawControlsWEBGL() {
+      this._p.push();
+      let renderer = this._renderer;
+      let gl = renderer.drawingContext;
+      let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
+      gl.flush();
+      let mvMatrix = renderer.uMVMatrix.copy();
+      let pMatrix = renderer.uPMatrix.copy();
+      // Now prepare renderer for standard 2D output to draw GUI
+      gl.disable(gl.DEPTH_TEST);
+      renderer.resetMatrix();
+      renderer._curCamera.ortho(0, w, -h, 0, -d, d);
+      // Draw GUI
+      for (let c of this._ctrls)
+          if (!c.getParent())
+              c._renderWEBGL();
+      gl.flush();
+      renderer.uMVMatrix.set(mvMatrix);
+      renderer.uPMatrix.set(pMatrix);
+      gl.enable(gl.DEPTH_TEST);
+      this._p.pop();
+  }
+
+  // ##################################################################################
+  // ##################################################################################
+  // Class methods and attributes
+  // ##################################################################################
+  // ##################################################################################
+
+  /**
+   * <p>Creates and returns a GUI controller for a given canvas elelment.</p>
+   * @param p5c 
+   * @param p 
+   * @returns a GUI controller
+   */
+  static get(p5c: p5.Renderer, p: p5 = p5.instance) {
+      GUI.announce();
+      if (GUI._guis.has(p)) return GUI._guis.get(p);
+
+      let gui = new GUI(p5c, p);
+      GUI._guis.set(p, gui);
+      return gui;
+  }
+
+
+  private static _guis = new Map();
+
+  private static _announced = false;
+
+  /**
+   * @hidden
+   */
+  static announce() {
+      if (!GUI._announced) {
+          console.log('================================================');
+          console.log('  canvasGUI (0.0.1)   \u00A9 2022 Peter Lager');
+          console.log('================================================');
+          GUI._announced = true;
+      }
+  }
+
+  private static _baseScheme = {
+      track_back: 'hsb(0, 0%, 75%)',
+      track_border: 'hsb(0, 0%, 53%)',
+
+      white: 'rgb(255, 255, 255)',
+      white0: 'rgba(255, 255, 255, 0.2)',
+      white1: 'rgba(255, 255, 255, 0.3)',
+      white2: 'rgba(255, 255, 255, 0.4)',
+      white3: 'rgba(255, 255, 255, 0.5)',
+      white4: 'rgba(255, 255, 255, 0.6)',
+      white5: 'rgba(255, 255, 255, 0.7)',
+      white6: 'rgba(255, 255, 255, 0.8)',
+      white7: 'rgba(255, 255, 255, 0.9)',
+      black: 'rgb(0, 0, 0)',
+      black0: 'rgba(0, 0, 0, 0.2)',
+      black1: 'rgba(0, 0, 0, 0.3)',
+      black2: 'rgba(0, 0, 0, 0.4)',
+      black3: 'rgba(0, 0, 0, 0.5)',
+      black4: 'rgba(0, 0, 0, 0.6)',
+      black5: 'rgba(0, 0, 0, 0.7)',
+      black6: 'rgba(0, 0, 0, 0.8)',
+      black7: 'rgba(0, 0, 0, 0.9)',
+      dark_grey: 'rgb(64, 64, 64)',
+      mid_grey: 'rgb(128, 128, 128)',
+      light_grey: 'rgb(192, 192, 192)',
+      clear: 'rgba(0, 0, 0, 0)',
+  };
+
+  private static _blueScheme = {
+      back: 'hsb(240, 45%, 100%)',
+      back0: 'hsba(240, 45%, 100%, 0.2)',
+      back1: 'hsba(240, 45%, 100%, 0.3)',
+      back2: 'hsba(240, 45%, 100%, 0.4)',
+      back3: 'hsba(240, 45%, 100%, 0.5)',
+      back4: 'hsba(240, 45%, 100%, 0.6)',
+      back5: 'hsba(240, 45%, 100%, 0.7)',
+      back6: 'hsba(240, 45%, 100%, 0.8)',
+      back7: 'hsba(240, 45%, 100%, 0.9)',
+      fore: 'hsb(240, 100%, 66%)',
+      thumb: 'hsb(240, 45%, 85%)',
+      track_fore: 'hsb(240, 14%, 100%)',
+      highlight: 'hsb(240, 100%, 50%)',
+      opaque: 'hsb(240, 45%, 100%)',
+      ttfore: 'hsb(240, 100%, 70%)',
+      ttback: 'hsb(240, 5%, 100%)',
+  };
+
+
+  private static _greenScheme = {
+      back: 'hsb(120, 45%, 90%)',
+      back0: 'hsba(120, 45%, 90%, 0.2)',
+      back1: 'hsba(120, 45%, 90%, 0.3)',
+      back2: 'hsba(120, 45%, 90%, 0.4)',
+      back3: 'hsba(120, 45%, 90%, 0.5)',
+      back4: 'hsba(120, 45%, 90%, 0.6)',
+      back5: 'hsba(120, 45%, 90%, 0.7)',
+      back6: 'hsba(120, 45%, 90%, 0.8)',
+      back7: 'hsba(120, 45%, 90%, 0.9)',
+      fore: 'hsb(120, 90%, 40%)',
+      thumb: 'hsb(120, 45%, 80%)',
+      track_fore: 'hsb(120, 14%, 100%)',
+      highlight: 'hsb(120, 100%, 50%)',
+      opaque: 'hsb(120, 45%, 100%)',
+      ttfore: 'hsb(120, 100%, 50%)',
+      ttback: 'hsb(120, 5%, 100%)',
+  };
+
+  private static _redScheme = {
+      back: 'hsb(1, 45%, 100%)',
+      back0: 'hsba(1, 45%, 100%, 0.2)',
+      back1: 'hsba(1, 45%, 100%, 0.3)',
+      back2: 'hsba(1, 45%, 100%, 0.4)',
+      back3: 'hsba(1, 45%, 100%, 0.5)',
+      back4: 'hsba(1, 45%, 100%, 0.6)',
+      back5: 'hsba(1, 45%, 100%, 0.7)',
+      back6: 'hsba(1, 45%, 100%, 0.8)',
+      back7: 'hsba(1, 45%, 100%, 0.9)',
+      fore: 'hsb(1, 100%, 66%)',
+      thumb: 'hsb(1, 45%, 85%)',
+      track_fore: 'hsb(1, 14%, 100%)',
+      highlight: 'hsb(1, 100%, 50%)',
+      opaque: 'hsb(1, 45%, 100%)',
+      ttfore: 'hsb(1, 100%, 70%)',
+      ttback: 'hsb(1, 5%, 100%)',
+  }
+
+  private static _cyanScheme = {
+      back: 'hsb(180, 45%, 100%)',
+      back0: 'hsba(180, 45%, 100%, 0.2)',
+      back1: 'hsba(180, 45%, 100%, 0.3)',
+      back2: 'hsba(180, 45%, 100%, 0.4)',
+      back3: 'hsba(180, 45%, 100%, 0.5)',
+      back4: 'hsba(180, 45%, 100%, 0.6)',
+      back5: 'hsba(180, 45%, 100%, 0.7)',
+      back6: 'hsba(180, 45%, 100%, 0.8)',
+      back7: 'hsba(180, 45%, 100%, 0.9)',
+      fore: 'hsb(180, 100%, 50%)',
+      thumb: 'hsb(180, 45%, 85%)',
+      track_fore: 'hsb(180, 14%, 100%)',
+      highlight: 'hsb(180, 100%, 50%)',
+      opaque: 'hsb(180, 45%, 100%)',
+      ttfore: 'hsb(180, 100%, 40%)',
+      ttback: 'hsb(180, 5%, 100%)',
+  };
+
+  private static _yellowScheme = {
+      back: 'hsb(60, 45%, 100%)',
+      back0: 'hsba(60, 45%, 100%, 0.2)',
+      back1: 'hsba(60, 45%, 100%, 0.3)',
+      back2: 'hsba(60, 45%, 100%, 0.4)',
+      back3: 'hsba(60, 45%, 100%, 0.5)',
+      back4: 'hsba(60, 45%, 100%, 0.6)',
+      back5: 'hsba(60, 45%, 100%, 0.7)',
+      back6: 'hsba(60, 45%, 100%, 0.8)',
+      back7: 'hsba(60, 45%, 100%, 0.9)',
+      fore: 'hsb(60, 100%, 50%)',
+      thumb: 'hsb(60, 70%, 80%)',
+      track_back: 'hsb(0, 0%, 75%)',
+      track_fore: 'hsb(60, 14%, 100%)',
+      track_border: 'hsb(0, 0%, 53%)',
+      highlight: 'hsb(60, 100%, 50%)',
+      opaque: 'hsb(60, 45%, 100%)',
+      ttfore: 'hsb(60, 100%, 40%)',
+      ttback: 'hsb(60, 5%, 100%)',
+  };
+
+  private static _purpleScheme = {
+      back: 'hsb(300, 45%, 100%)',
+      back0: 'hsba(300, 45%, 100%, 0.2)',
+      back1: 'hsba(300, 45%, 100%, 0.3)',
+      back2: 'hsba(300, 45%, 100%, 0.4)',
+      back3: 'hsba(300, 45%, 100%, 0.5)',
+      back4: 'hsba(300, 45%, 100%, 0.6)',
+      back5: 'hsba(300, 45%, 100%, 0.7)',
+      back6: 'hsba(300, 45%, 100%, 0.8)',
+      back7: 'hsba(300, 45%, 100%, 0.9)',
+      fore: 'hsb(300, 100%, 66%)',
+      thumb: 'hsb(300, 45%, 85%)',
+      track_fore: 'hsb(300, 14%, 100%)',
+      highlight: 'hsb(300, 100%, 50%)',
+      opaque: 'hsb(300, 45%, 100%)',
+      ttfore: 'hsb(300, 100%, 80%)',
+      ttback: 'hsb(300, 5%, 100%)',
+  };
+
+  private static _orangeScheme = {
+      back: 'hsb(30, 60%, 100%)',
+      back0: 'hsba(30, 60%, 100%, 0.2)',
+      back1: 'hsba(30, 60%, 100%, 0.3)',
+      back2: 'hsba(30, 60%, 100%, 0.4)',
+      back3: 'hsba(30, 60%, 100%, 0.5)',
+      back4: 'hsba(30, 60%, 100%, 0.6)',
+      back5: 'hsba(30, 60%, 100%, 0.7)',
+      back6: 'hsba(30, 60%, 100%, 0.8)',
+      back7: 'hsba(30, 60%, 100%, 0.9)',
+      fore: 'hsb(30, 100%, 50%)',
+      thumb: 'hsb(30, 45%, 85%)',
+      track_fore: 'hsb(30, 14%, 100%)',
+      highlight: 'hsb(30, 100%, 50%)',
+      opaque: 'hsb(30, 45%, 100%)',
+      ttfore: 'hsb(30, 100%, 80%)',
+      ttback: 'hsb(30, 5%, 100%)',
+
+  };
+
+  private static _darkScheme = {
+      back: 'rgb(64, 64, 64)',
+      fore: 'rgb(224, 224, 224)',
+      thumb: 'rgb(64, 64, 64)',
+      track_fore: 'rgb(124, 124, 124)',
+      highlight: 'rgb(250, 250, 250)',
+      opaque: 'hsb(1, 45%, 100%)',
+  };
+
+}
+
+//=================================================================================================
+//=================================================================================================
+//=================================================================================================
+//=================================================================================================
+//                                Controls
+//=================================================================================================
+//=================================================================================================
+//=================================================================================================
+//=================================================================================================
+
+
 /** <p>Object type  \{ x: number; y: number; \} </p> */
-interface Position { x: number; y: number; };
+interface __Position { x: number; y: number; };
 /** <p>Object type  \{ w: number; h: number; \} </p> */
-interface Box { w: number; h: number; };
+interface __Box { w: number; h: number; };
 /** <p>Object type  \{ low: number; high: number; \} </p> */
-interface Range { low: number; high: number; };
+interface __Range { low: number; high: number; };
 /** <p>Defines the event information sent to the event handler.</p> */
-interface EventInfo { source: GObject; type: string; };
+interface __EventInfo { source: CvsBaseControl; type: string; };
 /** <p>Defines an overlap</p> */
-interface Overlap {
+interface __Overlap {
   valid: boolean;
   left?: number; right?: number; top?: number, bottom?: number,
   width?: number; height?: number; offsetX?: number; offsetY?: number;
@@ -38,7 +873,7 @@ interface Overlap {
  ##############################################################################
  */
 
-class North {
+class OrientNorth {
 
   _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
     p.push();
@@ -68,7 +903,7 @@ class North {
   }
 }
 
-class South {
+class OrientSouth {
 
   _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
     p.push();
@@ -98,7 +933,7 @@ class South {
   }
 }
 
-class East {
+class OrientEast {
 
   _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
     p.push();
@@ -128,7 +963,7 @@ class East {
   }
 }
 
-class West {
+class OrientWest {
 
   _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
     p.push();
@@ -161,7 +996,7 @@ class West {
 
 /*
 ##############################################################################
- GObject
+ CvsBaseControl
  This is the base class for controls and panes that don't require a buffer
  ##############################################################################
  */
@@ -170,22 +1005,22 @@ class West {
  * <p>Base class for all controls</p>
  * <p>It provides most of the functionality for the controls</p>
  */
-class GObject {
+class CvsBaseControl {
 
   /** @hidden */
-  static NORTH = new North();
+  static NORTH = new OrientNorth();
   /** @hidden */
-  static SOUTH = new South();
+  static SOUTH = new OrientSouth();
   /** @hidden */
-  static EAST = new East();
+  static EAST = new OrientEast();
   /** @hidden */
-  static WEST = new West();
+  static WEST = new OrientWest();
 
   /** @hidden */ protected _gui: GUI;
   /** @hidden */ protected _p: p5;
   /** @hidden */ protected _name: string;
   /** @hidden */ protected _children: Array<any>;
-  /** @hidden */ protected _parent: GObject | GPane;
+  /** @hidden */ protected _parent: CvsBaseControl | CvsPane;
   /** @hidden */ protected _visible: boolean;
   /** @hidden */ protected _enabled: boolean;
   /** @hidden */ protected _Z: number;
@@ -193,7 +1028,7 @@ class GObject {
   /** @hidden */ protected _y: number = 0;
   /** @hidden */ protected _w: number = 0;
   /** @hidden */ protected _h: number = 0;
-  /** @hidden */ protected _orientation: North | South | East | West;
+  /** @hidden */ protected _orientation: OrientNorth | OrientSouth | OrientEast | OrientWest;
   /** @hidden */ protected _dragging: boolean;
   /** @hidden */ protected _buffer: p5.Renderer;
   /** @hidden */ protected _over: number;
@@ -202,7 +1037,7 @@ class GObject {
   /** @hidden */ protected _c: Array<number>;
   /** @hidden */ protected _active: boolean;
   /** @hidden */ protected _opaque: boolean;
-  /** @hidden */ protected _tooltip: GTooltip;
+  /** @hidden */ protected _tooltip: CvsTooltip;
   /** @hidden */ protected _scheme: Array<string>;
   /** @hidden */ protected _bufferInvalid: boolean;
   /** <p>The event handler for this control. Although it is permitted to set 
@@ -222,7 +1057,7 @@ class GObject {
    * @param h height
    */
   /**
-   * Creates an instance of GObject.
+   * Creates an instance of CvsBaseControl.
    * @date 8/26/2022 - 7:04:37 PM
    *
    * @constructor
@@ -234,7 +1069,7 @@ class GObject {
    * @param {number} h
    */
   /**
-   * GObject class
+   * CvsBaseControl class
    * @hidden
    * @constructor
    * @param {GUI} gui
@@ -258,7 +1093,7 @@ class GObject {
     this._enabled = true;
     this._scheme = undefined;
     this._Z = 0;
-    this._orientation = GObject.EAST;
+    this._orientation = CvsBaseControl.EAST;
     this._dragging = false; // is mouse being dragged on active control
     this._bufferInvalid = true;
     this._over = 0;
@@ -267,7 +1102,7 @@ class GObject {
     this._c = gui.corners(undefined);
     this._active = false;
     this._opaque = true;
-    this.setAction((info?: EventInfo) => {
+    this.setAction((info?: __EventInfo) => {
       console.warn(`No action set for control '${info?.source._name}`);
     });
   }
@@ -285,7 +1120,7 @@ class GObject {
    * any ancestors</p>
    * @returns the actual position in the canvas
    */
-  getAbsXY(): Position {
+  getAbsXY(): __Position {
     if (!this._parent) {
       return { x: this._x, y: this._y };
     } else {
@@ -301,7 +1136,7 @@ class GObject {
    * @param cascade 
    * @returns this control or the control's color scheme
    */
-  scheme(ls?: string, cascade?: boolean): GObject | Array<string> {
+  scheme(ls?: string, cascade?: boolean): CvsBaseControl | Array<string> {
     // setter
     if (ls) {
       this._scheme = this._gui.getScheme(ls);
@@ -322,7 +1157,7 @@ class GObject {
    * @param c is the actual control or its name
    * @returns this control
    */
-  addChild(c: GObject | string, rx?: number, ry?: number): any {
+  addChild(c: CvsBaseControl | string, rx?: number, ry?: number): any {
     let control = this._gui.getControl(c);
     rx = !Number.isFinite(rx) ? control._x : Number(rx);
     ry = !Number.isFinite(ry) ? control._y : Number(ry);
@@ -344,7 +1179,7 @@ class GObject {
    * @param c the control to remove or its name
    * @returns this control
    */
-  removeChild(c: GObject | string) {
+  removeChild(c: CvsBaseControl | string) {
     let control = this._gui.getControl(c);
     for (let i = 0; i < this._children.length; i++) {
       if (control === this._children[i]) {
@@ -368,7 +1203,7 @@ class GObject {
    * @param ry  y position relative to parent
    * @returns this control
    */
-  parent(parent: GObject, rx?: number, ry?: number): GObject {
+  parent(parent: CvsBaseControl, rx?: number, ry?: number): CvsBaseControl {
     if (parent)
       parent.addChild(this, rx, ry);
     return this;
@@ -378,7 +1213,7 @@ class GObject {
    * <p>Remove this control from its parent</p>
    * @returns this control
    */
-  leaveParent(): GObject {
+  leaveParent(): CvsBaseControl {
     if (this._parent)
       this._parent.removeChild(this);
     return this;
@@ -419,21 +1254,21 @@ class GObject {
    * @param dir 'north', 'south', 'east' or 'west'
    * @returns this control
    */
-  orient(dir: string): GObject {
+  orient(dir: string): CvsBaseControl {
     dir = dir.toString().toLowerCase();
     switch (dir) {
       case 'north':
-        this._orientation = GObject.NORTH;
+        this._orientation = CvsBaseControl.NORTH;
         break;
       case 'south':
-        this._orientation = GObject.SOUTH;
+        this._orientation = CvsBaseControl.SOUTH;
         break;
       case 'west':
-        this._orientation = GObject.WEST;
+        this._orientation = CvsBaseControl.WEST;
         break;
       case 'east':
       default:
-        this._orientation = GObject.EAST;
+        this._orientation = CvsBaseControl.EAST;
         break;
 
     }
@@ -461,7 +1296,7 @@ class GObject {
    * @param cascade if true enable child controls
    * @returns this control
    */
-  enable(cascade?: boolean): GObject {
+  enable(cascade?: boolean): CvsBaseControl {
     this._enabled = true;
     if (cascade)
       for (let c of this._children)
@@ -474,7 +1309,7 @@ class GObject {
    * @param cascade if true disable child controls
    * @returns this control
    */
-  disable(cascade?: boolean): GObject {
+  disable(cascade?: boolean): CvsBaseControl {
     if (this._enabled) {
       this._enabled = false;
       this._bufferInvalid = true;
@@ -490,7 +1325,7 @@ class GObject {
    * @param cascade if true show children
    * @returns this control
    */
-  show(cascade?: boolean): GObject {
+  show(cascade?: boolean): CvsBaseControl {
     this._visible = true;
     if (cascade)
       for (let c of this._children)
@@ -503,7 +1338,7 @@ class GObject {
    * @param cascade if true hide children
    * @returns this control
    */
-  hide(cascade?: boolean): GObject {
+  hide(cascade?: boolean): CvsBaseControl {
     this._visible = false;
     if (cascade)
       for (let c of this._children)
@@ -516,7 +1351,7 @@ class GObject {
    * on the controls color scheme</p>
    * @returns this control
    */
-  opaque(): GObject {
+  opaque(): CvsBaseControl {
     this._opaque = true;
     return this;
   }
@@ -525,7 +1360,7 @@ class GObject {
    * <p>Makes the controls background fully transparent.</p>
    * @returns this control
    */
-  transparent(): GObject {
+  transparent(): CvsBaseControl {
     this._opaque = false;
     return this;
   }
@@ -537,7 +1372,7 @@ class GObject {
    * @param dim the dimension to shrink 
    * @returns this control
    */
-  shrink(dim?: string): GObject {
+  shrink(dim?: string): CvsBaseControl {
     let s = this._minControlSize();
     switch (dim) {
       case 'w':
@@ -563,7 +1398,7 @@ class GObject {
   }
 
   /** @hidden */
-  _minControlSize(): Box { return null; }
+  _minControlSize(): __Box { return null; }
 
   /**
    * <p>This method ensures we have a buffer of the correct size for the control</p>
@@ -672,7 +1507,7 @@ class GObject {
   }
 
   /** @hidden */
-  orientation(): North | South | East | West {
+  orientation(): OrientNorth | OrientSouth | OrientEast | OrientWest {
     return this._orientation;
   }
 
@@ -680,14 +1515,14 @@ class GObject {
   _updateControlVisual(): void { }
 
   /** @hidden */
-  _handleMouse(e: EventInfo): boolean { return true; };
+  _handleMouse(e: __EventInfo): boolean { return true; };
 
 }
 
 
 /*
 ##############################################################################
- GControl
+ CvsBufferedControl
  This is the base class for all visual controls that require a graphic buffer
  ##############################################################################
  */
@@ -695,10 +1530,10 @@ class GObject {
 /**
  * <p>This is the base class for all visual controls that require a graphic buffer.</p>
  */
-abstract class GControl extends GObject {
+abstract class CvsBufferedControl extends CvsBaseControl {
 
   /**
-   * GControl class 
+   * CvsBufferedControl class 
    * @hidden
    * @param {GUI} gui
    * @param name unique identifier
@@ -726,7 +1561,7 @@ abstract class GControl extends GObject {
       .showTime(duration || 1600)
       .shrink();
     this.addChild(tt);
-    if (tt instanceof GTooltip) {
+    if (tt instanceof CvsTooltip) {
       tt._validatePosition();
       this._tooltip = tt;
     }
@@ -751,7 +1586,7 @@ abstract class GControl extends GObject {
  * <p>Major and minor tick marks can be added to the bar and supports 
  * stick-to-ticks if wanted.</p>
  */
-class GSlider extends GControl {
+class CvsSlider extends CvsBufferedControl {
   protected _t01: number;
   protected _limit0: number;
   protected _limit1: number;
@@ -787,7 +1622,7 @@ class GSlider extends GControl {
    * @param l1 upper limit
    * @returns this slider object
    */
-  limits(l0: number, l1: number): GObject {
+  limits(l0: number, l1: number): CvsBaseControl {
     if (Number.isFinite(l0) && Number.isFinite(l1)) {
       this._limit0 = l0;
       this._limit1 = l1;
@@ -801,9 +1636,9 @@ class GSlider extends GControl {
    * @param {number} major the number of major ticks
    * @param {number} minor the number of minor ticks between major ticks
    * @param {boolean} stick2ticks slider value is constrainged to tick values
-   * @returns {GObject} this slider object
+   * @returns {CvsBaseControl} this slider object
    */
-  ticks(major: number, minor: number, stick2ticks?: boolean): GObject {
+  ticks(major: number, minor: number, stick2ticks?: boolean): CvsBaseControl {
     this._majorTicks = major;
     this._minorTicks = minor;
     this._s2ticks = Boolean(stick2ticks);
@@ -815,7 +1650,7 @@ class GSlider extends GControl {
    * @param v the selected value to be set 
    * @returns the current value or this slider object
    */
-  value(v?: number): GObject | number {
+  value(v?: number): CvsBaseControl | number {
     if (Number.isFinite(v)) {
       if ((v - this._limit0) * (v - this._limit1) <= 0) {
         this._bufferInvalid = true;
@@ -879,7 +1714,7 @@ class GSlider extends GControl {
   }
 
   /** @hidden */
-  _handleMouse(e: EventInfo) { //    GSlider
+  _handleMouse(e: __EventInfo) { //    CvsSlider
     let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
@@ -936,7 +1771,7 @@ class GSlider extends GControl {
   }
 
   /** @hidden */
-  _updateControlVisual(): void { // GSlider
+  _updateControlVisual(): void { // CvsSlider
     let b = this._buffer;
     let cs = this._scheme || this._gui.scheme();
     let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
@@ -1007,7 +1842,7 @@ class GSlider extends GControl {
  * <p>Major and minor tick marks can be added to the bar and supports 
  * stick-to-ticks if wanted.</p>
  */
-class GRanger extends GSlider {
+class CvsRanger extends CvsSlider {
 
   /** @hidden */ protected _t: Array<number>;
   /** @hidden */ protected _tIdx: number;
@@ -1028,7 +1863,7 @@ class GRanger extends GSlider {
    * @param v1 high value
    * @returns this control or the low/high values
    */
-  range(v0?: number, v1?: number): GObject | Range {
+  range(v0?: number, v1?: number): CvsBaseControl | __Range {
     if (!v0 || !v1)
       return { low: Math.min(v0, v1), high: Math.max(v0, v1) };
     let t0 = this._norm01(v0);
@@ -1039,7 +1874,7 @@ class GRanger extends GSlider {
   }
 
   /** @hidden */
-  value(v?: number): number | GObject {
+  value(v?: number): number | CvsBaseControl {
       console.warn('Ranger controls require 2 values - use range(v0, v1) instead');
       return undefined;
   }
@@ -1061,7 +1896,7 @@ class GRanger extends GSlider {
   }
 
   /** @hidden */
-  _handleMouse(e: EventInfo) { //    GRanger
+  _handleMouse(e: __EventInfo) { //    CvsRanger
     let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
@@ -1125,7 +1960,7 @@ class GRanger extends GSlider {
   }
 
   /** @hidden */
-  _updateControlVisual() { // GRanger
+  _updateControlVisual() { // CvsRanger
     let b = this._buffer;
     let cs = this._scheme || this._gui.scheme();
     let tw = b.width - 20;
@@ -1196,13 +2031,13 @@ class GRanger extends GSlider {
  * visual interface</p>
  * 
  */
-abstract class GText extends GControl {
+abstract class CvsText extends CvsBufferedControl {
 
   /** @hidden */ protected _lines: Array<string>;
   /** @hidden */ protected _text: string;
   /** @hidden */ protected _textSize: number;
   /** @hidden */ protected _textAlign: number;
-  /** @hidden */ protected _tbox: Box;
+  /** @hidden */ protected _tbox: __Box;
   /** @hidden */ protected _gap: number;
 
   /** @hidden */
@@ -1250,7 +2085,7 @@ abstract class GText extends GControl {
    * @param align LEFT, CENTER or RIGHT
    * @returns this control
    */
-  textAlign(align: number): GObject {
+  textAlign(align: number): CvsBaseControl {
     if (align && (align == this._p.LEFT || align == this._p.CENTER || align == this._p.RIGHT))
       this._textAlign = align;
     return this;
@@ -1261,7 +2096,7 @@ abstract class GText extends GControl {
    * 
    * @returns this control
    */
-  noText(): GObject {
+  noText(): CvsBaseControl {
     this._lines = [];
     this._textAlign = this._p.CENTER;
     this._tbox = { w: 0, h: 0 };
@@ -1319,7 +2154,7 @@ abstract class GText extends GControl {
  * <p>This class enables icons to be added to any text control.</p>
  * 
  */
-abstract class GTextIcon extends GText {
+abstract class CvsTextIcon extends CvsText {
 
   /** @hidden */ protected _icon: p5.Graphics;
   /** @hidden */ protected _iconAlign: number;
@@ -1397,7 +2232,7 @@ abstract class GTextIcon extends GText {
 /**
  * <p>This class is to create simple buttons with text and / or icons on its face.</p>
  */
-class GButton extends GTextIcon {
+class CvsButton extends CvsTextIcon {
 
   /** @hidden */
   constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
@@ -1405,7 +2240,7 @@ class GButton extends GTextIcon {
   }
 
   /** @hidden */
-  _updateControlVisual() { // GButton
+  _updateControlVisual() { // CvsButton
     let ts = this._textSize || this._gui.textSize();
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;
@@ -1469,12 +2304,12 @@ class GButton extends GTextIcon {
     // last line in this method should be
     this._bufferInvalid = false;
     // Finally if this is a Pane tab then we need to validate the tabs
-    if (this._parent instanceof GPane) // && this._parent.validateTabs)
+    if (this._parent instanceof CvsPane) // && this._parent.validateTabs)
       this._parent.validateTabs();
   }
 
   /** @hidden */
-  _handleMouse(e: EventInfo) { // button
+  _handleMouse(e: __EventInfo) { // button
     let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
@@ -1528,7 +2363,7 @@ class GButton extends GTextIcon {
 /**
  * This class supports simple true-false checkbox
  */
-class GCheckbox extends GText {
+class CvsCheckbox extends CvsText {
 
   protected _selected: boolean;
   protected _iconAlign: number;
@@ -1591,7 +2426,7 @@ class GCheckbox extends GText {
   }
 
   /** @hidden */
-  _handleMouse(e: EventInfo) { // GCheckbox
+  _handleMouse(e: __EventInfo) { // CvsCheckbox
     let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
@@ -1642,7 +2477,7 @@ class GCheckbox extends GText {
   }
 
   /** @hidden */
-  _updateControlVisual() { //  GCheckbox
+  _updateControlVisual() { //  CvsCheckbox
     let ts = this._textSize || this._gui.textSize();
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;
@@ -1710,7 +2545,7 @@ class GCheckbox extends GText {
   }
 
   /** @hidden */
-  _minControlSize() { // GCheckbox
+  _minControlSize() { // CvsCheckbox
     let b = this._buffer;
     let lines = this._lines;
     let tbox = this._tbox;
@@ -1741,9 +2576,9 @@ class GCheckbox extends GText {
  * <p>The user should <i>not</i> create instances of this class because the library 
  * will make them when needed.</p>
  */
-class GOptionGroup {
+class CvsOptionGroup {
   /** @hidden */ protected _name: string;
-  /** @hidden */ protected _group: Set<GOption>;
+  /** @hidden */ protected _group: Set<CvsOption>;
 
   /** @hidden */
   constructor(name: string) {
@@ -1756,7 +2591,7 @@ class GOptionGroup {
    * Add an option to this group
    * @hidden 
    */
-  add(option: GOption) {
+  add(option: CvsOption) {
     // If this option is selected then deselect all the existing options  in group
     if (option.isSelected()) {
       for (let opt of this._group) {
@@ -1770,7 +2605,7 @@ class GOptionGroup {
    * Remove an option to this group
    * @hidden 
    */
-  remove(option: GOption) {
+  remove(option: CvsOption) {
     this._group.delete(option);
   }
 
@@ -1778,7 +2613,7 @@ class GOptionGroup {
    * @hidden 
    * @returns the currently selected option which will be deselected
    */
-  _prev(): GOption | undefined {
+  _prev(): CvsOption | undefined {
     let prev = undefined;
     for (let opt of this._group)
       if (opt.isSelected()) {
@@ -1791,17 +2626,17 @@ class GOptionGroup {
 
 /*
  ##############################################################################
- GOption
+ CvsOption
  This class represents an option button (aka radio button). These are usually
  grouped together so that only one can be selected at a time.
  ##############################################################################
  */
-class GOption extends GText {
+class CvsOption extends CvsText {
 
   /** @hidden */ protected _selected: boolean;
   /** @hidden */ protected _iconAlign: number;
   /** @hidden */ protected _icon: p5.Graphics;
-  /** @hidden */ protected _optGroup: GOptionGroup;
+  /** @hidden */ protected _optGroup: CvsOptionGroup;
 
   /** @hidden */
   constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
@@ -1868,7 +2703,7 @@ class GOption extends GText {
   }
 
   /** @hidden */
-  _handleMouse(e: EventInfo) { // GOption
+  _handleMouse(e: __EventInfo) { // CvsOption
     let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
@@ -1922,7 +2757,7 @@ class GOption extends GText {
   }
 
   /** @hidden */
-  _updateControlVisual() { //  GOption
+  _updateControlVisual() { //  CvsOption
     let ts = this._textSize || this._gui.textSize();
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;
@@ -1991,7 +2826,7 @@ class GOption extends GText {
   }
 
   /** @hidden */
-  _minControlSize() { // GOption
+  _minControlSize() { // CvsOption
     let b = this._buffer;
     let lines = this._lines;
     let tbox = this._tbox;
@@ -2017,7 +2852,7 @@ class GOption extends GText {
 /**
  * <p>Simple label with text and / or icon</p>
  */
-class GLabel extends GTextIcon {
+class CvsLabel extends CvsTextIcon {
 
   /** @hidden */
   constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
@@ -2025,7 +2860,7 @@ class GLabel extends GTextIcon {
   }
 
   /** @hidden */
-  _updateControlVisual() { // GLabel
+  _updateControlVisual() { // CvsLabel
     let ts = this._textSize || this._gui.textSize();
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;
@@ -2084,11 +2919,11 @@ class GLabel extends GTextIcon {
 
 /*
 ##############################################################################
- GTooltip
+ CvsTooltip
  A box containing some text and/or icon
  ##############################################################################
  */
-class GTooltip extends GText {
+class CvsTooltip extends CvsText {
 
   /** @hidden */ protected _gap: number;
   /** @hidden */ protected _showTime: number;
@@ -2157,7 +2992,7 @@ class GTooltip extends GText {
   }
 
   /** @hidden */
-  _updateControlVisual() { // GTooltip
+  _updateControlVisual() { // CvsTooltip
     let ts = this._textSize || this._gui.tipTextSize();
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;
@@ -2218,16 +3053,16 @@ class GTooltip extends GText {
 
 /*
  ##############################################################################
- GScroller
+ CvsScroller
  This class represents a simple scrollbar. Although it can be used as a 
- distinct control it is more likely to be used as part of a larger control such as GViewer
+ distinct control it is more likely to be used as part of a larger control such as CvsViewer
  ##############################################################################
  */
 /** 
  * <p>The scroller is used to scroll thorugh an object larger than the 
  * display area.</p>
  */
-class GScroller extends GControl {
+class CvsScroller extends CvsBufferedControl {
 
   /** @hidden */ protected _capacity: number;
   /** @hidden */ protected _used: number;
@@ -2342,7 +3177,7 @@ class GScroller extends GControl {
   }
 
   /** @hidden */
-  _handleMouse(e: EventInfo) { //    GScroller
+  _handleMouse(e: __EventInfo) { //    CvsScroller
     let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
@@ -2390,7 +3225,7 @@ class GScroller extends GControl {
   }
 
   /** @hidden */
-  _updateControlVisual() { // GScroller
+  _updateControlVisual() { // CvsScroller
     let b = this._buffer;
     let cs = this._scheme || this._gui.scheme();
     let thumbSizeX = Math.max(this._used * this._TLENGTH, 12), thumbSizeY = 14;
@@ -2436,7 +3271,7 @@ class GScroller extends GControl {
 
 /*
  ##############################################################################
- GViewer
+ CvsViewer
  This control is used to scroll and zoom around a bitmap
  image.
 
@@ -2459,7 +3294,7 @@ class GScroller extends GControl {
  * slider is only visible when the mouse pointer is near the centre of the 
  * view area.</p>
  */
-class GViewer extends GControl {
+class CvsViewer extends CvsBufferedControl {
 
   /** @hidden */ protected _layers: Array<p5.Graphics>;
   /** @hidden */ protected _hidden: Set<number>;
@@ -2470,10 +3305,10 @@ class GViewer extends GControl {
   /** @hidden */ protected _wscale: number;
   /** @hidden */ protected _usedX: number;
   /** @hidden */ protected _usedY: number;
-  /** @hidden */ protected _o: Overlap;
-  /** @hidden */ protected _scrH: GScroller;
-  /** @hidden */ protected _scrV: GScroller;
-  /** @hidden */ protected _scaler: GSlider;
+  /** @hidden */ protected _o: __Overlap;
+  /** @hidden */ protected _scrH: CvsScroller;
+  /** @hidden */ protected _scrV: CvsScroller;
+  /** @hidden */ protected _scaler: CvsSlider;
   /** @hidden */ protected _wscales: number;
   /** @hidden */ protected _mx0: number;
   /** @hidden */ protected _my0: number;
@@ -2669,7 +3504,7 @@ class GViewer extends GControl {
   }
 
   /** @hidden */
-  _handleMouse(e: EventInfo) { // viewer
+  _handleMouse(e: __EventInfo) { // viewer
     let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
@@ -2763,7 +3598,7 @@ class GViewer extends GControl {
   }
 
   /** @hidden */
-  _updateControlVisual() { // GViewer
+  _updateControlVisual() { // CvsViewer
     let b = this._buffer;
     let cs = this._scheme || this._gui.scheme();
     b.background(cs.dark_grey);
@@ -2805,7 +3640,7 @@ class GViewer extends GControl {
    * @hidden 
    */
   _overlap(ax0: number, ay0: number, ax1: number, ay1: number,
-    bx0: number, by0: number, bx1: number, by1: number): Overlap {
+    bx0: number, by0: number, bx1: number, by1: number): __Overlap {
     let topA = Math.min(ay0, ay1);
     let botA = Math.max(ay0, ay1);
     let leftA = Math.min(ax0, ax1);
@@ -2846,7 +3681,7 @@ class GViewer extends GControl {
   }
 
   /** @hidden */
-  shrink(dim?: string): GObject {
+  shrink(dim?: string): CvsBaseControl {
     console.warn("Cannot change 'shrink' a viewer");
     return this;
   }
@@ -2859,7 +3694,7 @@ class GViewer extends GControl {
   }
 
   /** @hidden */
-  _minControlSize(): Box {
+  _minControlSize(): __Box {
     return { w: this._w, h: this._h };
   }
 
@@ -2867,16 +3702,16 @@ class GViewer extends GControl {
 
 /*
 ##############################################################################
- GPane
+ CvsPane
  This is the base class side panes
  ##############################################################################
  */
-abstract class GPane extends GObject {
+abstract class CvsPane extends CvsBaseControl {
 
   /** @hidden */ protected _cornerRadius: number;
   /** @hidden */ protected _status: string;
   /** @hidden */ protected _timer: number;
-  /** @hidden */ protected _tab: GButton;
+  /** @hidden */ protected _tab: CvsButton;
   /** @hidden */ protected _tabstate: string;
   /** @hidden */ protected _size: number;
 
@@ -2919,7 +3754,7 @@ abstract class GPane extends GObject {
       case "opening":   // Stop existing timer
         clearInterval(this._timer);
       case "open": // now add closing timer
-        this._timer = setInterval(() => { this._closing() }, GPane._dI);
+        this._timer = setInterval(() => { this._closing() }, CvsPane._dI);
         this._status = 'closing';
         break;
     }
@@ -2936,7 +3771,7 @@ abstract class GPane extends GObject {
         clearInterval(this._timer);
       case "closed": // now add opening timer
         this._gui._closeAll();
-        this._timer = setInterval(() => { this._opening() }, GPane._dI);
+        this._timer = setInterval(() => { this._opening() }, CvsPane._dI);
         this._status = 'opening';
         break;
     }
@@ -3068,13 +3903,13 @@ abstract class GPane extends GObject {
 
 
   /** @hidden */
-  opaque(dim?: string): GObject {
+  opaque(dim?: string): CvsBaseControl {
     console.warn("This methis is not applicable to a pane");
     return this;
   }
 
   /** @hidden */
-  transparent(dim?: string): GObject {
+  transparent(dim?: string): CvsBaseControl {
     console.warn("This methis is not applicable to a pane");
     return this;
   }
@@ -3131,24 +3966,24 @@ abstract class GPane extends GObject {
   }
 
   /** @hidden */
-  _minControlSize(): Box {
+  _minControlSize(): __Box {
     return { w: this._w, h: this._h };
   }
 }
 
 
 /** @hidden */
-class GPaneNorth extends GPane {
+class CvsPaneNorth extends CvsPane {
 
   constructor(gui: GUI, name: string, size: number) {
     super(gui, name, 0, -size, gui.canvasWidth(), size);
     this._size = size;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
-    let tab = this._tab = this._gui.button('Tab ' + GPane._tabID++);
+    let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
     tab.text(tab._name).setAction(this._tabAction);
     let s = tab._minControlSize();
-    tab._w = s.w + GPane._wExtra;
+    tab._w = s.w + CvsPane._wExtra;
     tab._c = [0, 0, this._cornerRadius, this._cornerRadius];
     this.addChild(tab);
     gui._panesNorth.push(this);
@@ -3156,7 +3991,7 @@ class GPaneNorth extends GPane {
   }
 
   _opening() { // North
-    let py = this._y + GPane._dO;
+    let py = this._y + CvsPane._dO;
     if (py > 0) { // See if open
       py = 0;
       clearInterval(this._timer);
@@ -3166,7 +4001,7 @@ class GPaneNorth extends GPane {
   }
 
   _closing() { // North
-    let py = this._y - GPane._dC;
+    let py = this._y - CvsPane._dC;
     if (py < -this._size) {  // See if closed
       py = -this._size;
       clearInterval(this._timer);
@@ -3175,7 +4010,7 @@ class GPaneNorth extends GPane {
     this._y = py;
   }
 
-  // Called by GButton if it has updated its size/status
+  // Called by CvsButton if it has updated its size/status
   validateTabs() {
     this._gui.validateTabsNorth();
     return this;
@@ -3184,17 +4019,17 @@ class GPaneNorth extends GPane {
 }
 
 /** @hidden */
-class GPaneSouth extends GPane {
+class CvsPaneSouth extends CvsPane {
 
   constructor(gui: GUI, name: string, size: number) {
     super(gui, name, 0, gui.canvasHeight(), gui.canvasWidth(), size);
     this._size = size;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
-    let tab = this._tab = this._gui.button('Tab ' + GPane._tabID++);
+    let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
     tab.text(tab._name).setAction(this._tabAction);
     let s = tab._minControlSize();
-    tab._w = s.w + GPane._wExtra;
+    tab._w = s.w + CvsPane._wExtra;
     tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
     this.addChild(tab);
     // Add this pane control to those on East side
@@ -3203,7 +4038,7 @@ class GPaneSouth extends GPane {
   }
 
   _opening() { // South
-    let py = this._y - GPane._dO;
+    let py = this._y - CvsPane._dO;
     if (py < this._gui.canvasHeight() - this._size) { // See if open
       py = this._gui.canvasHeight() - this._size;
       clearInterval(this._timer);
@@ -3213,7 +4048,7 @@ class GPaneSouth extends GPane {
   }
 
   _closing() { // South
-    let py = this._y + GPane._dC;
+    let py = this._y + CvsPane._dC;
     if (py > this._gui.canvasHeight()) {  // See if closed
       py = this._gui.canvasHeight();
       clearInterval(this._timer);
@@ -3222,7 +4057,7 @@ class GPaneSouth extends GPane {
     this._y = py;
   }
 
-  // Called by GButton if it has updated its size/status
+  // Called by CvsButton if it has updated its size/status
   validateTabs() {
     this._gui.validateTabsSouth();
     return this;
@@ -3231,19 +4066,19 @@ class GPaneSouth extends GPane {
 
 
 /** @hidden */
-class GPaneEast extends GPane {
+class CvsPaneEast extends CvsPane {
 
   constructor(gui: GUI, name: string, size: number) {
     super(gui, name, gui.canvasWidth(), 0, size, gui.canvasHeight());
     this._size = size;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
-    let tab = this._tab = this._gui.button('Tab ' + GPane._tabID++);
+    let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
     tab.text(tab._name)
       .orient('north')
       .setAction(this._tabAction);
     let s = tab._minControlSize();
-    tab._w = s.w + GPane._wExtra;
+    tab._w = s.w + CvsPane._wExtra;
     tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
     this.addChild(tab);
     // Add this pane control to those on East side
@@ -3252,7 +4087,7 @@ class GPaneEast extends GPane {
   }
 
   _opening() { // East
-    let px = this._x - GPane._dO;
+    let px = this._x - CvsPane._dO;
     if (px < this._gui.canvasWidth() - this._size) { // See if open
       px = this._gui.canvasWidth() - this._size;
       clearInterval(this._timer);
@@ -3262,7 +4097,7 @@ class GPaneEast extends GPane {
   }
 
   _closing() { // East
-    let px = this._x + GPane._dC;
+    let px = this._x + CvsPane._dC;
     if (px > this._gui.canvasWidth()) {  // See if closed
       px = this._gui.canvasWidth();
       clearInterval(this._timer);
@@ -3271,7 +4106,7 @@ class GPaneEast extends GPane {
     this._x = px;
   }
 
-  // Called by GButton if it has updated its size/status
+  // Called by CvsButton if it has updated its size/status
   validateTabs() {
     this._gui.validateTabsEast();
     return this;
@@ -3280,19 +4115,19 @@ class GPaneEast extends GPane {
 }
 
 /** @hidden */
-class GPaneWest extends GPane {
+class CvsPaneWest extends CvsPane {
 
   constructor(gui: GUI, name: string, size: number) {
     super(gui, name, -size, 0, size, gui.canvasHeight());
     this._size = size;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
-    let tab = this._tab = this._gui.button('Tab ' + GPane._tabID++);
+    let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
     tab.text(tab._name)
       .orient('south')
       .setAction(this._tabAction);
     let s = tab._minControlSize();
-    tab._w = s.w + GPane._wExtra;
+    tab._w = s.w + CvsPane._wExtra;
     tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
     this.addChild(tab);
     // Add this pane control to those on East side
@@ -3301,7 +4136,7 @@ class GPaneWest extends GPane {
   }
 
   _opening() { // West
-    let px = this._x + GPane._dO;
+    let px = this._x + CvsPane._dO;
     if (px > 0) { // See if open
       px = 0;
       clearInterval(this._timer);
@@ -3311,7 +4146,7 @@ class GPaneWest extends GPane {
   }
 
   _closing() { // West
-    let px = this._x - GPane._dC;
+    let px = this._x - CvsPane._dC;
     if (px < -this._size) {  // See if closed
       px = -this._size;
       clearInterval(this._timer);
@@ -3320,12 +4155,10 @@ class GPaneWest extends GPane {
     this._x = px;
   }
 
-  // Called by GButton if it has updated its size/status
+  // Called by CvsButton if it has updated its size/status
   validateTabs() {
     this._gui.validateTabsWest();
     return this;
   }
 
 }
-
-
