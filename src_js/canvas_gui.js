@@ -211,14 +211,13 @@ class GUI {
     }
     _initColorSchemes() {
         this._schemes = [];
-        this._schemes['blue'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._blueScheme);
-        this._schemes['green'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._greenScheme);
-        this._schemes['red'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._redScheme);
-        this._schemes['cyan'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._cyanScheme);
-        this._schemes['yellow'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._yellowScheme);
-        this._schemes['purple'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._purpleScheme);
-        this._schemes['orange'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._orangeScheme);
-        this._schemes['dark'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._darkScheme);
+        this._schemes['blue'] = new BlueScheme();
+        this._schemes['green'] = new GreenScheme();
+        this._schemes['red'] = new RedScheme();
+        this._schemes['cyan'] = new CyanScheme();
+        this._schemes['yellow'] = new YellowScheme();
+        this._schemes['purple'] = new PurpleScheme();
+        this._schemes['orange'] = new OrangeScheme();
         this._scheme = this._schemes['blue'];
     }
     scheme(schemename) {
@@ -241,13 +240,6 @@ class GUI {
             return Object.assign({}, this._schemes[schemename]);
         console.warn(`Unable to retrieve color scheme '${schemename}'`);
         return undefined;
-    }
-    deleteScheme(schemename) {
-        if (schemename && this._schemes[schemename]) {
-            this._schemes[schemename] = undefined;
-            this._schemes = this._schemes.filter(Boolean);
-        }
-        return this;
     }
     addScheme(schemename, scheme) {
         if (typeof schemename === 'string' && !scheme) {
@@ -330,173 +322,73 @@ class GUI {
 }
 GUI._guis = new Map();
 GUI._announced = false;
-GUI._baseScheme = {
-    track_back: 'hsb(0, 0%, 75%)',
-    track_border: 'hsb(0, 0%, 53%)',
-    white: 'rgb(255, 255, 255)',
-    white0: 'rgba(255, 255, 255, 0.2)',
-    white1: 'rgba(255, 255, 255, 0.3)',
-    white2: 'rgba(255, 255, 255, 0.4)',
-    white3: 'rgba(255, 255, 255, 0.5)',
-    white4: 'rgba(255, 255, 255, 0.6)',
-    white5: 'rgba(255, 255, 255, 0.7)',
-    white6: 'rgba(255, 255, 255, 0.8)',
-    white7: 'rgba(255, 255, 255, 0.9)',
-    black: 'rgb(0, 0, 0)',
-    black0: 'rgba(0, 0, 0, 0.2)',
-    black1: 'rgba(0, 0, 0, 0.3)',
-    black2: 'rgba(0, 0, 0, 0.4)',
-    black3: 'rgba(0, 0, 0, 0.5)',
-    black4: 'rgba(0, 0, 0, 0.6)',
-    black5: 'rgba(0, 0, 0, 0.7)',
-    black6: 'rgba(0, 0, 0, 0.8)',
-    black7: 'rgba(0, 0, 0, 0.9)',
-    dark_grey: 'rgb(64, 64, 64)',
-    mid_grey: 'rgb(128, 128, 128)',
-    light_grey: 'rgb(192, 192, 192)',
-    clear: 'rgba(0, 0, 0, 0)',
-};
-GUI._blueScheme = {
-    back: 'hsb(240, 45%, 100%)',
-    back0: 'hsba(240, 45%, 100%, 0.2)',
-    back1: 'hsba(240, 45%, 100%, 0.3)',
-    back2: 'hsba(240, 45%, 100%, 0.4)',
-    back3: 'hsba(240, 45%, 100%, 0.5)',
-    back4: 'hsba(240, 45%, 100%, 0.6)',
-    back5: 'hsba(240, 45%, 100%, 0.7)',
-    back6: 'hsba(240, 45%, 100%, 0.8)',
-    back7: 'hsba(240, 45%, 100%, 0.9)',
-    fore: 'hsb(240, 100%, 66%)',
-    thumb: 'hsb(240, 45%, 85%)',
-    track_fore: 'hsb(240, 14%, 100%)',
-    highlight: 'hsb(240, 100%, 50%)',
-    opaque: 'hsb(240, 45%, 100%)',
-    ttfore: 'hsb(240, 100%, 70%)',
-    ttback: 'hsb(240, 5%, 100%)',
-};
-GUI._greenScheme = {
-    back: 'hsb(120, 45%, 90%)',
-    back0: 'hsba(120, 45%, 90%, 0.2)',
-    back1: 'hsba(120, 45%, 90%, 0.3)',
-    back2: 'hsba(120, 45%, 90%, 0.4)',
-    back3: 'hsba(120, 45%, 90%, 0.5)',
-    back4: 'hsba(120, 45%, 90%, 0.6)',
-    back5: 'hsba(120, 45%, 90%, 0.7)',
-    back6: 'hsba(120, 45%, 90%, 0.8)',
-    back7: 'hsba(120, 45%, 90%, 0.9)',
-    fore: 'hsb(120, 90%, 40%)',
-    thumb: 'hsb(120, 45%, 80%)',
-    track_fore: 'hsb(120, 14%, 100%)',
-    highlight: 'hsb(120, 100%, 50%)',
-    opaque: 'hsb(120, 45%, 100%)',
-    ttfore: 'hsb(120, 100%, 50%)',
-    ttback: 'hsb(120, 5%, 100%)',
-};
-GUI._redScheme = {
-    back: 'hsb(1, 45%, 100%)',
-    back0: 'hsba(1, 45%, 100%, 0.2)',
-    back1: 'hsba(1, 45%, 100%, 0.3)',
-    back2: 'hsba(1, 45%, 100%, 0.4)',
-    back3: 'hsba(1, 45%, 100%, 0.5)',
-    back4: 'hsba(1, 45%, 100%, 0.6)',
-    back5: 'hsba(1, 45%, 100%, 0.7)',
-    back6: 'hsba(1, 45%, 100%, 0.8)',
-    back7: 'hsba(1, 45%, 100%, 0.9)',
-    fore: 'hsb(1, 100%, 66%)',
-    thumb: 'hsb(1, 45%, 85%)',
-    track_fore: 'hsb(1, 14%, 100%)',
-    highlight: 'hsb(1, 100%, 50%)',
-    opaque: 'hsb(1, 45%, 100%)',
-    ttfore: 'hsb(1, 100%, 70%)',
-    ttback: 'hsb(1, 5%, 100%)',
-};
-GUI._cyanScheme = {
-    back: 'hsb(180, 45%, 100%)',
-    back0: 'hsba(180, 45%, 100%, 0.2)',
-    back1: 'hsba(180, 45%, 100%, 0.3)',
-    back2: 'hsba(180, 45%, 100%, 0.4)',
-    back3: 'hsba(180, 45%, 100%, 0.5)',
-    back4: 'hsba(180, 45%, 100%, 0.6)',
-    back5: 'hsba(180, 45%, 100%, 0.7)',
-    back6: 'hsba(180, 45%, 100%, 0.8)',
-    back7: 'hsba(180, 45%, 100%, 0.9)',
-    fore: 'hsb(180, 100%, 50%)',
-    thumb: 'hsb(180, 45%, 85%)',
-    track_fore: 'hsb(180, 14%, 100%)',
-    highlight: 'hsb(180, 100%, 50%)',
-    opaque: 'hsb(180, 45%, 100%)',
-    ttfore: 'hsb(180, 100%, 40%)',
-    ttback: 'hsb(180, 5%, 100%)',
-};
-GUI._yellowScheme = {
-    back: 'hsb(60, 45%, 100%)',
-    back0: 'hsba(60, 45%, 100%, 0.2)',
-    back1: 'hsba(60, 45%, 100%, 0.3)',
-    back2: 'hsba(60, 45%, 100%, 0.4)',
-    back3: 'hsba(60, 45%, 100%, 0.5)',
-    back4: 'hsba(60, 45%, 100%, 0.6)',
-    back5: 'hsba(60, 45%, 100%, 0.7)',
-    back6: 'hsba(60, 45%, 100%, 0.8)',
-    back7: 'hsba(60, 45%, 100%, 0.9)',
-    fore: 'hsb(60, 100%, 50%)',
-    thumb: 'hsb(60, 70%, 80%)',
-    track_back: 'hsb(0, 0%, 75%)',
-    track_fore: 'hsb(60, 14%, 100%)',
-    track_border: 'hsb(0, 0%, 53%)',
-    highlight: 'hsb(60, 100%, 50%)',
-    opaque: 'hsb(60, 45%, 100%)',
-    ttfore: 'hsb(60, 100%, 40%)',
-    ttback: 'hsb(60, 5%, 100%)',
-};
-GUI._purpleScheme = {
-    back: 'hsb(300, 45%, 100%)',
-    back0: 'hsba(300, 45%, 100%, 0.2)',
-    back1: 'hsba(300, 45%, 100%, 0.3)',
-    back2: 'hsba(300, 45%, 100%, 0.4)',
-    back3: 'hsba(300, 45%, 100%, 0.5)',
-    back4: 'hsba(300, 45%, 100%, 0.6)',
-    back5: 'hsba(300, 45%, 100%, 0.7)',
-    back6: 'hsba(300, 45%, 100%, 0.8)',
-    back7: 'hsba(300, 45%, 100%, 0.9)',
-    fore: 'hsb(300, 100%, 66%)',
-    thumb: 'hsb(300, 45%, 85%)',
-    track_fore: 'hsb(300, 14%, 100%)',
-    highlight: 'hsb(300, 100%, 50%)',
-    opaque: 'hsb(300, 45%, 100%)',
-    ttfore: 'hsb(300, 100%, 80%)',
-    ttback: 'hsb(300, 5%, 100%)',
-};
-GUI._orangeScheme = {
-    back: 'hsb(30, 60%, 100%)',
-    back0: 'hsba(30, 60%, 100%, 0.2)',
-    back1: 'hsba(30, 60%, 100%, 0.3)',
-    back2: 'hsba(30, 60%, 100%, 0.4)',
-    back3: 'hsba(30, 60%, 100%, 0.5)',
-    back4: 'hsba(30, 60%, 100%, 0.6)',
-    back5: 'hsba(30, 60%, 100%, 0.7)',
-    back6: 'hsba(30, 60%, 100%, 0.8)',
-    back7: 'hsba(30, 60%, 100%, 0.9)',
-    fore: 'hsb(30, 100%, 50%)',
-    thumb: 'hsb(30, 45%, 85%)',
-    track_fore: 'hsb(30, 14%, 100%)',
-    highlight: 'hsb(30, 100%, 50%)',
-    opaque: 'hsb(30, 45%, 100%)',
-    ttfore: 'hsb(30, 100%, 80%)',
-    ttback: 'hsb(30, 5%, 100%)',
-};
-GUI._darkScheme = {
-    back: 'rgb(64, 64, 64)',
-    fore: 'rgb(224, 224, 224)',
-    thumb: 'rgb(64, 64, 64)',
-    track_fore: 'rgb(124, 124, 124)',
-    highlight: 'rgb(250, 250, 250)',
-    opaque: 'hsb(1, 45%, 100%)',
-};
-;
-;
-;
-;
-;
+class BaseScheme {
+    constructor() {
+        this['WHITE'] = 'rgb(255, 255, 255)';
+        this['BLACK'] = 'rgb(0, 0, 0)';
+        this['CLEAR'] = 'rgba(0, 0, 0, 0)';
+        for (let i = 0; i < 10; i++) {
+            this[`GREY_${i}`] = `hsb(0,0%,${90 - i * 6}%)`;
+        }
+        for (let i = 0; i < 10; i++) {
+            this[`TINT_${i}`] = `rgba(10,0,0,${i * 0.1})`;
+        }
+    }
+    _colors(h, s0 = 40, s1 = 70, b = 100) {
+        let cn = 0, i;
+        for (i = 0; i <= 4; ++i) {
+            this[`COLOR_${cn++}`] = `hsba(${h}, ${s0}%, ${b}%, ${0.6 + i * 0.1})`;
+        }
+        for (let i = 0; i <= 3; ++i) {
+            this[`COLOR_${cn++}`] = `hsb(${h}, ${s0}%, ${100 - i * 10}%)`;
+        }
+        for (let i = 0; i <= 5; ++i) {
+            this[`COLOR_${cn++}`] = `hsb(${h}, ${s1}%, ${100 - i * 12}%)`;
+        }
+    }
+}
+class BlueScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._colors(240);
+    }
+}
+class GreenScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._colors(120);
+    }
+}
+class RedScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._colors(0);
+    }
+}
+class CyanScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._colors(180);
+    }
+}
+class YellowScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._colors(60);
+    }
+}
+class PurpleScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._colors(300);
+    }
+}
+class OrangeScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._colors(30);
+    }
+}
 class OrientNorth {
     _renderP2D(p, w, h, buffer) {
         p.push();
@@ -643,13 +535,13 @@ class CvsBaseControl {
             return pos;
         }
     }
-    scheme(ls, cascade) {
-        if (ls) {
-            this._scheme = this._gui.getScheme(ls);
+    scheme(id, cascade) {
+        if (id) {
+            this._scheme = this._gui.getScheme(id);
             this._bufferInvalid = true;
             if (cascade)
                 for (let c of this._children)
-                    c.scheme(ls, cascade);
+                    c.scheme(id, cascade);
             return this;
         }
         return this._scheme;
@@ -719,7 +611,6 @@ class CvsBaseControl {
             case 'east':
             default:
                 this._orientation = CvsBaseControl.EAST;
-                break;
         }
         return this;
     }
@@ -831,7 +722,7 @@ class CvsBaseControl {
         p.pop();
     }
     _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs.black1);
+        b.fill(cs['TINT_7']);
         b.noStroke();
         b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -1006,15 +897,21 @@ class CvsSlider extends CvsBufferedControl {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
         let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
+        const OPAQUE = cs['COLOR_3'];
+        const TICKS = cs['GREY_8'];
+        const UNUSED_TRACK = cs['GREY_1'];
+        const USED_TRACK = cs['GREY_4'];
+        const HIGHLIGHT = cs['COLOR_14'];
+        const THUMB = cs['COLOR_10'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(cs.back7);
+            b.fill(OPAQUE);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         b.translate(10, b.height / 2);
-        b.stroke(cs.track_border);
+        b.stroke(TICKS);
         b.strokeWeight(1);
         let n, dT;
         n = this._majorTicks * this._minorTicks;
@@ -1033,16 +930,16 @@ class CvsSlider extends CvsBufferedControl {
                 b.line(tx, -majorT, tx, majorT);
             }
         }
-        b.fill(cs.track_back);
+        b.fill(UNUSED_TRACK);
         b.rect(0, -trackW / 2, tw, trackW);
         let tx = tw * this._t01;
-        b.fill(cs.track_fore);
+        b.fill(USED_TRACK);
         b.rect(0, -trackW / 2, tx, trackW, this._c[0], this._c[1], this._c[2], this._c[3]);
-        b.fill(cs.thumb);
+        b.fill(THUMB);
         b.noStroke();
         if (this._active || this._over > 0) {
             b.strokeWeight(2);
-            b.stroke(cs.highlight);
+            b.stroke(HIGHLIGHT);
         }
         b.rect(tx - thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize, this._c[0], this._c[1], this._c[2], this._c[3]);
         if (!this._enabled)
@@ -1157,15 +1054,21 @@ class CvsRanger extends CvsSlider {
         let cs = this._scheme || this._gui.scheme();
         let tw = b.width - 20;
         let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
+        const OPAQUE = cs['COLOR_3'];
+        const TICKS = cs['GREY_8'];
+        const UNUSED_TRACK = cs['GREY_1'];
+        const USED_TRACK = cs['GREY_4'];
+        const HIGHLIGHT = cs['COLOR_14'];
+        const THUMB = cs['COLOR_10'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(cs.back7);
+            b.fill(OPAQUE);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         b.translate(10, b.height / 2);
-        b.stroke(cs.track_border);
+        b.stroke(TICKS);
         b.strokeWeight(1);
         let n, dT;
         n = this._majorTicks * this._minorTicks;
@@ -1184,18 +1087,18 @@ class CvsRanger extends CvsSlider {
                 b.line(tx, -majorT, tx, majorT);
             }
         }
-        b.fill(cs.track_back);
+        b.fill(UNUSED_TRACK);
         b.rect(0, -trackW / 2, tw, trackW);
         let tx0 = tw * Math.min(this._t[0], this._t[1]);
         let tx1 = tw * Math.max(this._t[0], this._t[1]);
-        b.fill(cs.track_fore);
+        b.fill(USED_TRACK);
         b.rect(tx0, -trackW / 2, tx1 - tx0, trackW, this._c[0], this._c[1], this._c[2], this._c[3]);
         for (let tnbr = 0; tnbr < 2; tnbr++) {
-            b.fill(cs.thumb);
+            b.fill(THUMB);
             b.noStroke();
             if ((this._active || this._over > 0) && tnbr == this._tIdx) {
                 b.strokeWeight(2);
-                b.stroke(cs.highlight);
+                b.stroke(HIGHLIGHT);
             }
             b.rect(this._t[tnbr] * tw - thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
@@ -1339,11 +1242,14 @@ class CvsButton extends CvsTextIcon {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
+        let BACK = cs['COLOR_4'];
+        let FORE = cs['COLOR_13'];
+        let HIGHLIGHT = cs['COLOR_14'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(cs.back);
+            b.fill(BACK);
             b.rect(1, 1, this._w - 1, this._h - 1, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         if (icon) {
@@ -1371,7 +1277,7 @@ class CvsButton extends CvsTextIcon {
             let tw = x1 - x0;
             let th = this._tbox.h;
             let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(cs.fore);
+            b.fill(FORE);
             for (let line of lines) {
                 switch (textAlign) {
                     case this._p.LEFT:
@@ -1389,7 +1295,7 @@ class CvsButton extends CvsTextIcon {
             }
         }
         if (this._over > 0) {
-            b.stroke(cs.highlight);
+            b.stroke(HIGHLIGHT);
             b.strokeWeight(2);
             b.noFill();
             b.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
@@ -1540,22 +1446,25 @@ class CvsCheckbox extends CvsText {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
+        let BACK = cs['COLOR_3'];
+        let FORE = cs['COLOR_13'];
+        let HIGHLIGHT = cs['COLOR_14'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(cs.back7);
+            b.fill(BACK);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         b.push();
         let px = (iconAlign == this._p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
         b.translate(px, b.height / 2);
-        b.stroke(cs.fore);
-        b.fill(cs.white);
+        b.stroke(FORE);
+        b.fill(cs['WHITE']);
         b.strokeWeight(1.5);
         b.rect(-isize / 2, -isize / 2, isize, isize, 3);
         if (this._selected) {
-            b.stroke(cs.fore);
+            b.stroke(FORE);
             b.strokeWeight(2.5);
             b.line(-0.281 * isize, 0, -0.188 * isize, 0.313 * isize);
             b.line(0.270 * isize, -0.27 * isize, -0.188 * isize, 0.313 * isize);
@@ -1571,7 +1480,7 @@ class CvsCheckbox extends CvsText {
             let tw = x1 - x0;
             let th = this._tbox.h;
             let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(cs.fore);
+            b.fill(FORE);
             for (let line of lines) {
                 switch (textAlign) {
                     case this._p.LEFT:
@@ -1589,7 +1498,7 @@ class CvsCheckbox extends CvsText {
             }
         }
         if (this._over > 0) {
-            b.stroke(cs.highlight);
+            b.stroke(HIGHLIGHT);
             b.strokeWeight(2);
             b.noFill();
             b.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
@@ -1746,22 +1655,25 @@ class CvsOption extends CvsText {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
+        let BACK = cs['COLOR_3'];
+        let FORE = cs['COLOR_13'];
+        let HIGHLIGHT = cs['COLOR_14'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(cs.back7);
+            b.fill(BACK);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         b.push();
         let px = (iconAlign == p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
         b.translate(px, b.height / 2);
-        b.stroke(cs.fore);
-        b.fill(cs.white);
+        b.stroke(FORE);
+        b.fill(cs['WHITE']);
         b.strokeWeight(1.5);
         b.ellipse(0, 0, isize, isize);
         if (this._selected) {
-            b.fill(cs.fore);
+            b.fill(FORE);
             b.noStroke();
             b.ellipse(0, 0, isize / 2, isize / 2);
         }
@@ -1776,7 +1688,7 @@ class CvsOption extends CvsText {
             let tw = x1 - x0;
             let th = this._tbox.h;
             let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(cs.fore);
+            b.fill(FORE);
             for (let line of lines) {
                 switch (textAlign) {
                     case p.LEFT:
@@ -1794,7 +1706,7 @@ class CvsOption extends CvsText {
             }
         }
         if (this._over > 0) {
-            b.stroke(cs.highlight);
+            b.stroke(HIGHLIGHT);
             b.strokeWeight(2);
             b.noFill();
             b.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
@@ -1839,11 +1751,13 @@ class CvsLabel extends CvsTextIcon {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
+        let OPAQUE = cs['COLOR_4'];
+        let FORE = cs['COLOR_13'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(cs.back7);
+            b.fill(OPAQUE);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         if (icon) {
@@ -1871,7 +1785,7 @@ class CvsLabel extends CvsTextIcon {
             let tw = x1 - x0;
             let th = this._tbox.h;
             let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(cs.fore);
+            b.fill(FORE);
             for (let line of lines) {
                 switch (textAlign) {
                     case p.LEFT:
@@ -1942,12 +1856,14 @@ class CvsTooltip extends CvsText {
         let b = this._buffer;
         let lines = this._lines;
         let gap = this._gap;
+        let BACK = cs['COLOR_4'];
+        let FORE = cs['COLOR_13'];
         b.push();
         b.clear();
-        b.stroke(cs.ttfore);
-        b.fill(cs.ttback);
+        b.stroke(FORE);
+        b.fill(BACK);
         b.rect(0, 0, this._w - 1, this._h - 1);
-        b.fill(cs.ttfore).noStroke();
+        b.fill(FORE).noStroke();
         if (lines.length > 0) {
             b.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
@@ -2101,23 +2017,28 @@ class CvsScroller extends CvsBufferedControl {
         let cs = this._scheme || this._gui.scheme();
         let thumbSizeX = Math.max(this._used * this._TLENGTH, 12), thumbSizeY = 14;
         let tx = this._value * this._TLENGTH;
+        const OPAQUE = cs['COLOR_3'];
+        const TICKS = cs['GREY_8'];
+        const UNUSED_TRACK = cs['GREY_4'];
+        const HIGHLIGHT = cs['COLOR_14'];
+        const THUMB = cs['COLOR_10'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(cs.back7);
+            b.fill(OPAQUE);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         b.translate(this._BORDER, b.height / 2);
-        b.fill(cs.track_back);
-        b.stroke(cs.track_border);
+        b.fill(UNUSED_TRACK);
+        b.stroke(TICKS);
         b.strokeWeight(1);
         b.rect(0, -this._THEIGHT / 2, this._TLENGTH, this._THEIGHT);
-        b.fill(cs.thumb);
+        b.fill(THUMB);
         b.noStroke();
         if (this._active || this._over > 0) {
             b.strokeWeight(2);
-            b.stroke(cs.highlight);
+            b.stroke(HIGHLIGHT);
         }
         b.rect(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY, this._c[0], this._c[1], this._c[2], this._c[3]);
         if (!this._enabled)
@@ -2337,7 +2258,7 @@ class CvsViewer extends CvsBufferedControl {
     _updateControlVisual() {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        b.background(cs.dark_grey);
+        b.background(cs['GREY_5']);
         let wscale = this._wscale;
         let wcx = this._wcx;
         let wcy = this._wcy;
@@ -2464,9 +2385,9 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let _cs = this._scheme || this._gui.scheme();
+            let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(_cs.black4);
+            p.fill(cs['TINT_6']);
             p.beginShape(p.TRIANGLE_STRIP);
             p.vertex(0, 0);
             p.vertex(0, this._h);
@@ -2484,9 +2405,9 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let _cs = this._scheme || this._gui.scheme();
+            let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(_cs.black4);
+            p.fill(cs['TINT_6']);
             p.rect(0, 0, this._w, this._h);
         }
         for (let c of this._children)

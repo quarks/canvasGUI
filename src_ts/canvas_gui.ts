@@ -4,12 +4,20 @@ export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
 export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
 export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
 export { CvsViewer, CvsText, CvsTextIcon };
-export { __Position, __Box, __Range, __EventInfo, __Overlap };
+export { __Position, __Box, __Range, __EventInfo, __Overlap, __Scheme };
 
 // Uncomment the above export statements should be uncommented for
 // --- When using TypeDoc
 // comment them out
 // --- when transpiling ts>js
+
+
+/** <p>Defines an color scheme</p> @hidden */
+interface __Scheme {
+  WHITE: string;
+  BLACK :string;
+  CLEAR :string;
+}
 
 /**
  * <p>Core class for cGUI library </p>
@@ -25,7 +33,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
  * @version 0.0.1
  * 
  */
- class GUI {
+class GUI {
   /** @hidden */ private _renderer: any;
   /** @hidden */  public _p: p5;
   /** @hidden */ private _is3D: boolean;
@@ -52,24 +60,24 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @param p the sketch instance
    */
   private constructor(p5c: p5.Renderer, p: p5 = p5.instance) {
-      this._renderer = p5c;
-      this._p = p;
-      this._is3D = false; // set when initialsing mouse event hadlers
-      this._controls = new Map(); // registered controls
-      this._ctrls = []; // controls in render order
-      this._corners = [4, 4, 4, 4];
-      this._optionGroups = new Map();
-      this._textSize = 12;
-      this._tipTextSize = 10;
-      // Side panes
-      this._panesEast = [];
-      this._panesSouth = [];
-      this._panesWest = [];
-      this._panesNorth = [];
-      // Colour schemes
-      this._initColorSchemes();
-      // Event handlers for canvas
-      this._initMouseEventHandlers(p5c);
+    this._renderer = p5c;
+    this._p = p;
+    this._is3D = false; // set when initialsing mouse event hadlers
+    this._controls = new Map(); // registered controls
+    this._ctrls = []; // controls in render order
+    this._corners = [4, 4, 4, 4];
+    this._optionGroups = new Map();
+    this._textSize = 12;
+    this._tipTextSize = 10;
+    // Side panes
+    this._panesEast = [];
+    this._panesSouth = [];
+    this._panesWest = [];
+    this._panesNorth = [];
+    // Colour schemes
+    this._initColorSchemes();
+    // Event handlers for canvas
+    this._initMouseEventHandlers(p5c);
   }
 
   // ##################################################################
@@ -84,7 +92,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns scroller control
    */
   scroller(name: string, x: number, y: number, w: number, h: number) {
-      return this.addControl(new CvsScroller(this, name, x, y, w, h));
+    return this.addControl(new CvsScroller(this, name, x, y, w, h));
   }
   /**
   * Create a slider control
@@ -96,7 +104,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
   * @returns slider control
   */
   slider(name: string, x: number, y: number, w: number, h: number) {
-      return this.addControl(new CvsSlider(this, name, x, y, w, h));
+    return this.addControl(new CvsSlider(this, name, x, y, w, h));
   }
   /**
   * Create a ranger control
@@ -108,7 +116,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
   * @returns ranger control
   */
   ranger(name: string, x: number, y: number, w: number, h: number) {
-      return this.addControl(new CvsRanger(this, name, x, y, w, h));
+    return this.addControl(new CvsRanger(this, name, x, y, w, h));
   }
   /**
   * Create a button control
@@ -120,7 +128,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
   * @returns control
   */
   button(name: string, x?: number, y?: number, w?: number, h?: number) {
-      return this.addControl(new CvsButton(this, name, x, y, w, h));
+    return this.addControl(new CvsButton(this, name, x, y, w, h));
   }
   /**
   * Create a checkbox control
@@ -132,7 +140,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
   * @returns control
   */
   checkbox(name: string, x: number, y: number, w: number, h: number) {
-      return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
+    return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
   }
   /**
   * Create an option (radio button) control
@@ -144,7 +152,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
   * @returns control
   */
   option(name: string, x: number, y: number, w: number, h: number) {
-      return this.addControl(new CvsOption(this, name, x, y, w, h));
+    return this.addControl(new CvsOption(this, name, x, y, w, h));
   }
   /**
   * Create a label control
@@ -156,7 +164,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
   * @returns button control
   */
   label(name: string, x: number, y: number, w: number, h: number) {
-      return this.addControl(new CvsLabel(this, name, x, y, w, h));
+    return this.addControl(new CvsLabel(this, name, x, y, w, h));
   }
   /**
   * Create a viewer
@@ -168,7 +176,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
   * @returns viewer control
   */
   viewer(name: string, x: number, y: number, w: number, h: number) {
-      return this.addControl(new CvsViewer(this, name, x, y, w, h));
+    return this.addControl(new CvsViewer(this, name, x, y, w, h));
   }
   /**
    * @hidden
@@ -176,7 +184,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns tooltip control
    */
   __tooltip(name: string): CvsTooltip {
-      return this.addControl(new CvsTooltip(this, name));
+    return this.addControl(new CvsTooltip(this, name));
   }
   /**
    * Create a side pane. The pane location is either 'north', 'south',
@@ -187,15 +195,15 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns pane control for specified location
    */
   pane(name: string, location: string, size: number): CvsPane {
-      let ctrl: CvsPane;
-      switch (location) {
-          case 'north': ctrl = new CvsPaneNorth(this, name, size); break;
-          case 'south': ctrl = new CvsPaneSouth(this, name, size); break;
-          case 'west': ctrl = new CvsPaneWest(this, name, size); break;
-          case 'east':
-          default: ctrl = new CvsPaneEast(this, name, size);
-      }
-      return this.addControl(ctrl);
+    let ctrl: CvsPane;
+    switch (location) {
+      case 'north': ctrl = new CvsPaneNorth(this, name, size); break;
+      case 'south': ctrl = new CvsPaneSouth(this, name, size); break;
+      case 'west': ctrl = new CvsPaneWest(this, name, size); break;
+      case 'east':
+      default: ctrl = new CvsPaneEast(this, name, size);
+    }
+    return this.addControl(ctrl);
   }
 
   // ###########        End of factory methods             ############
@@ -209,7 +217,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns  get the associated control
    */
   getControl(id: string | CvsBaseControl): CvsBaseControl {
-      return (typeof id === "string") ? this._controls.get(id) : id;
+    return (typeof id === "string") ? this._controls.get(id) : id;
   }
 
   /**
@@ -218,7 +226,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns  get the associated control
   */
   $(id: string | CvsBaseControl): CvsBaseControl {
-      return (typeof id === "string") ? this._controls.get(id) : id;
+    return (typeof id === "string") ? this._controls.get(id) : id;
   }
 
   /**
@@ -227,13 +235,13 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns the control just added
    */
   addControl(control) {
-      console.assert(!this._controls.has(control._name),
-          `Control '${control._name}' already exists and will be replaced.`);
-      this._controls.set(control._name, control);
-      // Now find render order
-      this._ctrls = [...this._controls.values()];
-      this._ctrls.sort((a, b) => { return a.z() - b.z() });
-      return control;
+    console.assert(!this._controls.has(control._name),
+      `Control '${control._name}' already exists and will be replaced.`);
+    this._controls.set(control._name, control);
+    // Now find render order
+    this._ctrls = [...this._controls.values()];
+    this._ctrls.sort((a, b) => { return a.z() - b.z() });
+    return control;
   }
 
   /**
@@ -241,12 +249,12 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   listControls() {
-      console.log("List of controls");
-      for (let c of this._ctrls) {
-          console.log(c.name());
-          //console.log(!c.parent, c.parent, Boolean(c.parent));
-      }
-      console.log('--------------------------------------------------------------');
+    console.log("List of controls");
+    for (let c of this._ctrls) {
+      console.log(c.name());
+      //console.log(!c.parent, c.parent, Boolean(c.parent));
+    }
+    console.log('--------------------------------------------------------------');
   }
 
   /**
@@ -256,9 +264,9 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   getOptionGroup(name: string): CvsOptionGroup {
-      if (!this._optionGroups.has(name))
-          this._optionGroups.set(name, new CvsOptionGroup(name));
-      return this._optionGroups.get(name);
+    if (!this._optionGroups.has(name))
+      this._optionGroups.set(name, new CvsOptionGroup(name));
+    return this._optionGroups.get(name);
   }
   /**
    * <p>Sets or gets the global text size.</p>
@@ -268,13 +276,13 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns the global text size or this control
    */
   textSize(gts?: number) {
-      if (!Number.isFinite(gts)) {
-          return this._textSize;
-      }
-      this._textSize = gts;
-      // Update visual for all controls
-      this._controls.forEach((c) => { c.invalidateBuffer(); });
-      return this;
+    if (!Number.isFinite(gts)) {
+      return this._textSize;
+    }
+    this._textSize = gts;
+    // Update visual for all controls
+    this._controls.forEach((c) => { c.invalidateBuffer(); });
+    return this;
   }
 
   /**
@@ -285,18 +293,18 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns the global tip text size or this control
    */
   tipTextSize(gtts?: number) {
-      if (gtts) {
-          this._tipTextSize = gtts;
-          return this;
-      }
-      return this._tipTextSize;
+    if (gtts) {
+      this._tipTextSize = gtts;
+      return this;
+    }
+    return this._tipTextSize;
   }
   /**
    * <p>Get the width of the HTML canvas tag</p>
    * @returns the width of the canvas
    */
   canvasWidth() {
-      return this._renderer.width;
+    return this._renderer.width;
   }
 
   /**
@@ -304,7 +312,7 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns the height of the canvas
    */
   canvasHeight() {
-      return this._renderer.height;
+    return this._renderer.height;
   }
 
   /**
@@ -313,10 +321,10 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns an array with the 4 corner radii
    */
   corners(c?: Array<number>): Array<number> {
-      if (Array.isArray(c) && c.length == 4) {
-          this._corners = Array.from(c);
-      }
-      return Array.from(this._corners);
+    if (Array.isArray(c) && c.length == 4) {
+      this._corners = Array.from(c);
+    }
+    return Array.from(this._corners);
   }
   /**
    * <p>Get the associated HTML canvas tag</p>
@@ -324,44 +332,44 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns the renderer used by this gui
    */
   context() {
-      return this._renderer;
+    return this._renderer;
   }
   /**
    * <p>Determines whether the renderer is P2D</p>
    * @returns true for WEBGL and false for P2D
    */
   is3D() {
-      return this._is3D;
+    return this._is3D;
   }
   /**
    * Close all side panes
    * @hidden
    */
   _closeAll() {
-      for (let pane of this._panesEast) pane.close();
-      for (let pane of this._panesWest) pane.close();
-      for (let pane of this._panesSouth) pane.close();
-      for (let pane of this._panesNorth) pane.close();
+    for (let pane of this._panesEast) pane.close();
+    for (let pane of this._panesWest) pane.close();
+    for (let pane of this._panesSouth) pane.close();
+    for (let pane of this._panesNorth) pane.close();
   }
   /**
    * Hide all side panes. This will also close any pane that is open.
    */
   hideAll() {
-      this._closeAll();
-      for (let pane of this._panesEast) pane.hide();
-      for (let pane of this._panesWest) pane.hide();
-      for (let pane of this._panesSouth) pane.hide();
-      for (let pane of this._panesNorth) pane.hide();
+    this._closeAll();
+    for (let pane of this._panesEast) pane.hide();
+    for (let pane of this._panesWest) pane.hide();
+    for (let pane of this._panesSouth) pane.hide();
+    for (let pane of this._panesNorth) pane.hide();
   }
 
   /**
    * Show all pane tabs. All panes will be shown closed.
    */
   showAll() {
-      for (let pane of this._panesEast) pane.show();
-      for (let pane of this._panesWest) pane.show();
-      for (let pane of this._panesSouth) pane.show();
-      for (let pane of this._panesNorth) pane.show();
+    for (let pane of this._panesEast) pane.show();
+    for (let pane of this._panesWest) pane.show();
+    for (let pane of this._panesSouth) pane.show();
+    for (let pane of this._panesNorth) pane.show();
   }
 
   /**
@@ -369,21 +377,21 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   validateTabsEast() { // East
-      let panes = this._panesEast, n = panes.length;
-      // Find length of tabs
-      let sum = 2 * (n - 1);
-      panes.forEach(p => (sum += p.tab()._w));
-      // Now find start position for the first tab
-      let pos = (this.canvasHeight() - sum) / 2;
-      for (let i = 0; i < n; i++) {
-          let pane = panes[i];
-          let tab = pane.tab();
-          let x = -tab._h;
-          let y = pos;
-          pos += tab._w + 2;
-          tab._x = x;
-          tab._y = y;
-      }
+    let panes = this._panesEast, n = panes.length;
+    // Find length of tabs
+    let sum = 2 * (n - 1);
+    panes.forEach(p => (sum += p.tab()._w));
+    // Now find start position for the first tab
+    let pos = (this.canvasHeight() - sum) / 2;
+    for (let i = 0; i < n; i++) {
+      let pane = panes[i];
+      let tab = pane.tab();
+      let x = -tab._h;
+      let y = pos;
+      pos += tab._w + 2;
+      tab._x = x;
+      tab._y = y;
+    }
   }
 
   /**
@@ -391,22 +399,22 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   validateTabsWest() { // West
-      let panes = this._panesWest;
-      let n = panes.length;
-      // Find length of tabs
-      let sum = 2 * (n - 1);
-      panes.forEach(p => (sum += p.tab()._w));
-      // Now find start position for the first tab
-      let pos = (this.canvasHeight() - sum) / 2;
-      for (let i = 0; i < n; i++) {
-          let pane = panes[i];
-          let tab = pane.tab();
-          let x = pane.size();
-          let y = pos;
-          pos += tab._w + 2;
-          tab._x = x;
-          tab._y = y;
-      }
+    let panes = this._panesWest;
+    let n = panes.length;
+    // Find length of tabs
+    let sum = 2 * (n - 1);
+    panes.forEach(p => (sum += p.tab()._w));
+    // Now find start position for the first tab
+    let pos = (this.canvasHeight() - sum) / 2;
+    for (let i = 0; i < n; i++) {
+      let pane = panes[i];
+      let tab = pane.tab();
+      let x = pane.size();
+      let y = pos;
+      pos += tab._w + 2;
+      tab._x = x;
+      tab._y = y;
+    }
   }
 
   /**
@@ -414,22 +422,22 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   validateTabsSouth() { // South
-      let panes = this._panesSouth;
-      let n = panes.length;
-      // Find length of tabs
-      let sum = 2 * (n - 1);
-      panes.forEach(p => (sum += p.tab()._w));
-      // Now find start position for the first tab
-      let pos = (this.canvasWidth() - sum) / 2;
-      for (let i = 0; i < n; i++) {
-          let pane = panes[i];
-          let tab = pane.tab();
-          let x = pos;
-          let y = -tab._h;
-          pos += tab._w + 2;
-          tab._x = x;
-          tab._y = y;
-      }
+    let panes = this._panesSouth;
+    let n = panes.length;
+    // Find length of tabs
+    let sum = 2 * (n - 1);
+    panes.forEach(p => (sum += p.tab()._w));
+    // Now find start position for the first tab
+    let pos = (this.canvasWidth() - sum) / 2;
+    for (let i = 0; i < n; i++) {
+      let pane = panes[i];
+      let tab = pane.tab();
+      let x = pos;
+      let y = -tab._h;
+      pos += tab._w + 2;
+      tab._x = x;
+      tab._y = y;
+    }
   }
 
   /**
@@ -437,56 +445,55 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   validateTabsNorth() { // North
-      let panes = this._panesNorth, n = panes.length;
-      // Find length of tabs
-      let sum = 2 * (n - 1);
-      panes.forEach(p => (sum += p.tab()._w));
-      // Now find start position for the first tab
-      let pos = (this.canvasWidth() - sum) / 2;
-      for (let i = 0; i < n; i++) {
-          let pane = panes[i], tab = pane.tab();
-          let x = pos, y = pane.size();
-          pos += tab._w + 2;
-          tab._x = x;
-          tab._y = y;
-      }
+    let panes = this._panesNorth, n = panes.length;
+    // Find length of tabs
+    let sum = 2 * (n - 1);
+    panes.forEach(p => (sum += p.tab()._w));
+    // Now find start position for the first tab
+    let pos = (this.canvasWidth() - sum) / 2;
+    for (let i = 0; i < n; i++) {
+      let pane = panes[i], tab = pane.tab();
+      let x = pos, y = pane.size();
+      pos += tab._w + 2;
+      tab._x = x;
+      tab._y = y;
+    }
   }
 
   private _initColorSchemes() {
-      this._schemes = [];
-      this._schemes['blue'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._blueScheme);
-      this._schemes['green'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._greenScheme);
-      this._schemes['red'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._redScheme);
-      this._schemes['cyan'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._cyanScheme);
-      this._schemes['yellow'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._yellowScheme);
-      this._schemes['purple'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._purpleScheme);
-      this._schemes['orange'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._orangeScheme);
-      this._schemes['dark'] = Object.assign(Object.assign({}, GUI._baseScheme), GUI._darkScheme);
-      this._scheme = this._schemes['blue'];
+    this._schemes = [];
+    this._schemes['blue'] = new BlueScheme();
+    this._schemes['green'] = new GreenScheme();
+    this._schemes['red'] = new RedScheme();
+    this._schemes['cyan'] = new CyanScheme();
+    this._schemes['yellow'] = new YellowScheme();
+    this._schemes['purple'] = new PurpleScheme();
+    this._schemes['orange'] = new OrangeScheme();
+    this._scheme = this._schemes['blue'];
   }
 
   /**
-   * <p>Set or get an existing global color scheme.</p>
-   * @param schemename color scheme to set
-   * @returns this gui instance
-   */
-  scheme(schemename?: string) {
-      // get global scheme
-      if (!schemename) {
-          return this._scheme;
-      }
-      // set global scheme
-      if (this._schemes[schemename]) {
-          this._scheme = this._schemes[schemename];
-          // Update visual for all these using the global color scheme
-          this._controls.forEach((c) => {
-              if (!c.scheme())
-                  c.invalidateBuffer();
-          });
-      }
-      else
-          console.error(`'${schemename}' is not a valid color scheme`);
-      return this;
+     * <p>Set or get an existing global color scheme.</p>
+     * @param schemename color scheme to set
+     * @returns this gui instance
+     */
+  scheme(schemename?: string): __Scheme | GUI {
+    // get global scheme
+    if (!schemename) {
+      return this._scheme;
+    }
+    // set global scheme and invalidate any controls using the global scheme
+    if (this._schemes[schemename]) {
+      this._scheme = this._schemes[schemename];
+      // Update visual for all these using the global color scheme
+      this._controls.forEach((c) => {
+        if (!c.scheme())
+          c.invalidateBuffer();
+      });
+    }
+    else
+      console.error(`'${schemename}' is not a valid color scheme`);
+    return this;
   }
 
   /**
@@ -494,24 +501,11 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @param schemename the color scheme name
    * @returns the color scheme or undefined if it doesn't exist
    */
-  getScheme(schemename: string): Array<string> | undefined {
-      if (schemename && this._schemes[schemename])
-          return Object.assign({}, this._schemes[schemename]);
-      console.warn(`Unable to retrieve color scheme '${schemename}'`);
-      return undefined;
-  }
-
-  /**
-   * <p>Deletes the named color scheme for the gui if it exists.</p>
-   * @param schemename the color scheme name
-   * @returns this gui instance
-   */
-  deleteScheme(schemename: string) {
-      if (schemename && this._schemes[schemename]) {
-          this._schemes[schemename] = undefined;
-          this._schemes = this._schemes.filter(Boolean);
-      }
-      return this;
+  getScheme(schemename: string): __Scheme | undefined {
+    if (schemename && this._schemes[schemename])
+      return Object.assign({}, this._schemes[schemename]);
+    console.warn(`Unable to retrieve color scheme '${schemename}'`);
+    return undefined;
   }
 
   /**
@@ -521,14 +515,14 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @param scheme  the color scheme
    * @returns this gui instance
    */
-  addScheme(schemename: string, scheme: any) {
-      if (typeof schemename === 'string' && !scheme) {
-          if (!this._schemes[schemename])
-              this._schemes[schemename] = scheme;
-          else
-              console.error(`Cannot add scheme '${schemename}' because it already exists.'`);
-      }
-      return this;
+  addScheme(schemename: string, scheme: __Scheme) {
+    if (typeof schemename === 'string' && !scheme) {
+      if (!this._schemes[schemename])
+        this._schemes[schemename] = scheme;
+      else
+        console.error(`Cannot add scheme '${schemename}' because it already exists.'`);
+    }
+    return this;
   }
 
   /**
@@ -538,17 +532,17 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @param p5c p5.Renderer
    */
   private _initMouseEventHandlers(p5c: p5.Renderer) {
-      let canvas = p5c.canvas;
-      // Add mouse events
-      canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e) });
-      canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e) });
-      canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e) });
-      canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e) });
-      // Leave canvas
-      canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e) });
-      // Initialise draw method based on P2D or WEBGL renderer
-      this._is3D = p5c.GL != undefined && p5c.GL != null;
-      this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
+    let canvas = p5c.canvas;
+    // Add mouse events
+    canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e) });
+    canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e) });
+    canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e) });
+    canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e) });
+    // Leave canvas
+    canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e) });
+    // Initialise draw method based on P2D or WEBGL renderer
+    this._is3D = p5c.GL != undefined && p5c.GL != null;
+    this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
   }
 
   /**
@@ -557,22 +551,22 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @param e event
    */
   private _handleMouseEvents(e) {
-      // Find the currently active control and pass the evnt to it
-      let activeControl = undefined;
-      for (let c of this._ctrls) {
-          if (c.isActive()) {
-              activeControl = c;
-              c._handleMouse(e);
-              break;
-          }
+    // Find the currently active control and pass the evnt to it
+    let activeControl = undefined;
+    for (let c of this._ctrls) {
+      if (c.isActive()) {
+        activeControl = c;
+        c._handleMouse(e);
+        break;
       }
-      // If there is no active control pass the event to each enabled control in 
-      // turn until one of them consumes the event
-      if (activeControl == undefined) {
-          for (let c of this._ctrls)
-              if (c.isEnabled())
-                  c._handleMouse(e);
-      }
+    }
+    // If there is no active control pass the event to each enabled control in 
+    // turn until one of them consumes the event
+    if (activeControl == undefined) {
+      for (let c of this._ctrls)
+        if (c.isEnabled())
+          c._handleMouse(e);
+    }
   }
 
   /**
@@ -586,11 +580,11 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   _drawControlsP2D() {
-      this._p.push();
-      for (let c of this._ctrls)
-          if (!c.getParent())
-              c._renderP2D();
-      this._p.pop();
+    this._p.push();
+    for (let c of this._ctrls)
+      if (!c.getParent())
+        c._renderP2D();
+    this._p.pop();
   }
 
   /**
@@ -598,26 +592,26 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @hidden
    */
   _drawControlsWEBGL() {
-      this._p.push();
-      let renderer = this._renderer;
-      let gl = renderer.drawingContext;
-      let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
-      gl.flush();
-      let mvMatrix = renderer.uMVMatrix.copy();
-      let pMatrix = renderer.uPMatrix.copy();
-      // Now prepare renderer for standard 2D output to draw GUI
-      gl.disable(gl.DEPTH_TEST);
-      renderer.resetMatrix();
-      renderer._curCamera.ortho(0, w, -h, 0, -d, d);
-      // Draw GUI
-      for (let c of this._ctrls)
-          if (!c.getParent())
-              c._renderWEBGL();
-      gl.flush();
-      renderer.uMVMatrix.set(mvMatrix);
-      renderer.uPMatrix.set(pMatrix);
-      gl.enable(gl.DEPTH_TEST);
-      this._p.pop();
+    this._p.push();
+    let renderer = this._renderer;
+    let gl = renderer.drawingContext;
+    let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
+    gl.flush();
+    let mvMatrix = renderer.uMVMatrix.copy();
+    let pMatrix = renderer.uPMatrix.copy();
+    // Now prepare renderer for standard 2D output to draw GUI
+    gl.disable(gl.DEPTH_TEST);
+    renderer.resetMatrix();
+    renderer._curCamera.ortho(0, w, -h, 0, -d, d);
+    // Draw GUI
+    for (let c of this._ctrls)
+      if (!c.getParent())
+        c._renderWEBGL();
+    gl.flush();
+    renderer.uMVMatrix.set(mvMatrix);
+    renderer.uPMatrix.set(pMatrix);
+    gl.enable(gl.DEPTH_TEST);
+    this._p.pop();
   }
 
   // ##################################################################################
@@ -633,205 +627,108 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
    * @returns a GUI controller
    */
   static get(p5c: p5.Renderer, p: p5 = p5.instance) {
-      GUI.announce();
-      if (GUI._guis.has(p)) return GUI._guis.get(p);
+    GUI.announce();
+    if (GUI._guis.has(p)) return GUI._guis.get(p);
 
-      let gui = new GUI(p5c, p);
-      GUI._guis.set(p, gui);
-      return gui;
+    let gui = new GUI(p5c, p);
+    GUI._guis.set(p, gui);
+    return gui;
   }
 
-
   private static _guis = new Map();
-
   private static _announced = false;
 
   /**
    * @hidden
    */
   static announce() {
-      if (!GUI._announced) {
-          console.log('================================================');
-          console.log('  canvasGUI (0.0.1)   \u00A9 2022 Peter Lager');
-          console.log('================================================');
-          GUI._announced = true;
-      }
+    if (!GUI._announced) {
+      console.log('================================================');
+      console.log('  canvasGUI (0.0.1)   \u00A9 2022 Peter Lager');
+      console.log('================================================');
+      GUI._announced = true;
+    }
   }
 
-  private static _baseScheme = {
-      track_back: 'hsb(0, 0%, 75%)',
-      track_border: 'hsb(0, 0%, 53%)',
+}
 
-      white: 'rgb(255, 255, 255)',
-      white0: 'rgba(255, 255, 255, 0.2)',
-      white1: 'rgba(255, 255, 255, 0.3)',
-      white2: 'rgba(255, 255, 255, 0.4)',
-      white3: 'rgba(255, 255, 255, 0.5)',
-      white4: 'rgba(255, 255, 255, 0.6)',
-      white5: 'rgba(255, 255, 255, 0.7)',
-      white6: 'rgba(255, 255, 255, 0.8)',
-      white7: 'rgba(255, 255, 255, 0.9)',
-      black: 'rgb(0, 0, 0)',
-      black0: 'rgba(0, 0, 0, 0.2)',
-      black1: 'rgba(0, 0, 0, 0.3)',
-      black2: 'rgba(0, 0, 0, 0.4)',
-      black3: 'rgba(0, 0, 0, 0.5)',
-      black4: 'rgba(0, 0, 0, 0.6)',
-      black5: 'rgba(0, 0, 0, 0.7)',
-      black6: 'rgba(0, 0, 0, 0.8)',
-      black7: 'rgba(0, 0, 0, 0.9)',
-      dark_grey: 'rgb(64, 64, 64)',
-      mid_grey: 'rgb(128, 128, 128)',
-      light_grey: 'rgb(192, 192, 192)',
-      clear: 'rgba(0, 0, 0, 0)',
-  };
-
-  private static _blueScheme = {
-      back: 'hsb(240, 45%, 100%)',
-      back0: 'hsba(240, 45%, 100%, 0.2)',
-      back1: 'hsba(240, 45%, 100%, 0.3)',
-      back2: 'hsba(240, 45%, 100%, 0.4)',
-      back3: 'hsba(240, 45%, 100%, 0.5)',
-      back4: 'hsba(240, 45%, 100%, 0.6)',
-      back5: 'hsba(240, 45%, 100%, 0.7)',
-      back6: 'hsba(240, 45%, 100%, 0.8)',
-      back7: 'hsba(240, 45%, 100%, 0.9)',
-      fore: 'hsb(240, 100%, 66%)',
-      thumb: 'hsb(240, 45%, 85%)',
-      track_fore: 'hsb(240, 14%, 100%)',
-      highlight: 'hsb(240, 100%, 50%)',
-      opaque: 'hsb(240, 45%, 100%)',
-      ttfore: 'hsb(240, 100%, 70%)',
-      ttback: 'hsb(240, 5%, 100%)',
-  };
-
-
-  private static _greenScheme = {
-      back: 'hsb(120, 45%, 90%)',
-      back0: 'hsba(120, 45%, 90%, 0.2)',
-      back1: 'hsba(120, 45%, 90%, 0.3)',
-      back2: 'hsba(120, 45%, 90%, 0.4)',
-      back3: 'hsba(120, 45%, 90%, 0.5)',
-      back4: 'hsba(120, 45%, 90%, 0.6)',
-      back5: 'hsba(120, 45%, 90%, 0.7)',
-      back6: 'hsba(120, 45%, 90%, 0.8)',
-      back7: 'hsba(120, 45%, 90%, 0.9)',
-      fore: 'hsb(120, 90%, 40%)',
-      thumb: 'hsb(120, 45%, 80%)',
-      track_fore: 'hsb(120, 14%, 100%)',
-      highlight: 'hsb(120, 100%, 50%)',
-      opaque: 'hsb(120, 45%, 100%)',
-      ttfore: 'hsb(120, 100%, 50%)',
-      ttback: 'hsb(120, 5%, 100%)',
-  };
-
-  private static _redScheme = {
-      back: 'hsb(1, 45%, 100%)',
-      back0: 'hsba(1, 45%, 100%, 0.2)',
-      back1: 'hsba(1, 45%, 100%, 0.3)',
-      back2: 'hsba(1, 45%, 100%, 0.4)',
-      back3: 'hsba(1, 45%, 100%, 0.5)',
-      back4: 'hsba(1, 45%, 100%, 0.6)',
-      back5: 'hsba(1, 45%, 100%, 0.7)',
-      back6: 'hsba(1, 45%, 100%, 0.8)',
-      back7: 'hsba(1, 45%, 100%, 0.9)',
-      fore: 'hsb(1, 100%, 66%)',
-      thumb: 'hsb(1, 45%, 85%)',
-      track_fore: 'hsb(1, 14%, 100%)',
-      highlight: 'hsb(1, 100%, 50%)',
-      opaque: 'hsb(1, 45%, 100%)',
-      ttfore: 'hsb(1, 100%, 70%)',
-      ttback: 'hsb(1, 5%, 100%)',
+class BaseScheme {
+  constructor() {
+    this['WHITE'] = 'rgb(255, 255, 255)';
+    this['BLACK'] = 'rgb(0, 0, 0)';
+    this['CLEAR'] = 'rgba(0, 0, 0, 0)';
+    for(let i = 0; i < 10; i++){
+      this[`GREY_${i}`] = `hsb(0,0%,${90 - i*6}%)`;
+    }
+    for(let i = 0; i < 10; i++){
+      this[`TINT_${i}`] = `rgba(10,0,0,${i*0.1})`;
+    }
   }
 
-  private static _cyanScheme = {
-      back: 'hsb(180, 45%, 100%)',
-      back0: 'hsba(180, 45%, 100%, 0.2)',
-      back1: 'hsba(180, 45%, 100%, 0.3)',
-      back2: 'hsba(180, 45%, 100%, 0.4)',
-      back3: 'hsba(180, 45%, 100%, 0.5)',
-      back4: 'hsba(180, 45%, 100%, 0.6)',
-      back5: 'hsba(180, 45%, 100%, 0.7)',
-      back6: 'hsba(180, 45%, 100%, 0.8)',
-      back7: 'hsba(180, 45%, 100%, 0.9)',
-      fore: 'hsb(180, 100%, 50%)',
-      thumb: 'hsb(180, 45%, 85%)',
-      track_fore: 'hsb(180, 14%, 100%)',
-      highlight: 'hsb(180, 100%, 50%)',
-      opaque: 'hsb(180, 45%, 100%)',
-      ttfore: 'hsb(180, 100%, 40%)',
-      ttback: 'hsb(180, 5%, 100%)',
-  };
+  _colors(h: number, s0: number = 40, s1: number = 70, b: number = 100) {
+    let cn = 0, i:number;
+    for (i = 0; i <= 4; ++i) {
+      this[`COLOR_${cn++}`] = `hsba(${h}, ${s0}%, ${b}%, ${0.6 + i * 0.1})`;
+    }
+    for (let i = 0; i <= 3; ++i) {
+      this[`COLOR_${cn++}`] = `hsb(${h}, ${s0}%, ${100 - i * 10}%)`;
+    }
+    for (let i = 0; i <= 5; ++i) {
+      this[`COLOR_${cn++}`] = `hsb(${h}, ${s1}%, ${100 - i * 12}%)`;
+    }
+  }
 
-  private static _yellowScheme = {
-      back: 'hsb(60, 45%, 100%)',
-      back0: 'hsba(60, 45%, 100%, 0.2)',
-      back1: 'hsba(60, 45%, 100%, 0.3)',
-      back2: 'hsba(60, 45%, 100%, 0.4)',
-      back3: 'hsba(60, 45%, 100%, 0.5)',
-      back4: 'hsba(60, 45%, 100%, 0.6)',
-      back5: 'hsba(60, 45%, 100%, 0.7)',
-      back6: 'hsba(60, 45%, 100%, 0.8)',
-      back7: 'hsba(60, 45%, 100%, 0.9)',
-      fore: 'hsb(60, 100%, 50%)',
-      thumb: 'hsb(60, 70%, 80%)',
-      track_back: 'hsb(0, 0%, 75%)',
-      track_fore: 'hsb(60, 14%, 100%)',
-      track_border: 'hsb(0, 0%, 53%)',
-      highlight: 'hsb(60, 100%, 50%)',
-      opaque: 'hsb(60, 45%, 100%)',
-      ttfore: 'hsb(60, 100%, 40%)',
-      ttback: 'hsb(60, 5%, 100%)',
-  };
+}
 
-  private static _purpleScheme = {
-      back: 'hsb(300, 45%, 100%)',
-      back0: 'hsba(300, 45%, 100%, 0.2)',
-      back1: 'hsba(300, 45%, 100%, 0.3)',
-      back2: 'hsba(300, 45%, 100%, 0.4)',
-      back3: 'hsba(300, 45%, 100%, 0.5)',
-      back4: 'hsba(300, 45%, 100%, 0.6)',
-      back5: 'hsba(300, 45%, 100%, 0.7)',
-      back6: 'hsba(300, 45%, 100%, 0.8)',
-      back7: 'hsba(300, 45%, 100%, 0.9)',
-      fore: 'hsb(300, 100%, 66%)',
-      thumb: 'hsb(300, 45%, 85%)',
-      track_fore: 'hsb(300, 14%, 100%)',
-      highlight: 'hsb(300, 100%, 50%)',
-      opaque: 'hsb(300, 45%, 100%)',
-      ttfore: 'hsb(300, 100%, 80%)',
-      ttback: 'hsb(300, 5%, 100%)',
-  };
+class BlueScheme extends BaseScheme {
+  constructor() {
+    super();
+    this._colors(240);
+  }
+}
 
-  private static _orangeScheme = {
-      back: 'hsb(30, 60%, 100%)',
-      back0: 'hsba(30, 60%, 100%, 0.2)',
-      back1: 'hsba(30, 60%, 100%, 0.3)',
-      back2: 'hsba(30, 60%, 100%, 0.4)',
-      back3: 'hsba(30, 60%, 100%, 0.5)',
-      back4: 'hsba(30, 60%, 100%, 0.6)',
-      back5: 'hsba(30, 60%, 100%, 0.7)',
-      back6: 'hsba(30, 60%, 100%, 0.8)',
-      back7: 'hsba(30, 60%, 100%, 0.9)',
-      fore: 'hsb(30, 100%, 50%)',
-      thumb: 'hsb(30, 45%, 85%)',
-      track_fore: 'hsb(30, 14%, 100%)',
-      highlight: 'hsb(30, 100%, 50%)',
-      opaque: 'hsb(30, 45%, 100%)',
-      ttfore: 'hsb(30, 100%, 80%)',
-      ttback: 'hsb(30, 5%, 100%)',
+class GreenScheme extends BaseScheme {
+  constructor() {
+    super();
+    this._colors(120);
+  }
+}
 
-  };
+class RedScheme extends BaseScheme {
+  constructor() {
+    super();
+    this._colors(0);
+  }
+}
+class CyanScheme extends BaseScheme {
+  constructor() {
+    super();
+    this._colors(180);
+  }
+}
+class YellowScheme extends BaseScheme {
 
-  private static _darkScheme = {
-      back: 'rgb(64, 64, 64)',
-      fore: 'rgb(224, 224, 224)',
-      thumb: 'rgb(64, 64, 64)',
-      track_fore: 'rgb(124, 124, 124)',
-      highlight: 'rgb(250, 250, 250)',
-      opaque: 'hsb(1, 45%, 100%)',
-  };
+  constructor() {
+    super();
+    this._colors(60);
+  }
+}
 
+class PurpleScheme extends BaseScheme {
+
+  constructor() {
+    super();
+    this._colors(300);
+  }
+
+}
+
+class OrangeScheme extends BaseScheme {
+
+  constructor() {
+    super();
+    this._colors(30);
+  }
 }
 
 //=================================================================================================
@@ -845,20 +742,20 @@ export { __Position, __Box, __Range, __EventInfo, __Overlap };
 //=================================================================================================
 
 
-/** <p>Object type  \{ x: number; y: number; \} </p> */
-interface __Position { x: number; y: number; };
-/** <p>Object type  \{ w: number; h: number; \} </p> */
-interface __Box { w: number; h: number; };
-/** <p>Object type  \{ low: number; high: number; \} </p> */
-interface __Range { low: number; high: number; };
-/** <p>Defines the event information sent to the event handler.</p> */
-interface __EventInfo { source: CvsBaseControl; type: string; };
-/** <p>Defines an overlap</p> */
+/** <p>Object type  \{ x: number; y: number; \} </p> @hidden */
+interface __Position { x: number; y: number; }
+/** <p>Object type  \{ w: number; h: number; \} </p> @hidden */
+interface __Box { w: number; h: number; }
+/** <p>Object type  \{ low: number; high: number; \} </p> @hidden */
+interface __Range { low: number; high: number; }
+/** <p>Defines the event information sent to the event handler.</p> @hidden */
+interface __EventInfo { source: CvsBaseControl; type: string; }
+/** <p>Defines an overlap</p> @hidden */
 interface __Overlap {
   valid: boolean;
   left?: number; right?: number; top?: number, bottom?: number,
   width?: number; height?: number; offsetX?: number; offsetY?: number;
-};
+}
 
 /*
 ##############################################################################
@@ -1037,7 +934,7 @@ class CvsBaseControl {
   /** @hidden */ protected _active: boolean;
   /** @hidden */ protected _opaque: boolean;
   /** @hidden */ protected _tooltip: CvsTooltip;
-  /** @hidden */ protected _scheme: Array<string>;
+  /** @hidden */ protected _scheme: __Scheme;
   /** @hidden */ protected _bufferInvalid: boolean;
   /** <p>The event handler for this control. Although it is permitted to set 
    * this property directly it is recommended that the <code>setAction(...)</code>
@@ -1131,18 +1028,18 @@ class CvsBaseControl {
 
   /**
    * <p>Sets or gets the color scheme used by this control.</p>
-   * @param ls 
+   * @param id 
    * @param cascade 
    * @returns this control or the control's color scheme
    */
-  scheme(ls?: string, cascade?: boolean): CvsBaseControl | Array<string> {
+  scheme(id?: string, cascade?: boolean): CvsBaseControl | __Scheme {
     // setter
-    if (ls) {
-      this._scheme = this._gui.getScheme(ls);
+    if (id) {
+      this._scheme = this._gui.getScheme(id);
       this._bufferInvalid = true;
       if (cascade)
         for (let c of this._children)
-          c.scheme(ls, cascade);
+          c.scheme(id, cascade);
       return this;
     }
     // getter
@@ -1268,7 +1165,6 @@ class CvsBaseControl {
       case 'east':
       default:
         this._orientation = CvsBaseControl.EAST;
-        break;
 
     }
     return this;
@@ -1455,7 +1351,7 @@ class CvsBaseControl {
 
   /** @hidden */
   protected _disable_hightlight(b, cs, x, y, w, h) {
-    b.fill(cs.black1);
+    b.fill(cs['TINT_7']);
     b.noStroke();
     b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
   }
@@ -1670,7 +1566,6 @@ class CvsSlider extends CvsBufferedControl {
     return this._limit0 + t * (this._limit1 - this._limit0);
   }
 
-
   /**
    * <p>Converts parametic value to user value</p>
    * @hidden
@@ -1775,17 +1670,24 @@ class CvsSlider extends CvsBufferedControl {
     let cs = this._scheme || this._gui.scheme();
     let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
 
+    const OPAQUE = cs['COLOR_3'];
+    const TICKS = cs['GREY_8'];
+    const UNUSED_TRACK = cs['GREY_1'];
+    const USED_TRACK = cs['GREY_4'];
+    const HIGHLIGHT = cs['COLOR_14'];
+    const THUMB = cs['COLOR_10'];
+
     b.push();
     b.clear();
     if (this._opaque) {
-      b.noStroke(); b.fill(cs.back7);
+      b.noStroke(); b.fill(OPAQUE);
       b.rect(0, 0, this._w, this._h,
         this._c[0], this._c[1], this._c[2], this._c[3]);
     }
     // Now translate to track left edge - track centre
     b.translate(10, b.height / 2);
     // Now draw ticks
-    b.stroke(cs.track_border); b.strokeWeight(1);
+    b.stroke(TICKS); b.strokeWeight(1);
     let n: number, dT: number;
     n = this._majorTicks * this._minorTicks;
     if (n >= 2) {
@@ -1804,19 +1706,19 @@ class CvsSlider extends CvsBufferedControl {
       }
     }
     // draw unused track
-    b.fill(cs.track_back);
+    b.fill(UNUSED_TRACK);
     b.rect(0, -trackW / 2, tw, trackW);
     // draw used track
     let tx = tw * this._t01;
-    b.fill(cs.track_fore);
+    b.fill(USED_TRACK);
     b.rect(0, -trackW / 2, tx, trackW,
       this._c[0], this._c[1], this._c[2], this._c[3]);
     // Draw thumb
-    b.fill(cs.thumb);
+    b.fill(THUMB);
     b.noStroke();
     if (this._active || this._over > 0) {
       b.strokeWeight(2);
-      b.stroke(cs.highlight);
+      b.stroke(HIGHLIGHT);
     }
     b.rect(tx - thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize,
       this._c[0], this._c[1], this._c[2], this._c[3]);
@@ -1874,8 +1776,8 @@ class CvsRanger extends CvsSlider {
 
   /** @hidden */
   value(v?: number): number | CvsBaseControl {
-      console.warn('Ranger controls require 2 values - use range(v0, v1) instead');
-      return undefined;
+    console.warn('Ranger controls require 2 values - use range(v0, v1) instead');
+    return undefined;
   }
 
   /** @hidden */
@@ -1965,18 +1867,25 @@ class CvsRanger extends CvsSlider {
     let tw = b.width - 20;
     let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
 
+    const OPAQUE = cs['COLOR_3'];
+    const TICKS = cs['GREY_8'];
+    const UNUSED_TRACK = cs['GREY_1'];
+    const USED_TRACK = cs['GREY_4'];
+    const HIGHLIGHT = cs['COLOR_14'];
+    const THUMB = cs['COLOR_10'];
+
     b.push();
     b.clear();
     // Backkground
     if (this._opaque) {
-      b.noStroke(); b.fill(cs.back7);
+      b.noStroke(); b.fill(OPAQUE);
       b.rect(0, 0, this._w, this._h,
         this._c[0], this._c[1], this._c[2], this._c[3]);
     }
     // Now translate to track left edge - track centre
     b.translate(10, b.height / 2);
     // Now draw ticks
-    b.stroke(cs.track_border);
+    b.stroke(TICKS);
     b.strokeWeight(1);
     let n, dT;
     n = this._majorTicks * this._minorTicks;
@@ -1996,21 +1905,21 @@ class CvsRanger extends CvsSlider {
       }
     }
     // draw unused track
-    b.fill(cs.track_back);
+    b.fill(UNUSED_TRACK);
     b.rect(0, -trackW / 2, tw, trackW);
     // draw used track
     let tx0 = tw * Math.min(this._t[0], this._t[1]);
     let tx1 = tw * Math.max(this._t[0], this._t[1]);
-    b.fill(cs.track_fore);
+    b.fill(USED_TRACK);
     b.rect(tx0, -trackW / 2, tx1 - tx0, trackW,
       this._c[0], this._c[1], this._c[2], this._c[3]);
     // Draw thumb
     for (let tnbr = 0; tnbr < 2; tnbr++) {
-      b.fill(cs.thumb);
+      b.fill(THUMB);
       b.noStroke();
       if ((this._active || this._over > 0) && tnbr == this._tIdx) {
         b.strokeWeight(2);
-        b.stroke(cs.highlight);
+        b.stroke(HIGHLIGHT);
       }
       b.rect(this._t[tnbr] * tw - thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize,
         this._c[0], this._c[1], this._c[2], this._c[3]);
@@ -2248,11 +2157,16 @@ class CvsButton extends CvsTextIcon {
     let textAlign = this._textAlign;
     let lines = this._lines;
     let gap = this._gap;
+
+    let BACK = cs['COLOR_4'];
+    let FORE = cs['COLOR_13'];
+    let HIGHLIGHT = cs['COLOR_14'];
+
     b.push();
     b.clear();
     // Backkground
     if (this._opaque) {
-      b.noStroke(); b.fill(cs.back);
+      b.noStroke(); b.fill(BACK);
       b.rect(1, 1, this._w - 1, this._h - 1,
         this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -2276,7 +2190,7 @@ class CvsButton extends CvsTextIcon {
       let tw = x1 - x0;
       let th = this._tbox.h;
       let py = b.textAscent() + (this._h - th) / 2;
-      b.fill(cs.fore);
+      b.fill(FORE);
       for (let line of lines) {
         switch (textAlign) {
           case this._p.LEFT: sx = x0; break;
@@ -2289,7 +2203,7 @@ class CvsButton extends CvsTextIcon {
     }
     // Mouse over highlight
     if (this._over > 0) {
-      b.stroke(cs.highlight);
+      b.stroke(HIGHLIGHT);
       b.strokeWeight(2);
       b.noFill();
       b.rect(1, 1, this._w - 2, this._h - 2,
@@ -2485,10 +2399,16 @@ class CvsCheckbox extends CvsText {
     let isize = this._p.constrain(Number(ts) * 0.7, 12, 16);
     let textAlign = this._textAlign;
     let lines = this._lines;
-    let gap = this._gap; b.push();
+    let gap = this._gap; 
+
+    let BACK = cs['COLOR_3'];
+    let FORE = cs['COLOR_13'];
+    let HIGHLIGHT = cs['COLOR_14'];
+
+    b.push();
     b.clear();
     if (this._opaque) {
-      b.noStroke(); b.fill(cs.back7);
+      b.noStroke(); b.fill(BACK);
       b.rect(0, 0, this._w, this._h,
         this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -2496,13 +2416,13 @@ class CvsCheckbox extends CvsText {
     b.push();
     let px = (iconAlign == this._p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
     b.translate(px, b.height / 2);
-    b.stroke(cs.fore);
-    b.fill(cs.white);
+    b.stroke(FORE);
+    b.fill(cs['WHITE']);
     b.strokeWeight(1.5);
 
     b.rect(-isize / 2, -isize / 2, isize, isize, 3);
     if (this._selected) {
-      b.stroke(cs.fore);
+      b.stroke(FORE);
       b.strokeWeight(2.5);
       b.line(-0.281 * isize, 0, -0.188 * isize, 0.313 * isize);
       b.line(0.270 * isize, -0.27 * isize, -0.188 * isize, 0.313 * isize);
@@ -2517,7 +2437,7 @@ class CvsCheckbox extends CvsText {
       let tw = x1 - x0;
       let th = this._tbox.h;
       let py = b.textAscent() + (this._h - th) / 2;
-      b.fill(cs.fore);
+      b.fill(FORE);
       for (let line of lines) {
         switch (textAlign) {
           case this._p.LEFT: sx = x0; break;
@@ -2530,7 +2450,7 @@ class CvsCheckbox extends CvsText {
     }
     // Mouse over control
     if (this._over > 0) {
-      b.stroke(cs.highlight);
+      b.stroke(HIGHLIGHT);
       b.strokeWeight(2);
       b.noFill();
       b.rect(1, 1, this._w - 2, this._h - 2,
@@ -2767,11 +2687,15 @@ class CvsOption extends CvsText {
     let lines = this._lines;
     let gap = this._gap;
 
+    let BACK = cs['COLOR_3'];
+    let FORE = cs['COLOR_13'];
+    let HIGHLIGHT = cs['COLOR_14'];
+
     b.push();
     b.clear();
     // If opaque
     if (this._opaque) {
-      b.noStroke(); b.fill(cs.back7);
+      b.noStroke(); b.fill(BACK);
       b.rect(0, 0, this._w, this._h,
         this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -2779,12 +2703,12 @@ class CvsOption extends CvsText {
     b.push();
     let px = (iconAlign == p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
     b.translate(px, b.height / 2);
-    b.stroke(cs.fore);
-    b.fill(cs.white);
+    b.stroke(FORE);
+    b.fill(cs['WHITE']);
     b.strokeWeight(1.5);
     b.ellipse(0, 0, isize, isize);
     if (this._selected) {
-      b.fill(cs.fore);
+      b.fill(FORE);
       b.noStroke();
       b.ellipse(0, 0, isize / 2, isize / 2);
     }
@@ -2798,7 +2722,7 @@ class CvsOption extends CvsText {
       let tw = x1 - x0;
       let th = this._tbox.h;
       let py = b.textAscent() + (this._h - th) / 2;
-      b.fill(cs.fore);
+      b.fill(FORE);
       for (let line of lines) {
         switch (textAlign) {
           case p.LEFT: sx = x0; break;
@@ -2811,7 +2735,7 @@ class CvsOption extends CvsText {
     }
     // Mouse over control
     if (this._over > 0) {
-      b.stroke(cs.highlight);
+      b.stroke(HIGHLIGHT);
       b.strokeWeight(2);
       b.noFill();
       b.rect(1, 1, this._w - 2, this._h - 2,
@@ -2869,11 +2793,15 @@ class CvsLabel extends CvsTextIcon {
     let textAlign = this._textAlign;
     let lines = this._lines;
     let gap = this._gap;
+
+    let OPAQUE = cs['COLOR_4'];
+    let FORE = cs['COLOR_13'];
+
     b.push();
     b.clear();
-    // Backkground
+    // Background
     if (this._opaque) {
-      b.noStroke(); b.fill(cs.back7);
+      b.noStroke(); b.fill(OPAQUE);
       b.rect(0, 0, this._w, this._h,
         this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -2897,7 +2825,7 @@ class CvsLabel extends CvsTextIcon {
       let tw = x1 - x0;
       let th = this._tbox.h;
       let py = b.textAscent() + (this._h - th) / 2;
-      b.fill(cs.fore);
+      b.fill(FORE);
       for (let line of lines) {
         switch (textAlign) {
           case p.LEFT: sx = x0; break;
@@ -2995,18 +2923,19 @@ class CvsTooltip extends CvsText {
     let ts = this._textSize || this._gui.tipTextSize();
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;
-    // let icon = this._icon;
-    // let iconAlign = this._iconAlign;
-    // let textAlign = this._textAlign;
     let lines = this._lines;
     let gap = this._gap;
+
+    let BACK = cs['COLOR_4'];
+    let FORE = cs['COLOR_13'];
+
     b.push();
     b.clear();
     // Backkground
-    b.stroke(cs.ttfore); b.fill(cs.ttback);
+    b.stroke(FORE); b.fill(BACK);
     b.rect(0, 0, this._w - 1, this._h - 1);
 
-    b.fill(cs.ttfore).noStroke();
+    b.fill(FORE).noStroke();
     if (lines.length > 0) {
       b.textSize(ts);
       let x0 = gap, x1 = this._w - gap, sx = 0;
@@ -3230,26 +3159,33 @@ class CvsScroller extends CvsBufferedControl {
     let thumbSizeX = Math.max(this._used * this._TLENGTH, 12), thumbSizeY = 14;
     let tx = this._value * this._TLENGTH;
 
+
+    const OPAQUE = cs['COLOR_3'];
+    const TICKS = cs['GREY_8'];
+    const UNUSED_TRACK = cs['GREY_4'];
+    const HIGHLIGHT = cs['COLOR_14'];
+    const THUMB = cs['COLOR_10'];
+
     b.push();
     b.clear();
     if (this._opaque) {
-      b.noStroke(); b.fill(cs.back7);
+      b.noStroke(); b.fill(OPAQUE);
       b.rect(0, 0, this._w, this._h,
         this._c[0], this._c[1], this._c[2], this._c[3]);
     }
     // Now translate to track left edge - track centre
     b.translate(this._BORDER, b.height / 2);
     // draw track
-    b.fill(cs.track_back);
-    b.stroke(cs.track_border);
+    b.fill(UNUSED_TRACK);
+    b.stroke(TICKS);
     b.strokeWeight(1);
     b.rect(0, -this._THEIGHT / 2, this._TLENGTH, this._THEIGHT);
     // Draw thumb
-    b.fill(cs.thumb);
+    b.fill(THUMB);
     b.noStroke();
     if (this._active || this._over > 0) {
       b.strokeWeight(2);
-      b.stroke(cs.highlight);
+      b.stroke(HIGHLIGHT);
     }
     b.rect(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY,
       this._c[0], this._c[1], this._c[2], this._c[3]);
@@ -3600,7 +3536,7 @@ class CvsViewer extends CvsBufferedControl {
   _updateControlVisual() { // CvsViewer
     let b = this._buffer;
     let cs = this._scheme || this._gui.scheme();
-    b.background(cs.dark_grey);
+    b.background(cs['GREY_5']);
     let wscale = this._wscale;
     let wcx = this._wcx;
     let wcy = this._wcy;
@@ -3807,9 +3743,9 @@ abstract class CvsPane extends CvsBaseControl {
     p.push();
     p.translate(this._x, this._y);
     if (this._visible && this._tabstate != 'closed') {
-      let _cs = this._scheme || this._gui.scheme();
+      let cs = this._scheme || this._gui.scheme();
       p.noStroke();
-      p.fill(_cs.black4);
+      p.fill(cs['TINT_6']);
       p.beginShape(p.TRIANGLE_STRIP);
       p.vertex(0, 0);
       p.vertex(0, this._h);
@@ -3828,9 +3764,9 @@ abstract class CvsPane extends CvsBaseControl {
     p.push();
     p.translate(this._x, this._y);
     if (this._visible && this._tabstate != 'closed') {
-      let _cs = this._scheme || this._gui.scheme();
+      let cs = this._scheme || this._gui.scheme();
       p.noStroke();
-      p.fill(_cs.black4);
+      p.fill(cs['TINT_6']);
       p.rect(0, 0, this._w, this._h);
     }
     for (let c of this._children)
