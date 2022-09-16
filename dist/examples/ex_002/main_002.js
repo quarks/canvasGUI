@@ -2,7 +2,7 @@
  * The Middle Earth sketch in instance mode
  * @param {*} p 
  */
- let sketch1 = function (p) {
+let sketch1 = function (p) {
 
     this.viewer = 0;
 
@@ -17,13 +17,13 @@
     };
 
     p.setup = function () {
-        let p5canvas = p.createCanvas(800, 740);
+        let p5canvas = p.createCanvas(770, 740);
         //p5canvas.parent('cv1');
         p.gui = GUI.get(p5canvas, p).textSize(16).scheme('red');
 
-        p.viewer = p.gui.viewer('view-0', 30, 40, 710, 500)
+        p.viewer = p.gui.viewer('view-0', 30, 30, 710, 530)
             .layers([p.me0, p.me1, p.me2, p.me3, p.me4, p.me5])
-            .view(1400, 1290).scale(1.1, 0.2, 3)
+            .view(1400, 1290).scaler(1.1, 0.21, 3)
             .setAction((info) => {
                 //console.log(`${info.source.name()} World centre at ${info.cX}, ${info.cY}  Scale ${info.scale}`);
                 p.cX = info.cX; p.cY = info.cY; p.scale = info.scale;

@@ -6,22 +6,22 @@ export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
 export { CvsViewer, CvsText, CvsTextIcon };
 export { __Position, __Box, __Range, __EventInfo, __Overlap, __Scheme };
 
-// Uncomment the above export statements should be uncommented for
+// Uncomment the above export statements 
 // --- When using TypeDoc
 // comment them out
 // --- when transpiling ts>js
 
 
-/** <p>Defines an color scheme</p> @hidden */
+/** <p>Defines a color scheme</p> @hidden */
 interface __Scheme {
   WHITE: string;
-  BLACK :string;
-  CLEAR :string;
+  BLACK: string;
+  CLEAR: string;
 }
 
 /**
  * <p>Core class for cGUI library </p>
- * <p>Use an instance of GUI to control all aspects of your gui</p>
+ * <p>Use an instance of GUI to control all aspects of your gui.</p>
  * <ul>
  * <li>Create the UI controls e.g. buttons, sliders</li>
  * <li>Provides 7 color schemes for the controls</li>
@@ -30,7 +30,7 @@ interface __Scheme {
  * @author Peter Lager
  * @copyright 2022
  * @license MIT
- * @version 0.0.1
+ * @version 0.0.1 alpha
  * 
  */
 class GUI {
@@ -83,18 +83,6 @@ class GUI {
   // ##################################################################
   // #########     Factory methods to create controls    ##############
   /**
-   * Create a scroller control
-   * @param name unique identifier
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @returns scroller control
-   */
-  scroller(name: string, x: number, y: number, w: number, h: number) {
-    return this.addControl(new CvsScroller(this, name, x, y, w, h));
-  }
-  /**
   * Create a slider control
   * @param name unique identifier
   * @param x left-hand pixel position
@@ -106,6 +94,7 @@ class GUI {
   slider(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsSlider(this, name, x, y, w, h));
   }
+
   /**
   * Create a ranger control
   * @param name unique identifier
@@ -118,6 +107,7 @@ class GUI {
   ranger(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsRanger(this, name, x, y, w, h));
   }
+
   /**
   * Create a button control
   * @param name unique identifier
@@ -130,6 +120,7 @@ class GUI {
   button(name: string, x?: number, y?: number, w?: number, h?: number) {
     return this.addControl(new CvsButton(this, name, x, y, w, h));
   }
+
   /**
   * Create a checkbox control
   * @param name unique identifier
@@ -142,6 +133,7 @@ class GUI {
   checkbox(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
   }
+
   /**
   * Create an option (radio button) control
   * @param name 
@@ -154,6 +146,7 @@ class GUI {
   option(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsOption(this, name, x, y, w, h));
   }
+
   /**
   * Create a label control
   * @param name unique identifier
@@ -166,6 +159,20 @@ class GUI {
   label(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsLabel(this, name, x, y, w, h));
   }
+
+  /**
+  * Create a scroller control
+  * @param name unique identifier
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns scroller control
+  */
+  __scroller(name: string, x: number, y: number, w: number, h: number) {
+    return this.addControl(new CvsScroller(this, name, x, y, w, h));
+  }
+
   /**
   * Create a viewer
   * @param name unique identifier
@@ -178,6 +185,7 @@ class GUI {
   viewer(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsViewer(this, name, x, y, w, h));
   }
+
   /**
    * @hidden
    * @param name auto generated unique identifier
@@ -186,6 +194,7 @@ class GUI {
   __tooltip(name: string): CvsTooltip {
     return this.addControl(new CvsTooltip(this, name));
   }
+
   /**
    * Create a side pane. The pane location is either 'north', 'south',
    * 'east' or 'west'
@@ -252,7 +261,6 @@ class GUI {
     console.log("List of controls");
     for (let c of this._ctrls) {
       console.log(c.name());
-      //console.log(!c.parent, c.parent, Boolean(c.parent));
     }
     console.log('--------------------------------------------------------------');
   }
@@ -657,16 +665,16 @@ class BaseScheme {
     this['WHITE'] = 'rgb(255, 255, 255)';
     this['BLACK'] = 'rgb(0, 0, 0)';
     this['CLEAR'] = 'rgba(0, 0, 0, 0)';
-    for(let i = 0; i < 10; i++){
-      this[`GREY_${i}`] = `hsb(0,0%,${90 - i*6}%)`;
+    for (let i = 0; i < 10; i++) {
+      this[`GREY_${i}`] = `hsb(0,0%,${90 - i * 6}%)`;
     }
-    for(let i = 0; i < 10; i++){
-      this[`TINT_${i}`] = `rgba(10,0,0,${i*0.1})`;
+    for (let i = 0; i < 10; i++) {
+      this[`TINT_${i}`] = `rgba(10,0,0,${i * 0.1})`;
     }
   }
 
   _colors(h: number, s0: number = 40, s1: number = 70, b: number = 100) {
-    let cn = 0, i:number;
+    let cn = 0, i: number;
     for (i = 0; i <= 4; ++i) {
       this[`COLOR_${cn++}`] = `hsba(${h}, ${s0}%, ${b}%, ${0.6 + i * 0.1})`;
     }
@@ -1036,7 +1044,7 @@ class CvsBaseControl {
     // setter
     if (id) {
       this._scheme = this._gui.getScheme(id);
-      this._bufferInvalid = true;
+      this.invalidateBuffer();
       if (cascade)
         for (let c of this._children)
           c.scheme(id, cascade);
@@ -1207,7 +1215,7 @@ class CvsBaseControl {
   disable(cascade?: boolean): CvsBaseControl {
     if (this._enabled) {
       this._enabled = false;
-      this._bufferInvalid = true;
+      this.invalidateBuffer();
     }
     if (cascade)
       for (let c of this._children)
@@ -1280,7 +1288,7 @@ class CvsBaseControl {
         this._w = s.w;
         this._h = s.h;
     }
-    this._bufferInvalid = true;
+    this.invalidateBuffer();
     return this;
   }
 
@@ -1303,7 +1311,7 @@ class CvsBaseControl {
     let b = this._buffer;
     if (b.width != this._w || b.height != this._h) {
       this._buffer = this._p.createGraphics(this._w, this._h);
-      this._bufferInvalid = true; // Force a redarw of the buffer
+      this.invalidateBuffer(); // Force a redarw of the buffer
     }
     if (this._bufferInvalid) {
       this._updateControlVisual();
@@ -1517,7 +1525,7 @@ class CvsSlider extends CvsBufferedControl {
    * @param l1 upper limit
    * @returns this slider object
    */
-  limits(l0: number, l1: number): CvsBaseControl {
+  limits(l0: number, l1: number): CvsSlider {
     if (Number.isFinite(l0) && Number.isFinite(l1)) {
       this._limit0 = l0;
       this._limit1 = l1;
@@ -1548,7 +1556,7 @@ class CvsSlider extends CvsBufferedControl {
   value(v?: number): CvsBaseControl | number {
     if (Number.isFinite(v)) {
       if ((v - this._limit0) * (v - this._limit1) <= 0) {
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         this._t01 = this._norm01(v);
         return this;
       }
@@ -1569,8 +1577,8 @@ class CvsSlider extends CvsBufferedControl {
   /**
    * <p>Converts parametic value to user value</p>
    * @hidden
-   * @param t parametric value
-   * @returns the correspoding value
+   * @param v value
+   * @returns the correspoding parametric value
    */
   protected _v2t(v: number): number {
     return (v - this._limit0) / (this._limit1 - this._limit0);
@@ -1625,7 +1633,7 @@ class CvsSlider extends CvsBufferedControl {
       case 'mousedown':
         if (this._over > 0) {
           this._active = true;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
         }
         break;
       case 'mouseout':
@@ -1633,7 +1641,7 @@ class CvsSlider extends CvsBufferedControl {
         if (this._active) {
           this.action({ source: this, p5Event: e, value: this.value(), final: true });
           this._active = false;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
@@ -1646,7 +1654,7 @@ class CvsSlider extends CvsBufferedControl {
             this._t01 = t01;
             this.action({ source: this, p5Event: e, value: this.value(), final: false });
           }
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
         }
         break;
       case 'mouseover':
@@ -1819,7 +1827,7 @@ class CvsRanger extends CvsSlider {
         if (this._over > 0) {
           this._active = true;
           this._tIdx = this._over - 1;  // Which thumb is the mouse over
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
         }
         break;
       case 'mouseout':
@@ -1832,7 +1840,7 @@ class CvsRanger extends CvsSlider {
             source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
           });
           this._active = false;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
@@ -1849,7 +1857,7 @@ class CvsRanger extends CvsSlider {
               source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
             });
           }
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
         }
         break;
       case 'mouseover':
@@ -1983,7 +1991,7 @@ abstract class CvsText extends CvsBufferedControl {
     let s = this._minControlSize();
     this._w = Math.max(this._w, s.w);
     this._h = Math.max(this._h, s.h);
-    this._bufferInvalid = true;
+    this.invalidateBuffer();
     return this;
   }
 
@@ -2029,7 +2037,7 @@ abstract class CvsText extends CvsBufferedControl {
       let s = this._minControlSize();
       this._w = Math.max(this._w, s.w);
       this._h = Math.max(this._h, s.h);
-      this._bufferInvalid = true;
+      this.invalidateBuffer();
     }
     return this;
   }
@@ -2093,7 +2101,7 @@ abstract class CvsTextIcon extends CvsText {
     let s = this._minControlSize();
     this._w = Math.max(this._w, s.w);
     this._h = Math.max(this._h, s.h);
-    this._bufferInvalid = true;
+    this.invalidateBuffer();
     return this;
   }
 
@@ -2104,7 +2112,7 @@ abstract class CvsTextIcon extends CvsText {
   noIcon() {
     this._icon = undefined;
     this._iconAlign = this._p.LEFT;
-    this._bufferInvalid = true;
+    this.invalidateBuffer();
     return this;
   }
 
@@ -2242,13 +2250,12 @@ class CvsButton extends CvsTextIcon {
           this._clickAllowed = true;
           this._dragging = true;
           this._active = true;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
       case 'mouseout':
       case 'mouseup':
-        //console.log(`Mouse up on ${this.name()}  ${this._active}`);
         if (this._active) {
           if (this._clickAllowed) {
             this.action({ source: this, p5Event: e });
@@ -2257,7 +2264,7 @@ class CvsButton extends CvsTextIcon {
           this._clickAllowed = false;
           this._dragging = false;
           this._active = false;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
@@ -2301,19 +2308,19 @@ class CvsCheckbox extends CvsText {
       return this._iconAlign;
     if (align == this._p.LEFT || align == this._p.RIGHT) {
       this._iconAlign = align;
-      this._bufferInvalid = true;
+      this.invalidateBuffer();
     }
     return this;
   }
 
   /**
-   * <p>Make this checkbox true>/p>
+   * <p>Make this checkbox true</p>
    * @returns this control
    */
   select() {
     if (!this._selected) {
       this._selected = true;
-      this._bufferInvalid = true;
+      this.invalidateBuffer();
     }
     return this;
   }
@@ -2325,7 +2332,7 @@ class CvsCheckbox extends CvsText {
   deselect() {
     if (this._selected) {
       this._selected = false;
-      this._bufferInvalid = true;
+      this.invalidateBuffer();
     }
     return this;
   }
@@ -2359,7 +2366,7 @@ class CvsCheckbox extends CvsText {
           this._clickAllowed = true;
           this._dragging = true;
           this._active = true;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
@@ -2374,7 +2381,7 @@ class CvsCheckbox extends CvsText {
           this._clickAllowed = false;
           this._dragging = false;
           this._active = false;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
@@ -2399,7 +2406,7 @@ class CvsCheckbox extends CvsText {
     let isize = this._p.constrain(Number(ts) * 0.7, 12, 16);
     let textAlign = this._textAlign;
     let lines = this._lines;
-    let gap = this._gap; 
+    let gap = this._gap;
 
     let BACK = cs['COLOR_3'];
     let FORE = cs['COLOR_13'];
@@ -2577,22 +2584,23 @@ class CvsOption extends CvsText {
       return this._iconAlign;
     if (align == this._p.LEFT || align == this._p.RIGHT) {
       this._iconAlign = align;
-      this._bufferInvalid = true;
+      this.invalidateBuffer();
     }
     return this;
   }
 
-  /*
-  <p>Replace previous selection with this option</p>
+  /**
+   * <p>Make this option true (selected) replacing the previos selection.</p>
+   * 
    */
   select() {
     let curr = this._optGroup?._prev();
     if (curr) {
       curr._selected = false;
-      curr._bufferInvalid = true;
+      curr.invalidateBuffer();
     }
     this._selected = true;
-    this._bufferInvalid = true;
+    this.invalidateBuffer();
     return this;
   }
 
@@ -2642,7 +2650,7 @@ class CvsOption extends CvsText {
           this._clickAllowed = true;
           this._dragging = true;
           this._active = true;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
@@ -2661,7 +2669,7 @@ class CvsOption extends CvsText {
         this._clickAllowed = false;
         this._dragging = false;
         this._active = false;
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         eventConsumed = true;
         break;
       case 'mousemove':
@@ -2849,6 +2857,8 @@ class CvsLabel extends CvsTextIcon {
  CvsTooltip
  A box containing some text and/or icon
  ##############################################################################
+
+ @hidden 
  */
 class CvsTooltip extends CvsText {
 
@@ -2882,7 +2892,7 @@ class CvsTooltip extends CvsText {
     let s = this._minControlSize();
     this._w = Math.max(this._w, s.w);
     this._h = Math.max(this._h, s.h);
-    this._bufferInvalid = true;
+    this.invalidateBuffer();
     return this;
   }
 
@@ -2978,7 +2988,6 @@ class CvsTooltip extends CvsText {
   }
 
 }
-
 /*
  ##############################################################################
  CvsScroller
@@ -2989,116 +2998,71 @@ class CvsTooltip extends CvsText {
 /** 
  * <p>The scroller is used to scroll thorugh an object larger than the 
  * display area.</p>
+ * @hidden
  */
 class CvsScroller extends CvsBufferedControl {
 
-  /** @hidden */ protected _capacity: number;
-  /** @hidden */ protected _used: number;
-  /** @hidden */ protected _minV: number;
-  /** @hidden */ protected _maxV: number;
-  /** @hidden */ protected _value: number;
-  /** @hidden */ protected _mdelta: number;
-  /** @hidden */ protected _mx0: number;
-  /** @hidden */ protected _mx1: number;
-  /** @hidden */ protected _my0: number;
-  /** @hidden */ protected _my1: number;
-  /** @hidden */ protected _BORDER: number;
+  /** @hidden */ protected _value: number = 0.5;
+  /** @hidden */ protected _dvalue: number = 0.5;
+  /** @hidden */ protected _used: number = 0.1;
+
+  /** @hidden */ protected _s_value: number = 0.5;
+  /** @hidden */ protected _s_dvalue: number = 0.5;
+  /** @hidden */ protected _s_mx: number = 0.5;
+
+  /** @hidden */ protected _minV: number = this._used / 2;
+  /** @hidden */ protected _maxV: number = 1 - this._used / 2;
+
+  /** @hidden */ protected _BORDER: number = 10;
   /** @hidden */ protected _TLENGTH: number;
-  /** @hidden */ protected _THEIGHT: number;
+  /** @hidden */ protected _THEIGHT: number = 8;
+  /** @hidden */ protected _THUMB_HEIGHT: number = 12;
+  /** @hidden */ protected _MIN_THUMB_WIDTH: number = 10;
+
 
   /** @hidden */
   constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
     super(gui, name, x || 0, y || 0, w || 100, h || 20);
-    this._updateTrackInfo();
-    this._capacity = 1;
-    this._used = 0.3;
-    this._minV = this._used / 2;
-    this._maxV = 1 - this._used / 2;
-    this._value = 0.5;
+    this._TLENGTH = this._w - 3 * this._BORDER;
     this._c = gui.corners();
-    this._opaque = true;
-    this._mdelta = 0;
-    this._mx0 = 0; this._mx1 = 0;
-    this._my0 = 0; this._my1 = 0;
+    this._opaque = false;
   }
 
-  /** @hidden */
-  _updateTrackInfo() {
-    this._BORDER = 10;
-    this._TLENGTH = this._w - 2 * this._BORDER;
-    this._THEIGHT = 10;
-  }
-
-  /**
-   * <p>Get or set the position of the thumb center.</p>
-   * @param v the thumb centre to set 
-   * @returns this control or the thumb position.
-   */
-  value(v?: number) {
-    if (!Number.isFinite(v))
-      return this._value * this._capacity;
-    let value = v / this._capacity;
-    this._validateValue(value);
-    return this;
-  }
-
-  /**
-   * <p>Gets or sets the amount of the scrolled object is visible. This controls
-   * the size of the thumb<p>
-   * @param u the amount used (&le;capacity)
-   * @returns this control or the amount used
-   */
-  used(u?: number) {
-    if (!Number.isFinite(u))
-      return this._used * this._capacity;
-    let used = u / this._capacity;
-    used = this._p.constrain(used, 0, 1);
-    //this._bufferInvalid = this._bufferInvalid || Math.abs(used - this._used) > 0.001;
-    this._bufferInvalid = this._bufferInvalid || this._neq(used, this._used);
-    this._used = used;
-    // Update value limits
-    this._minV = this._used / 2;
-    this._maxV = 1 - this._used / 2;
-    this._used >= 1 ? this.hide() : this.show();
-    // Validate current value
-    this._validateValue(this._value);
-    return this;
-  }
-
-  /** @hidden */
-  _validateValue(value: number) {
-    value = this._p.constrain(value, this._minV, this._maxV);
-    let changed = value != this._value;
-    if (changed) {
-      this._value = value;
-      this.action({ source: this, value: this.value(), final: true });
-      this._bufferInvalid = true;
+  update(v: number, u?: number) {
+    // If a used value is available then set it
+    if (Number.isFinite(u) && u !== this._used) {
+      this._used = u;
+      this._minV = this._used / 2;
+      this._maxV = 1 - this._used / 2;
+      this.invalidateBuffer();
+    }
+    if (Number.isFinite(v) && v !== this._value) {
+      v = this._p.constrain(v, 0, 1);
+      let dv = v, u2 = this._used / 2;
+      if (v < u2) dv = u2;
+      else if (v > 1 - u2) dv = 1 - u2;
+      if (this._value != v || this._dvalue != dv) {
+        this._value = v;
+        this._dvalue = dv;
+        this.invalidateBuffer();
+      }
     }
   }
 
-  /**
-   * <p>The capacity of a scroller is determined by the user based on
-   * the size of the object to be scrolled through.</p>
-   * 
-   * @param c the 'capacity' of the scroller
-   * @returns this control or the control
-   */
-  capacity(c: number) {
-    if (!Number.isFinite(c))
-      return this._capacity;
-    this._capacity = c;
-    //this._bufferInvalid = this._bufferInvalid || Math.abs(c - this._capacity) > 0.001;
-    this._bufferInvalid = this._bufferInvalid || this._neq(c, this._capacity);
-    return this;
+  getValue() {
+    return this._value;
+  }
+
+  getUsed() {
+    return this._used;
   }
 
   /** @hidden */
   _whereOver(px: number, py: number) {
-    //let b = this._buffer;
-    let tx = this._BORDER + this._value * this._TLENGTH;
+    let tx = this._BORDER + this._dvalue * this._TLENGTH;
     let ty = this._h / 2;
-    let thumbSizeX = Math.max(this._used * this._TLENGTH, 12);
-    if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= this._THEIGHT / 2) {
+    let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
+    if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= this._THUMB_HEIGHT / 2) {
       return 1;
     }
     return 0;
@@ -3115,33 +3079,34 @@ class CvsScroller extends CvsBufferedControl {
     my = r.y;
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
-    this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+    //this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+    if (this._pover != this._over) this.invalidateBuffer();
     if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
         if (this._over > 0) {
           this._active = true;
-          this._bufferInvalid = true;
-          this._mdelta = mx - (this._value * this._TLENGTH + this._BORDER);
+          this._s_value = this._value;
+          this._s_mx = mx;
+          this.invalidateBuffer();
         }
         break;
       case 'mouseout':
       case 'mouseup':
         if (this._active) {
-          this.action({ source: this, p5Event: e, value: this.value(), final: true });
+          this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
           this._active = false;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
           eventConsumed = true;
         }
         break;
       case 'mousemove':
         if (this._active) {
-          let nv = (mx - this._mdelta - this._BORDER) / this._TLENGTH;
-          nv = this._p.constrain(nv, this._minV, this._maxV);
-          this._value = nv;
-          this.action({ source: this, p5Event: e, value: this.value(), final: false });
-          this._bufferInvalid = true;
+          let delta = (mx - this._s_mx) / this._TLENGTH;
+          this.update(this._s_value + delta);
+          this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
+          this.invalidateBuffer();
         }
         break;
       case 'mouseover':
@@ -3156,9 +3121,8 @@ class CvsScroller extends CvsBufferedControl {
   _updateControlVisual() { // CvsScroller
     let b = this._buffer;
     let cs = this._scheme || this._gui.scheme();
-    let thumbSizeX = Math.max(this._used * this._TLENGTH, 12), thumbSizeY = 14;
-    let tx = this._value * this._TLENGTH;
-
+    let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH), thumbSizeY = this._THUMB_HEIGHT;
+    let tx = this._dvalue * this._TLENGTH;
 
     const OPAQUE = cs['COLOR_3'];
     const TICKS = cs['GREY_8'];
@@ -3231,20 +3195,19 @@ class CvsScroller extends CvsBufferedControl {
  */
 class CvsViewer extends CvsBufferedControl {
 
-  /** @hidden */ protected _layers: Array<p5.Graphics>;
-  /** @hidden */ protected _hidden: Set<number>;
-  /** @hidden */ protected _lw: number;
-  /** @hidden */ protected _lh: number;
-  /** @hidden */ protected _wcx: number;
-  /** @hidden */ protected _wcy: number;
-  /** @hidden */ protected _wscale: number;
-  /** @hidden */ protected _usedX: number;
-  /** @hidden */ protected _usedY: number;
-  /** @hidden */ protected _o: __Overlap;
+  /** @hidden */ protected _layers: Array<p5.Graphics> = [];
+  /** @hidden */ protected _hidden: Set<number> = new Set();
+  /** @hidden */ protected _lw: number = 0;
+  /** @hidden */ protected _lh: number = 0;
+  /** @hidden */ protected _wcx: number = 0;
+  /** @hidden */ protected _wcy: number = 0;
+  /** @hidden */ protected _wscale: number = 1;
+  /** @hidden */ protected _usedX: number = 0;
+  /** @hidden */ protected _usedY: number = 0;
+  /** @hidden */ protected _o: __Overlap = { valid: false };
   /** @hidden */ protected _scrH: CvsScroller;
   /** @hidden */ protected _scrV: CvsScroller;
   /** @hidden */ protected _scaler: CvsSlider;
-  /** @hidden */ protected _wscales: number;
   /** @hidden */ protected _mx0: number;
   /** @hidden */ protected _my0: number;
   /** @hidden */ protected _dcx: number;
@@ -3256,35 +3219,59 @@ class CvsViewer extends CvsBufferedControl {
   constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
     super(gui, name, x, y, w, h);
 
-    // The images in draw order
-    this._layers = [];
-    this._hidden = new Set();
-    this._lw = 0;
-    this._lh = 0;
-    // View on world        
-    this._wcx = 0;
-    this._wcy = 0;
-    this._wscale = 0;
-    // The amount horizontally and vertically visible 
-    this._usedX = 0;
-    this._usedY = 0;
-    // Overlap
-    this._o = { valid: false };
-
-    this._scrH = gui.scroller(this._name + "-scrH", 0, h, w, 20)
+    this._scrH = gui.__scroller(this._name + "-scrH", 0, h - 20, w, 20).hide()
       .setAction((info) => {
-        this.view(info.value, this._wcy);
-        this._bufferInvalid = true;
+        this.view(info.value * this._lw, this._wcy);
+        this.invalidateBuffer();
       });
 
-    this._scrV = gui.scroller(this._name + "-scrV", w, 0, h, 20).orient('south')
+    this._scrV = gui.__scroller(this._name + "-scrV", w - 20, 0, h, 20).orient('south').hide()
       .setAction((info) => {
-        this.view(this._wcx, info.value);
-        this._bufferInvalid = true;
+        this.view(this._wcx, info.value * this._lh);
+        this.invalidateBuffer();
       });
     this.addChild(this._scrH);
     this.addChild(this._scrV);
   }
+
+  /**
+   * <p>Sets the existing scaler value (if there is no scaler it will be created)
+   * and limits. The initial value will be constrained to the limits.</p>
+   * @param v the scale to use
+   * @param l0 the lowest scale allowed
+   * @param l1  the highest scale allowed
+   * @returns this control
+   */
+  scaler(v: number, l0: number, l1: number) {
+    if (Number.isFinite(v) && Number.isFinite(l0) && Number.isFinite(l1)) {
+      let low = Math.min(l0, l1);
+      let high = Math.max(l0, l1);
+      let value = this._p.constrain(v, low, high);
+      // If we don't have a scaler then create it
+      if (!this._scaler) {
+        this._scaler = this._gui.slider(this._name + "-scaler",
+          0.25 * this._w, 0.5 * this._h - 10, 0.5 * this._w, 20)
+          .hide()
+          .setAction((info) => {
+            this.scale(info.value);
+            this.invalidateBuffer();
+          });
+        this.addChild(this._scaler);
+      }
+      // Now update the scroller
+      this._scaler.limits(low, high);
+      this._scaler.value(value);
+      this._wscale = value;
+      // If we already have layers then update centre position
+      if (this._lw > 0 && this._lh > 0) {
+        this._wcx = this._lw * this._scrH.getValue();
+        this._wcy = this._lh * this._scrV.getValue();
+        this.invalidateBuffer();
+      }
+    }
+    return this;
+  }
+
 
   /** 
    * <p>Sets or gets the scale and or scale limits</p>
@@ -3293,35 +3280,17 @@ class CvsViewer extends CvsBufferedControl {
    * current scale and the limits for the zoom slider.</p>
    * 
    * @param v the scale to use
-   * @param l0 lower scle limit for slider
-   * @param l1 upper limit for slider
    * @returns this control or the current scale
    */
-  scale(v: number, l0?: number, l1?: number) {
-    if (!v && !l0 && !l1) // no parameters
+  scale(v: number) {
+    if (!Number.isFinite(v)) // no parameters
       return this._wscale;
-    // Have limits been provided
-    if (isFinite(l0) && isFinite(l1)) {
-      if (!this._scaler) {
-        this._scaler = this._gui.slider(this._name + "-scaler",
-          0.25 * this._w, 0.5 * this._h - 10, 0.5 * this._w, 20)
-          .hide()
-          .limits(l0, l1)
-          .value((l0 + l1) / 2)
-          .setAction((info) => {
-            this.scale(info.value);
-            this._bufferInvalid = true;
-          });
-        this.addChild(this._scaler);
-      }
-      this._scaler.limits(Math.min(l0, l1), Math.max(l0, l1));
-    }
-    if (isFinite(v)) { // numeric value provided
-      if (this._scaler) this._scaler.value(v);
-      this._wscale = v;
-      this.view(this._wcx, this._wcy, this._wscales);
-    }
-    this._bufferInvalid = true;
+
+    if (this._scaler) this._scaler.value(v);
+    this._wscale = v;
+    this.view(this._wcx, this._wcy, this._wscale);
+
+    this.invalidateBuffer();
     return this;
   }
 
@@ -3363,7 +3332,7 @@ class CvsViewer extends CvsBufferedControl {
     if (Number.isInteger(n))
       if (n >= 0 && n < this._layers.length && !this._hidden.has(n)) {
         this._hidden.add(n);
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
       }
     return this;
   }
@@ -3377,7 +3346,7 @@ class CvsViewer extends CvsBufferedControl {
     if (Number.isInteger(n))
       if (n >= 0 && n < this._layers.length && this._hidden.has(n)) {
         this._hidden.delete(n);
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
       }
     return this;
   }
@@ -3391,14 +3360,14 @@ class CvsViewer extends CvsBufferedControl {
       if (this._neq(this._wcx, wcx) || this._neq(this._wcy, wcy)) {
         this._wcx = wcx;
         this._wcy = wcy;
-        this._scrH.value(wcx);
-        this._scrV.value(wcy);
-        this._bufferInvalid = true;
+        this._scrH.update(wcx / this._lw);
+        this._scrV.update(wcy / this._lh);
+        this.invalidateBuffer();
       }
       if (this._neq(this._wscale, wscale)) {
         this._wscale = wscale;
         if (this._scaler) this._scaler.value(wscale);
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
       }
       this.action({ // Fire action to the user's sketch
         source: this, p5Event: undefined,
@@ -3427,15 +3396,11 @@ class CvsViewer extends CvsBufferedControl {
       if (l.width != lw || l.height != lh)
         l.resize(lw, lh);
     }
-    this._scrH.capacity(lw);
-    this._scrV.capacity(lh);
-    this._bufferInvalid = true;
+    // Now set the world centre based on scrollers
+    this._wcx = this._scrH.getValue() * this._lw;
+    this._wcy = this._scrV.getValue() * this._lh;
+    this.invalidateBuffer();
     return this;
-  }
-
-  /** @hidden */
-  _overScaler() {
-    return Boolean(this._scaler && this._scaler.over() > 0);
   }
 
   /** @hidden */
@@ -3451,23 +3416,29 @@ class CvsViewer extends CvsBufferedControl {
     if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
 
     // Hide scaler unless mouse is close to centre
-    if (this._scaler) this._over > 1 ? this._scaler.show() : this._scaler.hide();
+    if (this._scaler) this._over == 2 ? this._scaler.show() : this._scaler.hide();
+    if (this._over >= 1) {
+      this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
+      this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
+    }
+    else {
+      this._scrH.hide();
+      this._scrV.hide();
+    }
 
     switch (e.type) {
       case 'mousedown':
-        if (this._over > 0) {
-          if (!this._overScaler()) {
-            // Use these to see if there is movement between mouseDown and mouseUp
-            this._clickAllowed = false;
-            this._dragging = true;
-            this._active = true;
-            this._bufferInvalid = true;
-            // Remember starting values
-            this._mx0 = this._pmx = mx;
-            this._my0 = this._pmy = my;
-            this._dcx = this._wcx;
-            this._dcy = this._wcy;
-          }
+        if (this._over == 1) {
+          // Use these to see if there is movement between mouseDown and mouseUp
+          this._clickAllowed = false;
+          this._dragging = true;
+          this._active = true;
+          this.invalidateBuffer();
+          // Remember starting values
+          this._mx0 = this._pmx = mx;
+          this._my0 = this._pmy = my;
+          this._dcx = this._wcx;
+          this._dcy = this._wcy;
         }
         break;
       case 'mouseout':
@@ -3476,13 +3447,13 @@ class CvsViewer extends CvsBufferedControl {
           this._clickAllowed = false;
           this._dragging = false;
           this._active = false;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
         }
       case 'mouseup':
         if (this._active) {
           this._dragging = false;
           this._active = false;
-          this._bufferInvalid = true;
+          this.invalidateBuffer();
         }
         break;
       case 'mousemove':
@@ -3504,7 +3475,6 @@ class CvsViewer extends CvsBufferedControl {
 
   /** @hidden */
   _validateMouseDrag(ncx: number, ncy: number) {
-    //ncx = Math.round(ncx); ncy = Math.round(ncy);
     let ww2 = Math.round(0.5 * this._w / this._wscale);
     let wh2 = Math.round(0.5 * this._h / this._wscale);
     // See if the current display should be pinned
@@ -3524,7 +3494,7 @@ class CvsViewer extends CvsBufferedControl {
     else if (this._xor(top < 0, bottom > this._lh))
       if (top < 0) ncy -= top; else ncy += this._lh - bottom;
     this.view(ncx, ncy);
-    this._bufferInvalid = true;
+    this.invalidateBuffer();
   }
 
   /** @hidden */
@@ -3563,15 +3533,12 @@ class CvsViewer extends CvsBufferedControl {
           b.image(view, o.offsetX * wscale, o.offsetY * wscale, view.width, view.height);
         }
       }
-      this._usedX = view.width / wscale;
-      this._scrH.used(this._usedX);
-      this._usedY = view.height / wscale;
-      this._scrV.used(this._usedY);
     }
   }
 
   /** 
-   * <p>the 'a' parameters represent the image area and 'b' the view area.</p>
+   * <p>the 'a' parameters represent the image size i.e. [0, 0, image_width, imgaeHeight]
+   * and 'b' the view area taking into account scaling.</p>
    * @hidden 
    */
   _overlap(ax0: number, ay0: number, ax1: number, ay1: number,
@@ -3588,30 +3555,37 @@ class CvsViewer extends CvsBufferedControl {
     if (botA <= topB || botB <= topA || rightA <= leftB || rightB <= leftA)
       return { valid: false };
 
-    let leftO = (leftA < leftB) ? leftB : leftA;
-    let rightO = (rightA > rightB) ? rightB : rightA;
-    let botO = (botA > botB) ? botB : botA;
-    let topO = (topA < topB) ? topB : topA;
-    let offsetX = (leftO - leftB);
-    let offsetY = (topO - topB);
+    let leftO = leftA < leftB ? leftB : leftA;
+    let rightO = rightA > rightB ? rightB : rightA;
+    let botO = botA > botB ? botB : botA;
+    let topO = topA < topB ? topB : topA;
+    let width = rightO - leftO;
+    let height = botO - topO;
+    let offsetX = leftO - leftB;
+    let offsetY = topO - topB;
+    // Update scrollers
+    this._scrH.update(undefined, width / this._lw);
+    this._scrV.update(undefined, height / this._lh);
 
-    return {
-      valid: true,
+    return { valid: true,
       left: leftO, right: rightO, top: topO, bottom: botO,
-      width: rightO - leftO, height: botO - topO,
+      width: width, height: height,
       offsetX: offsetX, offsetY: offsetY,
     };
   }
 
   /** @hidden */
   _whereOver(px: number, py: number) {
+    if (px > this._w - 20 && px < this._w && py > 0 && py < this._h - 20)
+      return 3;   // over vertical scroller
+    if (px > 0 && px < this._w - 20 && py > this._h - 20 && py < this._h)
+      return 3;   // over horizontal scroller
     let w = this._w, w0 = 0.2 * w, w1 = 0.8 * w;
-    let h = this._h, h0 = 0.3 * h, h1 = 0.7 * h;
+    let h = this._h, h0 = 0.35 * h, h1 = 0.65 * h;
     if (this._scaler && px > w0 && px < w1 && py > h0 && py < h1)
-      return 2;
-    if (px > 0 && px < w && py > 0 && py < h) {
+      return 2; //over slider make visible area
+    if (px > 0 && px < w && py > 0 && py < h)
       return 1;
-    }
     return 0;
   }
 
@@ -3632,7 +3606,6 @@ class CvsViewer extends CvsBufferedControl {
   _minControlSize(): __Box {
     return { w: this._w, h: this._h };
   }
-
 }
 
 /*
@@ -4097,3 +4070,6 @@ class CvsPaneWest extends CvsPane {
   }
 
 }
+
+
+

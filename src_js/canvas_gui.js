@@ -1,3 +1,9 @@
+// import p5 from "../libraries/p5.min.js";
+// export { GUI };
+// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+// export { CvsViewer, CvsText, CvsTextIcon };
 class GUI {
     constructor(p5c, p = p5.instance) {
         this._renderer = p5c;
@@ -16,9 +22,6 @@ class GUI {
         this._initColorSchemes();
         this._initMouseEventHandlers(p5c);
     }
-    scroller(name, x, y, w, h) {
-        return this.addControl(new CvsScroller(this, name, x, y, w, h));
-    }
     slider(name, x, y, w, h) {
         return this.addControl(new CvsSlider(this, name, x, y, w, h));
     }
@@ -36,6 +39,9 @@ class GUI {
     }
     label(name, x, y, w, h) {
         return this.addControl(new CvsLabel(this, name, x, y, w, h));
+    }
+    __scroller(name, x, y, w, h) {
+        return this.addControl(new CvsScroller(this, name, x, y, w, h));
     }
     viewer(name, x, y, w, h) {
         return this.addControl(new CvsViewer(this, name, x, y, w, h));
@@ -538,7 +544,7 @@ class CvsBaseControl {
     scheme(id, cascade) {
         if (id) {
             this._scheme = this._gui.getScheme(id);
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
             if (cascade)
                 for (let c of this._children)
                     c.scheme(id, cascade);
@@ -630,7 +636,7 @@ class CvsBaseControl {
     disable(cascade) {
         if (this._enabled) {
             this._enabled = false;
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
         }
         if (cascade)
             for (let c of this._children)
@@ -672,7 +678,7 @@ class CvsBaseControl {
                 this._w = s.w;
                 this._h = s.h;
         }
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         return this;
     }
     _whereOver(px, py) {
@@ -686,7 +692,7 @@ class CvsBaseControl {
         let b = this._buffer;
         if (b.width != this._w || b.height != this._h) {
             this._buffer = this._p.createGraphics(this._w, this._h);
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
         }
         if (this._bufferInvalid) {
             this._updateControlVisual();
@@ -815,7 +821,7 @@ class CvsSlider extends CvsBufferedControl {
     value(v) {
         if (Number.isFinite(v)) {
             if ((v - this._limit0) * (v - this._limit1) <= 0) {
-                this._bufferInvalid = true;
+                this.invalidateBuffer();
                 this._t01 = this._norm01(v);
                 return this;
             }
@@ -857,7 +863,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mousedown':
                 if (this._over > 0) {
                     this._active = true;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                 }
                 break;
             case 'mouseout':
@@ -865,7 +871,7 @@ class CvsSlider extends CvsBufferedControl {
                 if (this._active) {
                     this.action({ source: this, p5Event: e, value: this.value(), final: true });
                     this._active = false;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
@@ -878,7 +884,7 @@ class CvsSlider extends CvsBufferedControl {
                         this._t01 = t01;
                         this.action({ source: this, p5Event: e, value: this.value(), final: false });
                     }
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                 }
                 break;
             case 'mouseover':
@@ -1007,7 +1013,7 @@ class CvsRanger extends CvsSlider {
                 if (this._over > 0) {
                     this._active = true;
                     this._tIdx = this._over - 1;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                 }
                 break;
             case 'mouseout':
@@ -1022,7 +1028,7 @@ class CvsRanger extends CvsSlider {
                         source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
                     });
                     this._active = false;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
@@ -1039,7 +1045,7 @@ class CvsRanger extends CvsSlider {
                             source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
                         });
                     }
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                 }
                 break;
             case 'mouseover':
@@ -1133,7 +1139,7 @@ class CvsText extends CvsBufferedControl {
         let s = this._minControlSize();
         this._w = Math.max(this._w, s.w);
         this._h = Math.max(this._h, s.h);
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         return this;
     }
     textAlign(align) {
@@ -1157,7 +1163,7 @@ class CvsText extends CvsBufferedControl {
             let s = this._minControlSize();
             this._w = Math.max(this._w, s.w);
             this._h = Math.max(this._h, s.h);
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
         }
         return this;
     }
@@ -1195,13 +1201,13 @@ class CvsTextIcon extends CvsText {
         let s = this._minControlSize();
         this._w = Math.max(this._w, s.w);
         this._h = Math.max(this._h, s.h);
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         return this;
     }
     noIcon() {
         this._icon = undefined;
         this._iconAlign = this._p.LEFT;
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         return this;
     }
     _minControlSize() {
@@ -1327,7 +1333,7 @@ class CvsButton extends CvsTextIcon {
                     this._clickAllowed = true;
                     this._dragging = true;
                     this._active = true;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
@@ -1341,7 +1347,7 @@ class CvsButton extends CvsTextIcon {
                     this._clickAllowed = false;
                     this._dragging = false;
                     this._active = false;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
@@ -1368,21 +1374,21 @@ class CvsCheckbox extends CvsText {
             return this._iconAlign;
         if (align == this._p.LEFT || align == this._p.RIGHT) {
             this._iconAlign = align;
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
         }
         return this;
     }
     select() {
         if (!this._selected) {
             this._selected = true;
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
         }
         return this;
     }
     deselect() {
         if (this._selected) {
             this._selected = false;
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
         }
         return this;
     }
@@ -1408,7 +1414,7 @@ class CvsCheckbox extends CvsText {
                     this._clickAllowed = true;
                     this._dragging = true;
                     this._active = true;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
@@ -1423,7 +1429,7 @@ class CvsCheckbox extends CvsText {
                     this._clickAllowed = false;
                     this._dragging = false;
                     this._active = false;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
@@ -1568,7 +1574,7 @@ class CvsOption extends CvsText {
             return this._iconAlign;
         if (align == this._p.LEFT || align == this._p.RIGHT) {
             this._iconAlign = align;
-            this._bufferInvalid = true;
+            this.invalidateBuffer();
         }
         return this;
     }
@@ -1577,10 +1583,10 @@ class CvsOption extends CvsText {
         let curr = (_a = this._optGroup) === null || _a === void 0 ? void 0 : _a._prev();
         if (curr) {
             curr._selected = false;
-            curr._bufferInvalid = true;
+            curr.invalidateBuffer();
         }
         this._selected = true;
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         return this;
     }
     _deselect() {
@@ -1614,7 +1620,7 @@ class CvsOption extends CvsText {
                     this._clickAllowed = true;
                     this._dragging = true;
                     this._active = true;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
@@ -1632,7 +1638,7 @@ class CvsOption extends CvsText {
                 this._clickAllowed = false;
                 this._dragging = false;
                 this._active = false;
-                this._bufferInvalid = true;
+                this.invalidateBuffer();
                 eventConsumed = true;
                 break;
             case 'mousemove':
@@ -1826,7 +1832,7 @@ class CvsTooltip extends CvsText {
         let s = this._minControlSize();
         this._w = Math.max(this._w, s.w);
         this._h = Math.max(this._h, s.h);
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
         return this;
     }
     showTime(duration) {
@@ -1902,66 +1908,54 @@ class CvsTooltip extends CvsText {
 class CvsScroller extends CvsBufferedControl {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 100, h || 20);
-        this._updateTrackInfo();
-        this._capacity = 1;
-        this._used = 0.3;
-        this._minV = this._used / 2;
-        this._maxV = 1 - this._used / 2;
         this._value = 0.5;
-        this._c = gui.corners();
-        this._opaque = true;
-        this._mdelta = 0;
-        this._mx0 = 0;
-        this._mx1 = 0;
-        this._my0 = 0;
-        this._my1 = 0;
-    }
-    _updateTrackInfo() {
-        this._BORDER = 10;
-        this._TLENGTH = this._w - 2 * this._BORDER;
-        this._THEIGHT = 10;
-    }
-    value(v) {
-        if (!Number.isFinite(v))
-            return this._value * this._capacity;
-        let value = v / this._capacity;
-        this._validateValue(value);
-        return this;
-    }
-    used(u) {
-        if (!Number.isFinite(u))
-            return this._used * this._capacity;
-        let used = u / this._capacity;
-        used = this._p.constrain(used, 0, 1);
-        this._bufferInvalid = this._bufferInvalid || this._neq(used, this._used);
-        this._used = used;
+        this._dvalue = 0.5;
+        this._used = 0.1;
+        this._s_value = 0.5;
+        this._s_dvalue = 0.5;
+        this._s_mx = 0.5;
         this._minV = this._used / 2;
         this._maxV = 1 - this._used / 2;
-        this._used >= 1 ? this.hide() : this.show();
-        this._validateValue(this._value);
-        return this;
+        this._BORDER = 10;
+        this._THEIGHT = 8;
+        this._THUMB_HEIGHT = 12;
+        this._MIN_THUMB_WIDTH = 10;
+        this._TLENGTH = this._w - 3 * this._BORDER;
+        this._c = gui.corners();
+        this._opaque = false;
     }
-    _validateValue(value) {
-        value = this._p.constrain(value, this._minV, this._maxV);
-        let changed = value != this._value;
-        if (changed) {
-            this._value = value;
-            this.action({ source: this, value: this.value(), final: true });
-            this._bufferInvalid = true;
+    update(v, u) {
+        if (Number.isFinite(u) && u !== this._used) {
+            this._used = u;
+            this._minV = this._used / 2;
+            this._maxV = 1 - this._used / 2;
+            this.invalidateBuffer();
+        }
+        if (Number.isFinite(v) && v !== this._value) {
+            v = this._p.constrain(v, 0, 1);
+            let dv = v, u2 = this._used / 2;
+            if (v < u2)
+                dv = u2;
+            else if (v > 1 - u2)
+                dv = 1 - u2;
+            if (this._value != v || this._dvalue != dv) {
+                this._value = v;
+                this._dvalue = dv;
+                this.invalidateBuffer();
+            }
         }
     }
-    capacity(c) {
-        if (!Number.isFinite(c))
-            return this._capacity;
-        this._capacity = c;
-        this._bufferInvalid = this._bufferInvalid || this._neq(c, this._capacity);
-        return this;
+    getValue() {
+        return this._value;
+    }
+    getUsed() {
+        return this._used;
     }
     _whereOver(px, py) {
-        let tx = this._BORDER + this._value * this._TLENGTH;
+        let tx = this._BORDER + this._dvalue * this._TLENGTH;
         let ty = this._h / 2;
-        let thumbSizeX = Math.max(this._used * this._TLENGTH, 12);
-        if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= this._THEIGHT / 2) {
+        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
+        if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= this._THUMB_HEIGHT / 2) {
             return 1;
         }
         return 0;
@@ -1976,33 +1970,34 @@ class CvsScroller extends CvsBufferedControl {
         my = r.y;
         this._pover = this._over;
         this._over = this._whereOver(mx, my);
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._pover != this._over)
+            this.invalidateBuffer();
         if (this._tooltip)
             this._tooltip._updateState(this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
                     this._active = true;
-                    this._bufferInvalid = true;
-                    this._mdelta = mx - (this._value * this._TLENGTH + this._BORDER);
+                    this._s_value = this._value;
+                    this._s_mx = mx;
+                    this.invalidateBuffer();
                 }
                 break;
             case 'mouseout':
             case 'mouseup':
                 if (this._active) {
-                    this.action({ source: this, p5Event: e, value: this.value(), final: true });
+                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
                     this._active = false;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                     eventConsumed = true;
                 }
                 break;
             case 'mousemove':
                 if (this._active) {
-                    let nv = (mx - this._mdelta - this._BORDER) / this._TLENGTH;
-                    nv = this._p.constrain(nv, this._minV, this._maxV);
-                    this._value = nv;
-                    this.action({ source: this, p5Event: e, value: this.value(), final: false });
-                    this._bufferInvalid = true;
+                    let delta = (mx - this._s_mx) / this._TLENGTH;
+                    this.update(this._s_value + delta);
+                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
+                    this.invalidateBuffer();
                 }
                 break;
             case 'mouseover':
@@ -2015,8 +2010,8 @@ class CvsScroller extends CvsBufferedControl {
     _updateControlVisual() {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        let thumbSizeX = Math.max(this._used * this._TLENGTH, 12), thumbSizeY = 14;
-        let tx = this._value * this._TLENGTH;
+        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH), thumbSizeY = this._THUMB_HEIGHT;
+        let tx = this._dvalue * this._TLENGTH;
         const OPAQUE = cs['COLOR_3'];
         const TICKS = cs['GREY_8'];
         const UNUSED_TRACK = cs['GREY_4'];
@@ -2060,47 +2055,56 @@ class CvsViewer extends CvsBufferedControl {
         this._lh = 0;
         this._wcx = 0;
         this._wcy = 0;
-        this._wscale = 0;
+        this._wscale = 1;
         this._usedX = 0;
         this._usedY = 0;
         this._o = { valid: false };
-        this._scrH = gui.scroller(this._name + "-scrH", 0, h, w, 20)
+        this._scrH = gui.__scroller(this._name + "-scrH", 0, h - 20, w, 20).hide()
             .setAction((info) => {
-            this.view(info.value, this._wcy);
-            this._bufferInvalid = true;
+            this.view(info.value * this._lw, this._wcy);
+            this.invalidateBuffer();
         });
-        this._scrV = gui.scroller(this._name + "-scrV", w, 0, h, 20).orient('south')
+        this._scrV = gui.__scroller(this._name + "-scrV", w - 20, 0, h, 20).orient('south').hide()
             .setAction((info) => {
-            this.view(this._wcx, info.value);
-            this._bufferInvalid = true;
+            this.view(this._wcx, info.value * this._lh);
+            this.invalidateBuffer();
         });
         this.addChild(this._scrH);
         this.addChild(this._scrV);
     }
-    scale(v, l0, l1) {
-        if (!v && !l0 && !l1)
-            return this._wscale;
-        if (isFinite(l0) && isFinite(l1)) {
+    scaler(v, l0, l1) {
+        if (Number.isFinite(v) && Number.isFinite(l0) && Number.isFinite(l1)) {
+            let low = Math.min(l0, l1);
+            let high = Math.max(l0, l1);
+            let value = this._p.constrain(v, low, high);
             if (!this._scaler) {
                 this._scaler = this._gui.slider(this._name + "-scaler", 0.25 * this._w, 0.5 * this._h - 10, 0.5 * this._w, 20)
                     .hide()
-                    .limits(l0, l1)
-                    .value((l0 + l1) / 2)
                     .setAction((info) => {
                     this.scale(info.value);
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                 });
                 this.addChild(this._scaler);
             }
-            this._scaler.limits(Math.min(l0, l1), Math.max(l0, l1));
+            this._scaler.limits(low, high);
+            this._scaler.value(value);
+            this._wscale = value;
+            if (this._lw > 0 && this._lh > 0) {
+                this._wcx = this._lw * this._scrH.getValue();
+                this._wcy = this._lh * this._scrV.getValue();
+                this.invalidateBuffer();
+            }
         }
-        if (isFinite(v)) {
-            if (this._scaler)
-                this._scaler.value(v);
-            this._wscale = v;
-            this.view(this._wcx, this._wcy, this._wscales);
-        }
-        this._bufferInvalid = true;
+        return this;
+    }
+    scale(v) {
+        if (!Number.isFinite(v))
+            return this._wscale;
+        if (this._scaler)
+            this._scaler.value(v);
+        this._wscale = v;
+        this.view(this._wcx, this._wcy, this._wscale);
+        this.invalidateBuffer();
         return this;
     }
     status() {
@@ -2116,7 +2120,7 @@ class CvsViewer extends CvsBufferedControl {
         if (Number.isInteger(n))
             if (n >= 0 && n < this._layers.length && !this._hidden.has(n)) {
                 this._hidden.add(n);
-                this._bufferInvalid = true;
+                this.invalidateBuffer();
             }
         return this;
     }
@@ -2124,7 +2128,7 @@ class CvsViewer extends CvsBufferedControl {
         if (Number.isInteger(n))
             if (n >= 0 && n < this._layers.length && this._hidden.has(n)) {
                 this._hidden.delete(n);
-                this._bufferInvalid = true;
+                this.invalidateBuffer();
             }
         return this;
     }
@@ -2133,15 +2137,15 @@ class CvsViewer extends CvsBufferedControl {
             if (this._neq(this._wcx, wcx) || this._neq(this._wcy, wcy)) {
                 this._wcx = wcx;
                 this._wcy = wcy;
-                this._scrH.value(wcx);
-                this._scrV.value(wcy);
-                this._bufferInvalid = true;
+                this._scrH.update(wcx / this._lw);
+                this._scrV.update(wcy / this._lh);
+                this.invalidateBuffer();
             }
             if (this._neq(this._wscale, wscale)) {
                 this._wscale = wscale;
                 if (this._scaler)
                     this._scaler.value(wscale);
-                this._bufferInvalid = true;
+                this.invalidateBuffer();
             }
             this.action({
                 source: this, p5Event: undefined,
@@ -2162,13 +2166,10 @@ class CvsViewer extends CvsBufferedControl {
             if (l.width != lw || l.height != lh)
                 l.resize(lw, lh);
         }
-        this._scrH.capacity(lw);
-        this._scrV.capacity(lh);
-        this._bufferInvalid = true;
+        this._wcx = this._scrH.getValue() * this._lw;
+        this._wcy = this._scrV.getValue() * this._lh;
+        this.invalidateBuffer();
         return this;
-    }
-    _overScaler() {
-        return Boolean(this._scaler && this._scaler.over() > 0);
     }
     _handleMouse(e) {
         let eventConsumed = false;
@@ -2181,20 +2182,26 @@ class CvsViewer extends CvsBufferedControl {
         if (this._tooltip)
             this._tooltip._updateState(this._pover, this._over);
         if (this._scaler)
-            this._over > 1 ? this._scaler.show() : this._scaler.hide();
+            this._over == 2 ? this._scaler.show() : this._scaler.hide();
+        if (this._over >= 1) {
+            this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
+            this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
+        }
+        else {
+            this._scrH.hide();
+            this._scrV.hide();
+        }
         switch (e.type) {
             case 'mousedown':
-                if (this._over > 0) {
-                    if (!this._overScaler()) {
-                        this._clickAllowed = false;
-                        this._dragging = true;
-                        this._active = true;
-                        this._bufferInvalid = true;
-                        this._mx0 = this._pmx = mx;
-                        this._my0 = this._pmy = my;
-                        this._dcx = this._wcx;
-                        this._dcy = this._wcy;
-                    }
+                if (this._over == 1) {
+                    this._clickAllowed = false;
+                    this._dragging = true;
+                    this._active = true;
+                    this.invalidateBuffer();
+                    this._mx0 = this._pmx = mx;
+                    this._my0 = this._pmy = my;
+                    this._dcx = this._wcx;
+                    this._dcy = this._wcy;
                 }
                 break;
             case 'mouseout':
@@ -2203,13 +2210,13 @@ class CvsViewer extends CvsBufferedControl {
                     this._clickAllowed = false;
                     this._dragging = false;
                     this._active = false;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                 }
             case 'mouseup':
                 if (this._active) {
                     this._dragging = false;
                     this._active = false;
-                    this._bufferInvalid = true;
+                    this.invalidateBuffer();
                 }
                 break;
             case 'mousemove':
@@ -2250,7 +2257,7 @@ class CvsViewer extends CvsBufferedControl {
             else
                 ncy += this._lh - bottom;
         this.view(ncx, ncy);
-        this._bufferInvalid = true;
+        this.invalidateBuffer();
     }
     _xor(a, b) {
         return (a || b) && !(a && b);
@@ -2276,10 +2283,6 @@ class CvsViewer extends CvsBufferedControl {
                     b.image(view, o.offsetX * wscale, o.offsetY * wscale, view.width, view.height);
                 }
             }
-            this._usedX = view.width / wscale;
-            this._scrH.used(this._usedX);
-            this._usedY = view.height / wscale;
-            this._scrV.used(this._usedY);
         }
     }
     _overlap(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1) {
@@ -2293,27 +2296,33 @@ class CvsViewer extends CvsBufferedControl {
         let rightB = Math.max(bx0, bx1);
         if (botA <= topB || botB <= topA || rightA <= leftB || rightB <= leftA)
             return { valid: false };
-        let leftO = (leftA < leftB) ? leftB : leftA;
-        let rightO = (rightA > rightB) ? rightB : rightA;
-        let botO = (botA > botB) ? botB : botA;
-        let topO = (topA < topB) ? topB : topA;
-        let offsetX = (leftO - leftB);
-        let offsetY = (topO - topB);
-        return {
-            valid: true,
+        let leftO = leftA < leftB ? leftB : leftA;
+        let rightO = rightA > rightB ? rightB : rightA;
+        let botO = botA > botB ? botB : botA;
+        let topO = topA < topB ? topB : topA;
+        let width = rightO - leftO;
+        let height = botO - topO;
+        let offsetX = leftO - leftB;
+        let offsetY = topO - topB;
+        this._scrH.update(undefined, width / this._lw);
+        this._scrV.update(undefined, height / this._lh);
+        return { valid: true,
             left: leftO, right: rightO, top: topO, bottom: botO,
-            width: rightO - leftO, height: botO - topO,
+            width: width, height: height,
             offsetX: offsetX, offsetY: offsetY,
         };
     }
     _whereOver(px, py) {
+        if (px > this._w - 20 && px < this._w && py > 0 && py < this._h - 20)
+            return 3;
+        if (px > 0 && px < this._w - 20 && py > this._h - 20 && py < this._h)
+            return 3;
         let w = this._w, w0 = 0.2 * w, w1 = 0.8 * w;
-        let h = this._h, h0 = 0.3 * h, h1 = 0.7 * h;
+        let h = this._h, h0 = 0.35 * h, h1 = 0.65 * h;
         if (this._scaler && px > w0 && px < w1 && py > h0 && py < h1)
             return 2;
-        if (px > 0 && px < w && py > 0 && py < h) {
+        if (px > 0 && px < w && py > 0 && py < h)
             return 1;
-        }
         return 0;
     }
     shrink(dim) {
