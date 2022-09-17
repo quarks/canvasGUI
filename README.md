@@ -1,4 +1,6 @@
 ## canvasGUI
 On-canvas GUI library for p5.js
 
-Please look at the wiki for more information about this exciting library.
+For more information about using canvasGUI please look at
+[Github wiki](https://github.com/quarks/canvasGUI/wiki) for more information about this exciting library.
+canvasGUI guides [website]
