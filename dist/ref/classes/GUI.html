@@ -1,21 +1,21 @@
-<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>GUI | p5js-gui</title><meta name="description" content="Documentation for p5js-gui"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>GUI | canvas-gui</title><meta name="description" content="Documentation for canvas-gui"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container">
 <div class="table-cell" id="tsd-search" data-base="..">
 <div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
 <ul class="results">
 <li class="state loading">Preparing search index...</li>
-<li class="state failure">The search index is not available</li></ul><a href="../index.html" class="title">p5js-gui</a></div>
+<li class="state failure">The search index is not available</li></ul><a href="../index.html" class="title">canvas-gui</a></div>
 <div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="7" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="11" width="14" height="2" fill="var(--color-text)"></rect></svg></a></div></div></header>
 <div class="container container-main">
 <div class="col-8 col-content">
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb">
-<li><a href="../modules.html">p5js-gui</a></li>
+<li><a href="../modules.html">canvas-gui</a></li>
 <li><a href="GUI.html">GUI</a></li></ul>
 <h1>Class GUI</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Core class for cGUI library </p>
-<p>Use an instance of GUI to control all aspects of your gui.</p>
+<div class="tsd-comment tsd-typography"><p>Core class for the canvasGUI library </p>
+<p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
 <ul>
 <li>Create the UI controls e.g. buttons, sliders</li>
 <li>Provides 7 color schemes for the controls</li>
@@ -26,7 +26,7 @@
 
 <h3>License</h3><p>MIT</p>
 
-<h3>Version</h3><p>0.0.1 alpha</p>
+<h3>Version</h3><p>0.9</p>
 </div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
@@ -47,7 +47,6 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Methods</h3>
 <div class="tsd-index-list"><a href="GUI.html#_" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>$</span></a>
-<a href="GUI.html#__scroller" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>__scroller</span></a>
 <a href="GUI.html#_initColorSchemes" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>_init<wbr/>Color<wbr/>Schemes</span></a>
 <a href="GUI.html#addControl" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>add<wbr/>Control</span></a>
 <a href="GUI.html#addScheme" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>add<wbr/>Scheme</span></a>
@@ -56,8 +55,6 @@
 <a href="GUI.html#canvasWidth" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>canvas<wbr/>Width</span></a>
 <a href="GUI.html#checkbox" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>checkbox</span></a>
 <a href="GUI.html#corners" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>corners</span></a>
-<a href="GUI.html#getControl" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Control</span></a>
-<a href="GUI.html#getScheme" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Scheme</span></a>
 <a href="GUI.html#hideAll" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>hide<wbr/>All</span></a>
 <a href="GUI.html#is3D" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is3D</span></a>
 <a href="GUI.html#label" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>label</span></a>
@@ -78,67 +75,32 @@
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <code class="tsd-tag ts-flagPrivate">Private</code> <span>_announced</span><a href="#_announced" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
 <div class="tsd-signature">_announced<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:647</li></ul></aside></section>
+<li>Defined in canvas_gui.ts:644</li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_guis" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <code class="tsd-tag ts-flagPrivate">Private</code> <span>_guis</span><a href="#_guis" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_guis<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:646</li></ul></aside></section></section>
+<li>Defined in canvas_gui.ts:643</li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="_" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>$</span><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="_._-1">$<span class="tsd-signature-symbol">(</span>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><a href="#_._-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="_._-1">$<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><a href="#_._-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Get the control given it's unique identifier.</p>
+<div class="tsd-comment tsd-typography"><p>Get the control given it's unique name.</p>
 <h3>Returns</h3><p>get the associated control</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>id: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h5>
-<div class="tsd-comment tsd-typography"><p>control&#39;s unique identifier</p>
+<h5>name: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h5>
+<div class="tsd-comment tsd-typography"><p>control&#39;s unique name for this control</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:237</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="__scroller" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>__scroller</span><a href="#__scroller" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="__scroller.__scroller-1">__scroller<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, x<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, y<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, w<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, h<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><a href="#__scroller.__scroller-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Create a scroller control</p>
-
-<h3>Returns</h3><p>scroller control</p>
-</div>
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
-</div></li>
-<li>
-<h5>x: <span class="tsd-signature-type">number</span></h5>
-<div class="tsd-comment tsd-typography"><p>left-hand pixel position</p>
-</div></li>
-<li>
-<h5>y: <span class="tsd-signature-type">number</span></h5>
-<div class="tsd-comment tsd-typography"><p>top pixel position</p>
-</div></li>
-<li>
-<h5>w: <span class="tsd-signature-type">number</span></h5>
-<div class="tsd-comment tsd-typography"><p>width</p>
-</div></li>
-<li>
-<h5>h: <span class="tsd-signature-type">number</span></h5>
-<div class="tsd-comment tsd-typography"><p>height</p>
-</div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in canvas_gui.ts:172</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:277</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="_initColorSchemes" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>_init<wbr/>Color<wbr/>Schemes</span><a href="#_initColorSchemes" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -146,7 +108,7 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:471</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:511</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="addControl" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>add<wbr/>Control</span><a href="#addControl" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -164,7 +126,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:246</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:286</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="addScheme" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>add<wbr/>Scheme</span><a href="#addScheme" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -187,7 +149,7 @@ existing scheme.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="GUI.html" class="tsd-signature-type" data-tsd-kind="Class">GUI</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:526</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:567</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="button" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>button</span><a href="#button" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -195,14 +157,14 @@ existing scheme.</p>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Create a button control</p>
 
-<h3>Returns</h3><p>control</p>
+<h3>Returns</h3><p>a button</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
+<div class="tsd-comment tsd-typography"><p>unique name for this control</p>
 </div></li>
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> x: <span class="tsd-signature-type">number</span></h5>
@@ -233,7 +195,7 @@ existing scheme.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:322</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:362</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="canvasWidth" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>canvas<wbr/>Width</span><a href="#canvasWidth" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -244,7 +206,7 @@ existing scheme.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:314</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:354</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="checkbox" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>checkbox</span><a href="#checkbox" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -252,14 +214,14 @@ existing scheme.</p>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Create a checkbox control</p>
 
-<h3>Returns</h3><p>control</p>
+<h3>Returns</h3><p>a checkbox</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
+<div class="tsd-comment tsd-typography"><p>unique name for this control</p>
 </div></li>
 <li>
 <h5>x: <span class="tsd-signature-type">number</span></h5>
@@ -297,43 +259,7 @@ existing scheme.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:331</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="getControl" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>get<wbr/>Control</span><a href="#getControl" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="getControl.getControl-1">get<wbr/>Control<span class="tsd-signature-symbol">(</span>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><a href="#getControl.getControl-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Get the control given it's unique identifier.</p>
-<h3>Returns</h3><p>get the associated control</p>
-</div>
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>id: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h5>
-<div class="tsd-comment tsd-typography"><p>control&#39;s unique identifier</p>
-</div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in canvas_gui.ts:228</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="getScheme" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>get<wbr/>Scheme</span><a href="#getScheme" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="getScheme.getScheme-1">get<wbr/>Scheme<span class="tsd-signature-symbol">(</span>schemename<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">__Scheme</span><a href="#getScheme.getScheme-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Get a copy of the named color scheme.</p>
-<h3>Returns</h3><p>the color scheme or undefined if it doesn&#39;t exist</p>
-</div>
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>schemename: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>the color scheme name</p>
-</div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">__Scheme</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in canvas_gui.ts:512</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:371</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="hideAll" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>hide<wbr/>All</span><a href="#hideAll" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -343,18 +269,18 @@ existing scheme.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:365</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:405</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="is3D" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is3D</span><a href="#is3D" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="is3D.is3D-1">is3D<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><a href="#is3D.is3D-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Determines whether the renderer is P2D</p>
+<div class="tsd-comment tsd-typography"><p>Is this a 3D renderer?</p>
 <h3>Returns</h3><p>true for WEBGL and false for P2D</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:349</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:389</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="label" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>label</span><a href="#label" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -362,14 +288,14 @@ existing scheme.</p>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Create a label control</p>
 
-<h3>Returns</h3><p>button control</p>
+<h3>Returns</h3><p>a label</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
+<div class="tsd-comment tsd-typography"><p>unique name for this control</p>
 </div></li>
 <li>
 <h5>x: <span class="tsd-signature-type">number</span></h5>
@@ -397,7 +323,7 @@ existing scheme.</p>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Create an option (radio button) control</p>
 
-<h3>Returns</h3><p>control</p>
+<h3>Returns</h3><p>an option button</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -426,31 +352,34 @@ existing scheme.</p>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="pane" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>pane</span><a href="#pane" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="pane.pane-1">pane<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, location<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, size<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a><a href="#pane.pane-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="pane.pane-1">pane<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, location<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, depth<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a><a href="#pane.pane-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Create a side pane. The pane location is either &#39;north&#39;, &#39;south&#39;,
-&#39;east&#39; or &#39;west&#39;</p>
+&#39;east&#39; or &#39;west&#39;.</p>
+<p>The pane will fill the whole width/height of the canvas depending on its 
+position. The user controls how far the pane extends into the canvas when 
+open.</p>
 
-<h3>Returns</h3><p>pane control for specified location</p>
+<h3>Returns</h3><p>a side pane</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
+<div class="tsd-comment tsd-typography"><p>unique name for this control</p>
 </div></li>
 <li>
 <h5>location: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>location for the pane</p>
+<div class="tsd-comment tsd-typography"><p>the pane position (&#39;north&#39;, &#39;south&#39;, &#39;east&#39; or &#39;west&#39;)</p>
 </div></li>
 <li>
-<h5>size: <span class="tsd-signature-type">number</span></h5>
-<div class="tsd-comment tsd-typography"><p>the maximum size the pane expands into the canvas</p>
+<h5>depth: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>the maximum depth the pane expands into the canvas</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:206</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:211</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="ranger" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>ranger</span><a href="#ranger" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -465,7 +394,7 @@ existing scheme.</p>
 <ul class="tsd-parameter-list">
 <li>
 <h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
+<div class="tsd-comment tsd-typography"><p>unique name for this control</p>
 </div></li>
 <li>
 <h5>x: <span class="tsd-signature-type">number</span></h5>
@@ -503,7 +432,7 @@ existing scheme.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="GUI.html" class="tsd-signature-type" data-tsd-kind="Class">GUI</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">__Scheme</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:488</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:528</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="showAll" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>show<wbr/>All</span><a href="#showAll" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -513,7 +442,7 @@ existing scheme.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:376</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:416</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="slider" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>slider</span><a href="#slider" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -528,7 +457,7 @@ existing scheme.</p>
 <ul class="tsd-parameter-list">
 <li>
 <h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
+<div class="tsd-comment tsd-typography"><p>unique name for this control</p>
 </div></li>
 <li>
 <h5>x: <span class="tsd-signature-type">number</span></h5>
@@ -568,7 +497,7 @@ otherwise it returns this control.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><a href="GUI.html" class="tsd-signature-type" data-tsd-kind="Class">GUI</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:286</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:326</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="tipTextSize" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tip<wbr/>Text<wbr/>Size</span><a href="#tipTextSize" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -589,7 +518,7 @@ otherwise it returns this control</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><a href="GUI.html" class="tsd-signature-type" data-tsd-kind="Class">GUI</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:303</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:343</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="viewer" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>viewer</span><a href="#viewer" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -597,14 +526,14 @@ otherwise it returns this control</p>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Create a viewer</p>
 
-<h3>Returns</h3><p>viewer control</p>
+<h3>Returns</h3><p>an image viewer</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>name: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>unique identifier</p>
+<div class="tsd-comment tsd-typography"><p>unique name for this control</p>
 </div></li>
 <li>
 <h5>x: <span class="tsd-signature-type">number</span></h5>
@@ -624,13 +553,13 @@ otherwise it returns this control</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:185</li></ul></aside></li></ul></section>
+<li>Defined in canvas_gui.ts:186</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="get" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <span>get</span><a href="#get" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="get.get-1">get<span class="tsd-signature-symbol">(</span>p5c<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Renderer</span>, p<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">p5</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><a href="#get.get-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Creates and returns a GUI controller for a given canvas elelment.</p>
+<div class="tsd-comment tsd-typography"><p>Creates and returns a GUI controller for a given canvas element.</p>
 <h3>Returns</h3><p>a GUI controller</p>
 </div>
 <div class="tsd-parameters">
@@ -642,7 +571,7 @@ otherwise it returns this control</p>
 <h5>p: <span class="tsd-signature-type">p5</span><span class="tsd-signature-symbol"> = p5.instance</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in canvas_gui.ts:637</li></ul></aside></li></ul></section></section></div>
+<li>Defined in canvas_gui.ts:634</li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
@@ -662,7 +591,7 @@ otherwise it returns this control</p>
 <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.93896 8.531L12 15.591L19.061 8.531L16.939 6.409L12 11.349L7.06098 6.409L4.93896 8.531Z" fill="var(--color-text)"></path></svg> Modules</h3></summary>
 <div class="tsd-accordion-details">
 <ul>
-<li><a href="../modules.html">p5js-<wbr/>gui</a>
+<li><a href="../modules.html">canvas-<wbr/>gui</a>
 <ul></ul></li></ul></div></details></nav>
 <nav class="tsd-navigation secondary menu-sticky">
 <ul>
@@ -671,7 +600,6 @@ otherwise it returns this control</p>
 <li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="GUI.html#_announced" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_announced</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="GUI.html#_guis" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_guis</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#_" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>$</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#__scroller" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>__scroller</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="GUI.html#_initColorSchemes" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>_init<wbr/>Color<wbr/>Schemes</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#addControl" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>add<wbr/>Control</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#addScheme" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>add<wbr/>Scheme</a></li>
@@ -680,8 +608,6 @@ otherwise it returns this control</p>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#canvasWidth" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>canvas<wbr/>Width</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#checkbox" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>checkbox</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#corners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>corners</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#getControl" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Control</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#getScheme" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Scheme</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#hideAll" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>hide<wbr/>All</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#is3D" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is3D</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="GUI.html#label" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>label</a></li>

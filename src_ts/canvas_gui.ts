@@ -20,8 +20,8 @@ interface __Scheme {
 }
 
 /**
- * <p>Core class for cGUI library </p>
- * <p>Use an instance of GUI to control all aspects of your gui.</p>
+ * <p>Core class for the canvasGUI library </p>
+ * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
  * <ul>
  * <li>Create the UI controls e.g. buttons, sliders</li>
  * <li>Provides 7 color schemes for the controls</li>
@@ -30,7 +30,7 @@ interface __Scheme {
  * @author Peter Lager
  * @copyright 2022
  * @license MIT
- * @version 0.0.1 alpha
+ * @version 0.9
  * 
  */
 class GUI {
@@ -84,7 +84,7 @@ class GUI {
   // #########     Factory methods to create controls    ##############
   /**
   * Create a slider control
-  * @param name unique identifier
+  * @param name unique name for this control
   * @param x left-hand pixel position
   * @param y top pixel position
   * @param w width
@@ -97,7 +97,7 @@ class GUI {
 
   /**
   * Create a ranger control
-  * @param name unique identifier
+  * @param name unique name for this control
   * @param x left-hand pixel position
   * @param y top pixel position
   * @param w width
@@ -110,12 +110,12 @@ class GUI {
 
   /**
   * Create a button control
-  * @param name unique identifier
+  * @param name unique name for this control
   * @param x left-hand pixel position
   * @param y top pixel position
   * @param w width
   * @param h height
-  * @returns control
+  * @returns a button
   */
   button(name: string, x?: number, y?: number, w?: number, h?: number) {
     return this.addControl(new CvsButton(this, name, x, y, w, h));
@@ -123,12 +123,12 @@ class GUI {
 
   /**
   * Create a checkbox control
-  * @param name unique identifier
+  * @param name unique name for this control
   * @param x left-hand pixel position
   * @param y top pixel position
   * @param w width
   * @param h height
-  * @returns control
+  * @returns a checkbox
   */
   checkbox(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
@@ -141,7 +141,7 @@ class GUI {
   * @param y top pixel position
   * @param w width
   * @param h height
-  * @returns control
+  * @returns an option button
   */
   option(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsOption(this, name, x, y, w, h));
@@ -149,12 +149,12 @@ class GUI {
 
   /**
   * Create a label control
-  * @param name unique identifier
+  * @param name unique name for this control
   * @param x left-hand pixel position
   * @param y top pixel position
   * @param w width
   * @param h height
-  * @returns button control
+  * @returns a label
   */
   label(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsLabel(this, name, x, y, w, h));
@@ -162,12 +162,13 @@ class GUI {
 
   /**
   * Create a scroller control
-  * @param name unique identifier
+  * @param name unique name for this control
   * @param x left-hand pixel position
   * @param y top pixel position
   * @param w width
   * @param h height
   * @returns scroller control
+  * @hidden
   */
   __scroller(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsScroller(this, name, x, y, w, h));
@@ -175,12 +176,12 @@ class GUI {
 
   /**
   * Create a viewer
-  * @param name unique identifier
+  * @param name unique name for this control
   * @param x left-hand pixel position
   * @param y top pixel position
   * @param w width
   * @param h height
-  * @returns viewer control
+  * @returns an image viewer
   */
   viewer(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsViewer(this, name, x, y, w, h));
@@ -188,7 +189,7 @@ class GUI {
 
   /**
    * @hidden
-   * @param name auto generated unique identifier
+   * @param name auto generated unique name
    * @returns tooltip control
    */
   __tooltip(name: string): CvsTooltip {
@@ -197,20 +198,24 @@ class GUI {
 
   /**
    * Create a side pane. The pane location is either 'north', 'south',
-   * 'east' or 'west'
-   * @param name unique identifier
-   * @param location location for the pane
-   * @param size the maximum size the pane expands into the canvas
-   * @returns pane control for specified location
+   * 'east' or 'west'.
+   * 
+   * The pane will fill the whole width/height of the canvas depending on its 
+   * position. The user controls how far the pane extends into the canvas when 
+   * open.
+   * @param name unique name for this control
+   * @param location the pane position ('north', 'south', 'east' or 'west')
+   * @param depth the maximum depth the pane expands into the canvas
+   * @returns a side pane
    */
-  pane(name: string, location: string, size: number): CvsPane {
+  pane(name: string, location: string, depth: number): CvsPane {
     let ctrl: CvsPane;
     switch (location) {
-      case 'north': ctrl = new CvsPaneNorth(this, name, size); break;
-      case 'south': ctrl = new CvsPaneSouth(this, name, size); break;
-      case 'west': ctrl = new CvsPaneWest(this, name, size); break;
+      case 'north': ctrl = new CvsPaneNorth(this, name, depth); break;
+      case 'south': ctrl = new CvsPaneSouth(this, name, depth); break;
+      case 'west': ctrl = new CvsPaneWest(this, name, depth); break;
       case 'east':
-      default: ctrl = new CvsPaneEast(this, name, size);
+      default: ctrl = new CvsPaneEast(this, name, depth);
     }
     return this.addControl(ctrl);
   }
@@ -218,24 +223,59 @@ class GUI {
   // ###########        End of factory methods             ############
   // ##################################################################
 
-  // -----------------------------------------------------------------------
-  // id is a control or the name of a control
   /**
-   * <p>Get the control given it's unique identifier.</p>
-   * @param id control's unique identifier
-   * @returns  get the associated control
-   */
-  getControl(id: string | CvsBaseControl): CvsBaseControl {
-    return (typeof id === "string") ? this._controls.get(id) : id;
+  * Adds event listeners to the HTML canvas object. It also sets the draw method
+  * based on whether the render is WEBGL or P2D
+  * @hidden
+  * @param p5c p5.Renderer
+  */
+  private _initMouseEventHandlers(p5c: p5.Renderer) {
+    let canvas = p5c.canvas;
+    // Add mouse events
+    canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e) });
+    canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e) });
+    canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e) });
+    canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e) });
+    // Leave canvas
+    canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e) });
+    // Initialise draw method based on P2D or WEBGL renderer
+    this._is3D = p5c.GL != undefined && p5c.GL != null;
+    this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
   }
 
   /**
-   * <p>Get the control given it's unique identifier.</p>
-   * @param id control's unique identifier
+   * Called by the mouse event listeners
+   * @hidden
+   * @param e event
+   */
+  private _handleMouseEvents(e) {
+    // Find the currently active control and pass the event to it
+    let activeControl = undefined;
+    for (let c of this._ctrls) {
+      if (c.isActive()) {
+        activeControl = c;
+        c._handleMouse(e);
+        break;
+      }
+    }
+    // If no active control then pass the event to each enabled control in turn
+    if (activeControl == undefined) {
+      for (let c of this._ctrls)
+        if (c.isEnabled())
+          c._handleMouse(e);
+    }
+
+  }
+
+  // -----------------------------------------------------------------------
+
+  /**
+   * <p>Get the control given it's unique name.</p>
+   * @param name control's unique name for this control
    * @returns  get the associated control
   */
-  $(id: string | CvsBaseControl): CvsBaseControl {
-    return (typeof id === "string") ? this._controls.get(id) : id;
+  $(name: string | CvsBaseControl): CvsBaseControl {
+    return (typeof name === "string") ? this._controls.get(name) : name;
   }
 
   /**
@@ -244,9 +284,9 @@ class GUI {
    * @returns the control just added
    */
   addControl(control) {
-    console.assert(!this._controls.has(control._name),
-      `Control '${control._name}' already exists and will be replaced.`);
-    this._controls.set(control._name, control);
+    console.assert(!this._controls.has(control.name()),
+      `Control '${control.name()}' already exists and will be replaced.`);
+    this._controls.set(control.name(), control);
     // Now find render order
     this._ctrls = [...this._controls.values()];
     this._ctrls.sort((a, b) => { return a.z() - b.z() });
@@ -343,7 +383,7 @@ class GUI {
     return this._renderer;
   }
   /**
-   * <p>Determines whether the renderer is P2D</p>
+   * <p>Is this a 3D renderer?</p>
    * @returns true for WEBGL and false for P2D
    */
   is3D() {
@@ -417,7 +457,7 @@ class GUI {
     for (let i = 0; i < n; i++) {
       let pane = panes[i];
       let tab = pane.tab();
-      let x = pane.size();
+      let x = pane.depth();
       let y = pos;
       pos += tab._w + 2;
       tab._x = x;
@@ -461,7 +501,7 @@ class GUI {
     let pos = (this.canvasWidth() - sum) / 2;
     for (let i = 0; i < n; i++) {
       let pane = panes[i], tab = pane.tab();
-      let x = pos, y = pane.size();
+      let x = pos, y = pane.depth();
       pos += tab._w + 2;
       tab._x = x;
       tab._y = y;
@@ -506,10 +546,11 @@ class GUI {
 
   /**
    * <p>Get a copy of the named color scheme.</p>
-   * @param schemename the color scheme name
+   * @param schemename the name of the color scheme
    * @returns the color scheme or undefined if it doesn't exist
+   * @hidden
    */
-  getScheme(schemename: string): __Scheme | undefined {
+  _getScheme(schemename: string): __Scheme | undefined {
     if (schemename && this._schemes[schemename])
       return Object.assign({}, this._schemes[schemename]);
     console.warn(`Unable to retrieve color scheme '${schemename}'`);
@@ -531,50 +572,6 @@ class GUI {
         console.error(`Cannot add scheme '${schemename}' because it already exists.'`);
     }
     return this;
-  }
-
-  /**
-   * Adds event listeners to the HTML canvas object. It also sets the draw method
-   * based on whether the render is WEBGL or P2D
-   * @hidden
-   * @param p5c p5.Renderer
-   */
-  private _initMouseEventHandlers(p5c: p5.Renderer) {
-    let canvas = p5c.canvas;
-    // Add mouse events
-    canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e) });
-    canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e) });
-    canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e) });
-    canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e) });
-    // Leave canvas
-    canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e) });
-    // Initialise draw method based on P2D or WEBGL renderer
-    this._is3D = p5c.GL != undefined && p5c.GL != null;
-    this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
-  }
-
-  /**
-   * Called by the mouse event listeners
-   * @hidden
-   * @param e event
-   */
-  private _handleMouseEvents(e) {
-    // Find the currently active control and pass the evnt to it
-    let activeControl = undefined;
-    for (let c of this._ctrls) {
-      if (c.isActive()) {
-        activeControl = c;
-        c._handleMouse(e);
-        break;
-      }
-    }
-    // If there is no active control pass the event to each enabled control in 
-    // turn until one of them consumes the event
-    if (activeControl == undefined) {
-      for (let c of this._ctrls)
-        if (c.isEnabled())
-          c._handleMouse(e);
-    }
   }
 
   /**
@@ -629,7 +626,7 @@ class GUI {
   // ##################################################################################
 
   /**
-   * <p>Creates and returns a GUI controller for a given canvas elelment.</p>
+   * <p>Creates and returns a GUI controller for a given canvas element.</p>
    * @param p5c 
    * @param p 
    * @returns a GUI controller
@@ -923,11 +920,11 @@ class CvsBaseControl {
   /** @hidden */ protected _gui: GUI;
   /** @hidden */ protected _p: p5;
   /** @hidden */ protected _name: string;
-  /** @hidden */ protected _children: Array<any>;
+  /** @hidden */ protected _children: Array<any> = [];
   /** @hidden */ protected _parent: CvsBaseControl | CvsPane;
-  /** @hidden */ protected _visible: boolean;
-  /** @hidden */ protected _enabled: boolean;
-  /** @hidden */ protected _Z: number;
+  /** @hidden */ protected _visible: boolean = true;
+  /** @hidden */ protected _enabled: boolean = true;
+  /** @hidden */ protected _Z: number = 0;
   /** @hidden */ protected _x: number = 0;
   /** @hidden */ protected _y: number = 0;
   /** @hidden */ protected _w: number = 0;
@@ -935,26 +932,26 @@ class CvsBaseControl {
   /** @hidden */ protected _orientation: OrientNorth | OrientSouth | OrientEast | OrientWest;
   /** @hidden */ protected _dragging: boolean;
   /** @hidden */ protected _buffer: p5.Renderer;
-  /** @hidden */ protected _over: number;
-  /** @hidden */ protected _pover: number;
-  /** @hidden */ protected _clickAllowed: boolean;
+  /** @hidden */ protected _over: number = 0;
+  /** @hidden */ protected _pover: number = 0;
+  /** @hidden */ protected _clickAllowed: boolean = false;
   /** @hidden */ protected _c: Array<number>;
-  /** @hidden */ protected _active: boolean;
-  /** @hidden */ protected _opaque: boolean;
+  /** @hidden */ protected _active: boolean = false;
+  /** @hidden */ protected _opaque: boolean = true;;
   /** @hidden */ protected _tooltip: CvsTooltip;
-  /** @hidden */ protected _scheme: __Scheme;
-  /** @hidden */ protected _bufferInvalid: boolean;
+  /** @hidden */ protected _scheme: __Scheme = undefined;
+  /** @hidden */ protected _bufferInvalid: boolean = true;
   /** <p>The event handler for this control. Although it is permitted to set 
    * this property directly it is recommended that the <code>setAction(...)</code>
    * method is used to define the event handler actions.</p> 
    */
-  action: Function;
+  action: Function = function () { };
 
   /**
    * 
    * @hidden
    * @param gui
-   * @param name unique identifier
+   * @param name unique name for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
@@ -991,24 +988,24 @@ class CvsBaseControl {
     this._y = y;
     this._w = w;
     this._h = h;
-    this._children = [];
+    //this._children = [];
     this._parent = undefined;
     this._visible = true;
     this._enabled = true;
     this._scheme = undefined;
-    this._Z = 0;
+    //  this._Z = 0;
     this._orientation = CvsBaseControl.EAST;
     this._dragging = false; // is mouse being dragged on active control
-    this._bufferInvalid = true;
-    this._over = 0;
-    this._pover = 0;
-    this._clickAllowed = false;
+    // this._bufferInvalid = true;
+    // this._over = 0;
+    // this._pover = 0;
+    // this._clickAllowed = false;
     this._c = gui.corners(undefined);
-    this._active = false;
-    this._opaque = true;
-    this.setAction((info?: __EventInfo) => {
-      console.warn(`No action set for control '${info?.source._name}`);
-    });
+    // this._active = false;
+    // this._opaque = true;
+    // this.setAction((info?: __EventInfo) => {
+    //   console.warn(`No action set for control '${info?.source._name}`);
+    // });
   }
 
   /**
@@ -1043,7 +1040,7 @@ class CvsBaseControl {
   scheme(id?: string, cascade?: boolean): CvsBaseControl | __Scheme {
     // setter
     if (id) {
-      this._scheme = this._gui.getScheme(id);
+      this._scheme = this._gui._getScheme(id);
       this.invalidateBuffer();
       if (cascade)
         for (let c of this._children)
@@ -1055,14 +1052,26 @@ class CvsBaseControl {
   }
 
   /**
-   * <p>Add a child to this control using its relative position [rx, ry]
-   * If rx and ry are not provided then it assumes these values are 
-   * already set in the child.</p>
+   * <p>Adds this control to another control which becomes its parent</p>
+   * @param p is the parental control or its name
+   * @param rx x position relative to parent
+   * @param ry  y position relative to parent
+   * @returns this control
+   */
+  parent(p: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
+    let parent = this._gui.$(p);
+    parent.addChild(this, rx, ry);
+    return this;
+  }
+
+  /**
+   * <p>Add a child to this control using its relative position [rx, ry].
+   * If rx and ry are not provided then it uses the values set in the child.</p> 
    * @param c is the actual control or its name
    * @returns this control
    */
   addChild(c: CvsBaseControl | string, rx?: number, ry?: number): any {
-    let control = this._gui.getControl(c);
+    let control = this._gui.$(c);
     rx = !Number.isFinite(rx) ? control._x : Number(rx);
     ry = !Number.isFinite(ry) ? control._y : Number(ry);
     // See if the control already has a parent and it is not remove
@@ -1084,7 +1093,7 @@ class CvsBaseControl {
    * @returns this control
    */
   removeChild(c: CvsBaseControl | string) {
-    let control = this._gui.getControl(c);
+    let control = this._gui.$(c);
     for (let i = 0; i < this._children.length; i++) {
       if (control === this._children[i]) {
         let pos = control.getAbsXY();
@@ -1100,18 +1109,6 @@ class CvsBaseControl {
     return this;
   }
 
-  /**
-   * <p>Adds this control to another control which becomes its parent</p>
-   * @param parent the control which will become the parent
-   * @param rx x position relative to parent
-   * @param ry  y position relative to parent
-   * @returns this control
-   */
-  parent(parent: CvsBaseControl, rx?: number, ry?: number): CvsBaseControl {
-    if (parent)
-      parent.addChild(this, rx, ry);
-    return this;
-  }
 
   /**
    * <p>Remove this control from its parent</p>
@@ -1195,12 +1192,17 @@ class CvsBaseControl {
   }
 
   /**
-   * <p>Enable this control</p>
+   * <p>Enables this control</p>
    * @param cascade if true enable child controls
    * @returns this control
    */
   enable(cascade?: boolean): CvsBaseControl {
-    this._enabled = true;
+    if (!this._enabled) {
+      this._enabled = true;
+      this.invalidateBuffer();
+    }
+    //this._enabled = true;
+    this.invalidateBuffer();
     if (cascade)
       for (let c of this._children)
         c.enable(cascade);
@@ -1208,7 +1210,7 @@ class CvsBaseControl {
   }
 
   /**
-   * <p>Disable this control</p>
+   * <p>Disables this control</p>
    * @param cascade if true disable child controls
    * @returns this control
    */
@@ -1359,7 +1361,7 @@ class CvsBaseControl {
 
   /** @hidden */
   protected _disable_hightlight(b, cs, x, y, w, h) {
-    b.fill(cs['TINT_7']);
+    b.fill(cs['TINT_4']);
     b.noStroke();
     b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
   }
@@ -1439,7 +1441,7 @@ abstract class CvsBufferedControl extends CvsBaseControl {
    * CvsBufferedControl class 
    * @hidden
    * @param {GUI} gui
-   * @param name unique identifier
+   * @param name unique name for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
@@ -1500,7 +1502,7 @@ class CvsSlider extends CvsBufferedControl {
   /**
    * @hidden
    * @param gui the gui controller
-   * @param name unique identifier
+   * @param name unique name for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
@@ -1516,7 +1518,6 @@ class CvsSlider extends CvsBufferedControl {
     this._s2ticks = false;
     this._opaque = false;
   }
-
 
   /**
    * Set the lower and upper limits for the slider
@@ -1534,10 +1535,22 @@ class CvsSlider extends CvsBufferedControl {
   }
 
   /**
-   * <p>Sets the number of major and minor ticks and whether the slider is 
-   * constrained to the tick values.</p>
-   * @param {number} major the number of major ticks
-   * @param {number} minor the number of minor ticks between major ticks
+   * 
+   * @param value scale value to test
+   * @returns true if the value lies within the slider's limits else false
+   */
+  isValid(value: number): boolean {
+    return (Number.isFinite(value)
+      && (value - this._limit0) * (value - this._limit1) <= 0);
+  }
+
+  /**
+   * <p>The track can be divided up into a number of domains separated with major ticks. The
+   * major domains and be further divided into subdomains separated with minor ticks. If the
+   * final parameter is true then values retqurned by the slider are consrained to the 
+   * tick values.</p>
+   * @param {number} major the number of major domains on the track
+   * @param {number} minor the number of minor domains  between major ticks
    * @param {boolean} stick2ticks slider value is constrainged to tick values
    * @returns {CvsBaseControl} this slider object
    */
@@ -1549,15 +1562,17 @@ class CvsSlider extends CvsBufferedControl {
   }
 
   /**
-   * Sets or gets the value for this slider
-   * @param v the selected value to be set 
+   * If the parameter value is withing the slider limits it will move the thumb
+   * to the appropriate position. If no parameter is passed or is outside the 
+   * limits this methods returns the current slider value.
+   * @param value the selected value to be set 
    * @returns the current value or this slider object
    */
-  value(v?: number): CvsBaseControl | number {
-    if (Number.isFinite(v)) {
-      if ((v - this._limit0) * (v - this._limit1) <= 0) {
+  value(value?: number): CvsBaseControl | number {
+    if (Number.isFinite(value)) {
+      if ((value - this._limit0) * (value - this._limit1) <= 0) {
         this.invalidateBuffer();
-        this._t01 = this._norm01(v);
+        this._t01 = this._norm01(value);
         return this;
       }
     }
@@ -1665,7 +1680,10 @@ class CvsSlider extends CvsBufferedControl {
     return eventConsumed;
   }
 
-  /** @hidden */
+  /** 
+   * For a given value p01 find the value at the nearest tick
+   * @hidden 
+   */
   _nearestTickT(p01: number): number {
     let nbrTicks = this._minorTicks > 0
       ? this._minorTicks * this._majorTicks : this._majorTicks;
@@ -1679,9 +1697,9 @@ class CvsSlider extends CvsBufferedControl {
     let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
 
     const OPAQUE = cs['COLOR_3'];
-    const TICKS = cs['GREY_8'];
-    const UNUSED_TRACK = cs['GREY_1'];
-    const USED_TRACK = cs['GREY_4'];
+    const TICKS = cs['GREY_9'];
+    const UNUSED_TRACK = cs['GREY_6'];
+    const USED_TRACK = cs['GREY_1'];
     const HIGHLIGHT = cs['COLOR_14'];
     const THUMB = cs['COLOR_10'];
 
@@ -1753,8 +1771,8 @@ class CvsSlider extends CvsBufferedControl {
  */
 class CvsRanger extends CvsSlider {
 
-  /** @hidden */ protected _t: Array<number>;
-  /** @hidden */ protected _tIdx: number;
+  /** @hidden */ protected _t: Array<number> = [0.25, 0.75];
+  /** @hidden */ protected _tIdx: number = -1;
 
   /** @hidden */
   constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
@@ -1767,20 +1785,45 @@ class CvsRanger extends CvsSlider {
   }
 
   /**
-   * <p>Sets or gets the kow and high values for this control</p>
+   * <p>Sets or gets the low and high values for this control. If both parameters
+   * and within the rangers limits then they are used to set the low and high
+   * values of the ranger and move the thumbs to the correct postion.</p>
+   * <p>If one or both parameters are invalid then they are ignored and the method 
+   * returns the current range low and high values.</p>
    * @param v0 low value
    * @param v1 high value
    * @returns this control or the low/high values
    */
   range(v0?: number, v1?: number): CvsBaseControl | __Range {
-    if (!v0 || !v1)
-      return { low: Math.min(v0, v1), high: Math.max(v0, v1) };
-    let t0 = this._norm01(v0);
-    let t1 = this._norm01(v1);
-    this._bufferInvalid = (this._t[0] != t0) || (this._t[1] != t1);
-    this._t[0] = Math.min(t0, t1); this._t[1] = Math.max(t0, t1);
-    return this;
+    // if (!v0 || !v1)
+    //   return { low: this._t2v(this._t[0]), high: this._t2v(this._t[1]) };
+    if (Number.isFinite(v0) && Number.isFinite(v1)) { // If two numbers then
+      let t0 = this._norm01(Math.min(v0, v1));
+      let t1 = this._norm01(Math.max(v0, v1));
+      if (t0 >= 0 && t0 <= 1 && t1 >= 0 && t1 <= 1) {
+        this._bufferInvalid = (this._t[0] != t0) || (this._t[1] != t1);
+        this._t[0] = t0; this._t[1] = t1;
+        return this;
+      }
+    }
+    // Invalid parameters
+    return { low: this._t2v(this._t[0]), high: this._t2v(this._t[1]) };
   }
+
+  /**
+   * @returns the low value of the range
+   */
+  low(): number {
+    return this._t2v(this._t[0]);
+  }
+
+  /**
+   * @returns the high value of the range
+   */
+  high(): number {
+    return this._t2v(this._t[1]);
+  }
+
 
   /** @hidden */
   value(v?: number): number | CvsBaseControl {
@@ -1876,9 +1919,9 @@ class CvsRanger extends CvsSlider {
     let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
 
     const OPAQUE = cs['COLOR_3'];
-    const TICKS = cs['GREY_8'];
-    const UNUSED_TRACK = cs['GREY_1'];
-    const USED_TRACK = cs['GREY_4'];
+    const TICKS = cs['GREY_9'];
+    const UNUSED_TRACK = cs['GREY_6'];
+    const USED_TRACK = cs['GREY_1'];
     const HIGHLIGHT = cs['COLOR_14'];
     const THUMB = cs['COLOR_10'];
 
@@ -1949,42 +1992,41 @@ class CvsRanger extends CvsSlider {
  */
 abstract class CvsText extends CvsBufferedControl {
 
-  /** @hidden */ protected _lines: Array<string>;
-  /** @hidden */ protected _text: string;
-  /** @hidden */ protected _textSize: number;
-  /** @hidden */ protected _textAlign: number;
-  /** @hidden */ protected _tbox: __Box;
-  /** @hidden */ protected _gap: number;
+  /** @hidden */ protected _lines: Array<string> = [];
+//  /** @hidden */ protected _text: string = '';
+  /** @hidden */ protected _textSize: number = undefined;
+  /** @hidden */ protected _textAlign: number = this._p.CENTER;
+  /** @hidden */ protected _tbox: __Box = { w: 0, h: 0 };
+  /** @hidden */ protected _gap: number = 2;
 
   /** @hidden */
   constructor(gui: GUI, name: string, x?: number, y?: number, w?: number, h?: number) {
     super(gui, name, x || 0, y || 0, w || 80, h || 16);
-    this._lines = [];
-    this._textSize = undefined;
-    this._textAlign = this._p.CENTER;
-    this._tbox = { w: 0, h: 0 };
-    this._gap = 2;
+    // this._lines = [];
+    // this._textSize = undefined;
+    // this._textAlign = this._p.CENTER;
+    // this._tbox = { w: 0, h: 0 };
+    // this._gap = 2;
   }
 
   /**
    * <p>Gets or sets the current text.</p>
    * <p>Processing constants are used to define the alignment.</p>
-   * @param t the text toset
+   * @param t the text to display
    * @param align LEFT, CENTER or RIGHT
    * @returns this control or the existing text
    */
-  text(t?: string | Array<string>, align?: number) {
+  text(t?: string | Array<string>, align?: number): string | CvsBaseControl {
     // getter
-    if (t == undefined)
-      return { text: this._text, icon: undefined };
+    if (!t)
+      //    return this._lines.length == 1 ? this._lines[0] : this._lines;
+      return this._lines.join('\n');
     //setter
     if (Array.isArray(t))
-      this._lines = t;
+      this._lines = t.map(x => x.toString());
     else {
       let lines = t.toString().split('\n');
-      this._lines = [];
-      for (let line of lines)
-        this._lines.push(line);
+      this._lines = lines.map(x => x.toString());
     }
     this.textAlign(align);
     // If necessary expand the control to surround text
@@ -2002,8 +2044,10 @@ abstract class CvsText extends CvsBufferedControl {
    * @returns this control
    */
   textAlign(align: number): CvsBaseControl {
-    if (align && (align == this._p.LEFT || align == this._p.CENTER || align == this._p.RIGHT))
+    if (align && (align == this._p.LEFT || align == this._p.CENTER || align == this._p.RIGHT)) {
       this._textAlign = align;
+      this.invalidateBuffer();
+    }
     return this;
   }
 
@@ -2014,8 +2058,8 @@ abstract class CvsText extends CvsBufferedControl {
    */
   noText(): CvsBaseControl {
     this._lines = [];
-    this._textAlign = this._p.CENTER;
     this._tbox = { w: 0, h: 0 };
+    this.invalidateBuffer();
     return this;
   }
 
@@ -2087,12 +2131,12 @@ abstract class CvsTextIcon extends CvsText {
    * <p>Processing constants are used to define the icon alignment.</p>
    * @param i the icon to use for this control
    * @param align LEFT or RIGHT
-   * @returns this control or the current text/icon
+   * @returns this control or the current icon
    */
-  icon(i: p5.Graphics, align: number) {
+  icon(i: p5.Graphics, align?: number): p5.Graphics | CvsBaseControl {
     // getter
     if (!i)
-      return { text: this._text, icon: this._icon };
+      return this._icon;
     //setter    
     this._icon = i;
     if (align && (align == this._p.LEFT || align == this._p.RIGHT))
@@ -2106,13 +2150,32 @@ abstract class CvsTextIcon extends CvsText {
   }
 
   /**
+   * <p>Sets the icon alignment relative to the text.</p>
+   * <p>Processing constants are used to define the text alignment.</p>   
+   * @param align LEFT or RIGHT
+   * @returns this control
+   */
+  iconAlign(align: number) {
+    if (align && (align == this._p.LEFT || align == this._p.RIGHT)) {
+      this._iconAlign = align;
+      // If necessary expand the control to surrond text and icon 
+      let s = this._minControlSize();
+      this._w = Math.max(this._w, s.w);
+      this._h = Math.max(this._h, s.h);
+      this.invalidateBuffer();
+    }
+    return this;
+  }
+
+  /**
    * 
    * @returns this control
    */
   noIcon() {
-    this._icon = undefined;
-    this._iconAlign = this._p.LEFT;
-    this.invalidateBuffer();
+    if (this._icon) {
+      this._icon = undefined;
+      this.invalidateBuffer();
+    }
     return this;
   }
 
@@ -2142,7 +2205,6 @@ abstract class CvsTextIcon extends CvsText {
     sh = Math.max(this._tbox.h, sh) + gap;
     return { w: sw, h: sh };
   }
-
 }
 
 /**
@@ -2326,7 +2388,7 @@ class CvsCheckbox extends CvsText {
   }
 
   /**
-   * <p>Make this checkbox false>/p>
+   * <p>Make this checkbox false</p>
    * @returns this control
    */
   deselect() {
@@ -3168,30 +3230,15 @@ class CvsScroller extends CvsBufferedControl {
 }
 
 
-/*
- ##############################################################################
- CvsViewer
- This control is used to scroll and zoom around a bitmap
- image.
-
- The size of the view area is controlled by the parameters
- w and h but the scrollers  are added to the right hand 
- side and bottom which extends the control size by 20px.
- ##############################################################################
- */
 /**
  * <p>This control is used to scroll and zoom on an image.</p>
- * <p>The size of the view area is determined when the control is created but
- * scrollers added to the right and bottom of the view increaing its size
- * by 20px. The scrollers are only visible when they are needed.</p>
+ * <p>When the mouse moves over the control scrollbars will appear (if needed)
+ * inside the bottom and right-hand-side edges of the view. When the mouse is 
+ * near the centre a slider will appear which can be used to change the scale.</p>
  * 
  * <p>THis control also supports layers where multiple images can be layered 
  * to make the final visual.</p>
  * 
- * <p>If you call the method <code>scale()</code> with all three parameters
- * a slider is created so the user can zoom in and out of the image. The
- * slider is only visible when the mouse pointer is near the centre of the 
- * view area.</p>
  */
 class CvsViewer extends CvsBufferedControl {
 
@@ -3285,20 +3332,18 @@ class CvsViewer extends CvsBufferedControl {
   scale(v: number) {
     if (!Number.isFinite(v)) // no parameters
       return this._wscale;
-
     if (this._scaler) this._scaler.value(v);
     this._wscale = v;
     this.view(this._wcx, this._wcy, this._wscale);
-
     this.invalidateBuffer();
     return this;
   }
 
   /**
-   * <p>The current status is  an object with 3 fields <code>\{ cX, cY, scale \}</code>
+   * <p>The current status is an object with 3 fields <code>\{ cX, cY, scale \}</code>
    * where -</p>
    * <ul>
-   * <li><code>cx, cy</code> is the position in the image that correseponds to the view center and</li>
+   * <li><code>cX, cY</code> is the position in the image that correseponds to the view center and</li>
    * <li><code>scale</code> is the current scale used to display the image.</li>
    * </ul>
    * @returns the current status
@@ -3351,15 +3396,18 @@ class CvsViewer extends CvsBufferedControl {
     return this;
   }
 
-  /*
-  Any changes in the view should call this method to change the view centre
-  and scale attributes so that it can fire action events back to the user
+  /**
+  Sets the view of the image to be displayed. If you enter values outside the 
+  image or ar scale value outside scaler limts they will be constrained to legal 
+  values. If it is important that you know the correct view details then add an 
+  action on the viewer to report back changes to the view centre and/or scale
+  attributes.
   */
   view(wcx: number, wcy: number, wscale?: number) {
     if (Number.isFinite(wcx) && Number.isFinite(wcy)) {
       if (this._neq(this._wcx, wcx) || this._neq(this._wcy, wcy)) {
-        this._wcx = wcx;
-        this._wcy = wcy;
+        this._wcx = this._p.constrain(wcx, 0, this._lw);
+        this._wcy = this._p.constrain(wcy, 0, this._lh);
         this._scrH.update(wcx / this._lw);
         this._scrV.update(wcy / this._lh);
         this.invalidateBuffer();
@@ -3442,12 +3490,11 @@ class CvsViewer extends CvsBufferedControl {
         }
         break;
       case 'mouseout':
+        this._scrH.hide();
+        this._scrV.hide();
         if (this._active) {
           this._over = 0;
           this._clickAllowed = false;
-          this._dragging = false;
-          this._active = false;
-          this.invalidateBuffer();
         }
       case 'mouseup':
         if (this._active) {
@@ -3520,8 +3567,6 @@ class CvsViewer extends CvsBufferedControl {
     if (this._o.valid) {
       let o = this._o;
       // Calculate display offset
-      // let dx: number = o.offsetX * wscale;
-      // let dy: number = o.offsetY * wscale;
       let view;
       for (let i = 0, len = this._layers.length; i < len; i++) {
         if (!this._hidden.has(i) && this._layers[i]) {
@@ -3567,7 +3612,8 @@ class CvsViewer extends CvsBufferedControl {
     this._scrH.update(undefined, width / this._lw);
     this._scrV.update(undefined, height / this._lh);
 
-    return { valid: true,
+    return {
+      valid: true,
       left: leftO, right: rightO, top: topO, bottom: botO,
       width: width, height: height,
       offsetX: offsetX, offsetY: offsetY,
@@ -3621,7 +3667,7 @@ abstract class CvsPane extends CvsBaseControl {
   /** @hidden */ protected _timer: number;
   /** @hidden */ protected _tab: CvsButton;
   /** @hidden */ protected _tabstate: string;
-  /** @hidden */ protected _size: number;
+  /** @hidden */ protected _depth: number;
 
   // Deltas used in controlling opening and closing speeds
   /** @hidden */ static _dI = 20;
@@ -3644,13 +3690,24 @@ abstract class CvsPane extends CvsBaseControl {
     this._Z = 128;
   }
 
+  /** @hidden */
+  parent(p: string | CvsBaseControl, rx?: number, ry?: number): CvsBaseControl {
+    console.warn('Panes cannot have a parent');
+    return undefined;
+  }
+
+  /** @hidden */
+  leaveParent(): CvsBaseControl {
+    console.warn('Panes cannot have a parent');
+    return undefined;
+  }
+
   /**
-   * <p>For panes attached to the north or south canvas edges the size is the pane height. 
-   * For panes attached to the east and west it is the pane width.</p>
-   * @returns the pane size
+   * <p>Get the 'depth' the pane will intrude into the canvas when open.</p>
+   * @returns the depth
    */
-  size(): number {
-    return this._size;
+  depth(): number {
+    return this._depth;
   }
 
   /**
@@ -3759,7 +3816,7 @@ abstract class CvsPane extends CvsBaseControl {
   }
 
   /**
-   * <p> Removes the text from the pane tab.</p>
+   * <p>Removes the text from the pane tab.</p>
    * @returns this control
    */
   noText() {
@@ -3790,7 +3847,7 @@ abstract class CvsPane extends CvsBaseControl {
 
   /**
    * <p>Sets the text size for the pane tab.</p>
-   * @param ts the test size to use
+   * @param ts the text size to use
    * @returns this control
    */
   textSize(ts?: number) {
@@ -3812,7 +3869,7 @@ abstract class CvsPane extends CvsBaseControl {
 
   /** @hidden */
   opaque(dim?: string): CvsBaseControl {
-    console.warn("This methis is not applicable to a pane");
+    console.warn("This method is not applicable to a pane");
     return this;
   }
 
@@ -3883,9 +3940,9 @@ abstract class CvsPane extends CvsBaseControl {
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
 
-  constructor(gui: GUI, name: string, size: number) {
-    super(gui, name, 0, -size, gui.canvasWidth(), size);
-    this._size = size;
+  constructor(gui: GUI, name: string, depth: number) {
+    super(gui, name, 0, -depth, gui.canvasWidth(), depth);
+    this._depth = depth;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
     let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
@@ -3910,8 +3967,8 @@ class CvsPaneNorth extends CvsPane {
 
   _closing() { // North
     let py = this._y - CvsPane._dC;
-    if (py < -this._size) {  // See if closed
-      py = -this._size;
+    if (py < -this._depth) {  // See if closed
+      py = -this._depth;
       clearInterval(this._timer);
       this._status = 'closed';
     }
@@ -3929,9 +3986,9 @@ class CvsPaneNorth extends CvsPane {
 /** @hidden */
 class CvsPaneSouth extends CvsPane {
 
-  constructor(gui: GUI, name: string, size: number) {
-    super(gui, name, 0, gui.canvasHeight(), gui.canvasWidth(), size);
-    this._size = size;
+  constructor(gui: GUI, name: string, depth: number) {
+    super(gui, name, 0, gui.canvasHeight(), gui.canvasWidth(), depth);
+    this._depth = depth;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
     let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
@@ -3947,8 +4004,8 @@ class CvsPaneSouth extends CvsPane {
 
   _opening() { // South
     let py = this._y - CvsPane._dO;
-    if (py < this._gui.canvasHeight() - this._size) { // See if open
-      py = this._gui.canvasHeight() - this._size;
+    if (py < this._gui.canvasHeight() - this._depth) { // See if open
+      py = this._gui.canvasHeight() - this._depth;
       clearInterval(this._timer);
       this._status = 'open';
     }
@@ -3976,9 +4033,9 @@ class CvsPaneSouth extends CvsPane {
 /** @hidden */
 class CvsPaneEast extends CvsPane {
 
-  constructor(gui: GUI, name: string, size: number) {
-    super(gui, name, gui.canvasWidth(), 0, size, gui.canvasHeight());
-    this._size = size;
+  constructor(gui: GUI, name: string, depth: number) {
+    super(gui, name, gui.canvasWidth(), 0, depth, gui.canvasHeight());
+    this._depth = depth;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
     let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
@@ -3996,8 +4053,8 @@ class CvsPaneEast extends CvsPane {
 
   _opening() { // East
     let px = this._x - CvsPane._dO;
-    if (px < this._gui.canvasWidth() - this._size) { // See if open
-      px = this._gui.canvasWidth() - this._size;
+    if (px < this._gui.canvasWidth() - this._depth) { // See if open
+      px = this._gui.canvasWidth() - this._depth;
       clearInterval(this._timer);
       this._status = 'open';
     }
@@ -4025,9 +4082,9 @@ class CvsPaneEast extends CvsPane {
 /** @hidden */
 class CvsPaneWest extends CvsPane {
 
-  constructor(gui: GUI, name: string, size: number) {
-    super(gui, name, -size, 0, size, gui.canvasHeight());
-    this._size = size;
+  constructor(gui: GUI, name: string, depth: number) {
+    super(gui, name, -depth, 0, depth, gui.canvasHeight());
+    this._depth = depth;
     this._status = 'closed'; // closing opening open
     // Make the tab button 
     let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
@@ -4055,8 +4112,8 @@ class CvsPaneWest extends CvsPane {
 
   _closing() { // West
     let px = this._x - CvsPane._dC;
-    if (px < -this._size) {  // See if closed
-      px = -this._size;
+    if (px < -this._depth) {  // See if closed
+      px = -this._depth;
       clearInterval(this._timer);
       this._status = 'closed';
     }
@@ -4070,6 +4127,3 @@ class CvsPaneWest extends CvsPane {
   }
 
 }
-
-
-

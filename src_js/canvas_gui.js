@@ -1,9 +1,3 @@
-// import p5 from "../libraries/p5.min.js";
-// export { GUI };
-// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-// export { CvsViewer, CvsText, CvsTextIcon };
 class GUI {
     constructor(p5c, p = p5.instance) {
         this._renderer = p5c;
@@ -49,32 +43,54 @@ class GUI {
     __tooltip(name) {
         return this.addControl(new CvsTooltip(this, name));
     }
-    pane(name, location, size) {
+    pane(name, location, depth) {
         let ctrl;
         switch (location) {
             case 'north':
-                ctrl = new CvsPaneNorth(this, name, size);
+                ctrl = new CvsPaneNorth(this, name, depth);
                 break;
             case 'south':
-                ctrl = new CvsPaneSouth(this, name, size);
+                ctrl = new CvsPaneSouth(this, name, depth);
                 break;
             case 'west':
-                ctrl = new CvsPaneWest(this, name, size);
+                ctrl = new CvsPaneWest(this, name, depth);
                 break;
             case 'east':
-            default: ctrl = new CvsPaneEast(this, name, size);
+            default: ctrl = new CvsPaneEast(this, name, depth);
         }
         return this.addControl(ctrl);
     }
-    getControl(id) {
-        return (typeof id === "string") ? this._controls.get(id) : id;
+    _initMouseEventHandlers(p5c) {
+        let canvas = p5c.canvas;
+        canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e); });
+        canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e); });
+        canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e); });
+        canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e); });
+        canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e); });
+        this._is3D = p5c.GL != undefined && p5c.GL != null;
+        this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
     }
-    $(id) {
-        return (typeof id === "string") ? this._controls.get(id) : id;
+    _handleMouseEvents(e) {
+        let activeControl = undefined;
+        for (let c of this._ctrls) {
+            if (c.isActive()) {
+                activeControl = c;
+                c._handleMouse(e);
+                break;
+            }
+        }
+        if (activeControl == undefined) {
+            for (let c of this._ctrls)
+                if (c.isEnabled())
+                    c._handleMouse(e);
+        }
+    }
+    $(name) {
+        return (typeof name === "string") ? this._controls.get(name) : name;
     }
     addControl(control) {
-        console.assert(!this._controls.has(control._name), `Control '${control._name}' already exists and will be replaced.`);
-        this._controls.set(control._name, control);
+        console.assert(!this._controls.has(control.name()), `Control '${control.name()}' already exists and will be replaced.`);
+        this._controls.set(control.name(), control);
         this._ctrls = [...this._controls.values()];
         this._ctrls.sort((a, b) => { return a.z() - b.z(); });
         return control;
@@ -179,7 +195,7 @@ class GUI {
         for (let i = 0; i < n; i++) {
             let pane = panes[i];
             let tab = pane.tab();
-            let x = pane.size();
+            let x = pane.depth();
             let y = pos;
             pos += tab._w + 2;
             tab._x = x;
@@ -209,7 +225,7 @@ class GUI {
         let pos = (this.canvasWidth() - sum) / 2;
         for (let i = 0; i < n; i++) {
             let pane = panes[i], tab = pane.tab();
-            let x = pos, y = pane.size();
+            let x = pos, y = pane.depth();
             pos += tab._w + 2;
             tab._x = x;
             tab._y = y;
@@ -241,7 +257,7 @@ class GUI {
             console.error(`'${schemename}' is not a valid color scheme`);
         return this;
     }
-    getScheme(schemename) {
+    _getScheme(schemename) {
         if (schemename && this._schemes[schemename])
             return Object.assign({}, this._schemes[schemename]);
         console.warn(`Unable to retrieve color scheme '${schemename}'`);
@@ -255,31 +271,6 @@ class GUI {
                 console.error(`Cannot add scheme '${schemename}' because it already exists.'`);
         }
         return this;
-    }
-    _initMouseEventHandlers(p5c) {
-        let canvas = p5c.canvas;
-        canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e); });
-        this._is3D = p5c.GL != undefined && p5c.GL != null;
-        this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
-    }
-    _handleMouseEvents(e) {
-        let activeControl = undefined;
-        for (let c of this._ctrls) {
-            if (c.isActive()) {
-                activeControl = c;
-                c._handleMouse(e);
-                break;
-            }
-        }
-        if (activeControl == undefined) {
-            for (let c of this._ctrls)
-                if (c.isEnabled())
-                    c._handleMouse(e);
-        }
     }
     draw() { }
     _drawControlsP2D() {
@@ -497,10 +488,22 @@ class OrientWest {
 }
 class CvsBaseControl {
     constructor(gui, name, x, y, w, h) {
+        this._children = [];
+        this._visible = true;
+        this._enabled = true;
+        this._Z = 0;
         this._x = 0;
         this._y = 0;
         this._w = 0;
         this._h = 0;
+        this._over = 0;
+        this._pover = 0;
+        this._clickAllowed = false;
+        this._active = false;
+        this._opaque = true;
+        this._scheme = undefined;
+        this._bufferInvalid = true;
+        this.action = function () { };
         this._gui = gui;
         this._p = this._gui._p;
         this._name = name;
@@ -508,25 +511,15 @@ class CvsBaseControl {
         this._y = y;
         this._w = w;
         this._h = h;
-        this._children = [];
         this._parent = undefined;
         this._visible = true;
         this._enabled = true;
         this._scheme = undefined;
-        this._Z = 0;
         this._orientation = CvsBaseControl.EAST;
         this._dragging = false;
-        this._bufferInvalid = true;
-        this._over = 0;
-        this._pover = 0;
-        this._clickAllowed = false;
         this._c = gui.corners(undefined);
-        this._active = false;
-        this._opaque = true;
-        this.setAction((info) => {
-            console.warn(`No action set for control '${info === null || info === void 0 ? void 0 : info.source._name}`);
-        });
     }
+    ;
     name() {
         return this._name;
     }
@@ -543,7 +536,7 @@ class CvsBaseControl {
     }
     scheme(id, cascade) {
         if (id) {
-            this._scheme = this._gui.getScheme(id);
+            this._scheme = this._gui._getScheme(id);
             this.invalidateBuffer();
             if (cascade)
                 for (let c of this._children)
@@ -552,8 +545,13 @@ class CvsBaseControl {
         }
         return this._scheme;
     }
+    parent(p, rx, ry) {
+        let parent = this._gui.$(p);
+        parent.addChild(this, rx, ry);
+        return this;
+    }
     addChild(c, rx, ry) {
-        let control = this._gui.getControl(c);
+        let control = this._gui.$(c);
         rx = !Number.isFinite(rx) ? control._x : Number(rx);
         ry = !Number.isFinite(ry) ? control._y : Number(ry);
         if (!control._parent) {
@@ -566,7 +564,7 @@ class CvsBaseControl {
         return this;
     }
     removeChild(c) {
-        let control = this._gui.getControl(c);
+        let control = this._gui.$(c);
         for (let i = 0; i < this._children.length; i++) {
             if (control === this._children[i]) {
                 let pos = control.getAbsXY();
@@ -578,11 +576,6 @@ class CvsBaseControl {
             }
         }
         this._children = this._children.filter(Boolean);
-        return this;
-    }
-    parent(parent, rx, ry) {
-        if (parent)
-            parent.addChild(this, rx, ry);
         return this;
     }
     leaveParent() {
@@ -627,7 +620,11 @@ class CvsBaseControl {
         return this._enabled;
     }
     enable(cascade) {
-        this._enabled = true;
+        if (!this._enabled) {
+            this._enabled = true;
+            this.invalidateBuffer();
+        }
+        this.invalidateBuffer();
         if (cascade)
             for (let c of this._children)
                 c.enable(cascade);
@@ -728,7 +725,7 @@ class CvsBaseControl {
         p.pop();
     }
     _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs['TINT_7']);
+        b.fill(cs['TINT_4']);
         b.noStroke();
         b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -812,17 +809,21 @@ class CvsSlider extends CvsBufferedControl {
         }
         return this;
     }
+    isValid(value) {
+        return (Number.isFinite(value)
+            && (value - this._limit0) * (value - this._limit1) <= 0);
+    }
     ticks(major, minor, stick2ticks) {
         this._majorTicks = major;
         this._minorTicks = minor;
         this._s2ticks = Boolean(stick2ticks);
         return this;
     }
-    value(v) {
-        if (Number.isFinite(v)) {
-            if ((v - this._limit0) * (v - this._limit1) <= 0) {
+    value(value) {
+        if (Number.isFinite(value)) {
+            if ((value - this._limit0) * (value - this._limit1) <= 0) {
                 this.invalidateBuffer();
-                this._t01 = this._norm01(v);
+                this._t01 = this._norm01(value);
                 return this;
             }
         }
@@ -904,9 +905,9 @@ class CvsSlider extends CvsBufferedControl {
         let cs = this._scheme || this._gui.scheme();
         let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
         const OPAQUE = cs['COLOR_3'];
-        const TICKS = cs['GREY_8'];
-        const UNUSED_TRACK = cs['GREY_1'];
-        const USED_TRACK = cs['GREY_4'];
+        const TICKS = cs['GREY_9'];
+        const UNUSED_TRACK = cs['GREY_6'];
+        const USED_TRACK = cs['GREY_1'];
         const HIGHLIGHT = cs['COLOR_14'];
         const THUMB = cs['COLOR_10'];
         b.push();
@@ -963,19 +964,30 @@ class CvsRanger extends CvsSlider {
         super(gui, name, x || 0, y || 0, w || 100, h || 20);
         this._t = [0.25, 0.75];
         this._tIdx = -1;
+        this._t = [0.25, 0.75];
+        this._tIdx = -1;
         this._limit0 = 0;
         this._limit1 = 1;
         this._opaque = false;
     }
     range(v0, v1) {
-        if (!v0 || !v1)
-            return { low: Math.min(v0, v1), high: Math.max(v0, v1) };
-        let t0 = this._norm01(v0);
-        let t1 = this._norm01(v1);
-        this._bufferInvalid = (this._t[0] != t0) || (this._t[1] != t1);
-        this._t[0] = Math.min(t0, t1);
-        this._t[1] = Math.max(t0, t1);
-        return this;
+        if (Number.isFinite(v0) && Number.isFinite(v1)) {
+            let t0 = this._norm01(Math.min(v0, v1));
+            let t1 = this._norm01(Math.max(v0, v1));
+            if (t0 >= 0 && t0 <= 1 && t1 >= 0 && t1 <= 1) {
+                this._bufferInvalid = (this._t[0] != t0) || (this._t[1] != t1);
+                this._t[0] = t0;
+                this._t[1] = t1;
+                return this;
+            }
+        }
+        return { low: this._t2v(this._t[0]), high: this._t2v(this._t[1]) };
+    }
+    low() {
+        return this._t2v(this._t[0]);
+    }
+    high() {
+        return this._t2v(this._t[1]);
     }
     value(v) {
         console.warn('Ranger controls require 2 values - use range(v0, v1) instead');
@@ -1061,9 +1073,9 @@ class CvsRanger extends CvsSlider {
         let tw = b.width - 20;
         let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
         const OPAQUE = cs['COLOR_3'];
-        const TICKS = cs['GREY_8'];
-        const UNUSED_TRACK = cs['GREY_1'];
-        const USED_TRACK = cs['GREY_4'];
+        const TICKS = cs['GREY_9'];
+        const UNUSED_TRACK = cs['GREY_6'];
+        const USED_TRACK = cs['GREY_1'];
         const HIGHLIGHT = cs['COLOR_14'];
         const THUMB = cs['COLOR_10'];
         b.push();
@@ -1125,15 +1137,13 @@ class CvsText extends CvsBufferedControl {
         this._gap = 2;
     }
     text(t, align) {
-        if (t == undefined)
-            return { text: this._text, icon: undefined };
+        if (!t)
+            return this._lines.join('\n');
         if (Array.isArray(t))
-            this._lines = t;
+            this._lines = t.map(x => x.toString());
         else {
             let lines = t.toString().split('\n');
-            this._lines = [];
-            for (let line of lines)
-                this._lines.push(line);
+            this._lines = lines.map(x => x.toString());
         }
         this.textAlign(align);
         let s = this._minControlSize();
@@ -1143,14 +1153,16 @@ class CvsText extends CvsBufferedControl {
         return this;
     }
     textAlign(align) {
-        if (align && (align == this._p.LEFT || align == this._p.CENTER || align == this._p.RIGHT))
+        if (align && (align == this._p.LEFT || align == this._p.CENTER || align == this._p.RIGHT)) {
             this._textAlign = align;
+            this.invalidateBuffer();
+        }
         return this;
     }
     noText() {
         this._lines = [];
-        this._textAlign = this._p.CENTER;
         this._tbox = { w: 0, h: 0 };
+        this.invalidateBuffer();
         return this;
     }
     textSize(lts) {
@@ -1194,7 +1206,7 @@ class CvsTextIcon extends CvsText {
     }
     icon(i, align) {
         if (!i)
-            return { text: this._text, icon: this._icon };
+            return this._icon;
         this._icon = i;
         if (align && (align == this._p.LEFT || align == this._p.RIGHT))
             this._iconAlign = align;
@@ -1204,10 +1216,21 @@ class CvsTextIcon extends CvsText {
         this.invalidateBuffer();
         return this;
     }
+    iconAlign(align) {
+        if (align && (align == this._p.LEFT || align == this._p.RIGHT)) {
+            this._iconAlign = align;
+            let s = this._minControlSize();
+            this._w = Math.max(this._w, s.w);
+            this._h = Math.max(this._h, s.h);
+            this.invalidateBuffer();
+        }
+        return this;
+    }
     noIcon() {
-        this._icon = undefined;
-        this._iconAlign = this._p.LEFT;
-        this.invalidateBuffer();
+        if (this._icon) {
+            this._icon = undefined;
+            this.invalidateBuffer();
+        }
         return this;
     }
     _minControlSize() {
@@ -2135,8 +2158,8 @@ class CvsViewer extends CvsBufferedControl {
     view(wcx, wcy, wscale) {
         if (Number.isFinite(wcx) && Number.isFinite(wcy)) {
             if (this._neq(this._wcx, wcx) || this._neq(this._wcy, wcy)) {
-                this._wcx = wcx;
-                this._wcy = wcy;
+                this._wcx = this._p.constrain(wcx, 0, this._lw);
+                this._wcy = this._p.constrain(wcy, 0, this._lh);
                 this._scrH.update(wcx / this._lw);
                 this._scrV.update(wcy / this._lh);
                 this.invalidateBuffer();
@@ -2205,12 +2228,11 @@ class CvsViewer extends CvsBufferedControl {
                 }
                 break;
             case 'mouseout':
+                this._scrH.hide();
+                this._scrV.hide();
                 if (this._active) {
                     this._over = 0;
                     this._clickAllowed = false;
-                    this._dragging = false;
-                    this._active = false;
-                    this.invalidateBuffer();
                 }
             case 'mouseup':
                 if (this._active) {
@@ -2306,7 +2328,8 @@ class CvsViewer extends CvsBufferedControl {
         let offsetY = topO - topB;
         this._scrH.update(undefined, width / this._lw);
         this._scrV.update(undefined, height / this._lh);
-        return { valid: true,
+        return {
+            valid: true,
             left: leftO, right: rightO, top: topO, bottom: botO,
             width: width, height: height,
             offsetX: offsetX, offsetY: offsetY,
@@ -2349,8 +2372,16 @@ class CvsPane extends CvsBaseControl {
         this._timer = 0;
         this._Z = 128;
     }
-    size() {
-        return this._size;
+    parent(p, rx, ry) {
+        console.warn('Panes cannot have a parent');
+        return undefined;
+    }
+    leaveParent() {
+        console.warn('Panes cannot have a parent');
+        return undefined;
+    }
+    depth() {
+        return this._depth;
     }
     close() {
         switch (this._status) {
@@ -2448,7 +2479,7 @@ class CvsPane extends CvsBaseControl {
         return this.tab().shrink();
     }
     opaque(dim) {
-        console.warn("This methis is not applicable to a pane");
+        console.warn("This method is not applicable to a pane");
         return this;
     }
     transparent(dim) {
@@ -2490,9 +2521,9 @@ CvsPane._dO = 20;
 CvsPane._wExtra = 20;
 CvsPane._tabID = 1;
 class CvsPaneNorth extends CvsPane {
-    constructor(gui, name, size) {
-        super(gui, name, 0, -size, gui.canvasWidth(), size);
-        this._size = size;
+    constructor(gui, name, depth) {
+        super(gui, name, 0, -depth, gui.canvasWidth(), depth);
+        this._depth = depth;
         this._status = 'closed';
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
         tab.text(tab._name).setAction(this._tabAction);
@@ -2514,8 +2545,8 @@ class CvsPaneNorth extends CvsPane {
     }
     _closing() {
         let py = this._y - CvsPane._dC;
-        if (py < -this._size) {
-            py = -this._size;
+        if (py < -this._depth) {
+            py = -this._depth;
             clearInterval(this._timer);
             this._status = 'closed';
         }
@@ -2527,9 +2558,9 @@ class CvsPaneNorth extends CvsPane {
     }
 }
 class CvsPaneSouth extends CvsPane {
-    constructor(gui, name, size) {
-        super(gui, name, 0, gui.canvasHeight(), gui.canvasWidth(), size);
-        this._size = size;
+    constructor(gui, name, depth) {
+        super(gui, name, 0, gui.canvasHeight(), gui.canvasWidth(), depth);
+        this._depth = depth;
         this._status = 'closed';
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
         tab.text(tab._name).setAction(this._tabAction);
@@ -2542,8 +2573,8 @@ class CvsPaneSouth extends CvsPane {
     }
     _opening() {
         let py = this._y - CvsPane._dO;
-        if (py < this._gui.canvasHeight() - this._size) {
-            py = this._gui.canvasHeight() - this._size;
+        if (py < this._gui.canvasHeight() - this._depth) {
+            py = this._gui.canvasHeight() - this._depth;
             clearInterval(this._timer);
             this._status = 'open';
         }
@@ -2564,9 +2595,9 @@ class CvsPaneSouth extends CvsPane {
     }
 }
 class CvsPaneEast extends CvsPane {
-    constructor(gui, name, size) {
-        super(gui, name, gui.canvasWidth(), 0, size, gui.canvasHeight());
-        this._size = size;
+    constructor(gui, name, depth) {
+        super(gui, name, gui.canvasWidth(), 0, depth, gui.canvasHeight());
+        this._depth = depth;
         this._status = 'closed';
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
         tab.text(tab._name)
@@ -2581,8 +2612,8 @@ class CvsPaneEast extends CvsPane {
     }
     _opening() {
         let px = this._x - CvsPane._dO;
-        if (px < this._gui.canvasWidth() - this._size) {
-            px = this._gui.canvasWidth() - this._size;
+        if (px < this._gui.canvasWidth() - this._depth) {
+            px = this._gui.canvasWidth() - this._depth;
             clearInterval(this._timer);
             this._status = 'open';
         }
@@ -2603,9 +2634,9 @@ class CvsPaneEast extends CvsPane {
     }
 }
 class CvsPaneWest extends CvsPane {
-    constructor(gui, name, size) {
-        super(gui, name, -size, 0, size, gui.canvasHeight());
-        this._size = size;
+    constructor(gui, name, depth) {
+        super(gui, name, -depth, 0, depth, gui.canvasHeight());
+        this._depth = depth;
         this._status = 'closed';
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
         tab.text(tab._name)
@@ -2629,8 +2660,8 @@ class CvsPaneWest extends CvsPane {
     }
     _closing() {
         let px = this._x - CvsPane._dC;
-        if (px < -this._size) {
-            px = -this._size;
+        if (px < -this._depth) {
+            px = -this._depth;
             clearInterval(this._timer);
             this._status = 'closed';
         }
