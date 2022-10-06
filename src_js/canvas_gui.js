@@ -1,3 +1,4 @@
+const CANVAS_GUI_VERSION = '0.9.1';
 class GUI {
     constructor(p5c, p = p5.instance) {
         this._renderer = p5c;
@@ -15,6 +16,14 @@ class GUI {
         this._panesNorth = [];
         this._initColorSchemes();
         this._initMouseEventHandlers(p5c);
+    }
+    static announce() {
+        if (!GUI._announced) {
+            console.log('================================================');
+            console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2022 Peter Lager`);
+            console.log('================================================');
+            GUI._announced = true;
+        }
     }
     slider(name, x, y, w, h) {
         return this.addControl(new CvsSlider(this, name, x, y, w, h));
@@ -307,14 +316,6 @@ class GUI {
         let gui = new GUI(p5c, p);
         GUI._guis.set(p, gui);
         return gui;
-    }
-    static announce() {
-        if (!GUI._announced) {
-            console.log('================================================');
-            console.log('  canvasGUI (0.0.1)   \u00A9 2022 Peter Lager');
-            console.log('================================================');
-            GUI._announced = true;
-        }
     }
 }
 GUI._guis = new Map();
@@ -1602,8 +1603,7 @@ class CvsOption extends CvsText {
         return this;
     }
     select() {
-        var _a;
-        let curr = (_a = this._optGroup) === null || _a === void 0 ? void 0 : _a._prev();
+        let curr = this._optGroup?._prev();
         if (curr) {
             curr._selected = false;
             curr.invalidateBuffer();
@@ -2390,6 +2390,7 @@ class CvsPane extends CvsBaseControl {
             case "open":
                 this._timer = setInterval(() => { this._closing(); }, CvsPane._dI);
                 this._status = 'closing';
+                this.action({ source: this, p5Event: undefined, state: 'closed' });
                 break;
         }
         return this;
@@ -2402,6 +2403,7 @@ class CvsPane extends CvsBaseControl {
                 this._gui._closeAll();
                 this._timer = setInterval(() => { this._opening(); }, CvsPane._dI);
                 this._status = 'opening';
+                this.action({ source: this, p5Event: undefined, state: 'open' });
                 break;
         }
     }

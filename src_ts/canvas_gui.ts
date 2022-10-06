@@ -1,16 +1,17 @@
-import p5 from "../libraries/p5.min.js";
-export { GUI };
-export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-export { CvsViewer, CvsText, CvsTextIcon };
-export { __Position, __Box, __Range, __EventInfo, __Overlap, __Scheme };
+// import p5 from "../libraries/p5.min.js";
+// export { GUI };
+// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+// export { CvsViewer, CvsText, CvsTextIcon };
+// export { __Position, __Box, __Range, __EventInfo, __Overlap, __Scheme };
 
 // Uncomment the above export statements 
 // --- When using TypeDoc
 // comment them out
 // --- when transpiling ts>js
 
+const CANVAS_GUI_VERSION: string = '0.9.1';
 
 /** <p>Defines a color scheme</p> @hidden */
 interface __Scheme {
@@ -30,10 +31,25 @@ interface __Scheme {
  * @author Peter Lager
  * @copyright 2022
  * @license MIT
- * @version 0.9
+ * @version 0.9.1
  * 
  */
 class GUI {
+  private static _guis = new Map();
+  private static _announced = false;
+
+  /**
+   * @hidden
+   */
+  static announce() {
+    if (!GUI._announced) {
+      console.log('================================================');
+      console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2022 Peter Lager`);
+      console.log('================================================');
+      GUI._announced = true;
+    }
+  }
+
   /** @hidden */ private _renderer: any;
   /** @hidden */  public _p: p5;
   /** @hidden */ private _is3D: boolean;
@@ -638,21 +654,6 @@ class GUI {
     let gui = new GUI(p5c, p);
     GUI._guis.set(p, gui);
     return gui;
-  }
-
-  private static _guis = new Map();
-  private static _announced = false;
-
-  /**
-   * @hidden
-   */
-  static announce() {
-    if (!GUI._announced) {
-      console.log('================================================');
-      console.log('  canvasGUI (0.0.1)   \u00A9 2022 Peter Lager');
-      console.log('================================================');
-      GUI._announced = true;
-    }
   }
 
 }
@@ -3721,6 +3722,7 @@ abstract class CvsPane extends CvsBaseControl {
       case "open": // now add closing timer
         this._timer = setInterval(() => { this._closing() }, CvsPane._dI);
         this._status = 'closing';
+        this.action({ source: this, p5Event: undefined, state: 'closed' });
         break;
     }
     return this;
@@ -3738,9 +3740,11 @@ abstract class CvsPane extends CvsBaseControl {
         this._gui._closeAll();
         this._timer = setInterval(() => { this._opening() }, CvsPane._dI);
         this._status = 'opening';
+        this.action({ source: this, p5Event: undefined, state: 'open' });
         break;
     }
   }
+
 
   /** @hidden */ abstract _opening(): void;
   /** @hidden */ abstract _closing(): void;
