@@ -8,8 +8,13 @@
     "typedoc": "npx typedoc",
     "gcc": "npx google-closure-compiler src_js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2020 --language_out ECMASCRIPT_NEXT "
   },
+  "keywords": [
+    "GUI",
+    "canvas",
+    "p5.js"
+  ],
   "author": "Peter Lager",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/p5": "^1.4.2",
     "google-closure-compiler": "^20220803.0.0",
