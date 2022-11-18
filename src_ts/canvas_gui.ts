@@ -1,4 +1,4 @@
-// import p5 from "../libraries/p5.min.js";
+ import p5 from "../libraries/p5.min.js";
 // export { GUI };
 // export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
 // export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
