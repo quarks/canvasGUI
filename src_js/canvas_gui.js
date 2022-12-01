@@ -1,4 +1,4 @@
-const CANVAS_GUI_VERSION = '0.9.1';
+const CANVAS_GUI_VERSION = '0.9.2';
 class GUI {
     constructor(p5c, p = p5.instance) {
         this._renderer = p5c;
@@ -2395,6 +2395,12 @@ class CvsPane extends CvsBaseControl {
         }
         return this;
     }
+    isClosed() {
+        return this._status == 'closed';
+    }
+    isClosing() {
+        return this._status == 'closing';
+    }
     open() {
         switch (this._status) {
             case "closing":
@@ -2406,6 +2412,12 @@ class CvsPane extends CvsBaseControl {
                 this.action({ source: this, p5Event: undefined, state: 'open' });
                 break;
         }
+    }
+    isOpen() {
+        return this._status == 'open';
+    }
+    isOpening() {
+        return this._status == 'opening';
     }
     _tabAction(ta) {
         let pane = ta.source._parent;
@@ -2479,6 +2491,9 @@ class CvsPane extends CvsBaseControl {
     }
     shrink(dim) {
         return this.tab().shrink();
+    }
+    isActive() {
+        return this.tab()._active;
     }
     opaque(dim) {
         console.warn("This method is not applicable to a pane");

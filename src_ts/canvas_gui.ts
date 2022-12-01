@@ -1,17 +1,17 @@
- import p5 from "../libraries/p5.min.js";
-// export { GUI };
-// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-// export { CvsViewer, CvsText, CvsTextIcon };
-// export { __Position, __Box, __Range, __EventInfo, __Overlap, __Scheme };
+import p5 from "../libraries/p5.min.js";
+export { GUI };
+export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+export { CvsViewer, CvsText, CvsTextIcon };
+export { __Position, __Box, __Range, __EventInfo, __Overlap, __Scheme };
 
 // Uncomment the above export statements 
 // --- When using TypeDoc
 // comment them out
 // --- when transpiling ts>js
 
-const CANVAS_GUI_VERSION: string = '0.9.1';
+const CANVAS_GUI_VERSION: string = '0.9.2';
 
 /** <p>Defines a color scheme</p> @hidden */
 interface __Scheme {
@@ -997,16 +997,7 @@ class CvsBaseControl {
     //  this._Z = 0;
     this._orientation = CvsBaseControl.EAST;
     this._dragging = false; // is mouse being dragged on active control
-    // this._bufferInvalid = true;
-    // this._over = 0;
-    // this._pover = 0;
-    // this._clickAllowed = false;
     this._c = gui.corners(undefined);
-    // this._active = false;
-    // this._opaque = true;
-    // this.setAction((info?: __EventInfo) => {
-    //   console.warn(`No action set for control '${info?.source._name}`);
-    // });
   }
 
   /**
@@ -1177,8 +1168,10 @@ class CvsBaseControl {
   }
 
   /**
-   * 
-   * @returns whether this control is active - expecting mouse events
+   * A control becomes active when the mous btton is pressed over it.
+   * This method has little practical use except when debugging.
+   * @hidden
+   * @returns true if this control is expecting more mouse events
    */
   isActive() {
     return this._active;
@@ -1202,7 +1195,6 @@ class CvsBaseControl {
       this._enabled = true;
       this.invalidateBuffer();
     }
-    //this._enabled = true;
     this.invalidateBuffer();
     if (cascade)
       for (let c of this._children)
@@ -3729,6 +3721,22 @@ abstract class CvsPane extends CvsBaseControl {
   }
 
   /**
+ * 
+ * @returns true if the pane is closed else false
+ */
+  isClosed(): boolean {
+    return this._status == 'closed';
+  }
+
+  /**
+   * 
+   * @returns true if the pane is closinging else false
+   */
+  isClosing(): boolean {
+    return this._status == 'closing';
+  }
+
+  /**
    * <p>Close this pane</p>
    * @returns this control
    */
@@ -3745,6 +3753,21 @@ abstract class CvsPane extends CvsBaseControl {
     }
   }
 
+  /**
+   * 
+   * @returns true if the pane is open else false
+   */
+  isOpen(): boolean {
+    return this._status == 'open';
+  }
+
+  /**
+   * 
+   * @returns true if the pane is opening else false
+   */
+  isOpening(): boolean {
+    return this._status == 'opening';
+  }
 
   /** @hidden */ abstract _opening(): void;
   /** @hidden */ abstract _closing(): void;
@@ -3870,6 +3893,15 @@ abstract class CvsPane extends CvsBaseControl {
     return this.tab().shrink();
   }
 
+  /**
+   * A control becomes active when the mous btton is pressed over it.
+   * This method has little practical use except when debugging.
+   * @hidden
+   * @returns true if this control is expecting more mouse events
+   */
+  isActive() {
+    return this.tab()._active;
+  }
 
   /** @hidden */
   opaque(dim?: string): CvsBaseControl {
