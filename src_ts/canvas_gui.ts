@@ -31,7 +31,7 @@ interface __Scheme {
  * @author Peter Lager
  * @copyright 2022
  * @license MIT
- * @version 0.9.1
+ * @version 0.9.2
  * 
  */
 class GUI {

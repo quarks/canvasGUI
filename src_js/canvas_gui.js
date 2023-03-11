@@ -1,4 +1,4 @@
-const CANVAS_GUI_VERSION = '0.9.2';
+const CANVAS_GUI_VERSION = '0.9.2 ';
 class GUI {
     constructor(p5c, p = p5.instance) {
         this._renderer = p5c;
