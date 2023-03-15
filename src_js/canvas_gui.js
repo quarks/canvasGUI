@@ -1,6 +1,9 @@
-const CANVAS_GUI_VERSION = '0.9.2 ';
+const CANVAS_GUI_VERSION = '0.9.3 alpha release';
 class GUI {
     constructor(p5c, p = p5.instance) {
+        this._keyEventsEnabled = false;
+        this._visible = true;
+        this._enabled = true;
         this._renderer = p5c;
         this._p = p;
         this._is3D = false;
@@ -33,6 +36,11 @@ class GUI {
     }
     button(name, x, y, w, h) {
         return this.addControl(new CvsButton(this, name, x, y, w, h));
+    }
+    textfield(name, x, y, w, h) {
+        if (!this._keyEventsEnabled)
+            this._initKeyEventHandlers(this._renderer);
+        return this.addControl(new CvsTextfield(this, name, x, y, w, h));
     }
     checkbox(name, x, y, w, h) {
         return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
@@ -69,6 +77,28 @@ class GUI {
         }
         return this.addControl(ctrl);
     }
+    show() {
+        this._visible = true;
+        return this;
+    }
+    hide() {
+        this._visible = false;
+        return this;
+    }
+    isVisible() {
+        return this._visible;
+    }
+    enable() {
+        this._enabled = true;
+        return this;
+    }
+    disable() {
+        this._enabled = false;
+        return this;
+    }
+    isEnabled() {
+        return this._enabled;
+    }
     _initMouseEventHandlers(p5c) {
         let canvas = p5c.canvas;
         canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e); });
@@ -76,22 +106,47 @@ class GUI {
         canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e); });
         canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e); });
         canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e); });
+        canvas.addEventListener('mouseenter', (e) => {
+            this._handleMouseEvents(e);
+        });
         this._is3D = p5c.GL != undefined && p5c.GL != null;
         this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
     }
-    _handleMouseEvents(e) {
-        let activeControl = undefined;
-        for (let c of this._ctrls) {
-            if (c.isActive()) {
-                activeControl = c;
-                c._handleMouse(e);
-                break;
+    _initKeyEventHandlers(p5c) {
+        if (!this._target) {
+            this._target = document.getElementById(p5c.parent().id);
+            this._target.setAttribute('tabindex', '0');
+            this._target.focus();
+            this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); });
+            this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e); });
+            this._keyEventsEnabled = true;
+        }
+    }
+    _handleKeyEvents(e) {
+        if (this._enabled) {
+            for (let c of this._ctrls) {
+                if (c.isActive()) {
+                    c._handleKey(e);
+                    break;
+                }
             }
         }
-        if (activeControl == undefined) {
-            for (let c of this._ctrls)
-                if (c.isEnabled())
+    }
+    _handleMouseEvents(e) {
+        if (this._enabled) {
+            let activeControl = undefined;
+            for (let c of this._ctrls) {
+                if (c.isActive()) {
+                    activeControl = c;
                     c._handleMouse(e);
+                    break;
+                }
+            }
+            if (activeControl == undefined) {
+                for (let c of this._ctrls)
+                    if (c.isEnabled())
+                        c._handleMouse(e);
+            }
         }
     }
     $(name) {
@@ -149,7 +204,7 @@ class GUI {
     is3D() {
         return this._is3D;
     }
-    _closeAll() {
+    _closePanes() {
         for (let pane of this._panesEast)
             pane.close();
         for (let pane of this._panesWest)
@@ -159,8 +214,8 @@ class GUI {
         for (let pane of this._panesNorth)
             pane.close();
     }
-    hideAll() {
-        this._closeAll();
+    hidePanes() {
+        this._closePanes();
         for (let pane of this._panesEast)
             pane.hide();
         for (let pane of this._panesWest)
@@ -170,7 +225,7 @@ class GUI {
         for (let pane of this._panesNorth)
             pane.hide();
     }
-    showAll() {
+    showPanes() {
         for (let pane of this._panesEast)
             pane.show();
         for (let pane of this._panesWest)
@@ -283,31 +338,35 @@ class GUI {
     }
     draw() { }
     _drawControlsP2D() {
-        this._p.push();
-        for (let c of this._ctrls)
-            if (!c.getParent())
-                c._renderP2D();
-        this._p.pop();
+        if (this._visible) {
+            this._p.push();
+            for (let c of this._ctrls)
+                if (!c.getParent())
+                    c._renderP2D();
+            this._p.pop();
+        }
     }
     _drawControlsWEBGL() {
-        this._p.push();
-        let renderer = this._renderer;
-        let gl = renderer.drawingContext;
-        let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
-        gl.flush();
-        let mvMatrix = renderer.uMVMatrix.copy();
-        let pMatrix = renderer.uPMatrix.copy();
-        gl.disable(gl.DEPTH_TEST);
-        renderer.resetMatrix();
-        renderer._curCamera.ortho(0, w, -h, 0, -d, d);
-        for (let c of this._ctrls)
-            if (!c.getParent())
-                c._renderWEBGL();
-        gl.flush();
-        renderer.uMVMatrix.set(mvMatrix);
-        renderer.uPMatrix.set(pMatrix);
-        gl.enable(gl.DEPTH_TEST);
-        this._p.pop();
+        if (this._visible) {
+            this._p.push();
+            let renderer = this._renderer;
+            let gl = renderer.drawingContext;
+            let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
+            gl.flush();
+            let mvMatrix = renderer.uMVMatrix.copy();
+            let pMatrix = renderer.uPMatrix.copy();
+            gl.disable(gl.DEPTH_TEST);
+            renderer.resetMatrix();
+            renderer._curCamera.ortho(0, w, -h, 0, -d, d);
+            for (let c of this._ctrls)
+                if (!c.getParent())
+                    c._renderWEBGL();
+            gl.flush();
+            renderer.uMVMatrix.set(mvMatrix);
+            renderer.uPMatrix.set(pMatrix);
+            gl.enable(gl.DEPTH_TEST);
+            this._p.pop();
+        }
     }
     static get(p5c, p = p5.instance) {
         GUI.announce();
@@ -763,6 +822,8 @@ class CvsBaseControl {
     _updateControlVisual() { }
     _handleMouse(e) { return true; }
     ;
+    _handleKey(e) { return true; }
+    ;
 }
 CvsBaseControl.NORTH = new OrientNorth();
 CvsBaseControl.SOUTH = new OrientSouth();
@@ -1191,7 +1252,7 @@ class CvsText extends CvsBufferedControl {
                 this._validateBuffer();
             b.textSize(ts);
             tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
-            tbox.h = (lines.length - 1) * b.textLeading() + b.textAscent() + b.textDescent();
+            tbox.h = (lines.length - 1) * b.textLeading();
             gap += this._gap;
         }
         sw += tbox.w + gap;
@@ -2406,7 +2467,7 @@ class CvsPane extends CvsBaseControl {
             case "closing":
                 clearInterval(this._timer);
             case "closed":
-                this._gui._closeAll();
+                this._gui._closePanes();
                 this._timer = setInterval(() => { this._opening(); }, CvsPane._dI);
                 this._status = 'opening';
                 this.action({ source: this, p5Event: undefined, state: 'open' });
@@ -2687,6 +2748,266 @@ class CvsPaneWest extends CvsPane {
     validateTabs() {
         this._gui.validateTabsWest();
         return this;
+    }
+}
+class CvsTextfield extends CvsText {
+    constructor(gui, name, x, y, w, h) {
+        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        this._prevCurrIdx = 0;
+        this._currCurrIdx = 0;
+        this._textInvalid = false;
+        this._cursorOn = false;
+        this.textAlign(this._p.LEFT);
+        this._c = [0, 0, 0, 0];
+    }
+    index(idx) {
+        if (Number.isFinite(idx)) {
+            this._linkIndex = idx;
+            if (!this._gui._links)
+                this._gui._links = new Map();
+            this._gui._links.set(idx, this);
+        }
+        return this;
+    }
+    noIndex() {
+        if (Number.isFinite(this._linkIndex) && !this._gui._links)
+            this._gui._links.delete(this._linkIndex);
+        this._linkIndex = undefined;
+        return this;
+    }
+    validation(vfunc) {
+        this._validation = vfunc;
+        return this;
+    }
+    _validate() {
+        if (this._validation) {
+            let line = this._getLine();
+            let r = this._validation(line);
+            if (Array.isArray(r) && r.length > 0) {
+                this._textInvalid = !Boolean(r[0]);
+                if (r[1])
+                    if (this._buffer.textWidth(r[1]) < this._maxTextWidthPixels())
+                        this.text(r[1]);
+                    else
+                        this._textInvalid = true;
+            }
+        }
+    }
+    _activate(selectAll = false) {
+        this._active = true;
+        let line = this._getLine();
+        this._currCurrIdx = line.length;
+        this._prevCurrIdx = selectAll || this._textInvalid ? 0 : line.length;
+        this._cursorOn = true;
+        this._clock = setInterval(() => {
+            this._cursorOn = !this._cursorOn;
+            this.invalidateBuffer();
+        }, 550);
+        this.invalidateBuffer();
+    }
+    _activateNext(idx) {
+        this._deactivate();
+        this._validate();
+        if (Number.isFinite(idx) && this._gui._links) {
+            this._gui._links.get(idx)?._activate();
+        }
+    }
+    _deactivate() {
+        this._active = false;
+        this._cursorOn = false;
+        clearInterval(this._clock);
+        this.invalidateBuffer();
+    }
+    _getLine() {
+        return this._lines.length > 0 ? this._lines[0] : '';
+    }
+    _cursorX(buff, line, idx) {
+        return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
+    }
+    _handleMouse(e) {
+        let eventConsumed = false;
+        let pos = this.getAbsXY();
+        let mx = this._p.mouseX - pos.x;
+        let my = this._p.mouseY - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x;
+        my = r.y;
+        this._pover = this._over;
+        this._over = this._whereOver(mx, my);
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this._pover, this._over);
+        switch (e.type) {
+            case 'mousedown':
+                if (this._over > 0) {
+                    this._activate();
+                    eventConsumed = true;
+                }
+                break;
+        }
+        return eventConsumed;
+    }
+    _maxTextWidthPixels() {
+        let ts = Number(this._textSize || this._gui.textSize());
+        return this._w - 2 * this._gap - ts;
+    }
+    _handleKey(e) {
+        let mtw = this._maxTextWidthPixels();
+        let line = this._getLine();
+        let hasSelection = this._prevCurrIdx != this._currCurrIdx;
+        let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx == 0);
+        let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx >= line.length);
+        if (e.type == 'keydown') {
+            if (e.key.length == 1) {
+                if (this._prevCurrIdx != this._currCurrIdx) {
+                    line = this._removeSelectedText(line);
+                }
+                line = line.substring(0, this._currCurrIdx) + e.key + line.substring(this._currCurrIdx);
+                if (this._buffer.textWidth(line) < mtw) {
+                    this._currCurrIdx++;
+                    this._prevCurrIdx++;
+                    this.text(line);
+                }
+                this.invalidateBuffer();
+                return true;
+            }
+            let eventConsumed = true;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    if (tabLeft) {
+                        this._activateNext(this._linkIndex - 1);
+                    }
+                    else {
+                        if (this._currCurrIdx > 0) {
+                            if (!e.shiftKey && hasSelection)
+                                this._currCurrIdx = Math.min(this._currCurrIdx, this._prevCurrIdx);
+                            else
+                                this._currCurrIdx--;
+                            if (!e.shiftKey)
+                                this._prevCurrIdx = this._currCurrIdx;
+                        }
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (tabRight) {
+                        this._activateNext(this._linkIndex + 1);
+                    }
+                    else {
+                        if (this._currCurrIdx <= line.length) {
+                            if (!e.shiftKey && hasSelection)
+                                this._currCurrIdx = Math.max(this._currCurrIdx, this._prevCurrIdx);
+                            else
+                                this._currCurrIdx++;
+                            if (!e.shiftKey)
+                                this._prevCurrIdx = this._currCurrIdx;
+                        }
+                    }
+                    break;
+                case 'ArrowUp':
+                    if (!hasSelection)
+                        this._activateNext(this._linkIndex - 1000);
+                    break;
+                case 'ArrowDown':
+                    if (!hasSelection)
+                        this._activateNext(this._linkIndex + 1000);
+                    break;
+                case 'Enter':
+                    this.action({ source: this, p5Event: e, value: line });
+                    this._deactivate();
+                    break;
+                case 'Backspace':
+                    if (this._prevCurrIdx != this._currCurrIdx) {
+                        line = this._removeSelectedText(line);
+                    }
+                    else {
+                        if (this._currCurrIdx > 0) {
+                            line = line.substring(0, this._currCurrIdx - 1) + line.substring(this._currCurrIdx);
+                            this._currCurrIdx--;
+                            this._prevCurrIdx = this._currCurrIdx;
+                        }
+                    }
+                    this.text(line);
+                    break;
+                case 'Delete':
+                    if (this._prevCurrIdx != this._currCurrIdx) {
+                        line = this._removeSelectedText(line);
+                    }
+                    else {
+                        if (this._currCurrIdx < line.length) {
+                            line = line.substring(0, this._currCurrIdx) + line.substring(this._currCurrIdx + 1);
+                        }
+                    }
+                    this.text(line);
+                    break;
+                default:
+                    eventConsumed = false;
+            }
+            this.invalidateBuffer();
+            return eventConsumed;
+        }
+        return true;
+    }
+    _removeSelectedText(line) {
+        let p0 = Math.min(this._prevCurrIdx, this._currCurrIdx);
+        let p1 = Math.max(this._prevCurrIdx, this._currCurrIdx);
+        this._prevCurrIdx = this._currCurrIdx = p0;
+        return line.substring(0, p0) + line.substring(p1);
+    }
+    _updateControlVisual() {
+        let ts = Number(this._textSize || this._gui.textSize());
+        let cs = this._scheme || this._gui.scheme();
+        let b = this._buffer;
+        let line = this._lines.length > 0 ? this._lines[0] : '';
+        let tv = this._textInvalid;
+        let sx = 2 * this._gap;
+        let BACK = cs['COLOR_0'];
+        let FORE = cs['COLOR_14'];
+        let CURSOR = cs['BLACK'];
+        let HIGHLIGHT = cs['COLOR_14'];
+        let SELECT = cs['COLOR_4'];
+        b.push();
+        b.background(cs['WHITE']);
+        b.noStroke();
+        if (!this._active) {
+            BACK = tv ? cs['COLOR_14'] : cs['COLOR_0'];
+            FORE = tv ? cs['COLOR_2'] : cs['COLOR_14'];
+            b.stroke(FORE);
+            b.strokeWeight(3);
+            b.fill(BACK);
+            b.rect(0, 0, this._w, this._h);
+        }
+        else {
+            if (this._currCurrIdx != this._prevCurrIdx) {
+                let px = this._cursorX(b, line, this._prevCurrIdx);
+                let cx = this._cursorX(b, line, this._currCurrIdx);
+                b.noStroke();
+                b.fill(SELECT);
+                let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
+                b.rect(cx0, 1, cx1, this._h - 2);
+            }
+        }
+        b.fill(BACK);
+        b.textAlign(this._p.LEFT, this._p.TOP);
+        b.noStroke();
+        b.fill(FORE);
+        b.text(line, sx, (this._h - ts) / 2);
+        if (this._activate && this._cursorOn) {
+            let cx = this._cursorX(b, line, this._currCurrIdx);
+            b.stroke(CURSOR);
+            b.strokeWeight(1.5);
+            b.line(sx + cx, 4, sx + cx, this._h - 5);
+        }
+        if (this._over > 0) {
+            b.stroke(HIGHLIGHT);
+            b.strokeWeight(2);
+            b.noFill();
+            b.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
+        }
+        if (!this._enabled)
+            this._disable_hightlight(b, cs, 0, 0, this._w, this._h);
+        b.pop();
+        b.updatePixels();
+        this._bufferInvalid = false;
     }
 }
 //# sourceMappingURL=canvas_gui.js.map
