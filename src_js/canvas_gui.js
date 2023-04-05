@@ -113,7 +113,7 @@ class GUI {
         this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
     }
     _initKeyEventHandlers(p5c) {
-        if (!this._target) {
+        if (!this._keyEventsEnabled) {
             this._target = document.getElementById(p5c.parent().id);
             this._target.setAttribute('tabindex', '0');
             this._target.focus();
@@ -123,7 +123,7 @@ class GUI {
         }
     }
     _handleKeyEvents(e) {
-        if (this._enabled) {
+        if (this._enabled && this.isVisible()) {
             for (let c of this._ctrls) {
                 if (c.isActive()) {
                     c._handleKey(e);
@@ -133,7 +133,7 @@ class GUI {
         }
     }
     _handleMouseEvents(e) {
-        if (this._enabled) {
+        if (this._enabled && this.isVisible()) {
             let activeControl = undefined;
             for (let c of this._ctrls) {
                 if (c.isActive()) {
@@ -684,7 +684,6 @@ class CvsBaseControl {
             this._enabled = true;
             this.invalidateBuffer();
         }
-        this.invalidateBuffer();
         if (cascade)
             for (let c of this._children)
                 c.enable(cascade);
@@ -713,6 +712,9 @@ class CvsBaseControl {
             for (let c of this._children)
                 c.hide(cascade);
         return this;
+    }
+    isVisible() {
+        return this._visible;
     }
     opaque() {
         this._opaque = true;
@@ -921,7 +923,7 @@ class CvsSlider extends CvsBufferedControl {
         this._over = this._whereOver(mx, my);
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
@@ -1081,7 +1083,7 @@ class CvsRanger extends CvsSlider {
         this._tIdx = this._active ? this._tIdx : this._over - 1;
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
@@ -1199,7 +1201,7 @@ class CvsText extends CvsBufferedControl {
         this._gap = 2;
     }
     text(t, align) {
-        if (!t)
+        if (t == null || t == undefined)
             return this._lines.join('\n');
         if (Array.isArray(t))
             this._lines = t.map(x => x.toString());
@@ -1228,10 +1230,10 @@ class CvsText extends CvsBufferedControl {
         return this;
     }
     textSize(lts) {
-        lts = Number(lts);
         let ts = this._textSize || this._gui.textSize();
-        if (Number.isNaN(lts) || lts == 0)
+        if (!Number.isFinite(lts))
             return ts;
+        lts = Number(lts);
         if (lts != ts) {
             this._textSize = lts;
             let s = this._minControlSize();
@@ -1411,7 +1413,7 @@ class CvsButton extends CvsTextIcon {
         this._over = this._whereOver(mx, my);
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
@@ -1492,7 +1494,7 @@ class CvsCheckbox extends CvsText {
         this._over = this._whereOver(mx, my);
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
@@ -1697,7 +1699,7 @@ class CvsOption extends CvsText {
         this._over = this._whereOver(mx, my);
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
@@ -1923,8 +1925,8 @@ class CvsTooltip extends CvsText {
         this._showTime = duration;
         return this;
     }
-    _updateState(prevOver, currOver) {
-        if (prevOver != currOver)
+    _updateState(owner, prevOver, currOver) {
+        if (owner.isVisible() && prevOver != currOver)
             if (currOver > 0) {
                 this.show();
                 setTimeout(() => { this.hide(); }, this._showTime);
@@ -2057,7 +2059,7 @@ class CvsScroller extends CvsBufferedControl {
         if (this._pover != this._over)
             this.invalidateBuffer();
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
@@ -2264,7 +2266,7 @@ class CvsViewer extends CvsBufferedControl {
         this._over = this._whereOver(mx, my);
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         if (this._scaler)
             this._over == 2 ? this._scaler.show() : this._scaler.hide();
         if (this._over >= 1) {
@@ -2753,19 +2755,46 @@ class CvsPaneWest extends CvsPane {
 class CvsTextfield extends CvsText {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
-        this._prevCurrIdx = 0;
-        this._currCurrIdx = 0;
+        this._linkOffset = 0;
+        this._prevCsrIdx = 0;
+        this._currCsrIdx = 0;
         this._textInvalid = false;
         this._cursorOn = false;
         this.textAlign(this._p.LEFT);
         this._c = [0, 0, 0, 0];
     }
-    index(idx) {
+    index(idx, deltaIndex) {
         if (Number.isFinite(idx)) {
+            if (Number.isFinite(deltaIndex))
+                this._linkOffset = deltaIndex;
             this._linkIndex = idx;
             if (!this._gui._links)
                 this._gui._links = new Map();
             this._gui._links.set(idx, this);
+        }
+        return this;
+    }
+    text(t) {
+        if (t == null || t == undefined)
+            return this._getLine();
+        this._textInvalid = false;
+        t = t.toString().replaceAll('\n', ' ');
+        while (t.length > 0 && this._buffer.textWidth(t) >= this._maxTextWidthPixels()) {
+            t = t.substring(0, t.length - 1);
+        }
+        this._lines = [t];
+        this.validate();
+        this.invalidateBuffer();
+        return this;
+    }
+    textSize(lts) {
+        let ts = this._textSize || this._gui.textSize();
+        if (!Number.isFinite(lts))
+            return ts;
+        lts = Number(lts);
+        if (lts != ts) {
+            this._textSize = lts;
+            this.invalidateBuffer();
         }
         return this;
     }
@@ -2775,8 +2804,25 @@ class CvsTextfield extends CvsText {
         this._linkIndex = undefined;
         return this;
     }
+    isValid() {
+        return !this._textInvalid;
+    }
+    hasValidText() {
+        return !this._textInvalid && this._lines.length > 0 && this._lines[0].length > 0;
+    }
+    clearValid() {
+        if (this._textInvalid) {
+            this._textInvalid = false;
+            this.invalidateBuffer();
+        }
+        return this;
+    }
     validation(vfunc) {
         this._validation = vfunc;
+        return this;
+    }
+    validate() {
+        this._validate();
         return this;
     }
     _validate() {
@@ -2787,7 +2833,7 @@ class CvsTextfield extends CvsText {
                 this._textInvalid = !Boolean(r[0]);
                 if (r[1])
                     if (this._buffer.textWidth(r[1]) < this._maxTextWidthPixels())
-                        this.text(r[1]);
+                        this._lines[0] = r[1];
                     else
                         this._textInvalid = true;
             }
@@ -2796,8 +2842,8 @@ class CvsTextfield extends CvsText {
     _activate(selectAll = false) {
         this._active = true;
         let line = this._getLine();
-        this._currCurrIdx = line.length;
-        this._prevCurrIdx = selectAll || this._textInvalid ? 0 : line.length;
+        this._currCsrIdx = line.length;
+        this._prevCsrIdx = selectAll || this._textInvalid ? 0 : line.length;
         this._cursorOn = true;
         this._clock = setInterval(() => {
             this._cursorOn = !this._cursorOn;
@@ -2805,11 +2851,17 @@ class CvsTextfield extends CvsText {
         }, 550);
         this.invalidateBuffer();
     }
-    _activateNext(idx) {
+    _activateNext(offset) {
         this._deactivate();
         this._validate();
-        if (Number.isFinite(idx) && this._gui._links) {
-            this._gui._links.get(idx)?._activate();
+        let links = this._gui._links;
+        if (links) {
+            let idx = this._linkIndex, ctrl;
+            do {
+                idx += offset;
+                ctrl = links.get(idx);
+            } while (ctrl && (!ctrl.isEnabled() || !ctrl.isVisible()));
+            ctrl?._activate();
         }
     }
     _deactivate() {
@@ -2836,7 +2888,7 @@ class CvsTextfield extends CvsText {
         this._over = this._whereOver(mx, my);
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
-            this._tooltip._updateState(this._pover, this._over);
+            this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
                 if (this._over > 0) {
@@ -2849,24 +2901,24 @@ class CvsTextfield extends CvsText {
     }
     _maxTextWidthPixels() {
         let ts = Number(this._textSize || this._gui.textSize());
-        return this._w - 2 * this._gap - ts;
+        return this._w - (2 * this._gap) - ts / 2;
     }
     _handleKey(e) {
         let mtw = this._maxTextWidthPixels();
         let line = this._getLine();
-        let hasSelection = this._prevCurrIdx != this._currCurrIdx;
-        let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx == 0);
-        let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx >= line.length);
+        let hasSelection = this._prevCsrIdx != this._currCsrIdx;
+        let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
+        let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= line.length);
         if (e.type == 'keydown') {
             if (e.key.length == 1) {
-                if (this._prevCurrIdx != this._currCurrIdx) {
+                if (this._prevCsrIdx != this._currCsrIdx) {
                     line = this._removeSelectedText(line);
                 }
-                line = line.substring(0, this._currCurrIdx) + e.key + line.substring(this._currCurrIdx);
+                line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
                 if (this._buffer.textWidth(line) < mtw) {
-                    this._currCurrIdx++;
-                    this._prevCurrIdx++;
-                    this.text(line);
+                    this._currCsrIdx++;
+                    this._prevCsrIdx++;
+                    this._lines[0] = line;
                 }
                 this.invalidateBuffer();
                 return true;
@@ -2875,69 +2927,78 @@ class CvsTextfield extends CvsText {
             switch (e.key) {
                 case 'ArrowLeft':
                     if (tabLeft) {
-                        this._activateNext(this._linkIndex - 1);
+                        this._activateNext(-1);
+                        this.action({ source: this, p5Event: e, value: line });
                     }
                     else {
-                        if (this._currCurrIdx > 0) {
+                        if (this._currCsrIdx > 0) {
                             if (!e.shiftKey && hasSelection)
-                                this._currCurrIdx = Math.min(this._currCurrIdx, this._prevCurrIdx);
+                                this._currCsrIdx = Math.min(this._currCsrIdx, this._prevCsrIdx);
                             else
-                                this._currCurrIdx--;
+                                this._currCsrIdx--;
                             if (!e.shiftKey)
-                                this._prevCurrIdx = this._currCurrIdx;
+                                this._prevCsrIdx = this._currCsrIdx;
                         }
                     }
                     break;
                 case 'ArrowRight':
                     if (tabRight) {
-                        this._activateNext(this._linkIndex + 1);
+                        this._activateNext(1);
+                        this.action({ source: this, p5Event: e, value: line });
                     }
                     else {
-                        if (this._currCurrIdx <= line.length) {
+                        if (this._currCsrIdx <= line.length) {
                             if (!e.shiftKey && hasSelection)
-                                this._currCurrIdx = Math.max(this._currCurrIdx, this._prevCurrIdx);
+                                this._currCsrIdx = Math.max(this._currCsrIdx, this._prevCsrIdx);
                             else
-                                this._currCurrIdx++;
+                                this._currCsrIdx++;
                             if (!e.shiftKey)
-                                this._prevCurrIdx = this._currCurrIdx;
+                                this._prevCsrIdx = this._currCsrIdx;
                         }
                     }
                     break;
                 case 'ArrowUp':
-                    if (!hasSelection)
-                        this._activateNext(this._linkIndex - 1000);
+                    if (!hasSelection) {
+                        if (this._linkOffset !== 0)
+                            this._activateNext(-this._linkOffset);
+                        this.action({ source: this, p5Event: e, value: line });
+                    }
                     break;
                 case 'ArrowDown':
-                    if (!hasSelection)
-                        this._activateNext(this._linkIndex + 1000);
+                    if (!hasSelection) {
+                        if (this._linkOffset !== 0)
+                            this._activateNext(this._linkOffset);
+                        this.action({ source: this, p5Event: e, value: line });
+                    }
                     break;
                 case 'Enter':
-                    this.action({ source: this, p5Event: e, value: line });
                     this._deactivate();
+                    this._validate();
+                    this.action({ source: this, p5Event: e, value: line });
                     break;
                 case 'Backspace':
-                    if (this._prevCurrIdx != this._currCurrIdx) {
+                    if (this._prevCsrIdx != this._currCsrIdx) {
                         line = this._removeSelectedText(line);
                     }
                     else {
-                        if (this._currCurrIdx > 0) {
-                            line = line.substring(0, this._currCurrIdx - 1) + line.substring(this._currCurrIdx);
-                            this._currCurrIdx--;
-                            this._prevCurrIdx = this._currCurrIdx;
+                        if (this._currCsrIdx > 0) {
+                            line = line.substring(0, this._currCsrIdx - 1) + line.substring(this._currCsrIdx);
+                            this._currCsrIdx--;
+                            this._prevCsrIdx = this._currCsrIdx;
                         }
                     }
-                    this.text(line);
+                    this._lines[0] = line;
                     break;
                 case 'Delete':
-                    if (this._prevCurrIdx != this._currCurrIdx) {
+                    if (this._prevCsrIdx != this._currCsrIdx) {
                         line = this._removeSelectedText(line);
                     }
                     else {
-                        if (this._currCurrIdx < line.length) {
-                            line = line.substring(0, this._currCurrIdx) + line.substring(this._currCurrIdx + 1);
+                        if (this._currCsrIdx < line.length) {
+                            line = line.substring(0, this._currCsrIdx) + line.substring(this._currCsrIdx + 1);
                         }
                     }
-                    this.text(line);
+                    this._lines[0] = line;
                     break;
                 default:
                     eventConsumed = false;
@@ -2948,15 +3009,16 @@ class CvsTextfield extends CvsText {
         return true;
     }
     _removeSelectedText(line) {
-        let p0 = Math.min(this._prevCurrIdx, this._currCurrIdx);
-        let p1 = Math.max(this._prevCurrIdx, this._currCurrIdx);
-        this._prevCurrIdx = this._currCurrIdx = p0;
+        let p0 = Math.min(this._prevCsrIdx, this._currCsrIdx);
+        let p1 = Math.max(this._prevCsrIdx, this._currCsrIdx);
+        this._prevCsrIdx = this._currCsrIdx = p0;
         return line.substring(0, p0) + line.substring(p1);
     }
     _updateControlVisual() {
         let ts = Number(this._textSize || this._gui.textSize());
         let cs = this._scheme || this._gui.scheme();
         let b = this._buffer;
+        b.textSize(ts);
         let line = this._lines.length > 0 ? this._lines[0] : '';
         let tv = this._textInvalid;
         let sx = 2 * this._gap;
@@ -2972,14 +3034,14 @@ class CvsTextfield extends CvsText {
             BACK = tv ? cs['COLOR_14'] : cs['COLOR_0'];
             FORE = tv ? cs['COLOR_2'] : cs['COLOR_14'];
             b.stroke(FORE);
-            b.strokeWeight(3);
+            b.strokeWeight(1.5);
             b.fill(BACK);
             b.rect(0, 0, this._w, this._h);
         }
         else {
-            if (this._currCurrIdx != this._prevCurrIdx) {
-                let px = this._cursorX(b, line, this._prevCurrIdx);
-                let cx = this._cursorX(b, line, this._currCurrIdx);
+            if (this._currCsrIdx != this._prevCsrIdx) {
+                let px = this._cursorX(b, line, this._prevCsrIdx);
+                let cx = this._cursorX(b, line, this._currCsrIdx);
                 b.noStroke();
                 b.fill(SELECT);
                 let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
@@ -2987,12 +3049,13 @@ class CvsTextfield extends CvsText {
             }
         }
         b.fill(BACK);
+        b.textSize(ts);
         b.textAlign(this._p.LEFT, this._p.TOP);
         b.noStroke();
         b.fill(FORE);
         b.text(line, sx, (this._h - ts) / 2);
         if (this._activate && this._cursorOn) {
-            let cx = this._cursorX(b, line, this._currCurrIdx);
+            let cx = this._cursorX(b, line, this._currCsrIdx);
             b.stroke(CURSOR);
             b.strokeWeight(1.5);
             b.line(sx + cx, 4, sx + cx, this._h - 5);

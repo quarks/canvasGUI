@@ -1,6 +1,3 @@
-
-// //import p5 from "../libraries/p5.min.js";
-
 // /**
 //  * This class supports a single line text entry field.
 //  * 
@@ -34,10 +31,10 @@
 //  */
 // class CvsTextfield extends CvsText {
 
-//     static _links: Map<number, CvsTextfield>;
 //     protected _linkIndex: number;
-//     protected _prevCurrIdx = 0;
-//     protected _currCurrIdx = 0;
+//     protected _linkOffset = 0;
+//     protected _prevCsrIdx = 0;
+//     protected _currCsrIdx = 0;
 //     protected _textInvalid = false;
 //     protected _cursorOn = false;
 //     protected _clock: number;
@@ -47,8 +44,6 @@
 //     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
 //         super(gui, name, x || 0, y || 0, w || 80, h || 16);
 //         this.textAlign(this._p.LEFT);
-//         //this._gap = 0;
-//         console.log(this._gap)
 //         this._c = [0, 0, 0, 0];
 //     }
 
@@ -58,13 +53,43 @@
 //      * @param idx the index number to use
 //      * @returns this control
 //      */
-//     index(idx: number) {
+//     index(idx: number, deltaIndex?: number) {
 //         if (Number.isFinite(idx)) {
+//             if (Number.isFinite(deltaIndex)) this._linkOffset = deltaIndex;
 //             this._linkIndex = idx;
-//             if (!CvsTextfield._links)
-//                 CvsTextfield._links = new Map();
-//             CvsTextfield._links.set(idx, this);
+//             if (!this._gui._links)
+//                 this._gui._links = new Map();
+//             this._gui._links.set(idx, this);
 //         }
+//         return this;
+//     }
+
+//     /**
+//      * Gets or sets the current text.
+//      * Any EOL characters are stripped out of the string. If necessary the
+//      * string length will be reduced until will fit inside the textfiel.
+//      * If a validation function has been set then the string will be 
+//      * validated.
+//      * 
+//      * @param t a string representing text to display
+//      * @returns this control for setter
+//      */
+//     text(t?: string): string | CvsTextfield {
+//         // getter
+//         if (t == null || t == undefined)
+//             return this._getLine();
+//         //setter
+//         this._textInvalid = false;
+//         t = t.toString().replaceAll(' \n', ' ');
+//         t = t.toString().replaceAll('\n ', ' ');
+//         t = t.toString().replaceAll('\n', ' ');
+//         while (this._buffer.textWidth(t) >= this._maxTextWidthPixels()) {
+//             t = t.substring(0, t.length - 1);
+//         }
+//         this._lines[0] = t;
+//         //this._lines = [t];
+//         this.validate();
+//         this.invalidateBuffer();
 //         return this;
 //     }
 
@@ -73,19 +98,47 @@
 //      * @returns this control
 //      */
 //     noIndex() {
-//         if (Number.isFinite(this._linkIndex) && !CvsTextfield._links)
-//             CvsTextfield._links.delete(this._linkIndex);
+//         if (Number.isFinite(this._linkIndex) && !this._gui._links)
+//             this._gui._links.delete(this._linkIndex);
 //         this._linkIndex = undefined;
 //         return this;
 //     }
 
 //     /**
-//      * Provide a validation function for this textfield
+//      * @returns true if the text has passed validation
+//      */
+//     isValid(): boolean {
+//         return !this._textInvalid;
+//     }
+
+//     /**
+//      * Clears the validity flag irrespective of whether the text is
+//      * valid or not.
+//      * @returns this control
+//      */
+//     clearValid() {
+//         if (this._textInvalid) {
+//             this._textInvalid = false;
+//             this.invalidateBuffer();
+//         }
+//         return this;
+//     }
+//     /**
+//      * Uesr provide a validation function for this textfield
 //      * @param vfunc the validation function
-//      * @returns 
+//      * @returns this control
 //      */
 //     validation(vfunc: Function) {
 //         this._validation = vfunc;
+//         return this;
+//     }
+
+//     /**
+//      * Force the control to validate
+//      * @returns this control
+//      */
+//     validate(): CvsTextfield {
+//         this._validate();
 //         return this;
 //     }
 
@@ -103,7 +156,9 @@
 //                 if (r[1]) // Validator has returned formatted text
 //                     // See if it fits textfield
 //                     if (this._buffer.textWidth(r[1]) < this._maxTextWidthPixels())
-//                         this.text(r[1]); 
+//                         this._lines[0] = r[1];
+//                     //this._lines = [r[1]];
+//                     //this.text(r[1]);
 //                     else
 //                         this._textInvalid = true;
 //             }
@@ -118,8 +173,8 @@
 //     _activate(selectAll: boolean = false) {
 //         this._active = true;
 //         let line = this._getLine();
-//         this._currCurrIdx = line.length;
-//         this._prevCurrIdx = selectAll || this._textInvalid ? 0 : line.length;
+//         this._currCsrIdx = line.length;
+//         this._prevCsrIdx = selectAll || this._textInvalid ? 0 : line.length;
 //         this._cursorOn = true;
 //         this._clock = setInterval(() => {
 //             this._cursorOn = !this._cursorOn;
@@ -132,11 +187,18 @@
 //      * Called when this control passes focus to a new control.
 //      * @param idx the index for the control to be activated
 //      */
-//     _activateNext(idx: number) {
+//     _activateNext(offset: number) {
 //         this._deactivate();
 //         this._validate();
-//         if (Number.isFinite(idx) && CvsTextfield._links) {
-//             CvsTextfield._links.get(idx)?._activate();
+//         let links = this._gui._links;
+//         if (links) {
+//             let idx = this._linkIndex, ctrl;
+//             do {
+//                 idx += offset;
+//                 ctrl = links.get(idx);
+//             }
+//             while (ctrl && (!ctrl.isEnabled() || !ctrl.isVisible()));
+//             ctrl?._activate();
 //         }
 //     }
 
@@ -150,7 +212,6 @@
 //         clearInterval(this._clock);
 //         this.invalidateBuffer();
 //     }
-
 
 //     /**
 //      * We are only interested in the first line of text
@@ -206,23 +267,23 @@
 //         //let ts = Number(this._textSize || this._gui.textSize());
 //         let mtw = this._maxTextWidthPixels(); // maximun text width in pixels
 //         let line = this._getLine(); // get text
-//         let hasSelection = this._prevCurrIdx != this._currCurrIdx;
-//         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx == 0);
-//         let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx >= line.length);
+//         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
+//         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
+//         let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= line.length);
 //         // console.log(`Has selection ${hasSelection}  ::  Tab left ${tabLeft}  ::  Tab right ${tabRight}`);
 //         // console.log(`Curr ${this._currCurrIdx}  ::  Prev ${this._prevCurrIdx}  ::  Line length ${line.length}`);
 //         if (e.type == 'keydown') {
 //             // Visible character
 //             if (e.key.length == 1) {
-//                 if (this._prevCurrIdx != this._currCurrIdx) {
+//                 if (this._prevCsrIdx != this._currCsrIdx) {
 //                     line = this._removeSelectedText(line);
 //                 }
 //                 // Add new character provided it is hort enough to dosplay safely
-//                 line = line.substring(0, this._currCurrIdx) + e.key + line.substring(this._currCurrIdx)
+//                 line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx)
 //                 if (this._buffer.textWidth(line) < mtw) {
-//                     this._currCurrIdx++; this._prevCurrIdx++;
-//                     this.text(line);
-//                     console.log(this._h)
+//                     this._currCsrIdx++; this._prevCsrIdx++;
+//                     this._lines[0] = line;
+//                     //this.text(line);
 //                 }
 //                 this.invalidateBuffer();
 //                 return true; // event consumed
@@ -231,65 +292,76 @@
 //             switch (e.key) {
 //                 case 'ArrowLeft':
 //                     if (tabLeft) {
-//                         this._activateNext(this._linkIndex - 1);
+//                         this.action({ source: this, p5Event: e, value: line });
+//                         this._activateNext(-1);
 //                     }
 //                     else {
-//                         if (this._currCurrIdx > 0) {
+//                         if (this._currCsrIdx > 0) {
 //                             if (!e.shiftKey && hasSelection)
-//                                 this._currCurrIdx = Math.min(this._currCurrIdx, this._prevCurrIdx);
+//                                 this._currCsrIdx = Math.min(this._currCsrIdx, this._prevCsrIdx);
 //                             else
-//                                 this._currCurrIdx--;
-//                             if (!e.shiftKey) this._prevCurrIdx = this._currCurrIdx;
+//                                 this._currCsrIdx--;
+//                             if (!e.shiftKey) this._prevCsrIdx = this._currCsrIdx;
 //                         }
 //                     }
 //                     break;
 //                 case 'ArrowRight':
 //                     if (tabRight) {
-//                         this._activateNext(this._linkIndex + 1);
+//                         this.action({ source: this, p5Event: e, value: line });
+//                         this._activateNext(1);
 //                     }
 //                     else {
-//                         if (this._currCurrIdx <= line.length) {
+//                         if (this._currCsrIdx <= line.length) {
 //                             if (!e.shiftKey && hasSelection)
-//                                 this._currCurrIdx = Math.max(this._currCurrIdx, this._prevCurrIdx);
+//                                 this._currCsrIdx = Math.max(this._currCsrIdx, this._prevCsrIdx);
 //                             else
-//                                 this._currCurrIdx++;
-//                             if (!e.shiftKey) this._prevCurrIdx = this._currCurrIdx;
+//                                 this._currCsrIdx++;
+//                             if (!e.shiftKey) this._prevCsrIdx = this._currCsrIdx;
 //                         }
 //                     }
 //                     break;
 //                 case 'ArrowUp':
-//                     if (!hasSelection) this._activateNext(this._linkIndex - 1000);
+//                     if (!hasSelection) {
+//                         this.action({ source: this, p5Event: e, value: line });
+//                         if (this._linkOffset !== 0) this._activateNext(-this._linkOffset);
+//                     }
 //                     break;
 //                 case 'ArrowDown':
-//                     if (!hasSelection) this._activateNext(this._linkIndex + 1000);
+//                     if (!hasSelection) {
+//                         this.action({ source: this, p5Event: e, value: line });
+//                         if (this._linkOffset !== 0) this._activateNext(this._linkOffset);
+//                     }
 //                     break;
 //                 case 'Enter':
 //                     this.action({ source: this, p5Event: e, value: line });
 //                     this._deactivate();
+//                     this._validate();
 //                     break;
 //                 case 'Backspace':
-//                     if (this._prevCurrIdx != this._currCurrIdx) {
+//                     if (this._prevCsrIdx != this._currCsrIdx) {
 //                         line = this._removeSelectedText(line);
 //                     }
 //                     else { // Delete character to left
-//                         if (this._currCurrIdx > 0) {
-//                             line = line.substring(0, this._currCurrIdx - 1) + line.substring(this._currCurrIdx);
-//                             this._currCurrIdx--;
-//                             this._prevCurrIdx = this._currCurrIdx;
+//                         if (this._currCsrIdx > 0) {
+//                             line = line.substring(0, this._currCsrIdx - 1) + line.substring(this._currCsrIdx);
+//                             this._currCsrIdx--;
+//                             this._prevCsrIdx = this._currCsrIdx;
 //                         }
 //                     }
-//                     this.text(line);
+//                     this._lines[0] = line;
+//                     //this.text(line);
 //                     break;
 //                 case 'Delete':
-//                     if (this._prevCurrIdx != this._currCurrIdx) {
+//                     if (this._prevCsrIdx != this._currCsrIdx) {
 //                         line = this._removeSelectedText(line);
 //                     }
 //                     else { // Delete character to right
-//                         if (this._currCurrIdx < line.length) {
-//                             line = line.substring(0, this._currCurrIdx) + line.substring(this._currCurrIdx + 1);
+//                         if (this._currCsrIdx < line.length) {
+//                             line = line.substring(0, this._currCsrIdx) + line.substring(this._currCsrIdx + 1);
 //                         }
 //                     }
-//                     this.text(line);
+//                     this._lines[0] = line;
+//                     //this.text(line);
 //                     break;
 //                 default:
 //                     eventConsumed = false;
@@ -305,9 +377,9 @@
 //      * @hidden 
 //      */
 //     _removeSelectedText(line: string) {
-//         let p0 = Math.min(this._prevCurrIdx, this._currCurrIdx);
-//         let p1 = Math.max(this._prevCurrIdx, this._currCurrIdx);
-//         this._prevCurrIdx = this._currCurrIdx = p0;
+//         let p0 = Math.min(this._prevCsrIdx, this._currCsrIdx);
+//         let p1 = Math.max(this._prevCsrIdx, this._currCsrIdx);
+//         this._prevCsrIdx = this._currCsrIdx = p0;
 //         return line.substring(0, p0) + line.substring(p1);
 //     }
 
@@ -331,15 +403,15 @@
 //         b.noStroke();
 //         if (!this._active) {
 //             BACK = tv ? cs['COLOR_14'] : cs['COLOR_0'];
-//             FORE = tv ? cs['COLOR_0'] : cs['COLOR_14'];
-//             b.stroke(FORE); b.strokeWeight(3); b.fill(BACK);
+//             FORE = tv ? cs['COLOR_2'] : cs['COLOR_14'];
+//             b.stroke(FORE); b.strokeWeight(1.5); b.fill(BACK);
 //             b.rect(0, 0, this._w, this._h);
 //         }
 //         else {
 //             // Active so display any selection
-//             if (this._currCurrIdx != this._prevCurrIdx) {
-//                 let px = this._cursorX(b, line, this._prevCurrIdx);
-//                 let cx = this._cursorX(b, line, this._currCurrIdx);
+//             if (this._currCsrIdx != this._prevCsrIdx) {
+//                 let px = this._cursorX(b, line, this._prevCsrIdx);
+//                 let cx = this._cursorX(b, line, this._currCsrIdx);
 //                 b.noStroke(); b.fill(SELECT);
 //                 let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
 //                 b.rect(cx0, 1, cx1, this._h - 2);
@@ -352,7 +424,7 @@
 //         b.text(line, sx, (this._h - ts) / 2);
 //         // Draw cursor
 //         if (this._activate && this._cursorOn) {
-//             let cx = this._cursorX(b, line, this._currCurrIdx);
+//             let cx = this._cursorX(b, line, this._currCsrIdx);
 //             b.stroke(CURSOR); b.strokeWeight(1.5);
 //             b.line(sx + cx, 4, sx + cx, this._h - 5);
 //         }

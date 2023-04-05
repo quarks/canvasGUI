@@ -229,7 +229,7 @@ class GUI {
 
   /**
    * @hidden
-   * @param name auto generated unique name
+   * @param name auto generated unique name from parent control
    * @returns tooltip control
    */
   __tooltip(name: string): CvsTooltip {
@@ -300,7 +300,7 @@ class GUI {
     this._enabled = true;
     return this;
   }
-  
+
   /** 
    * Disable mouse/key event handling for this gui
    * @returns this gui
@@ -344,7 +344,8 @@ class GUI {
   }
 
   private _initKeyEventHandlers(p5c: p5.Renderer) {
-    if (!this._target) {
+    //if (!this._target) {
+    if (!this._keyEventsEnabled) {
       this._target = document.getElementById(p5c.parent().id);
       this._target.setAttribute('tabindex', '0');
       this._target.focus();
@@ -361,7 +362,7 @@ class GUI {
    */
   private _handleKeyEvents(e) {
     // Find the currently active control and pass the event to it
-    if (this._enabled) {
+    if (this._enabled && this.isVisible()) {
       for (let c of this._ctrls) {
         if (c.isActive()) {
           c._handleKey(e);
@@ -378,7 +379,7 @@ class GUI {
    */
   private _handleMouseEvents(e) {
     // Find the currently active control and pass the event to it
-    if (this._enabled) {
+    if (this._enabled && this.isVisible()) {
       let activeControl = undefined;
       for (let c of this._ctrls) {
         if (c.isActive()) {
@@ -1318,7 +1319,7 @@ class CvsBaseControl {
       this._enabled = true;
       this.invalidateBuffer();
     }
-    this.invalidateBuffer();
+    // this.invalidateBuffer(); // removed 0.9.3
     if (cascade)
       for (let c of this._children)
         c.enable(cascade);
@@ -1365,6 +1366,14 @@ class CvsBaseControl {
       for (let c of this._children)
         c.hide(cascade);
     return this;
+  }
+
+  /**
+   * @returns true if this control is visible
+   * @since 0.9.3
+   */
+  isVisible() {
+    return this._visible;
   }
 
   /**
@@ -1761,7 +1770,7 @@ class CvsSlider extends CvsBufferedControl {
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
@@ -1982,7 +1991,7 @@ class CvsRanger extends CvsSlider {
     this._tIdx = this._active ? this._tIdx : this._over - 1;
 
     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
@@ -2112,7 +2121,6 @@ class CvsRanger extends CvsSlider {
 abstract class CvsText extends CvsBufferedControl {
 
   /** @hidden */ protected _lines: Array<string> = [];
-  //  /** @hidden */ protected _text: string = '';
   /** @hidden */ protected _textSize: number = undefined;
   /** @hidden */ protected _textAlign: number = this._p.CENTER;
   /** @hidden */ protected _tbox: __Box = { w: 0, h: 0 };
@@ -2121,11 +2129,6 @@ abstract class CvsText extends CvsBufferedControl {
   /** @hidden */
   constructor(gui: GUI, name: string, x?: number, y?: number, w?: number, h?: number) {
     super(gui, name, x || 0, y || 0, w || 80, h || 16);
-    // this._lines = [];
-    // this._textSize = undefined;
-    // this._textAlign = this._p.CENTER;
-    // this._tbox = { w: 0, h: 0 };
-    // this._gap = 2;
   }
 
   /**
@@ -2137,7 +2140,7 @@ abstract class CvsText extends CvsBufferedControl {
    */
   text(t?: string | Array<string>, align?: number): string | CvsBaseControl {
     // getter
-    if (!t)
+    if (t == null || t == undefined)
       return this._lines.join('\n');
     //setter
     if (Array.isArray(t))
@@ -2149,6 +2152,7 @@ abstract class CvsText extends CvsBufferedControl {
     this.textAlign(align);
     // If necessary expand the control to surround text
     let s = this._minControlSize();
+    //console.log(`'${this.name()}'   Size: ${this._w} x ${this._y}   Min size: ${s.w} x ${s.h}`)
     this._w = Math.max(this._w, s.w);
     this._h = Math.max(this._h, s.h);
     this.invalidateBuffer();
@@ -2184,15 +2188,14 @@ abstract class CvsText extends CvsBufferedControl {
   /**
    * <p>Sets or gets the text size.</p>
    * @param lts the text size to use
-   * @returns this control or the current tet size
+   * @returns this control or the current text size
    */
   textSize(lts: number) {
-    lts = Number(lts);
     let ts = this._textSize || this._gui.textSize();
-    // getter (use if null, undefined or zero)
-    if (Number.isNaN(lts) || lts == 0)
-      return ts;
+    // getter
+    if (!Number.isFinite(lts)) return ts;
     // setter
+    lts = Number(lts);
     if (lts != ts) {
       this._textSize = lts;
       // If necessary expand the control to surrond text
@@ -2218,7 +2221,7 @@ abstract class CvsText extends CvsBufferedControl {
       b.textSize(ts);
       tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
       tbox.h = (lines.length - 1) * b.textLeading(); // + b.textAscent() + b.textDescent(); fix for 0.9.3
-      // console.log(`Font size ${ts}   Leading ${b.textLeading()}     Ascent ${b.textAscent()}   Descent ${b.textDescent()}`)
+      //console.log(`'${this.name()}' Font size ${ts}   Leading ${b.textLeading()}     Ascent ${b.textAscent()}   Descent ${b.textDescent()}`)
       gap += this._gap;
     }
     sw += tbox.w + gap;
@@ -2422,7 +2425,7 @@ class CvsButton extends CvsTextIcon {
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
@@ -2538,7 +2541,7 @@ class CvsCheckbox extends CvsText {
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
@@ -2822,7 +2825,7 @@ class CvsOption extends CvsText {
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
@@ -3088,8 +3091,8 @@ class CvsTooltip extends CvsText {
   }
 
   /** @hidden */
-  _updateState(prevOver: number, currOver: number) {
-    if (prevOver != currOver)
+  _updateState(owner: CvsBufferedControl,prevOver: number, currOver: number) {
+    if (owner.isVisible() && prevOver != currOver)
       if (currOver > 0) {
         this.show();
         setTimeout(() => { this.hide() }, this._showTime);
@@ -3262,7 +3265,7 @@ class CvsScroller extends CvsBufferedControl {
     this._over = this._whereOver(mx, my);     // Store current mouse over state
     //this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
     if (this._pover != this._over) this.invalidateBuffer();
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
@@ -3580,7 +3583,7 @@ class CvsViewer extends CvsBufferedControl {
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     // Hide scaler unless mouse is close to centre
     if (this._scaler) this._over == 2 ? this._scaler.show() : this._scaler.hide();
@@ -4287,11 +4290,7 @@ class CvsPaneWest extends CvsPane {
     this._gui.validateTabsWest();
     return this;
   }
-
 }
-
-
-//import p5 from "../libraries/p5.min.js";
 
 /**
  * This class supports a single line text entry field.
@@ -4320,15 +4319,16 @@ class CvsPaneWest extends CvsPane {
  * current text field.
  * 
  * The user can provide their own validation function which is checked when
- * the control is deativated.
+ * the control is deativated. 
  * 
  * @since 0.9.3
  */
 class CvsTextfield extends CvsText {
 
   protected _linkIndex: number;
-  protected _prevCurrIdx = 0;
-  protected _currCurrIdx = 0;
+  protected _linkOffset = 0;
+  protected _prevCsrIdx = 0;
+  protected _currCsrIdx = 0;
   protected _textInvalid = false;
   protected _cursorOn = false;
   protected _clock: number;
@@ -4347,12 +4347,57 @@ class CvsTextfield extends CvsText {
    * @param idx the index number to use
    * @returns this control
    */
-  index(idx: number) {
+  index(idx: number, deltaIndex?: number) {
     if (Number.isFinite(idx)) {
+      if (Number.isFinite(deltaIndex)) this._linkOffset = deltaIndex;
       this._linkIndex = idx;
       if (!this._gui._links)
         this._gui._links = new Map();
       this._gui._links.set(idx, this);
+    }
+    return this;
+  }
+
+  /**
+   * Gets or sets the current text.
+   * Any EOL characters are stripped out of the string. If necessary the
+   * string length will be reduced until will fit inside the textfiel.
+   * If a validation function has been set then the string will be 
+   * validated.
+   * 
+   * @param t a string representing text to display
+   * @returns this control for setter
+   */
+  text(t?: string): string | CvsTextfield {
+    // getter
+    if (t == null || t == undefined)
+      return this._getLine();
+    //setter
+    this._textInvalid = false;
+    t = t.toString().replaceAll('\n', ' ');
+    while (t.length > 0 && this._buffer.textWidth(t) >= this._maxTextWidthPixels()) {
+      t = t.substring(0, t.length - 1);
+    }
+    this._lines = [t];
+    this.validate();
+    this.invalidateBuffer();
+    return this;
+  }
+
+  /**
+   * <p>Sets or gets the text size.</p>
+   * @param lts the text size to use
+   * @returns this control or the current text size
+   */
+  textSize(lts: number) {
+    let ts = this._textSize || this._gui.textSize();
+    // getter
+    if (!Number.isFinite(lts)) return ts;
+    // setter
+    lts = Number(lts);
+    if (lts != ts) {
+      this._textSize = lts;
+      this.invalidateBuffer();
     }
     return this;
   }
@@ -4369,12 +4414,52 @@ class CvsTextfield extends CvsText {
   }
 
   /**
-   * Provide a validation function for this textfield
+   * If there is no validation function then this will always return true.
+   * @returns true if the text has passed validation
+   */
+  isValid(): boolean {
+    return !this._textInvalid;
+  }
+
+  /**
+   * If there is no text then this method will always return false. If there
+   * is some text then this method returns the same as the isValid() method. 
+   * 
+   * @returns true if there is some text and it passed any validation function
+   */
+  hasValidText(): boolean {
+    return !this._textInvalid && this._lines.length > 0 && this._lines[0].length > 0;
+  }
+
+  /**
+   * Clears the validity flag irrespective of whether the text is
+   * valid or not.
+   * @returns this control
+   */
+  clearValid() {
+    if (this._textInvalid) {
+      this._textInvalid = false;
+      this.invalidateBuffer();
+    }
+    return this;
+  }
+
+  /**
+   * Uesr provide a validation function for this textfield
    * @param vfunc the validation function
-   * @returns 
+   * @returns this control
    */
   validation(vfunc: Function) {
     this._validation = vfunc;
+    return this;
+  }
+
+  /**
+   * Force the control to validate
+   * @returns this control
+   */
+  validate(): CvsTextfield {
+    this._validate();
     return this;
   }
 
@@ -4392,7 +4477,7 @@ class CvsTextfield extends CvsText {
         if (r[1]) // Validator has returned formatted text
           // See if it fits textfield
           if (this._buffer.textWidth(r[1]) < this._maxTextWidthPixels())
-            this.text(r[1]);
+            this._lines[0] = r[1];
           else
             this._textInvalid = true;
       }
@@ -4407,8 +4492,8 @@ class CvsTextfield extends CvsText {
   _activate(selectAll: boolean = false) {
     this._active = true;
     let line = this._getLine();
-    this._currCurrIdx = line.length;
-    this._prevCurrIdx = selectAll || this._textInvalid ? 0 : line.length;
+    this._currCsrIdx = line.length;
+    this._prevCsrIdx = selectAll || this._textInvalid ? 0 : line.length;
     this._cursorOn = true;
     this._clock = setInterval(() => {
       this._cursorOn = !this._cursorOn;
@@ -4421,11 +4506,18 @@ class CvsTextfield extends CvsText {
    * Called when this control passes focus to a new control.
    * @param idx the index for the control to be activated
    */
-  _activateNext(idx: number) {
+  _activateNext(offset: number) {
     this._deactivate();
     this._validate();
-    if (Number.isFinite(idx) && this._gui._links) {
-      this._gui._links.get(idx)?._activate();
+    let links = this._gui._links;
+    if (links) {
+      let idx = this._linkIndex, ctrl;
+      do {
+        idx += offset;
+        ctrl = links.get(idx);
+      }
+      while (ctrl && (!ctrl.isEnabled() || !ctrl.isVisible()));
+      ctrl?._activate();
     }
   }
 
@@ -4439,7 +4531,6 @@ class CvsTextfield extends CvsText {
     clearInterval(this._clock);
     this.invalidateBuffer();
   }
-
 
   /**
    * We are only interested in the first line of text
@@ -4471,7 +4562,7 @@ class CvsTextfield extends CvsText {
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    if (this._tooltip) this._tooltip._updateState(this._pover, this._over);
+    if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
     switch (e.type) {
       case 'mousedown':
@@ -4487,7 +4578,7 @@ class CvsTextfield extends CvsText {
   /** @hidden */
   _maxTextWidthPixels() {
     let ts = Number(this._textSize || this._gui.textSize());
-    return this._w - 2 * this._gap - ts; // maximun text width in pixels
+    return this._w - (2 * this._gap) - ts / 2; // maximun text width in pixels
   }
 
   /** @hidden */
@@ -4495,22 +4586,23 @@ class CvsTextfield extends CvsText {
     //let ts = Number(this._textSize || this._gui.textSize());
     let mtw = this._maxTextWidthPixels(); // maximun text width in pixels
     let line = this._getLine(); // get text
-    let hasSelection = this._prevCurrIdx != this._currCurrIdx;
-    let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx == 0);
-    let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCurrIdx >= line.length);
+    let hasSelection = this._prevCsrIdx != this._currCsrIdx;
+    let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
+    let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= line.length);
     // console.log(`Has selection ${hasSelection}  ::  Tab left ${tabLeft}  ::  Tab right ${tabRight}`);
     // console.log(`Curr ${this._currCurrIdx}  ::  Prev ${this._prevCurrIdx}  ::  Line length ${line.length}`);
     if (e.type == 'keydown') {
       // Visible character
       if (e.key.length == 1) {
-        if (this._prevCurrIdx != this._currCurrIdx) {
+        if (this._prevCsrIdx != this._currCsrIdx) {
           line = this._removeSelectedText(line);
         }
         // Add new character provided it is hort enough to dosplay safely
-        line = line.substring(0, this._currCurrIdx) + e.key + line.substring(this._currCurrIdx)
+        line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx)
         if (this._buffer.textWidth(line) < mtw) {
-          this._currCurrIdx++; this._prevCurrIdx++;
-          this.text(line);
+          this._currCsrIdx++; this._prevCsrIdx++;
+          this._lines[0] = line;
+          //this.text(line);
         }
         this.invalidateBuffer();
         return true; // event consumed
@@ -4519,65 +4611,76 @@ class CvsTextfield extends CvsText {
       switch (e.key) {
         case 'ArrowLeft':
           if (tabLeft) {
-            this._activateNext(this._linkIndex - 1);
+            this._activateNext(-1);
+            this.action({ source: this, p5Event: e, value: line });
           }
           else {
-            if (this._currCurrIdx > 0) {
+            if (this._currCsrIdx > 0) {
               if (!e.shiftKey && hasSelection)
-                this._currCurrIdx = Math.min(this._currCurrIdx, this._prevCurrIdx);
+                this._currCsrIdx = Math.min(this._currCsrIdx, this._prevCsrIdx);
               else
-                this._currCurrIdx--;
-              if (!e.shiftKey) this._prevCurrIdx = this._currCurrIdx;
+                this._currCsrIdx--;
+              if (!e.shiftKey) this._prevCsrIdx = this._currCsrIdx;
             }
           }
           break;
         case 'ArrowRight':
           if (tabRight) {
-            this._activateNext(this._linkIndex + 1);
+            this._activateNext(1);
+            this.action({ source: this, p5Event: e, value: line });
           }
           else {
-            if (this._currCurrIdx <= line.length) {
+            if (this._currCsrIdx <= line.length) {
               if (!e.shiftKey && hasSelection)
-                this._currCurrIdx = Math.max(this._currCurrIdx, this._prevCurrIdx);
+                this._currCsrIdx = Math.max(this._currCsrIdx, this._prevCsrIdx);
               else
-                this._currCurrIdx++;
-              if (!e.shiftKey) this._prevCurrIdx = this._currCurrIdx;
+                this._currCsrIdx++;
+              if (!e.shiftKey) this._prevCsrIdx = this._currCsrIdx;
             }
           }
           break;
         case 'ArrowUp':
-          if (!hasSelection) this._activateNext(this._linkIndex - 1000);
+          if (!hasSelection) {
+            if (this._linkOffset !== 0) this._activateNext(-this._linkOffset);
+            this.action({ source: this, p5Event: e, value: line });
+          }
           break;
         case 'ArrowDown':
-          if (!hasSelection) this._activateNext(this._linkIndex + 1000);
+          if (!hasSelection) {
+            if (this._linkOffset !== 0) this._activateNext(this._linkOffset);
+            this.action({ source: this, p5Event: e, value: line });
+          }
           break;
         case 'Enter':
-          this.action({ source: this, p5Event: e, value: line });
           this._deactivate();
+          this._validate();
+          this.action({ source: this, p5Event: e, value: line });
           break;
         case 'Backspace':
-          if (this._prevCurrIdx != this._currCurrIdx) {
+          if (this._prevCsrIdx != this._currCsrIdx) {
             line = this._removeSelectedText(line);
           }
           else { // Delete character to left
-            if (this._currCurrIdx > 0) {
-              line = line.substring(0, this._currCurrIdx - 1) + line.substring(this._currCurrIdx);
-              this._currCurrIdx--;
-              this._prevCurrIdx = this._currCurrIdx;
+            if (this._currCsrIdx > 0) {
+              line = line.substring(0, this._currCsrIdx - 1) + line.substring(this._currCsrIdx);
+              this._currCsrIdx--;
+              this._prevCsrIdx = this._currCsrIdx;
             }
           }
-          this.text(line);
+          this._lines[0] = line;
+          //this.text(line);
           break;
         case 'Delete':
-          if (this._prevCurrIdx != this._currCurrIdx) {
+          if (this._prevCsrIdx != this._currCsrIdx) {
             line = this._removeSelectedText(line);
           }
           else { // Delete character to right
-            if (this._currCurrIdx < line.length) {
-              line = line.substring(0, this._currCurrIdx) + line.substring(this._currCurrIdx + 1);
+            if (this._currCsrIdx < line.length) {
+              line = line.substring(0, this._currCsrIdx) + line.substring(this._currCsrIdx + 1);
             }
           }
-          this.text(line);
+          this._lines[0] = line;
+          //this.text(line);
           break;
         default:
           eventConsumed = false;
@@ -4593,9 +4696,9 @@ class CvsTextfield extends CvsText {
    * @hidden 
    */
   _removeSelectedText(line: string) {
-    let p0 = Math.min(this._prevCurrIdx, this._currCurrIdx);
-    let p1 = Math.max(this._prevCurrIdx, this._currCurrIdx);
-    this._prevCurrIdx = this._currCurrIdx = p0;
+    let p0 = Math.min(this._prevCsrIdx, this._currCsrIdx);
+    let p1 = Math.max(this._prevCsrIdx, this._currCsrIdx);
+    this._prevCsrIdx = this._currCsrIdx = p0;
     return line.substring(0, p0) + line.substring(p1);
   }
 
@@ -4604,6 +4707,7 @@ class CvsTextfield extends CvsText {
     let ts = Number(this._textSize || this._gui.textSize());
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;
+    b.textSize(ts);
     let line = this._lines.length > 0 ? this._lines[0] : '';
     let tv = this._textInvalid;
     let sx = 2 * this._gap;
@@ -4620,14 +4724,14 @@ class CvsTextfield extends CvsText {
     if (!this._active) {
       BACK = tv ? cs['COLOR_14'] : cs['COLOR_0'];
       FORE = tv ? cs['COLOR_2'] : cs['COLOR_14'];
-      b.stroke(FORE); b.strokeWeight(3); b.fill(BACK);
+      b.stroke(FORE); b.strokeWeight(1.5); b.fill(BACK);
       b.rect(0, 0, this._w, this._h);
     }
     else {
       // Active so display any selection
-      if (this._currCurrIdx != this._prevCurrIdx) {
-        let px = this._cursorX(b, line, this._prevCurrIdx);
-        let cx = this._cursorX(b, line, this._currCurrIdx);
+      if (this._currCsrIdx != this._prevCsrIdx) {
+        let px = this._cursorX(b, line, this._prevCsrIdx);
+        let cx = this._cursorX(b, line, this._currCsrIdx);
         b.noStroke(); b.fill(SELECT);
         let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
         b.rect(cx0, 1, cx1, this._h - 2);
@@ -4635,12 +4739,13 @@ class CvsTextfield extends CvsText {
     }
     b.fill(BACK);
     // Draw text
+    b.textSize(ts);
     b.textAlign(this._p.LEFT, this._p.TOP);
     b.noStroke(); b.fill(FORE);
     b.text(line, sx, (this._h - ts) / 2);
     // Draw cursor
     if (this._activate && this._cursorOn) {
-      let cx = this._cursorX(b, line, this._currCurrIdx);
+      let cx = this._cursorX(b, line, this._currCsrIdx);
       b.stroke(CURSOR); b.strokeWeight(1.5);
       b.line(sx + cx, 4, sx + cx, this._h - 5);
     }
@@ -4661,3 +4766,4 @@ class CvsTextfield extends CvsText {
     this._bufferInvalid = false;
   }
 }
+

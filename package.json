@@ -6,7 +6,7 @@
   "scripts": {
     "tsc": "tsc",
     "typedoc": "npx typedoc",
-    "gcc": "npx google-closure-compiler src_js/canvas_gui.js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2020 --language_out ECMASCRIPT_NEXT"
+    "gcc": "npx google-closure-compiler src_js/canvas_gui.js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2021 --language_out ECMASCRIPT_NEXT"
   },
   "keywords": [
     "GUI",
