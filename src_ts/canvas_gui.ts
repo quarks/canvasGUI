@@ -391,7 +391,7 @@ class GUI {
       // If no active control then pass the event to each enabled control in turn
       if (activeControl == undefined) {
         for (let c of this._ctrls)
-          if (c.isEnabled())
+          if (c.isEnabled() && c.isVisible())  // 0.9.3 introduces visibility condition
             c._handleMouse(e);
       }
     }
@@ -3091,7 +3091,7 @@ class CvsTooltip extends CvsText {
   }
 
   /** @hidden */
-  _updateState(owner: CvsBufferedControl,prevOver: number, currOver: number) {
+  _updateState(owner: CvsBufferedControl, prevOver: number, currOver: number) {
     if (owner.isVisible() && prevOver != currOver)
       if (currOver > 0) {
         this.show();

@@ -692,6 +692,7 @@ class CvsBaseControl {
     disable(cascade) {
         if (this._enabled) {
             this._enabled = false;
+            this._active = false;
             this.invalidateBuffer();
         }
         if (cascade)
