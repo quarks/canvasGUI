@@ -1,4 +1,4 @@
-const CANVAS_GUI_VERSION = '0.9.3 alpha release';
+const CANVAS_GUI_VERSION = '0.9.3';
 class GUI {
     constructor(p5c, p = p5.instance) {
         this._keyEventsEnabled = false;
@@ -144,7 +144,7 @@ class GUI {
             }
             if (activeControl == undefined) {
                 for (let c of this._ctrls)
-                    if (c.isEnabled())
+                    if (c.isEnabled() && c.isVisible())
                         c._handleMouse(e);
             }
         }
@@ -692,7 +692,6 @@ class CvsBaseControl {
     disable(cascade) {
         if (this._enabled) {
             this._enabled = false;
-            this._active = false;
             this.invalidateBuffer();
         }
         if (cascade)

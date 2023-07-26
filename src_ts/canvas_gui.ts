@@ -1,18 +1,18 @@
-//import p5 from "../libraries/p5.min.js";
+import p5 from "../libraries/p5.min.js";
 
-// export { GUI };
-// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-// export { CvsViewer, CvsText, CvsTextIcon };
-// export { __Position, __Box, __Range, __Overlap, __Scheme };
+export { GUI };
+export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+export { CvsViewer, CvsText, CvsTextIcon };
+export { __Position, __Box, __Range, __Overlap, __Scheme };
 
 // Uncomment the above export statements 
 // --- When using TypeDoc
 // comment them out
 // --- when transpiling ts>js
 
-const CANVAS_GUI_VERSION: string = '0.9.3 alpha release';
+const CANVAS_GUI_VERSION: string = '0.9.3';
 
 /** <p>Defines a color scheme</p> @hidden */
 interface __Scheme {
@@ -30,9 +30,9 @@ interface __Scheme {
  * </ul>
  * 
  * @author Peter Lager
- * @copyright 2022
+ * @copyright 2023
  * @license MIT
- * @version 0.9.2
+ * @version 0.9.3
  * 
  */
 class GUI {

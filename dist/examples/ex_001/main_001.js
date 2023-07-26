@@ -19,7 +19,7 @@ function setup() {
 
     gui.checkbox('cbx1', 0, 0, 120, 60).text('Hide\nTabs', LEFT).textSize(9).shrink()
         .setAction(function (ei) {
-            if (ei.selected) gui.hideAll(); else gui.showAll()
+            if (ei.selected) gui.hidePanes(); else gui.showPanes()
         })
         .tooltip('Hide / show tabs', 2000)
         .scheme('green');
