@@ -1,11 +1,11 @@
-import p5 from "../libraries/p5.min.js";
+// import p5 from "../libraries/p5.min.js";
 
-export { GUI };
-export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-export { CvsViewer, CvsText, CvsTextIcon };
-export { __Position, __Box, __Range, __Overlap, __Scheme };
+// export { GUI };
+// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+// export { CvsViewer, CvsText, CvsTextIcon };
+// export { __Position, __Box, __Range, __Overlap, __Scheme };
 
 // Uncomment the above export statements 
 // --- When using TypeDoc
@@ -344,13 +344,12 @@ class GUI {
   }
 
   private _initKeyEventHandlers(p5c: p5.Renderer) {
-    //if (!this._target) {
     if (!this._keyEventsEnabled) {
       this._target = document.getElementById(p5c.parent().id);
       this._target.setAttribute('tabindex', '0');
       this._target.focus();
-      this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e) });
-      this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e) });
+      this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); return false });
+      this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e); return false });
       this._keyEventsEnabled = true;
     }
   }

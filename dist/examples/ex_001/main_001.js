@@ -28,7 +28,6 @@ function setup() {
 function draw() {
     push();
     background(230);
-
     stroke(0);
     fill(r, g, b);
     strokeWeight(0.5);
@@ -65,6 +64,10 @@ function createColorMixer() {
         .setAction(function (ei) { b = round(ei.value) });
     gui.label('lblB', 430, 26, 140, 14).text('Blue').parent(pane);
 
+}
+
+function mouseMoved() {
+    console.log(mouseX, mouseY);
 }
 
 function createColorPresets() {

@@ -117,8 +117,8 @@ class GUI {
             this._target = document.getElementById(p5c.parent().id);
             this._target.setAttribute('tabindex', '0');
             this._target.focus();
-            this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); });
-            this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e); });
+            this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); return false; });
+            this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e); return false; });
             this._keyEventsEnabled = true;
         }
     }
