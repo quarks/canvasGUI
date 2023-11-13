@@ -1,18 +1,18 @@
-// import p5 from "../libraries/p5.min.js";
+import p5 from "../libraries/p5.min.js";
 
-// export { GUI };
-// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-// export { CvsViewer, CvsText, CvsTextIcon };
-// export { __Position, __Box, __Range, __Overlap, __Scheme };
+export { GUI };
+export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+export { CvsViewer, CvsText, CvsTextIcon };
+export { __Position, __Box, __Range, __Overlap, __Scheme };
 
 // Uncomment the above export statements 
 // --- When using TypeDoc
 // comment them out
 // --- when transpiling ts>js
 
-const CANVAS_GUI_VERSION: string = '0.9.3';
+const CANVAS_GUI_VERSION: string = '0.9.4';
 
 /** <p>Defines a color scheme</p> @hidden */
 interface __Scheme {
@@ -32,32 +32,20 @@ interface __Scheme {
  * @author Peter Lager
  * @copyright 2023
  * @license MIT
- * @version 0.9.3
+ * @version 0.9.4
  * 
  */
 class GUI {
-  private static _guis = new Map();
-  private static _announced = false;
-
-  /**
-   * @hidden
-   */
-  static announce() {
-    if (!GUI._announced) {
-      console.log('================================================');
-      console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2022 Peter Lager`);
-      console.log('================================================');
-      GUI._announced = true;
-    }
-  }
-
   /** @hidden */ private _renderer: any;
   /** @hidden */ public _p: p5;
   /** @hidden */ private _is3D: boolean;
+  /** @hidden */ public _name: string;
 
-
+  /** @hidden */ private _mouseEventsEnabled = false;  // 0.9.4
   /** @hidden */ private _keyEventsEnabled = false;
+  /** @hidden */ private _eventsAllowed = true;
   /** @hidden */ public _target: HTMLElement;
+  /** @hidden */ public _canvas: HTMLElement;
 
   /** @hidden */ private _controls: Map<string, CvsBaseControl>;
   /** @hidden */ private _ctrls: Array<CvsBaseControl>;
@@ -79,7 +67,7 @@ class GUI {
 
   /** 
    * Create a GUI object to create and manage the GUI controls for
-   * an HTML canvaas.
+   * an HTML canvas.
    * 
    * @hidden
    * @param p5c the renderer
@@ -87,6 +75,8 @@ class GUI {
    */
   private constructor(p5c: p5.Renderer, p: p5 = p5.instance) {
     this._renderer = p5c;
+    this._canvas = p5c.canvas;
+    this._target = document.getElementById(p5c.canvas.id);  // for keyboard events
     this._p = p;
     this._is3D = false; // set when initialsing mouse event hadlers
     this._controls = new Map(); // registered controls
@@ -100,10 +90,14 @@ class GUI {
     this._panesSouth = [];
     this._panesWest = [];
     this._panesNorth = [];
-    // Colour schemes
-    this._initColorSchemes();
+
     // Event handlers for canvas
-    this._initMouseEventHandlers(p5c);
+    this._initColorSchemes();
+    this._addFocusHandlers();
+    this._addMouseEventHandlers();
+
+    // Choose 2D / 3D rendering methods
+    this._selectDrawMethod();
   }
 
   // ##################################################################
@@ -157,7 +151,7 @@ class GUI {
   * @returns a textfield
   */
   textfield(name: string, x?: number, y?: number, w?: number, h?: number) {
-    if (!this._keyEventsEnabled) this._initKeyEventHandlers(this._renderer);
+    this._addKeyEventHandlers();
     return this.addControl(new CvsTextfield(this, name, x, y, w, h));
   }
 
@@ -319,33 +313,51 @@ class GUI {
     return this._enabled;
   }
 
+  /**
+  * Stop handling mouse and key events
+  * @since 0.9.4
+  */
+  stopEventHandling() {
+    this._eventsAllowed = false;
+  }
+
+  /**
+  * Start handling mouse and key events
+  * @since 0.9.4
+  */
+  startEventHandling() {
+    this._eventsAllowed = true;
+  }
 
   /**
   * Adds event listeners to the HTML canvas object. It also sets the draw method
   * based on whether the render is WEBGL or P2D
   * @hidden
-  * @param p5c p5.Renderer
   */
-  private _initMouseEventHandlers(p5c: p5.Renderer) {
-    let canvas = p5c.canvas;
-    // Add mouse events
-    canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e) });
-    canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e) });
-    canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e) });
-    canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e) });
-    // Leave canvas
-    canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e) });
-    canvas.addEventListener('mouseenter', (e) => {
-      this._handleMouseEvents(e);
-    });
-    // Initialise draw method based on P2D or WEBGL renderer
-    this._is3D = p5c.GL != undefined && p5c.GL != null;
-    this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
+
+  private _addFocusHandlers() {
+    let canvas = this._canvas;
+    canvas.addEventListener('focusout', (e) => { this._handleFocusEvents(e); });
+    canvas.addEventListener('focusin', (e) => { this._handleFocusEvents(e); });
   }
 
-  private _initKeyEventHandlers(p5c: p5.Renderer) {
+  private _addMouseEventHandlers() {
+    if (!this._mouseEventsEnabled) {
+      let canvas = this._canvas;
+      // Add mouse events
+      canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e) });
+      canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e) });
+      canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e) });
+      canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e) });
+      // Leave canvas
+      canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e) });
+      canvas.addEventListener('mouseenter', (e) => { this._handleMouseEvents(e); });
+      this._mouseEventsEnabled = true;
+    }
+  }
+
+  private _addKeyEventHandlers() {
     if (!this._keyEventsEnabled) {
-      this._target = document.getElementById(p5c.parent().id);
       this._target.setAttribute('tabindex', '0');
       this._target.focus();
       this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); return false });
@@ -354,14 +366,29 @@ class GUI {
     }
   }
 
+  private _handleFocusEvents(e: FocusEvent) {
+    switch (e.type) {
+      case 'focusout':
+        // Deactivate any textfiles(s) - stop the flashing cursor
+        for (let c of this._ctrls)
+          if (c.isActive()) {
+            c['_deactivate']?.();
+            c['validate']?.();
+          }
+        break;
+      case 'focusin':
+        break;
+    }
+  }
+
   /**
    * Called by the key event listeners
    * @hidden
    * @param e event
    */
-  private _handleKeyEvents(e) {
+  private _handleKeyEvents(e: KeyboardEvent) {
     // Find the currently active control and pass the event to it
-    if (this._enabled && this.isVisible()) {
+    if (this._eventsAllowed && this._enabled && this.isVisible()) {
       for (let c of this._ctrls) {
         if (c.isActive()) {
           c._handleKey(e);
@@ -369,6 +396,7 @@ class GUI {
         }
       }
     }
+    return false;
   }
 
   /**
@@ -376,9 +404,9 @@ class GUI {
    * @hidden
    * @param e event
    */
-  private _handleMouseEvents(e) {
+  private _handleMouseEvents(e: MouseEvent) {
     // Find the currently active control and pass the event to it
-    if (this._enabled && this.isVisible()) {
+    if (this._eventsAllowed && this._enabled && this.isVisible()) {
       let activeControl = undefined;
       for (let c of this._ctrls) {
         if (c.isActive()) {
@@ -394,6 +422,13 @@ class GUI {
             c._handleMouse(e);
       }
     }
+    return false;
+  }
+
+  // Select draw method based on P2D or WEBGL renderer
+  private _selectDrawMethod() {
+    this._is3D = this._renderer.GL != undefined && this._renderer.GL != null;
+    this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
   }
 
   // -----------------------------------------------------------------------
@@ -764,6 +799,21 @@ class GUI {
   // ##################################################################################
   // ##################################################################################
 
+  private static _guis = {};  //new Map();
+  private static _announced = false;
+
+  /**
+   * @hidden
+   */
+  static announce() {
+    if (!GUI._announced) {
+      console.log('================================================');
+      console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2023 Peter Lager`);
+      console.log('================================================');
+      GUI._announced = true;
+    }
+  }
+
   /**
    * <p>Creates and returns a GUI controller for a given canvas element.</p>
    * @param p5c 
@@ -772,13 +822,29 @@ class GUI {
    */
   static get(p5c: p5.Renderer, p: p5 = p5.instance) {
     GUI.announce();
-    if (GUI._guis.has(p)) return GUI._guis.get(p);
-
+    if (GUI._guis[p]) return GUI._guis[p];
     let gui = new GUI(p5c, p);
-    GUI._guis.set(p, gui);
+    gui._name = p5c.toString();
+    GUI._guis[p] = gui;
     return gui;
   }
 
+  /**
+   * <p>Creates and returns a named GUI controller.</p>
+   * <p>Added in V0.9.4</p>
+   * @param name unique name for the gui
+   * @param p5c 
+   * @param p 
+   * @returns  a GUI controller
+   */
+  static getNamed(name: any, p5c: p5.Renderer, p: p5 = p5.instance) {
+    GUI.announce();
+    if (GUI._guis[name]) return GUI._guis[name];
+    let gui = new GUI(p5c, p);
+    gui._name = p5c.toString();
+    GUI._guis[name] = gui;
+    return gui;
+  }
 }
 
 class BaseScheme {
@@ -1112,12 +1178,10 @@ class CvsBaseControl {
     this._y = y;
     this._w = w;
     this._h = h;
-    //this._children = [];
     this._parent = undefined;
     this._visible = true;
     this._enabled = true;
     this._scheme = undefined;
-    //  this._Z = 0;
     this._orientation = CvsBaseControl.EAST;
     this._dragging = false; // is mouse being dragged on active control
     this._c = gui.corners(undefined);
@@ -1759,7 +1823,6 @@ class CvsSlider extends CvsBufferedControl {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { //    CvsSlider
-    let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -1784,7 +1847,6 @@ class CvsSlider extends CvsBufferedControl {
           this.action({ source: this, p5Event: e, value: this.value(), final: true });
           this._active = false;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mousemove':
@@ -1804,7 +1866,7 @@ class CvsSlider extends CvsBufferedControl {
       case 'wheel':
         break;
     }
-    return eventConsumed;
+    return false;
   }
 
   /** 
@@ -1976,7 +2038,6 @@ class CvsRanger extends CvsSlider {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { //    CvsRanger
-    let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -2011,7 +2072,6 @@ class CvsRanger extends CvsSlider {
           });
           this._active = false;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mousemove':
@@ -2035,7 +2095,7 @@ class CvsRanger extends CvsSlider {
       case 'wheel':
         break;
     }
-    return eventConsumed;
+    return false;
   }
 
   /** @hidden */
@@ -2414,7 +2474,6 @@ class CvsButton extends CvsTextIcon {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { // button
-    let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -2434,7 +2493,6 @@ class CvsButton extends CvsTextIcon {
           this._dragging = true;
           this._active = true;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mouseout':
@@ -2448,7 +2506,6 @@ class CvsButton extends CvsTextIcon {
           this._dragging = false;
           this._active = false;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mousemove':
@@ -2459,7 +2516,7 @@ class CvsButton extends CvsTextIcon {
       case 'wheel':
         break;
     }
-    return eventConsumed;
+    return false;
   }
 }
 
@@ -2530,7 +2587,6 @@ class CvsCheckbox extends CvsText {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { // CvsCheckbox
-    let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -2550,7 +2606,6 @@ class CvsCheckbox extends CvsText {
           this._dragging = true;
           this._active = true;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mouseout':
@@ -2565,7 +2620,6 @@ class CvsCheckbox extends CvsText {
           this._dragging = false;
           this._active = false;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mousemove':
@@ -2576,7 +2630,7 @@ class CvsCheckbox extends CvsText {
       case 'wheel':
         break;
     }
-    return eventConsumed;
+    return false;
   }
 
   /** @hidden */
@@ -2814,7 +2868,6 @@ class CvsOption extends CvsText {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { // CvsOption
-    let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -2834,7 +2887,6 @@ class CvsOption extends CvsText {
           this._dragging = true;
           this._active = true;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mouseout':
@@ -2853,7 +2905,6 @@ class CvsOption extends CvsText {
         this._dragging = false;
         this._active = false;
         this.invalidateBuffer();
-        eventConsumed = true;
         break;
       case 'mousemove':
         this._clickAllowed = false;
@@ -2863,7 +2914,7 @@ class CvsOption extends CvsText {
       case 'wheel':
         break;
     }
-    return eventConsumed;
+    return false;
   }
 
   /** @hidden */
@@ -3253,7 +3304,6 @@ class CvsScroller extends CvsBufferedControl {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { //    CvsScroller
-    let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -3262,7 +3312,6 @@ class CvsScroller extends CvsBufferedControl {
     my = r.y;
     this._pover = this._over;                 // Store previous mouse over state
     this._over = this._whereOver(mx, my);     // Store current mouse over state
-    //this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
     if (this._pover != this._over) this.invalidateBuffer();
     if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
 
@@ -3281,7 +3330,6 @@ class CvsScroller extends CvsBufferedControl {
           this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
           this._active = false;
           this.invalidateBuffer();
-          eventConsumed = true;
         }
         break;
       case 'mousemove':
@@ -3297,7 +3345,7 @@ class CvsScroller extends CvsBufferedControl {
       case 'wheel':
         break;
     }
-    return eventConsumed;
+    return false;
   }
 
   /** @hidden */
@@ -3574,7 +3622,6 @@ class CvsViewer extends CvsBufferedControl {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { // viewer
-    let eventConsumed: boolean = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -3638,7 +3685,7 @@ class CvsViewer extends CvsBufferedControl {
       case 'wheel':
         break;
     }
-    return eventConsumed;
+    return false;
   }
 
   /** @hidden */
@@ -3791,9 +3838,9 @@ abstract class CvsPane extends CvsBaseControl {
   /** @hidden */ protected _depth: number;
 
   // Deltas used in controlling opening and closing speeds
-  /** @hidden */ static _dI = 20;
-  /** @hidden */ static _dC = 40;
-  /** @hidden */ static _dO = 20;
+  /** @hidden */ static _dI = 50;  // Interval time (20)
+  /** @hidden */ static _dC = 60;  // Close speed px/sec :: was (40)
+  /** @hidden */ static _dO = 40;  // Open speed px/sec :: was (20)
 
   /** @hidden */ static _wExtra = 20;
   /** @hidden */ static _tabID = 1;
@@ -3849,9 +3896,9 @@ abstract class CvsPane extends CvsBaseControl {
   }
 
   /**
- * 
- * @returns true if the pane is closed else false
- */
+   * 
+   * @returns true if the pane is closed else false
+   */
   isClosed(): boolean {
     return this._status == 'closed';
   }
@@ -4551,7 +4598,6 @@ class CvsTextfield extends CvsText {
 
   /** @hidden */
   _handleMouse(e: MouseEvent) { // textfields
-    let eventConsumed = false;
     let pos = this.getAbsXY();
     let mx = this._p.mouseX - pos.x;
     let my = this._p.mouseY - pos.y;
@@ -4565,13 +4611,11 @@ class CvsTextfield extends CvsText {
 
     switch (e.type) {
       case 'mousedown':
-        if (this._over > 0) {
+        if (this._over > 0)
           this._activate();
-          eventConsumed = true;
-        }
         break;
     }
-    return eventConsumed;
+    return false;
   }
 
   /** @hidden */
@@ -4601,12 +4645,10 @@ class CvsTextfield extends CvsText {
         if (this._buffer.textWidth(line) < mtw) {
           this._currCsrIdx++; this._prevCsrIdx++;
           this._lines[0] = line;
-          //this.text(line);
         }
         this.invalidateBuffer();
-        return true; // event consumed
+        return true;
       }
-      let eventConsumed = true; // assume the event has been consumed
       switch (e.key) {
         case 'ArrowLeft':
           if (tabLeft) {
@@ -4679,13 +4721,11 @@ class CvsTextfield extends CvsText {
             }
           }
           this._lines[0] = line;
-          //this.text(line);
           break;
         default:
-          eventConsumed = false;
       }
       this.invalidateBuffer();
-      return eventConsumed;
+      return false;
     }
     return true;
   }

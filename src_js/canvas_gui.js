@@ -1,10 +1,14 @@
-const CANVAS_GUI_VERSION = '0.9.3';
+const CANVAS_GUI_VERSION = '0.9.4';
 class GUI {
     constructor(p5c, p = p5.instance) {
+        this._mouseEventsEnabled = false;
         this._keyEventsEnabled = false;
+        this._eventsAllowed = true;
         this._visible = true;
         this._enabled = true;
         this._renderer = p5c;
+        this._canvas = p5c.canvas;
+        this._target = document.getElementById(p5c.canvas.id);
         this._p = p;
         this._is3D = false;
         this._controls = new Map();
@@ -18,15 +22,9 @@ class GUI {
         this._panesWest = [];
         this._panesNorth = [];
         this._initColorSchemes();
-        this._initMouseEventHandlers(p5c);
-    }
-    static announce() {
-        if (!GUI._announced) {
-            console.log('================================================');
-            console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2022 Peter Lager`);
-            console.log('================================================');
-            GUI._announced = true;
-        }
+        this._addFocusHandlers();
+        this._addMouseEventHandlers();
+        this._selectDrawMethod();
     }
     slider(name, x, y, w, h) {
         return this.addControl(new CvsSlider(this, name, x, y, w, h));
@@ -38,8 +36,7 @@ class GUI {
         return this.addControl(new CvsButton(this, name, x, y, w, h));
     }
     textfield(name, x, y, w, h) {
-        if (!this._keyEventsEnabled)
-            this._initKeyEventHandlers(this._renderer);
+        this._addKeyEventHandlers();
         return this.addControl(new CvsTextfield(this, name, x, y, w, h));
     }
     checkbox(name, x, y, w, h) {
@@ -99,22 +96,31 @@ class GUI {
     isEnabled() {
         return this._enabled;
     }
-    _initMouseEventHandlers(p5c) {
-        let canvas = p5c.canvas;
-        canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e); });
-        canvas.addEventListener('mouseenter', (e) => {
-            this._handleMouseEvents(e);
-        });
-        this._is3D = p5c.GL != undefined && p5c.GL != null;
-        this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
+    stopEventHandling() {
+        this._eventsAllowed = false;
     }
-    _initKeyEventHandlers(p5c) {
+    startEventHandling() {
+        this._eventsAllowed = true;
+    }
+    _addFocusHandlers() {
+        let canvas = this._canvas;
+        canvas.addEventListener('focusout', (e) => { this._handleFocusEvents(e); });
+        canvas.addEventListener('focusin', (e) => { this._handleFocusEvents(e); });
+    }
+    _addMouseEventHandlers() {
+        if (!this._mouseEventsEnabled) {
+            let canvas = this._canvas;
+            canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e); });
+            canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e); });
+            canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e); });
+            canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e); });
+            canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e); });
+            canvas.addEventListener('mouseenter', (e) => { this._handleMouseEvents(e); });
+            this._mouseEventsEnabled = true;
+        }
+    }
+    _addKeyEventHandlers() {
         if (!this._keyEventsEnabled) {
-            this._target = document.getElementById(p5c.parent().id);
             this._target.setAttribute('tabindex', '0');
             this._target.focus();
             this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); return false; });
@@ -122,8 +128,21 @@ class GUI {
             this._keyEventsEnabled = true;
         }
     }
+    _handleFocusEvents(e) {
+        switch (e.type) {
+            case 'focusout':
+                for (let c of this._ctrls)
+                    if (c.isActive()) {
+                        c['_deactivate']?.();
+                        c['validate']?.();
+                    }
+                break;
+            case 'focusin':
+                break;
+        }
+    }
     _handleKeyEvents(e) {
-        if (this._enabled && this.isVisible()) {
+        if (this._eventsAllowed && this._enabled && this.isVisible()) {
             for (let c of this._ctrls) {
                 if (c.isActive()) {
                     c._handleKey(e);
@@ -131,9 +150,10 @@ class GUI {
                 }
             }
         }
+        return false;
     }
     _handleMouseEvents(e) {
-        if (this._enabled && this.isVisible()) {
+        if (this._eventsAllowed && this._enabled && this.isVisible()) {
             let activeControl = undefined;
             for (let c of this._ctrls) {
                 if (c.isActive()) {
@@ -148,6 +168,11 @@ class GUI {
                         c._handleMouse(e);
             }
         }
+        return false;
+    }
+    _selectDrawMethod() {
+        this._is3D = this._renderer.GL != undefined && this._renderer.GL != null;
+        this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
     }
     $(name) {
         return (typeof name === "string") ? this._controls.get(name) : name;
@@ -368,16 +393,34 @@ class GUI {
             this._p.pop();
         }
     }
+    static announce() {
+        if (!GUI._announced) {
+            console.log('================================================');
+            console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2023 Peter Lager`);
+            console.log('================================================');
+            GUI._announced = true;
+        }
+    }
     static get(p5c, p = p5.instance) {
         GUI.announce();
-        if (GUI._guis.has(p))
-            return GUI._guis.get(p);
+        if (GUI._guis[p])
+            return GUI._guis[p];
         let gui = new GUI(p5c, p);
-        GUI._guis.set(p, gui);
+        gui._name = p5c.toString();
+        GUI._guis[p] = gui;
+        return gui;
+    }
+    static getNamed(name, p5c, p = p5.instance) {
+        GUI.announce();
+        if (GUI._guis[name])
+            return GUI._guis[name];
+        let gui = new GUI(p5c, p);
+        gui._name = p5c.toString();
+        GUI._guis[name] = gui;
         return gui;
     }
 }
-GUI._guis = new Map();
+GUI._guis = {};
 GUI._announced = false;
 class BaseScheme {
     constructor() {
@@ -912,7 +955,6 @@ class CvsSlider extends CvsBufferedControl {
         return 0;
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -937,7 +979,6 @@ class CvsSlider extends CvsBufferedControl {
                     this.action({ source: this, p5Event: e, value: this.value(), final: true });
                     this._active = false;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mousemove':
@@ -957,7 +998,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return eventConsumed;
+        return false;
     }
     _nearestTickT(p01) {
         let nbrTicks = this._minorTicks > 0
@@ -1071,7 +1112,6 @@ class CvsRanger extends CvsSlider {
         return 0;
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -1105,7 +1145,6 @@ class CvsRanger extends CvsSlider {
                     });
                     this._active = false;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mousemove':
@@ -1129,7 +1168,7 @@ class CvsRanger extends CvsSlider {
             case 'wheel':
                 break;
         }
-        return eventConsumed;
+        return false;
     }
     _updateControlVisual() {
         let b = this._buffer;
@@ -1402,7 +1441,6 @@ class CvsButton extends CvsTextIcon {
             this._parent.validateTabs();
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -1421,7 +1459,6 @@ class CvsButton extends CvsTextIcon {
                     this._dragging = true;
                     this._active = true;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mouseout':
@@ -1435,7 +1472,6 @@ class CvsButton extends CvsTextIcon {
                     this._dragging = false;
                     this._active = false;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mousemove':
@@ -1446,7 +1482,7 @@ class CvsButton extends CvsTextIcon {
             case 'wheel':
                 break;
         }
-        return eventConsumed;
+        return false;
     }
 }
 class CvsCheckbox extends CvsText {
@@ -1483,7 +1519,6 @@ class CvsCheckbox extends CvsText {
         return this._selected;
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -1502,7 +1537,6 @@ class CvsCheckbox extends CvsText {
                     this._dragging = true;
                     this._active = true;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mouseout':
@@ -1517,7 +1551,6 @@ class CvsCheckbox extends CvsText {
                     this._dragging = false;
                     this._active = false;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mousemove':
@@ -1528,7 +1561,7 @@ class CvsCheckbox extends CvsText {
             case 'wheel':
                 break;
         }
-        return eventConsumed;
+        return false;
     }
     _updateControlVisual() {
         let ts = this._textSize || this._gui.textSize();
@@ -1688,7 +1721,6 @@ class CvsOption extends CvsText {
         return this;
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -1707,7 +1739,6 @@ class CvsOption extends CvsText {
                     this._dragging = true;
                     this._active = true;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mouseout':
@@ -1725,7 +1756,6 @@ class CvsOption extends CvsText {
                 this._dragging = false;
                 this._active = false;
                 this.invalidateBuffer();
-                eventConsumed = true;
                 break;
             case 'mousemove':
                 this._clickAllowed = false;
@@ -1735,7 +1765,7 @@ class CvsOption extends CvsText {
             case 'wheel':
                 break;
         }
-        return eventConsumed;
+        return false;
     }
     _updateControlVisual() {
         let ts = this._textSize || this._gui.textSize();
@@ -2047,7 +2077,6 @@ class CvsScroller extends CvsBufferedControl {
         return 0;
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -2075,7 +2104,6 @@ class CvsScroller extends CvsBufferedControl {
                     this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
                     this._active = false;
                     this.invalidateBuffer();
-                    eventConsumed = true;
                 }
                 break;
             case 'mousemove':
@@ -2091,7 +2119,7 @@ class CvsScroller extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return eventConsumed;
+        return false;
     }
     _updateControlVisual() {
         let b = this._buffer;
@@ -2258,7 +2286,6 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -2316,7 +2343,7 @@ class CvsViewer extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return eventConsumed;
+        return false;
     }
     _validateMouseDrag(ncx, ncy) {
         let ww2 = Math.round(0.5 * this._w / this._wscale);
@@ -2595,9 +2622,9 @@ class CvsPane extends CvsBaseControl {
         return { w: this._w, h: this._h };
     }
 }
-CvsPane._dI = 20;
-CvsPane._dC = 40;
-CvsPane._dO = 20;
+CvsPane._dI = 50;
+CvsPane._dC = 60;
+CvsPane._dO = 40;
 CvsPane._wExtra = 20;
 CvsPane._tabID = 1;
 class CvsPaneNorth extends CvsPane {
@@ -2877,7 +2904,6 @@ class CvsTextfield extends CvsText {
         return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
     }
     _handleMouse(e) {
-        let eventConsumed = false;
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
@@ -2891,13 +2917,11 @@ class CvsTextfield extends CvsText {
             this._tooltip._updateState(this, this._pover, this._over);
         switch (e.type) {
             case 'mousedown':
-                if (this._over > 0) {
+                if (this._over > 0)
                     this._activate();
-                    eventConsumed = true;
-                }
                 break;
         }
-        return eventConsumed;
+        return false;
     }
     _maxTextWidthPixels() {
         let ts = Number(this._textSize || this._gui.textSize());
@@ -2923,7 +2947,6 @@ class CvsTextfield extends CvsText {
                 this.invalidateBuffer();
                 return true;
             }
-            let eventConsumed = true;
             switch (e.key) {
                 case 'ArrowLeft':
                     if (tabLeft) {
@@ -3001,10 +3024,9 @@ class CvsTextfield extends CvsText {
                     this._lines[0] = line;
                     break;
                 default:
-                    eventConsumed = false;
             }
             this.invalidateBuffer();
-            return eventConsumed;
+            return false;
         }
         return true;
     }
