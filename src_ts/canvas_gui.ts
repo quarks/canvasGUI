@@ -1,16 +1,16 @@
-import p5 from "../libraries/p5.min.js";
+// import p5 from "../libraries/p5.min.js";
 
-export { GUI };
-export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-export { CvsViewer, CvsText, CvsTextIcon };
-export { __Position, __Box, __Range, __Overlap, __Scheme };
+// export { GUI };
+// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+// export { CvsViewer, CvsText, CvsTextIcon, CvsTextField };
+// export { __Position, __Box, __Range, __Overlap, __Scheme };
 
-// Uncomment the above export statements 
+// Uncomment the above export statements
 // --- When using TypeDoc
 // comment them out
-// --- when transpiling ts>js
+// --- when transpiling ts > js
 
 const CANVAS_GUI_VERSION: string = '0.9.4';
 
@@ -60,7 +60,7 @@ class GUI {
 
   /** @hidden */ private _schemes: Array<any>;
   /** @hidden */ private _scheme: any;
-  /** @hidden */ public _links: Map<number, CvsTextfield>;
+  /** @hidden */ public _links: Map<number, CvsTextField>;
 
   /** @hidden */ private _visible = true;
   /** @hidden */ private _enabled = true;
@@ -152,7 +152,7 @@ class GUI {
   */
   textfield(name: string, x?: number, y?: number, w?: number, h?: number) {
     this._addKeyEventHandlers();
-    return this.addControl(new CvsTextfield(this, name, x, y, w, h));
+    return this.addControl(new CvsTextField(this, name, x, y, w, h));
   }
 
   /**
@@ -3085,14 +3085,13 @@ class CvsLabel extends CvsTextIcon {
   }
 }
 
-
-/*
-##############################################################################
- CvsTooltip
- A box containing some text and/or icon
- ##############################################################################
-
- @hidden 
+/**
+ * <p>A tooltip is a simply text hint that appears near to a control with the 
+ * mouse over it.</p>
+ * 
+ * <p>The tooltip's relative position to thr dontrol is automatically set to 
+ * make sure it is visible inside the canvas area.</p>
+ * @hidden
  */
 class CvsTooltip extends CvsText {
 
@@ -3110,7 +3109,7 @@ class CvsTooltip extends CvsText {
   /**
      * <p>Sets the text to be displayed in the tooltip.</p>
      * <p>Processing constants are used to define the alignment.</p>
-     * @param t the text toset
+     * @param t the text to display
      * @returns this control
      */
   text(t: string) {
@@ -3222,6 +3221,7 @@ class CvsTooltip extends CvsText {
   }
 
 }
+
 /*
  ##############################################################################
  CvsScroller
@@ -4354,11 +4354,14 @@ class CvsPaneWest extends CvsPane {
  * index number.
  * 
  * If the control has the index value 'idx' then the next control depends
- * on the arrow key pressed -
- * left : idx - 1
- * right : idx + 1
- * up : idx - 1000
- * down : idx + 1000
+ * on the arrow key pressed - <br>
+ * left : idx - 1 <br>
+ * right : idx + 1 <br>
+ * up : idx - offset <br>
+ * down : idx + offset <br>
+ * 
+ * The offset value is set when initialising the idx value with the 
+ * <code>index(idx, deltaIndex</code> method.)
  * 
  * No other controls can be used while a textfield control is active. Pressing
  * 'Enter' or attempting to move to a non-existant textfield deactivates the 
@@ -4369,7 +4372,7 @@ class CvsPaneWest extends CvsPane {
  * 
  * @since 0.9.3
  */
-class CvsTextfield extends CvsText {
+class CvsTextField extends CvsText {
 
   protected _linkIndex: number;
   protected _linkOffset = 0;
@@ -4388,9 +4391,11 @@ class CvsTextfield extends CvsText {
   }
 
   /**
-   * The index number must be unique for all textfields.
+   * Set a unique index number for this text field.
    * 
-   * @param idx the index number to use
+   * 
+   * @param idx unique index number
+   * @param deltaIndex relative link when using up/down arrow keys
    * @returns this control
    */
   index(idx: number, deltaIndex?: number) {
@@ -4414,7 +4419,7 @@ class CvsTextfield extends CvsText {
    * @param t a string representing text to display
    * @returns this control for setter
    */
-  text(t?: string): string | CvsTextfield {
+  text(t?: string): string | CvsTextField {
     // getter
     if (t == null || t == undefined)
       return this._getLine();
@@ -4504,7 +4509,7 @@ class CvsTextfield extends CvsText {
    * Force the control to validate
    * @returns this control
    */
-  validate(): CvsTextfield {
+  validate(): CvsTextField {
     this._validate();
     return this;
   }
@@ -4709,7 +4714,6 @@ class CvsTextfield extends CvsText {
             }
           }
           this._lines[0] = line;
-          //this.text(line);
           break;
         case 'Delete':
           if (this._prevCsrIdx != this._currCsrIdx) {
@@ -4742,7 +4746,7 @@ class CvsTextfield extends CvsText {
   }
 
   /** @hidden */
-  _updateControlVisual() { // CvsTextfield
+  _updateControlVisual() { // CvsTextField
     let ts = Number(this._textSize || this._gui.textSize());
     let cs = this._scheme || this._gui.scheme();
     let b = this._buffer;

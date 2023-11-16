@@ -37,7 +37,7 @@ class GUI {
     }
     textfield(name, x, y, w, h) {
         this._addKeyEventHandlers();
-        return this.addControl(new CvsTextfield(this, name, x, y, w, h));
+        return this.addControl(new CvsTextField(this, name, x, y, w, h));
     }
     checkbox(name, x, y, w, h) {
         return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
@@ -2779,7 +2779,7 @@ class CvsPaneWest extends CvsPane {
         return this;
     }
 }
-class CvsTextfield extends CvsText {
+class CvsTextField extends CvsText {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
         this._linkOffset = 0;
