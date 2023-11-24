@@ -1,11 +1,11 @@
-// import p5 from "../libraries/p5.min.js";
+import p5 from "../libraries/p5.min.js";
 
-// export { GUI };
-// export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
-// export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
-// export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-// export { CvsViewer, CvsText, CvsTextIcon, CvsTextField };
-// export { __Position, __Box, __Range, __Overlap, __Scheme };
+export { GUI };
+export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
+export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
+export { CvsViewer, CvsText, CvsTextIcon, CvsTextField };
+export { __Position, __Box, __Range, __Overlap, __Scheme };
 
 // Uncomment the above export statements
 // --- When using TypeDoc
@@ -529,14 +529,14 @@ class GUI {
 
   /**
    * <p>Set or get the corner radii used for the controls</p>
-   * @param c an aaray of 4 corner radii
+   * @param c an array of 4 corner radii
    * @returns an array with the 4 corner radii
    */
   corners(c?: Array<number>): Array<number> {
     if (Array.isArray(c) && c.length == 4) {
-      this._corners = Array.from(c);
+      this._corners = [...c];
     }
-    return Array.from(this._corners);
+    return [...this._corners];
   }
   /**
    * <p>Get the associated HTML canvas tag</p>
@@ -975,6 +975,7 @@ class OrientNorth {
   }
 
   _renderWEBGL(p: p5, w: number, h: number, buffer: p5.Renderer) {
+    p.noStroke();
     p.textureMode(p.NORMAL);
     p.texture(buffer);
     p.beginShape(p.TRIANGLE_STRIP);
@@ -1482,9 +1483,39 @@ class CvsBaseControl {
     return this;
   }
 
-  /** @hidden */
+  /** 
+   * If control has significant rounded corners then take them 
+   * into consideration 
+   * @since 0.9.4
+   * @hidden
+   */
   _whereOver(px: number, py: number): number {
+    const R = 5;
     if (px > 0 && px < this._w && py > 0 && py < this._h) {
+      if (this._c[0] > R) {  // top left
+        let dx = px - this._c[0];
+        let dy = py - this._c[0];
+        let off = dx < 0 && dy < 0 && dx * dx + dy * dy > this._c[0] * this._c[0];
+        if (off) return 0;
+      }
+      if (this._c[1] > R) {  // top right
+        let dx = px - (this._w - this._c[1]);
+        let dy = py - this._c[1];
+        let off = dx > 0 && dy < 0 && dx * dx + dy * dy > this._c[1] * this._c[1];
+        if (off) return 0;
+      }
+      if (this._c[2] > R) {  // bottom right
+        let dx = px - (this._w - this._c[2]);
+        let dy = py - (this._h - this._c[2]);
+        let off = dx > 0 && dy > 0 && dx * dx + dy * dy > this._c[2] * this._c[2];
+        if (off) return 0;
+      }
+      if (this._c[3] > R) {  // bottom left
+        let dx = px - this._c[3];
+        let dy = py - (this._h - this._c[3]);
+        let off = dx < 0 && dy > 0 && dx * dx + dy * dy > this._c[3] * this._c[3];
+        if (off) return 0;
+      }
       return 1;
     }
     return 0;
@@ -1501,7 +1532,7 @@ class CvsBaseControl {
     let b = this._buffer;
     if (b.width != this._w || b.height != this._h) {
       this._buffer = this._p.createGraphics(this._w, this._h);
-      this.invalidateBuffer(); // Force a redarw of the buffer
+      this.invalidateBuffer(); // Force a redraw of the buffer
     }
     if (this._bufferInvalid) {
       this._updateControlVisual();
@@ -1524,6 +1555,7 @@ class CvsBaseControl {
     this._validateBuffer();
     let p = this._p;
     p.push();
+    p.noStroke(); // Fix for p5.js 1.6.0
     p.translate(this._x, this._y);
     if (this._visible)
       this._orientation._renderWEBGL(p, this._w, this._h, this._buffer);
@@ -1642,6 +1674,19 @@ abstract class CvsBufferedControl extends CvsBaseControl {
     super(gui, name, x, y, w, h);
     this._buffer = this._p.createGraphics(this._w, this._h);
     this._tooltip = undefined;
+  }
+
+  /**
+   * <p>Set or get the corner radii used for this control</p>
+   * @param c an array of 4 corner radii
+   * @returns an array with the 4 corner radii
+   */
+  corners(c: Array<number>): Array<number> | CvsBaseControl {
+    if (Array.isArray(c) && c.length == 4) {
+      this._c = [...c];
+      return this;
+    }
+    return [...this._c];
   }
 
   /**

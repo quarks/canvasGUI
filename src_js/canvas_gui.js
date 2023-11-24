@@ -219,9 +219,9 @@ class GUI {
     }
     corners(c) {
         if (Array.isArray(c) && c.length == 4) {
-            this._corners = Array.from(c);
+            this._corners = [...c];
         }
-        return Array.from(this._corners);
+        return [...this._corners];
     }
     context() {
         return this._renderer;
@@ -498,6 +498,7 @@ class OrientNorth {
         p.pop();
     }
     _renderWEBGL(p, w, h, buffer) {
+        p.noStroke();
         p.textureMode(p.NORMAL);
         p.texture(buffer);
         p.beginShape(p.TRIANGLE_STRIP);
@@ -784,7 +785,36 @@ class CvsBaseControl {
         return this;
     }
     _whereOver(px, py) {
+        const R = 5;
         if (px > 0 && px < this._w && py > 0 && py < this._h) {
+            if (this._c[0] > R) {
+                let dx = px - this._c[0];
+                let dy = py - this._c[0];
+                let off = dx < 0 && dy < 0 && dx * dx + dy * dy > this._c[0] * this._c[0];
+                if (off)
+                    return 0;
+            }
+            if (this._c[1] > R) {
+                let dx = px - (this._w - this._c[1]);
+                let dy = py - this._c[1];
+                let off = dx > 0 && dy < 0 && dx * dx + dy * dy > this._c[1] * this._c[1];
+                if (off)
+                    return 0;
+            }
+            if (this._c[2] > R) {
+                let dx = px - (this._w - this._c[2]);
+                let dy = py - (this._h - this._c[2]);
+                let off = dx > 0 && dy > 0 && dx * dx + dy * dy > this._c[2] * this._c[2];
+                if (off)
+                    return 0;
+            }
+            if (this._c[3] > R) {
+                let dx = px - this._c[3];
+                let dy = py - (this._h - this._c[3]);
+                let off = dx < 0 && dy > 0 && dx * dx + dy * dy > this._c[3] * this._c[3];
+                if (off)
+                    return 0;
+            }
             return 1;
         }
         return 0;
@@ -809,6 +839,7 @@ class CvsBaseControl {
         this._validateBuffer();
         let p = this._p;
         p.push();
+        p.noStroke();
         p.translate(this._x, this._y);
         if (this._visible)
             this._orientation._renderWEBGL(p, this._w, this._h, this._buffer);
@@ -879,6 +910,13 @@ class CvsBufferedControl extends CvsBaseControl {
         super(gui, name, x, y, w, h);
         this._buffer = this._p.createGraphics(this._w, this._h);
         this._tooltip = undefined;
+    }
+    corners(c) {
+        if (Array.isArray(c) && c.length == 4) {
+            this._c = [...c];
+            return this;
+        }
+        return [...this._c];
     }
     tooltip(tiptext, duration) {
         let tt = this._gui.__tooltip(this._name + '.tooltip')
