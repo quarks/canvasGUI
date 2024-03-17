@@ -1,0 +1,5 @@
+ /**
+ * @preserve canvasGUI    (c) Peter Lager  2024
+ * @license MIT
+ * @version 0.9.4
+ */

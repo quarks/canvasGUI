@@ -1,12 +1,12 @@
 {
   "name": "canvas-gui",
-  "version": "0.9.2",
+  "version": "0.9.4",
   "description": "On canvas GUI for p5.js",
-  "main": "main.js",
+  "main": "index.js",
   "scripts": {
-    "tsc": "tsc",
-    "typedoc": "npx typedoc",
-    "gcc": "npx google-closure-compiler src_js/canvas_gui.js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2021 --language_out ECMASCRIPT_NEXT"
+    "tsc": "tsc > tsc_err.log 2>&1",
+    "typedoc": "npx typedoc --exclude src_ts.**/*.js",
+    "gcc": "npx google-closure-compiler src_js/gui.js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2021 --language_out ECMASCRIPT_NEXT"
   },
   "keywords": [
     "GUI",

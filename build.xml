@@ -1,0 +1,148 @@
+<!--    
+    Build file for JS project
+    Peter Lager 2024
+    V0.1
+-->
+<project name="Canvas GUI" default="init" basedir="./" >
+
+    <property file="build.properties" />
+
+    <!-- Temporary folder for intermdiate files created during documatation -->
+    <property name="temp" location="./tmp" />
+
+	<!-- Create the time stamp -->
+	<tstamp> 
+		<format property="date" pattern="d-MMMM-yyyy  hh:mm aa" />
+	</tstamp>
+
+
+    <!-- Create the library min.js file    -->
+    <target name="compile" depends="concat.js.files">        
+        <property name="gcc.src" location="${library.dist.lib.dir}/${library.filename.js}" />
+        <property name="gcc.dst" location="${library.dist.lib.dir}/${library.filename.min.js}" />
+        <property name="gcc.lang.in" value="--language_in ECMASCRIPT_2021" />
+        <property name="gcc.lang.out" value="--language_out ECMASCRIPT_NEXT" />
+        <property name="gcc.run.line" value="${gcc.src} --js_output_file ${gcc.dst}  ${gcc.lang.in} ${gcc.lang.out}" />
+        <echo message="Google Closure Compiler" />
+        <delete file="${gcc.dst}" />
+        <exec executable="npx">
+            <arg line="google-closure-compiler ${gcc.run.line}" />
+        </exec>
+        <delete dir="${temp}" />      
+    </target>
+
+
+    <!-- Concatenate the JavaScript files in user defined order so that parent
+         classes are defined before thier child classes -->
+    <target name="concat.js.files" depends="copy.js.files" >
+        <echo message="Concatenate JavaScript files into one ready for GCC" />
+        <loadfile property="jslist" srcfile="${js.list.file}" />  
+        <concat destfile="${library.dist.lib.dir}/${library.filename.js}" fixlastline="true" > 
+            <header file="${jdoc.min}" ></header>
+            <!-- Base class code should precede child class code -->
+            <filelist dir="${temp}" files="${jslist}" />
+        </concat>  
+    </target>
+
+
+    <!-- Copy all the the JavaScript files into the 'tmp' folder prior to 
+        concantenation  -->
+    <target name="copy.js.files" depends="tsc" >
+        <echo message="Copying JavaScript files" />
+        <copy todir="${temp}" flatten="true" >
+            <!-- Remove any import statements (if any) -->
+            <filterchain>
+                <linecontains negate="true">
+                    <contains value="import" />
+                </linecontains>
+            </filterchain>
+            <fileset dir="${js.source.dir}" includes="**/*.js" />
+        </copy>
+    </target>
+
+
+    <!-- Create the HTML documentation -->
+    <target name="document" depends="concat.ts.files">
+        <echo message="Create HTML documantation" />
+        <delete>
+            <filelist dir="${temp}" files="**/*.*" />
+        </delete> 
+        <move toDir="${temp}">
+            <fileset dir="${ts.source.dir}">
+                <include name="**/*" />
+            </fileset>
+        </move>
+        <exec executable="npm">
+            <arg line="run typedoc" />
+        </exec>
+        <move toDir="${ts.source.dir}">
+             <fileset dir="${temp}">
+                <include name="**/*" />
+            </fileset>
+        </move>
+        <delete dir="${temp}" /> 
+        <delete file="${library.dist.dir}/index.ts" />
+    </target>
+
+
+    <!-- Concatenate the TypeScript files in user defined order so that parent
+         classes are defined before thier child classes -->
+    <target name="concat.ts.files" depends="copy.ts.files" >
+        <echo message="Concatenate TypeScript files for TypeDoc" />
+        <loadfile property="tslist" srcfile="${ts.list.file}" />        
+        <concat destfile="${library.dist.dir}/index.ts" fixlastline="true" > 
+            <header file="${exports}" ></header>
+            <!-- Base class code should precede child class code -->
+            <filelist dir="${temp}" files="${tslist}" />
+        </concat>
+    </target>
+
+
+    <!-- Copy all the the TransScript files into the temporary folder prior to 
+         concantenation removing all lines with import statements
+    -->
+    <target name="copy.ts.files" depends="init" >
+        <echo message="Copying TypeScript files" />
+        <copy todir="${temp}" flatten="true" >
+           <filterchain>
+                <linecontains negate="true">
+                    <contains value="import" />
+                </linecontains>
+            </filterchain>
+            <fileset dir="${ts.source.dir}" includes="**/*.ts" />
+        </copy>
+    </target>
+
+
+    <!-- Transpiles TypeScript to JavaScript  -->
+    <target name="tsc" depends="init">
+      <echo message="TypeScript Compiler" />
+      <exec executable="npm">
+        <arg line="run tsc" />
+      </exec>
+      <!-- Errors are stored in "tsc_err.log" show any none p5 errors then
+        delete log ignore any 'p5' errors 
+        -->
+      <concat>
+        <filterchain>
+          <linecontains negate="true">
+            <contains value="'p5'" />
+          </linecontains>
+        </filterchain>
+        <filelist files="./tsc_err.log" />
+      </concat>
+      <delete file="./tsc_err.log" />
+    </target>
+
+    <!-- Initialisation task for both compilation and documentation       -->
+    <target name="init">
+        <echo message="####################################################" />
+        <echo message="${library.name}   V${library.version}" />
+        <echo message="Build started ${date}" />
+        <delete file="${library.dist.dir}/index.ts" />
+        <delete dir="${temp}" />        
+        <mkdir dir="${temp}" />
+    </target>
+
+
+</project>

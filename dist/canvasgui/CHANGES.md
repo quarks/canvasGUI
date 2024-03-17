@@ -1,4 +1,7 @@
-## Latest stable version 0.9.2
+## Latest stable version 0.9.4
+
+## 0.9.4
+* bug fixes
 
 ## 0.9.3
 * single line text input fields added
