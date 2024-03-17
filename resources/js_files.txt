@@ -1,4 +1,9 @@
-gui.js
+canvas_gui.js
+colorschemes.js
+orientations.js
+controls.js
 viewer.js
 textfield.js
 panes.js
+
+

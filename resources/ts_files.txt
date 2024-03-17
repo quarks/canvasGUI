@@ -1,4 +1,8 @@
-gui.ts
+canvas_gui.ts
+colorschemes.ts
+orientations.ts
+controls.ts
 viewer.ts
 textfield.ts
 panes.ts
+
