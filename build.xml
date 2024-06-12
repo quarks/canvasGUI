@@ -8,13 +8,13 @@
     <property file="build.properties" />
 
     <!-- Temporary folder for intermdiate files created during documatation -->
-    <property name="temp" location="./tmp" />
+    <property name="temp" location="./temp" />
+    <property name="src_ts_temp" location="./src_ts_temp" />
 
 	<!-- Create the time stamp -->
 	<tstamp> 
 		<format property="date" pattern="d-MMMM-yyyy  hh:mm aa" />
 	</tstamp>
-
 
     <!-- Create the library min.js file    -->
     <target name="compile" depends="concat.js.files">        
@@ -32,21 +32,19 @@
     </target>
 
 
-    <!-- Concatenate the JavaScript files in user defined order so that parent
-         classes are defined before thier child classes -->
+    <!-- Concatenate the JavaScript files and store result in 'dist/lib/???.ts' -->
     <target name="concat.js.files" depends="copy.js.files" >
         <echo message="Concatenate JavaScript files into one ready for GCC" />
+        <!-- Concat order so that parent classes precede child classes  -->
         <loadfile property="jslist" srcfile="${js.list.file}" />  
         <concat destfile="${library.dist.lib.dir}/${library.filename.js}" fixlastline="true" > 
             <header file="${jdoc.min}" ></header>
-            <!-- Base class code should precede child class code -->
             <filelist dir="${temp}" files="${jslist}" />
         </concat>  
     </target>
 
 
-    <!-- Copy all the the JavaScript files into the 'tmp' folder prior to 
-        concantenation  -->
+     <!-- Copy all the the JavaScript files into 'temp' folder -->
     <target name="copy.js.files" depends="tsc" >
         <echo message="Copying JavaScript files" />
         <copy todir="${temp}" flatten="true" >
@@ -64,10 +62,8 @@
     <!-- Create the HTML documentation -->
     <target name="document" depends="concat.ts.files">
         <echo message="Create HTML documantation" />
-        <delete>
-            <filelist dir="${temp}" files="**/*.*" />
-        </delete> 
-        <move toDir="${temp}">
+        <!-- move original TS source files so they don't get included -->
+        <move toDir="${src_ts_temp}">
             <fileset dir="${ts.source.dir}">
                 <include name="**/*" />
             </fileset>
@@ -75,32 +71,31 @@
         <exec executable="npm">
             <arg line="run typedoc" />
         </exec>
+         <!-- move original TS source files back -->
         <move toDir="${ts.source.dir}">
-             <fileset dir="${temp}">
+             <fileset dir="${src_ts_temp}">
                 <include name="**/*" />
             </fileset>
         </move>
         <delete dir="${temp}" /> 
+        <delete dir="${src_ts_temp}" /> 
         <delete file="${library.dist.dir}/index.ts" />
     </target>
 
 
-    <!-- Concatenate the TypeScript files in user defined order so that parent
-         classes are defined before thier child classes -->
+    <!-- Concatenate the TypeScript files and store result in 'dist/index.ts' -->
     <target name="concat.ts.files" depends="copy.ts.files" >
         <echo message="Concatenate TypeScript files for TypeDoc" />
+        <!-- Concat order so that parent classes precede child classes  -->
         <loadfile property="tslist" srcfile="${ts.list.file}" />        
         <concat destfile="${library.dist.dir}/index.ts" fixlastline="true" > 
             <header file="${exports}" ></header>
-            <!-- Base class code should precede child class code -->
             <filelist dir="${temp}" files="${tslist}" />
         </concat>
     </target>
 
 
-    <!-- Copy all the the TransScript files into the temporary folder prior to 
-         concantenation removing all lines with import statements
-    -->
+    <!-- Copy all the the TypeScript files into 'temp' folder -->
     <target name="copy.ts.files" depends="init" >
         <echo message="Copying TypeScript files" />
         <copy todir="${temp}" flatten="true" >
@@ -136,10 +131,9 @@
 
     <!-- Initialisation task for both compilation and documentation       -->
     <target name="init">
-        <echo message="####################################################" />
+        <echo message="###################################################" />
         <echo message="${library.name}   V${library.version}" />
         <echo message="Build started ${date}" />
-        <delete file="${library.dist.dir}/index.ts" />
         <delete dir="${temp}" />        
         <mkdir dir="${temp}" />
     </target>
