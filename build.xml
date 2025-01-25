@@ -31,7 +31,6 @@
         <delete dir="${temp}" />      
     </target>
 
-
     <!-- Concatenate the JavaScript files and store result in 'dist/lib/???.ts' -->
     <target name="concat.js.files" depends="copy.js.files" >
         <echo message="Concatenate JavaScript files into one ready for GCC" />
@@ -42,7 +41,6 @@
             <filelist dir="${temp}" files="${jslist}" />
         </concat>  
     </target>
-
 
      <!-- Copy all the the JavaScript files into 'temp' folder -->
     <target name="copy.js.files" depends="tsc" >
@@ -58,8 +56,7 @@
         </copy>
     </target>
 
-
-    <!-- Create the HTML documentation -->
+    <!-- Create the HTML documentation    -->
     <target name="document" depends="concat.ts.files">
         <echo message="Create HTML documantation" />
         <!-- move original TS source files so they don't get included -->
@@ -82,7 +79,6 @@
         <delete file="${library.dist.dir}/index.ts" />
     </target>
 
-
     <!-- Concatenate the TypeScript files and store result in 'dist/index.ts' -->
     <target name="concat.ts.files" depends="copy.ts.files" >
         <echo message="Concatenate TypeScript files for TypeDoc" />
@@ -93,7 +89,6 @@
             <filelist dir="${temp}" files="${tslist}" />
         </concat>
     </target>
-
 
     <!-- Copy all the the TypeScript files into 'temp' folder -->
     <target name="copy.ts.files" depends="init" >
@@ -108,7 +103,6 @@
         </copy>
     </target>
 
-
     <!-- Transpiles TypeScript to JavaScript  -->
     <target name="tsc" depends="init">
       <echo message="TypeScript Compiler" />
@@ -116,8 +110,7 @@
         <arg line="run tsc" />
       </exec>
       <!-- Errors are stored in "tsc_err.log" show any none p5 errors then
-        delete log ignore any 'p5' errors 
-        -->
+        delete log ignore any 'p5' errors    -->
       <concat>
         <filterchain>
           <linecontains negate="true">
@@ -137,6 +130,5 @@
         <delete dir="${temp}" />        
         <mkdir dir="${temp}" />
     </target>
-
 
 </project>
