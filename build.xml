@@ -36,10 +36,14 @@
         <echo message="Concatenate JavaScript files into one ready for GCC" />
         <!-- Concat order so that parent classes precede child classes  -->
         <loadfile property="jslist" srcfile="${js.list.file}" />  
-        <concat destfile="${library.dist.lib.dir}/${library.filename.js}" fixlastline="true" > 
+        <!-- Concatenated file -->
+        <property name="jsfile" value="${library.dist.lib.dir}/${library.filename.js}" />
+        <concat destfile="${jsfile}" fixlastline="true" > 
             <header file="${jdoc.min}" ></header>
             <filelist dir="${temp}" files="${jslist}" />
-        </concat>  
+        </concat>
+        <!-- Set version number -->
+        <replace file="${jsfile}" token="!!VERSION!!" value="${library.version}" />
     </target>
 
      <!-- Copy all the the JavaScript files into 'temp' folder -->

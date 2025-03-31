@@ -758,13 +758,14 @@ class CvsSlider extends CvsBufferedControl {
      * @hidden
      * @param px horizontal position
      * @param py vertical position
+     * @param tol tolerance in pixels
      * @returns 0 if not over the control of &ge;1
      */
-    _whereOver(px: number, py: number): number {
+    _whereOver(px: number, py: number, tol = 8): number {
         px -= 10; // Adjust mouse to start of track
         let ty = this._buffer.height / 2;
         let tx = this._t01 * (this._buffer.width - 20);
-        if (Math.abs(tx - px) <= 8 && Math.abs(py - ty) <= 8) {
+        if (Math.abs(tx - px) <= tol && Math.abs(py - ty) <= tol) {
             return 1;
         }
         return 0;
@@ -816,6 +817,51 @@ class CvsSlider extends CvsBufferedControl {
                 break;
         }
         return false;
+    }
+
+    /** @hidden */
+    _handleTouch(e) {
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        // console.log(t);
+        // console.log(`        Touch # "${t.identifier}"  at  [${mx}, ${my}]   over ${over}  size [${t.radiusX}, ${t.radiusY}]   force ${t.force}`);
+        console.log(`##  ${this._name} Touch type: ${e.type}      Touch # "${t.identifier}"  at  [${mx}, ${my}]   over ${this._over} }`);
+
+        switch (e.type) {
+            case 'touchstart':
+                if (this._over > 0) {
+                    this._active = true;
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'touchend':
+                if (this._active) {
+                    this.action({ source: this, p5Event: e, value: this.value(), final: true });
+                    this._active = false;
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'touchmove':
+                if (this._active) {
+                    let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
+                    if (this._s2ticks)
+                        t01 = this._nearestTickT(t01);
+                    if (this._t01 != t01) {
+                        this._t01 = t01;
+                        this.action({ source: this, p5Event: e, value: this.value(), final: false });
+                    }
+                    this.invalidateBuffer();
+                }
+                break;
+        }
     }
 
     /** 
@@ -970,16 +1016,16 @@ class CvsRanger extends CvsSlider {
     }
 
     /** @hidden */
-    _whereOver(px: number, py: number): number {
+    _whereOver(px: number, py: number, tol = 8): number {
         // Check vertical position  
         let ty = this._buffer.height / 2;
         if (Math.abs(py - ty) <= 8) {
             let tw = this._buffer.width - 20;
             let t = this._t;
             px -= 10;
-            if (Math.abs(t[0] * tw - px) <= 8)
+            if (Math.abs(t[0] * tw - px) <= tol)
                 return 1;
-            if (Math.abs(t[1] * tw - px) <= 8)
+            if (Math.abs(t[1] * tw - px) <= tol)
                 return 2;
         }
         return 0
@@ -1045,6 +1091,64 @@ class CvsRanger extends CvsSlider {
                 break;
         }
         return false;
+    }
+
+    /** @hidden */
+    _handleTouch(e) {
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
+        // If this control is active remember the thumb that was pressed
+        // otherwise check the current position
+        this._tIdx = this._active ? this._tIdx : this._over - 1;
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        switch (e.type) {
+            case 'touchstart':
+                if (this._over > 0) {
+                    this._active = true;
+                    this._tIdx = this._over - 1; // Which thumb is the mouse over
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'touchend':
+                if (this._active) {
+                    let t0 = Math.min(this._t[0], this._t[1]);
+                    let t1 = Math.max(this._t[0], this._t[1]);
+                    this._t[0] = t0;
+                    this._t[1] = t1;
+                    this._tIdx = -1;
+                    this.action({
+                        source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
+                    });
+                    this._active = false;
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'touchmove':
+                if (this._active) {
+                    let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
+                    if (this._s2ticks)
+                        t01 = this._nearestTickT(t01);
+                    if (this._t[this._tIdx] != t01) {
+                        this._t[this._tIdx] = t01;
+                        let t0 = Math.min(this._t[0], this._t[1]);
+                        let t1 = Math.max(this._t[0], this._t[1]);
+                        this.action({
+                            source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
+                        });
+                    }
+                    this.invalidateBuffer();
+                }
+                break;
+        }
     }
 
     /** @hidden */

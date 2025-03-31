@@ -1,4 +1,7 @@
-## Latest stable version 0.9.4
+## Latest stable version 0.9.5
+
+## 0.9.5
+* Slider and Ranger controls now respond to touch events
 
 ## 0.9.4
 * bug fixes

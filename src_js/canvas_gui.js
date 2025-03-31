@@ -1,4 +1,4 @@
-const CANVAS_GUI_VERSION = '0.9.4';
+const CANVAS_GUI_VERSION = '!!VERSION!!';
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -18,6 +18,7 @@ class GUI {
      * @param p the sketch instance
      */
     constructor(p5c, p = p5.instance) {
+        /** @hidden */ this._touchEventsEnabled = false; // 0.9.5
         /** @hidden */ this._mouseEventsEnabled = false; // 0.9.4
         /** @hidden */ this._keyEventsEnabled = false;
         /** @hidden */ this._eventsAllowed = true;
@@ -43,6 +44,7 @@ class GUI {
         this._initColorSchemes();
         this._addFocusHandlers();
         this._addMouseEventHandlers();
+        this._addTouchEventHandlers();
         // Choose 2D / 3D rendering methods
         this._selectDrawMethod();
     }
@@ -294,6 +296,48 @@ class GUI {
             this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e); return false; });
             this._keyEventsEnabled = true;
         }
+    }
+    _addTouchEventHandlers() {
+        if (!this._touchEventsEnabled) {
+            let canvas = this._canvas;
+            // Add mouse events
+            canvas.addEventListener('touchstart', (e) => { this._handleTouchEvents(e); });
+            canvas.addEventListener('touchend', (e) => { this._handleTouchEvents(e); });
+            canvas.addEventListener('touchcancel', (e) => { this._handleTouchEvents(e); });
+            canvas.addEventListener('touchmove', (e) => { this._handleTouchEvents(e); });
+            this._touchEventsEnabled = true;
+        }
+    }
+    /**
+     * Called by the mouse event listeners
+     * @hidden
+     * @param e event
+     */
+    _handleTouchEvents(e) {
+        e.preventDefault();
+        // Find the currently active control and pass the event to it
+        if (this._eventsAllowed && this._enabled && this.isVisible()) {
+            let activeControl;
+            for (let c of this._ctrls) {
+                if (c.isActive()) {
+                    if (c['_handleTouch']) {
+                        activeControl = c;
+                        c._handleTouch(e);
+                    }
+                    else {
+                        activeControl = undefined;
+                    }
+                    break;
+                }
+            }
+            // If no active control then pass the event to each enabled control in turn
+            if (activeControl == undefined) {
+                for (let c of this._ctrls)
+                    if (c.isEnabled() && c.isVisible()) // 0.9.3 introduces visibility condition
+                        c['_handleTouch']?.(e);
+            }
+        }
+        return false;
     }
     _handleFocusEvents(e) {
         switch (e.type) {
