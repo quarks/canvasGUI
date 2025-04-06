@@ -1,4 +1,4 @@
-## Latest stable version 0.9.5
+## Latest stable version 0.9.6
 
 ## 0.9.6
 * All GUI controls now respond to touch events
