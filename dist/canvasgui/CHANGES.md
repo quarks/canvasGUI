@@ -1,5 +1,9 @@
 ## Latest stable version 0.9.5
 
+## 0.9.6
+* All GUI controls now respond to touch events
+* Fixes bug in Touch events extended to all 
+
 ## 0.9.5
 * Slider and Ranger controls now respond to touch events
 

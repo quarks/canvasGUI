@@ -197,6 +197,20 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /** @hidden */
+    _whereOver(px, py) {
+        if (px > this._w - 20 && px < this._w && py > 0 && py < this._h - 20)
+            return 3; // over vertical scroller
+        if (px > 0 && px < this._w - 20 && py > this._h - 20 && py < this._h)
+            return 3; // over horizontal scroller
+        let w = this._w, w0 = 0.2 * w, w1 = 0.8 * w;
+        let h = this._h, h0 = 0.35 * h, h1 = 0.65 * h;
+        if (this._scaler && px > w0 && px < w1 && py > h0 && py < h1)
+            return 2; //over slider make visible area
+        if (px > 0 && px < w && py > 0 && py < h)
+            return 1;
+        return 0;
+    }
+    /** @hidden */
     _handleMouse(e) {
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
@@ -217,8 +231,41 @@ class CvsViewer extends CvsBufferedControl {
             this._scrH.hide();
             this._scrV.hide();
         }
+        this._processEvent(e, mx, my);
+        return false;
+    }
+    /** @hidden */
+    _handleTouch(e) {
+        e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        // Hide scaler unless mouse is close to centre
+        if (this._scaler)
+            this._over == 2 ? this._scaler.show() : this._scaler.hide();
+        if (this._over >= 1) {
+            this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
+            this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
+        }
+        else {
+            this._scrH.hide();
+            this._scrV.hide();
+        }
+        this._processEvent(e, mx, my);
+    }
+    /** @hidden */
+    _processEvent(e, ...info) {
+        let mx = info[0], my = info[1];
         switch (e.type) {
             case 'mousedown':
+            case 'touchstart':
                 if (this._over == 1) {
                     // Use these to see if there is movement between mouseDown and mouseUp
                     this._clickAllowed = false;
@@ -240,6 +287,7 @@ class CvsViewer extends CvsBufferedControl {
                     this._clickAllowed = false;
                 }
             case 'mouseup':
+            case 'touchend':
                 if (this._active) {
                     this._dragging = false;
                     this._active = false;
@@ -247,6 +295,7 @@ class CvsViewer extends CvsBufferedControl {
                 }
                 break;
             case 'mousemove':
+            case 'touchmove':
                 if (this._active && this._dragging) {
                     if (this._scaler)
                         this._scaler.hide();
@@ -258,7 +307,6 @@ class CvsViewer extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return false;
     }
     /** @hidden */
     _validateMouseDrag(ncx, ncy) {
@@ -356,20 +404,6 @@ class CvsViewer extends CvsBufferedControl {
             width: width, height: height,
             offsetX: offsetX, offsetY: offsetY,
         };
-    }
-    /** @hidden */
-    _whereOver(px, py) {
-        if (px > this._w - 20 && px < this._w && py > 0 && py < this._h - 20)
-            return 3; // over vertical scroller
-        if (px > 0 && px < this._w - 20 && py > this._h - 20 && py < this._h)
-            return 3; // over horizontal scroller
-        let w = this._w, w0 = 0.2 * w, w1 = 0.8 * w;
-        let h = this._h, h0 = 0.35 * h, h1 = 0.65 * h;
-        if (this._scaler && px > w0 && px < w1 && py > h0 && py < h1)
-            return 2; //over slider make visible area
-        if (px > 0 && px < w && py > 0 && py < h)
-            return 1;
-        return 0;
     }
     /** @hidden */
     shrink(dim) {

@@ -200,6 +200,15 @@ class GUI {
     // ###########        End of factory methods             ############
     // ##################################################################
     /**
+     * Returns the name of this GUI. If the GUI is not named then
+     * the returned value is undefined.
+     *
+     * @returns the name of this gui or undefined
+     */
+    name() {
+        return this._name;
+    }
+    /**
      * Render any controls for this gui
      * @returns this gui
      * @since 0.9.3
@@ -282,7 +291,7 @@ class GUI {
             canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e); });
             canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e); });
             canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e); });
-            // Leave canvas
+            // Leave and enter canvas
             canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e); });
             canvas.addEventListener('mouseenter', (e) => { this._handleMouseEvents(e); });
             this._mouseEventsEnabled = true;
@@ -314,19 +323,14 @@ class GUI {
      * @param e event
      */
     _handleTouchEvents(e) {
-        e.preventDefault();
         // Find the currently active control and pass the event to it
         if (this._eventsAllowed && this._enabled && this.isVisible()) {
             let activeControl;
             for (let c of this._ctrls) {
+                activeControl = undefined;
                 if (c.isActive()) {
-                    if (c['_handleTouch']) {
-                        activeControl = c;
-                        c._handleTouch(e);
-                    }
-                    else {
-                        activeControl = undefined;
-                    }
+                    activeControl = c;
+                    c._handleTouch(e);
                     break;
                 }
             }
@@ -334,10 +338,9 @@ class GUI {
             if (activeControl == undefined) {
                 for (let c of this._ctrls)
                     if (c.isEnabled() && c.isVisible()) // 0.9.3 introduces visibility condition
-                        c['_handleTouch']?.(e);
+                        c._handleTouch(e);
             }
         }
-        return false;
     }
     _handleFocusEvents(e) {
         switch (e.type) {
@@ -531,9 +534,10 @@ class GUI {
             pane.close();
     }
     /**
-     * Hide all side panes. This will also close any pane that is open.
-    * Replaces hideAll
-     * @since 0.9.3  */
+     * Hide all side panes. This will also close any pane that is open.<br>
+     * Replaces hideAll
+     * @since 0.9.3
+     */
     hidePanes() {
         this._closePanes();
         for (let pane of this._panesEast)
@@ -758,42 +762,65 @@ class GUI {
     static announce() {
         if (!GUI._announced) {
             console.log('================================================');
-            console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2023 Peter Lager`);
+            console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2025 Peter Lager`);
             console.log('================================================');
             GUI._announced = true;
         }
     }
     /**
-     * <p>Creates and returns a GUI controller for a given canvas element.</p>
-     * @param p5c
-     * @param p
+     * <p>Returns a GUI controller for a given canvas element.</p>
+     * <p>If a GUI has already been created for this canvas it will be returned,
+     * otherwise a new GUI will be created and returned</p>
+     * <p>A canvas can have more than one GUI associated with it but in that case
+     * each GUI must have a unique name.</p>
+     *
+     *
+     * @param p5c the renderer - the display canvas
+     * @param p the processing instance (required in Instance mode)
      * @returns a GUI controller
      */
     static get(p5c, p = p5.instance) {
         GUI.announce();
-        if (GUI._guis[p])
-            return GUI._guis[p];
+        if (GUI._guis.has(p5c))
+            return GUI._guis.get(p5c);
+        // Need to create a GUI for this canvas
         let gui = new GUI(p5c, p);
-        gui._name = p5c.toString();
-        GUI._guis[p] = gui;
+        GUI._guis.set(p5c, gui);
         return gui;
     }
     /**
-     * <p>Creates and returns a named GUI controller.</p>
-     * <p>Added in V0.9.4</p>
-     * @param name unique name for the gui
-     * @param p5c
-     * @param p
-     * @returns  a GUI controller
+     * <p>Returns a named GUI controller.</p>
+     * <p>If an exisiting GUI has the same name it will be returned, otherwise
+     * a new GUI will be created and returned</p>
+     * <p>If the name parameter is not of type 'string' or an empty string then
+     * the returned value is undefined.</p>
+     *
+     * @param name unique name for the GUI
+     * @param p5c the renderer - the display canvas
+     * @param p the processing instance (required in Instance mode)
+     * @returns a GUI controller if valid name provided
      */
     static getNamed(name, p5c, p = p5.instance) {
         GUI.announce();
-        if (GUI._guis[name])
-            return GUI._guis[name];
-        let gui = new GUI(p5c, p);
-        gui._name = p5c.toString();
-        GUI._guis[name] = gui;
-        return gui;
+        if (typeof name === 'string' && name.length > 0) {
+            if (GUI._guis.has(name))
+                return GUI._guis.get(name);
+            // Need to create a GUI for this canvas
+            let gui = new GUI(p5c, p);
+            gui._name = name;
+            GUI._guis.set(name, gui);
+            return gui;
+        }
+        return undefined;
+    }
+    /**
+     * <p>Returns a previously created GUI controller for a given canvas
+     * or name. </p>
+     * @param key associated canvas or GUI name
+     * @returns  a matching GUI controller or undefined if not found
+     */
+    static find(key) {
+        return GUI._guis.get(key);
     }
 }
 // ##################################################################################
@@ -801,6 +828,6 @@ class GUI {
 // Class methods and attributes
 // ##################################################################################
 // ##################################################################################
-GUI._guis = {}; //new Map();
+GUI._guis = new Map();
 GUI._announced = false;
 //# sourceMappingURL=canvas_gui.js.map

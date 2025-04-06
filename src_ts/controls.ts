@@ -59,6 +59,7 @@ class CvsBaseControl {
     /** @hidden */ protected _tooltip: CvsTooltip;
     /** @hidden */ protected _scheme: __Scheme = undefined;
     /** @hidden */ protected _bufferInvalid: boolean = true;
+
     /** <p>The event handler for this control. Although it is permitted to set 
      * this property directly it is recommended that the <code>setAction(...)</code>
      * method is used to define the event handler actions.</p> 
@@ -393,7 +394,7 @@ class CvsBaseControl {
      * @since 0.9.4
      * @hidden
      */
-    _whereOver(px: number, py: number): number {
+    _whereOver(px: number, py: number, tol = 0): number {
         const R = 5;
         if (px > 0 && px < this._w && py > 0 && py < this._h) {
             if (this._c[0] > R) {  // top left
@@ -427,6 +428,21 @@ class CvsBaseControl {
 
     /** @hidden */
     _minControlSize(): __Box { return null; }
+
+    /** @hidden */
+    _updateControlVisual(): void { }
+
+    /** @hidden */
+    _handleMouse(e: MouseEvent): boolean { return true; };
+
+    /** @hidden */
+    _handleKey(e: KeyboardEvent): boolean { return true; };
+
+    /** @hidden */
+    _handleTouch(e: TouchEvent) { }
+
+    /** @hidden */
+    _processEvent(e: any, ...info) { }
 
     /**
      * <p>This method ensures we have a buffer of the correct size for the control</p>
@@ -539,15 +555,6 @@ class CvsBaseControl {
     orientation(): OrientNorth | OrientSouth | OrientEast | OrientWest {
         return this._orientation;
     }
-
-    /** @hidden */
-    _updateControlVisual(): void { }
-
-    /** @hidden */
-    _handleMouse(e: MouseEvent): boolean { return true; };
-
-    /** @hidden */
-    _handleKey(e: KeyboardEvent): boolean { return true; };
 
 }
 
@@ -777,15 +784,38 @@ class CvsSlider extends CvsBufferedControl {
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
         let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
+        mx = r.x; my = r.y;
         this._pover = this._over;                 // Store previous mouse over state
         this._over = this._whereOver(mx, my);     // Store current mouse over state
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx);
+        return false;
+    }
 
+    /** @hidden */
+    _handleTouch(e: TouchEvent) {
+        e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx);
+    }
+
+    /** @hidden */
+    _processEvent(e: any, ...info) {
+        let mx = info[0];
         switch (e.type) {
             case 'mousedown':
+            case 'touchstart':
                 if (this._over > 0) {
                     this._active = true;
                     this.invalidateBuffer();
@@ -793,6 +823,7 @@ class CvsSlider extends CvsBufferedControl {
                 break;
             case 'mouseout':
             case 'mouseup':
+            case 'touchend':
                 if (this._active) {
                     this.action({ source: this, p5Event: e, value: this.value(), final: true });
                     this._active = false;
@@ -800,6 +831,7 @@ class CvsSlider extends CvsBufferedControl {
                 }
                 break;
             case 'mousemove':
+            case 'touchmove':
                 if (this._active) {
                     let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
                     if (this._s2ticks)
@@ -816,54 +848,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return false;
     }
-
-    /** @hidden */
-    _handleTouch(e) {
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x; my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        // console.log(t);
-        // console.log(`        Touch # "${t.identifier}"  at  [${mx}, ${my}]   over ${over}  size [${t.radiusX}, ${t.radiusY}]   force ${t.force}`);
-        console.log(`##  ${this._name} Touch type: ${e.type}      Touch # "${t.identifier}"  at  [${mx}, ${my}]   over ${this._over} }`);
-
-        switch (e.type) {
-            case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'touchend':
-                if (this._active) {
-                    this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'touchmove':
-                if (this._active) {
-                    let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
-                    if (this._s2ticks)
-                        t01 = this._nearestTickT(t01);
-                    if (this._t01 != t01) {
-                        this._t01 = t01;
-                        this.action({ source: this, p5Event: e, value: this.value(), final: false });
-                    }
-                    this.invalidateBuffer();
-                }
-                break;
-        }
-    }
-
     /** 
      * For a given value p01 find the value at the nearest tick
      * @hidden 
@@ -1037,19 +1022,42 @@ class CvsRanger extends CvsSlider {
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
         let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
+        mx = r.x; my = r.y;
         this._pover = this._over;                 // Store previous mouse over state
         this._over = this._whereOver(mx, my);     // Store current mouse over state
         // If this control is active remember the thumb that was pressed
         // otherwise check the current position
         this._tIdx = this._active ? this._tIdx : this._over - 1;
-
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx);
+        return false;
+    }
 
+    /** @hidden */
+    _handleTouch(e: TouchEvent) {
+        e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
+        this._tIdx = this._active ? this._tIdx : this._over - 1;
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx);
+    }
+
+    /** @hidden */
+    _processEvent(e: any, ...info) {
+        let mx = info[0];
         switch (e.type) {
             case 'mousedown':
+            case 'touchstart':
                 if (this._over > 0) {
                     this._active = true;
                     this._tIdx = this._over - 1;  // Which thumb is the mouse over
@@ -1058,6 +1066,7 @@ class CvsRanger extends CvsSlider {
                 break;
             case 'mouseout':
             case 'mouseup':
+            case 'touchend':
                 if (this._active) {
                     let t0 = Math.min(this._t[0], this._t[1]);
                     let t1 = Math.max(this._t[0], this._t[1]);
@@ -1070,6 +1079,7 @@ class CvsRanger extends CvsSlider {
                 }
                 break;
             case 'mousemove':
+            case 'touchmove':
                 if (this._active) {
                     let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
                     if (this._s2ticks)
@@ -1090,67 +1100,7 @@ class CvsRanger extends CvsSlider {
             case 'wheel':
                 break;
         }
-        return false;
     }
-
-    /** @hidden */
-    _handleTouch(e) {
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x; my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        // If this control is active remember the thumb that was pressed
-        // otherwise check the current position
-        this._tIdx = this._active ? this._tIdx : this._over - 1;
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        switch (e.type) {
-            case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
-                    this._tIdx = this._over - 1; // Which thumb is the mouse over
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'touchend':
-                if (this._active) {
-                    let t0 = Math.min(this._t[0], this._t[1]);
-                    let t1 = Math.max(this._t[0], this._t[1]);
-                    this._t[0] = t0;
-                    this._t[1] = t1;
-                    this._tIdx = -1;
-                    this.action({
-                        source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
-                    });
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'touchmove':
-                if (this._active) {
-                    let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
-                    if (this._s2ticks)
-                        t01 = this._nearestTickT(t01);
-                    if (this._t[this._tIdx] != t01) {
-                        this._t[this._tIdx] = t01;
-                        let t0 = Math.min(this._t[0], this._t[1]);
-                        let t1 = Math.max(this._t[0], this._t[1]);
-                        this.action({
-                            source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
-                        });
-                    }
-                    this.invalidateBuffer();
-                }
-                break;
-        }
-    }
-
     /** @hidden */
     _updateControlVisual() { // CvsRanger
         let b = this._buffer;
@@ -1333,7 +1283,6 @@ abstract class CvsText extends CvsBufferedControl {
             b.textSize(ts);
             tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
             tbox.h = (lines.length - 1) * b.textLeading(); // + b.textAscent() + b.textDescent(); fix for 0.9.3
-            //console.log(`'${this.name()}' Font size ${ts}   Leading ${b.textLeading()}     Ascent ${b.textAscent()}   Descent ${b.textDescent()}`)
             gap += this._gap;
         }
         sw += tbox.w + gap;
@@ -1537,9 +1486,32 @@ class CvsButton extends CvsTextIcon {
         this._over = this._whereOver(mx, my);     // Store current mouse over state
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e);
+        return false;
+    }
 
+    /** @hidden */
+    _handleTouch(e: TouchEvent) {
+        // e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e);
+    }
+
+    /** @hidden */
+    _processEvent(e) {
         switch (e.type) {
             case 'mousedown':
+            case 'touchstart':
                 if (this._over > 0) {
                     // _clickAllowed is set to false if mouse moves
                     this._clickAllowed = true;
@@ -1550,6 +1522,7 @@ class CvsButton extends CvsTextIcon {
                 break;
             case 'mouseout':
             case 'mouseup':
+            case 'touchend':
                 if (this._active) {
                     if (this._clickAllowed) {
                         this.action({ source: this, p5Event: e });
@@ -1562,6 +1535,7 @@ class CvsButton extends CvsTextIcon {
                 }
                 break;
             case 'mousemove':
+            case 'touchmove':
                 this._clickAllowed = false;
                 break;
             case 'mouseover':
@@ -1569,8 +1543,9 @@ class CvsButton extends CvsTextIcon {
             case 'wheel':
                 break;
         }
-        return false;
+
     }
+
 }
 
 /**
@@ -1650,9 +1625,32 @@ class CvsCheckbox extends CvsText {
         this._over = this._whereOver(mx, my);     // Store current mouse over state
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e);
+        return false;
+    }
 
+    /** @hidden */
+    _handleTouch(e: TouchEvent) {
+        // e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e);
+    }
+
+    /** @hidden */
+    _processEvent(e: any, ...info) {
         switch (e.type) {
             case 'mousedown':
+            case 'touchstart':
                 if (this._over > 0) {
                     // Use these to see if there is movement between mosuseDown and mouseUp
                     this._clickAllowed = true;
@@ -1663,6 +1661,7 @@ class CvsCheckbox extends CvsText {
                 break;
             case 'mouseout':
             case 'mouseup':
+            case 'touchend':
                 if (this._active) {
                     if (this._clickAllowed) {
                         this._selected = !this._selected;
@@ -1676,6 +1675,7 @@ class CvsCheckbox extends CvsText {
                 }
                 break;
             case 'mousemove':
+            case 'touchmove':
                 this._clickAllowed = false;
                 break;
             case 'mouseover':
@@ -1683,9 +1683,8 @@ class CvsCheckbox extends CvsText {
             case 'wheel':
                 break;
         }
-        return false;
-    }
 
+    }
     /** @hidden */
     _updateControlVisual() { //  CvsCheckbox
         let ts = this._textSize || this._gui.textSize();
@@ -1925,15 +1924,37 @@ class CvsOption extends CvsText {
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;
         let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
+        mx = r.x; my = r.y;
         this._pover = this._over;                 // Store previous mouse over state
         this._over = this._whereOver(mx, my);     // Store current mouse over state
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e);
+        return false;
+    }
 
+    /** @hidden */
+    _handleTouch(e: TouchEvent) {
+        // e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e);
+    }
+
+    /** @hidden */
+    _processEvent(e: any, ...info) {
         switch (e.type) {
             case 'mousedown':
+            case 'touchstart':
                 if (this._over > 0) {
                     // Use these to see if there is movement between mosuseDown and mouseUp
                     this._clickAllowed = true;
@@ -1944,6 +1965,7 @@ class CvsOption extends CvsText {
                 break;
             case 'mouseout':
             case 'mouseup':
+            case 'touchend':
                 if (this._active) {
                     if (this._clickAllowed && !this._selected) {
                         // If we have an opt group then use it to replace old selection with this one
@@ -1960,6 +1982,7 @@ class CvsOption extends CvsText {
                 this.invalidateBuffer();
                 break;
             case 'mousemove':
+            case 'touchmove':
                 this._clickAllowed = false;
                 break;
             case 'mouseover':
@@ -1967,7 +1990,6 @@ class CvsOption extends CvsText {
             case 'wheel':
                 break;
         }
-        return false;
     }
 
     /** @hidden */
@@ -2343,17 +2365,17 @@ class CvsScroller extends CvsBufferedControl {
     getUsed() {
         return this._used;
     }
-
     /** @hidden */
-    _whereOver(px: number, py: number) {
+    _whereOver(px: number, py: number, tol = 20) {
         let tx = this._BORDER + this._dvalue * this._TLENGTH;
         let ty = this._h / 2;
         let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
-        if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= this._THUMB_HEIGHT / 2) {
+        if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= tol / 2) {
             return 1;
         }
         return 0;
     }
+
 
     /** @hidden */
     _handleMouse(e: MouseEvent) { //    CvsScroller
@@ -2364,12 +2386,36 @@ class CvsScroller extends CvsBufferedControl {
         mx = r.x;
         my = r.y;
         this._pover = this._over;                 // Store previous mouse over state
-        this._over = this._whereOver(mx, my);     // Store current mouse over state
+        this._over = this._whereOver(mx, my, this._THUMB_HEIGHT);     // Store current mouse over state
         if (this._pover != this._over) this.invalidateBuffer();
         if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx);
+        return false;
+    }
 
+    /** @hidden */
+    _handleTouch(e: TouchEvent) {
+        e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x;
+        let my = t.clientY - rect.top - pos.y;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x; my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, Math.max(this._THUMB_HEIGHT, 20)); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx);
+    }
+
+    /** @hidden */
+    _processEvent(e: any, ...info) {
+        let mx = info[0];
         switch (e.type) {
             case 'mousedown':
+            case 'touchstart':
                 if (this._over > 0) {
                     this._active = true;
                     this._s_value = this._value;
@@ -2379,6 +2425,7 @@ class CvsScroller extends CvsBufferedControl {
                 break;
             case 'mouseout':
             case 'mouseup':
+            case 'touchend':
                 if (this._active) {
                     this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
                     this._active = false;
@@ -2386,6 +2433,7 @@ class CvsScroller extends CvsBufferedControl {
                 }
                 break;
             case 'mousemove':
+            case 'touchmove':
                 if (this._active) {
                     let delta = (mx - this._s_mx) / this._TLENGTH;
                     this.update(this._s_value + delta);
@@ -2398,7 +2446,6 @@ class CvsScroller extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return false;
     }
 
     /** @hidden */
