@@ -1,6 +1,6 @@
 {
   "name": "canvas-gui",
-  "version": "0.9.4",
+  "version": "1.0.0",
   "description": "On canvas GUI for p5.js",
   "main": "index.js",
   "scripts": {
