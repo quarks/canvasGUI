@@ -2,7 +2,8 @@
   "name": "canvas-gui",
   "version": "1.0.0",
   "description": "On canvas GUI for p5.js",
-  "main": "index.js",
+  "main": "dist/lib/gui.js",
+  "browser": "dist/lib/gui.min.js",
   "scripts": {
     "tsc": "tsc > tsc_err.log 2>&1",
     "typedoc": "npx typedoc --exclude src_ts.**/*.js",

@@ -53,7 +53,6 @@ class CyanScheme extends BaseScheme {
     }
 }
 class YellowScheme extends BaseScheme {
-
     constructor() {
         super();
         this._colors(60);
@@ -61,7 +60,6 @@ class YellowScheme extends BaseScheme {
 }
 
 class PurpleScheme extends BaseScheme {
-
     constructor() {
         super();
         this._colors(300);
@@ -70,7 +68,6 @@ class PurpleScheme extends BaseScheme {
 }
 
 class OrangeScheme extends BaseScheme {
-
     constructor() {
         super();
         this._colors(30);
