@@ -5,5 +5,5 @@ export { __Position, __Box, __Range, __Overlap, __Scheme };
 export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
 export { CvsBaseControl, CvsBufferedControl, CvsScroller, CvsTooltip, CvsOptionGroup };
 export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-export { CvsViewer, CvsText, CvsTextIcon, CvsTextField };
+export { CvsViewer, CvsText, CvsTextIcon, CvsTextField, GridLayout};
 

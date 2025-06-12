@@ -5,4 +5,5 @@ controls.ts
 viewer.ts
 textfield.ts
 panes.ts
+grid.ts
 

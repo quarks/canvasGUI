@@ -84,7 +84,7 @@ class GUI {
   }
 
   // ##################################################################
-  // #########     Factory methods to create controls    ##############
+  // ######     Factory methods to create controls and layouts  #######
   /**
   * Create a slider control
   * @param name unique name for this control
@@ -235,6 +235,20 @@ class GUI {
       default: ctrl = new CvsPaneEast(this, name, depth);
     }
     return this.addControl(ctrl);
+  }
+
+  /**
+   * Get a grid layout for a given pixel position and size in the display area.
+   * Initially the grid repreents a single cell but the number and size of
+   * horizontal and vertical cells should be set before creating the controls.
+   * @param x left edge position
+   * @param y top edge position 
+   * @param w grid width
+   * @param h grid height
+   * @returns the grid layout
+   */
+  grid(x: number, y: number, w: number, h: number) {
+    return new GridLayout(x, y, w, h);
   }
 
   // ###########        End of factory methods             ############
