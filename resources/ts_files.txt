@@ -1,9 +1,19 @@
 canvas_gui.ts
 colorschemes.ts
 orientations.ts
-controls.ts
+basecontrol.ts
+bufferedcontrol.ts
+slider.ts
+ranger.ts
+texticon.ts
+button.ts
+tooltip.ts
+scroller.ts
+option.ts
+checkbox.ts
 viewer.ts
 textfield.ts
+joystick.ts
 panes.ts
 grid.ts
 

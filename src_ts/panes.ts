@@ -13,6 +13,7 @@ abstract class CvsPane extends CvsBaseControl {
     /** @hidden */ protected _tab: CvsButton;
     /** @hidden */ protected _tabstate: string;
     /** @hidden */ protected _depth: number;
+    /** @hidden */ protected _background = 'rgba(0,0,0,0.6)';
 
     // Deltas used in controlling opening and closing speeds
     /** @hidden */ static _dI = 50;  // Interval time (20)
@@ -53,6 +54,32 @@ abstract class CvsPane extends CvsBaseControl {
      */
     depth(): number {
         return this._depth;
+    }
+
+    /**
+     * <p>Sets the pane background color to use when open. There are 2 predined option ...</p>
+     * <ol>
+     * <li>'dark' semi transparent black background  : 'rgba(0,0,0,0.6)'</li>
+     * <li>'light' semi transparent white background  : 'rgba(255,255,255,0.6)'</li>
+     * </ol>
+     * <p>Alternatively the user can provide any valid CSS color specification but if
+     * invalid the results are unpredicatable and likely to cause the sketch to fail.</p>
+     * 
+     * @param rgba 'light', 'dark' or valid CSS color specification
+     * @returns this control
+     */
+    background(rgba: string) {
+        switch (rgba) {
+            case 'dark':
+                this._background = 'rgba(0,0,0,0.6)';
+                break;
+            case 'light':
+                this._background = 'rgba(255,255,255,0.6)';
+                break;
+            default:
+                this._background = rgba;
+        }
+        return this;
     }
 
     /**
@@ -152,9 +179,9 @@ abstract class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let cs = this._scheme || this._gui.scheme();
+            //let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(cs['TINT_6']);
+            p.fill(this._background);
             p.beginShape(p.TRIANGLE_STRIP);
             p.vertex(0, 0);
             p.vertex(0, this._h);
@@ -173,9 +200,9 @@ abstract class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let cs = this._scheme || this._gui.scheme();
+            // let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(cs['TINT_6']);
+            p.fill(this._background);
             p.rect(0, 0, this._w, this._h);
         }
         for (let c of this._children)

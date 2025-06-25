@@ -36,11 +36,11 @@ class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
-        this._linkOffset = 0;
-        this._prevCsrIdx = 0;
-        this._currCsrIdx = 0;
-        this._textInvalid = false;
-        this._cursorOn = false;
+        /** @hidden */ this._linkOffset = 0;
+        /** @hidden */ this._prevCsrIdx = 0;
+        /** @hidden */ this._currCsrIdx = 0;
+        /** @hidden */ this._textInvalid = false;
+        /** @hidden */ this._cursorOn = false;
         this.textAlign(this._p.LEFT);
         this._c = [0, 0, 0, 0];
     }
@@ -240,26 +240,6 @@ class CvsTextField extends CvsText {
     _cursorX(buff, line, idx) {
         return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
     }
-    // /** @hidden */
-    // _handleMouse(e: MouseEvent) { // textfields
-    //     let pos = this.getAbsXY();
-    //     let mx = this._p.mouseX - pos.x;
-    //     let my = this._p.mouseY - pos.y;
-    //     let r = this._orientation.xy(mx, my, this._w, this._h);
-    //     mx = r.x;
-    //     my = r.y;
-    //     this._pover = this._over;                 // Store previous mouse over state
-    //     this._over = this._whereOver(mx, my);     // Store current mouse over state
-    //     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    //     if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-    //     switch (e.type) {
-    //         case 'mousedown':
-    //             if (this._over > 0)
-    //                 this._activate();
-    //             break;
-    //     }
-    //     return false;
-    // }
     /** @hidden */
     _handleMouse(e) {
         let pos = this.getAbsXY();
@@ -308,7 +288,7 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */
     _handleKey(e) {
-        //let ts = Number(this._textSize || this._gui.textSize());
+        // let ts = Number(this._textSize || this._gui.textSize());
         let mtw = this._maxTextWidthPixels(); // maximun text width in pixels
         let line = this._getLine(); // get text
         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
@@ -434,17 +414,17 @@ class CvsTextField extends CvsText {
         let line = this._lines.length > 0 ? this._lines[0] : '';
         let tv = this._textInvalid;
         let sx = 2 * this._gap;
-        let BACK = cs['COLOR_0'];
-        let FORE = cs['COLOR_14'];
-        let CURSOR = cs['BLACK'];
-        let HIGHLIGHT = cs['COLOR_14'];
-        let SELECT = cs['COLOR_4'];
+        let BACK = cs['C_0'];
+        let FORE = cs['C_9'];
+        const CURSOR = cs['G_10'];
+        const HIGHLIGHT = cs['C_9'];
+        const SELECT = cs['C_0'];
         b.push();
-        b.background(cs['WHITE']); // white background
+        b.background(cs['G_0']); // white background
         b.noStroke();
         if (!this._active) {
-            BACK = tv ? cs['COLOR_14'] : cs['COLOR_0'];
-            FORE = tv ? cs['COLOR_2'] : cs['COLOR_14'];
+            BACK = tv ? cs['C_9'] : cs['C_0'];
+            FORE = tv ? cs['C_0'] : cs['C_9'];
             b.stroke(FORE);
             b.strokeWeight(1.5);
             b.fill(BACK);

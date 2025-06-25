@@ -49,7 +49,7 @@ class GUI {
         this._selectDrawMethod();
     }
     // ##################################################################
-    // #########     Factory methods to create controls    ##############
+    // ######     Factory methods to create controls and layouts  #######
     /**
     * Create a slider control
     * @param name unique name for this control
@@ -136,6 +136,30 @@ class GUI {
         return this.addControl(new CvsLabel(this, name, x, y, w, h));
     }
     /**
+    * Create a viewer
+    * @param name unique name for this control
+    * @param x left-hand pixel position
+    * @param y top pixel position
+    * @param w width
+    * @param h height
+    * @returns an image viewer
+    */
+    viewer(name, x, y, w, h) {
+        return this.addControl(new CvsViewer(this, name, x, y, w, h));
+    }
+    /**
+    * Create a joystick
+    * @param name unique name for this control
+    * @param x left-hand pixel position
+    * @param y top pixel position
+    * @param w width
+    * @param h height
+    * @returns a joystick control
+    */
+    joystick(name, x, y, w, h) {
+        return this.addControl(new CvsJoystick(this, name, x, y, w, h));
+    }
+    /**
     * Create a scroller control
     * @param name unique name for this control
     * @param x left-hand pixel position
@@ -147,18 +171,6 @@ class GUI {
     */
     __scroller(name, x, y, w, h) {
         return this.addControl(new CvsScroller(this, name, x, y, w, h));
-    }
-    /**
-    * Create a viewer
-    * @param name unique name for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns an image viewer
-    */
-    viewer(name, x, y, w, h) {
-        return this.addControl(new CvsViewer(this, name, x, y, w, h));
     }
     /**
      * @hidden
@@ -196,6 +208,20 @@ class GUI {
             default: ctrl = new CvsPaneEast(this, name, depth);
         }
         return this.addControl(ctrl);
+    }
+    /**
+     * Get a grid layout for a given pixel position and size in the display area.
+     * Initially the grid repreents a single cell but the number and size of
+     * horizontal and vertical cells should be set before creating the controls.
+     * @since 1.1.0
+     * @param x left edge position
+     * @param y top edge position
+     * @param w grid width
+     * @param h grid height
+     * @returns the grid layout
+     */
+    grid(x, y, w, h) {
+        return new GridLayout(x, y, w, h);
     }
     // ###########        End of factory methods             ############
     // ##################################################################
@@ -657,6 +683,8 @@ class GUI {
         this._schemes['yellow'] = new YellowScheme();
         this._schemes['purple'] = new PurpleScheme();
         this._schemes['orange'] = new OrangeScheme();
+        this._schemes['light'] = new LightScheme();
+        this._schemes['dark'] = new DarkScheme();
         this._scheme = this._schemes['blue'];
     }
     /**
@@ -697,7 +725,7 @@ class GUI {
     /**
      * <p>Adds a new color scheme to those already available. It does not replace an
      * existing scheme.</p>
-     * @param schemename the name of the color schmem
+     * @param schemename the name of the color scheme
      * @param scheme  the color scheme
      * @returns this gui instance
      */

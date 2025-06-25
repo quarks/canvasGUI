@@ -1,12 +1,5 @@
 const CANVAS_GUI_VERSION: string = '!!VERSION!!';
 
-/** <p>Defines a color scheme</p>  */
-interface __Scheme {
-  WHITE: string;
-  BLACK: string;
-  CLEAR: string;
-}
-
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -41,7 +34,7 @@ class GUI {
   /** @hidden */ public _panesNorth: Array<CvsPane>;
 
   /** @hidden */ private _schemes: Array<any>;
-  /** @hidden */ private _scheme: any;
+  /** @hidden */ private _scheme: BaseScheme;
   /** @hidden */ public _links: Map<number, CvsTextField>;
 
   /** @hidden */ private _visible = true;
@@ -178,6 +171,32 @@ class GUI {
   }
 
   /**
+  * Create a viewer
+  * @param name unique name for this control
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns an image viewer
+  */
+  viewer(name: string, x: number, y: number, w: number, h: number) {
+    return this.addControl(new CvsViewer(this, name, x, y, w, h));
+  }
+
+  /**
+  * Create a joystick
+  * @param name unique name for this control
+  * @param x left-hand pixel position
+  * @param y top pixel position
+  * @param w width
+  * @param h height
+  * @returns a joystick control
+  */
+  joystick(name: string, x: number, y: number, w: number, h: number) {
+    return this.addControl(new CvsJoystick(this, name, x, y, w, h));
+  }
+
+  /**
   * Create a scroller control
   * @param name unique name for this control
   * @param x left-hand pixel position
@@ -189,19 +208,6 @@ class GUI {
   */
   __scroller(name: string, x: number, y: number, w: number, h: number) {
     return this.addControl(new CvsScroller(this, name, x, y, w, h));
-  }
-
-  /**
-  * Create a viewer
-  * @param name unique name for this control
-  * @param x left-hand pixel position
-  * @param y top pixel position
-  * @param w width
-  * @param h height
-  * @returns an image viewer
-  */
-  viewer(name: string, x: number, y: number, w: number, h: number) {
-    return this.addControl(new CvsViewer(this, name, x, y, w, h));
   }
 
   /**
@@ -241,6 +247,7 @@ class GUI {
    * Get a grid layout for a given pixel position and size in the display area.
    * Initially the grid repreents a single cell but the number and size of
    * horizontal and vertical cells should be set before creating the controls.
+   * @since 1.1.0
    * @param x left edge position
    * @param y top edge position 
    * @param w grid width
@@ -733,6 +740,8 @@ class GUI {
     this._schemes['yellow'] = new YellowScheme();
     this._schemes['purple'] = new PurpleScheme();
     this._schemes['orange'] = new OrangeScheme();
+    this._schemes['light'] = new LightScheme();
+    this._schemes['dark'] = new DarkScheme();
     this._scheme = this._schemes['blue'];
   }
 
@@ -741,7 +750,7 @@ class GUI {
    * @param schemename color scheme to set
    * @returns this gui instance
    */
-  scheme(schemename?: string): __Scheme | GUI {
+  scheme(schemename?: string): any {
     // get global scheme
     if (!schemename) {
       return this._scheme;
@@ -766,7 +775,7 @@ class GUI {
    * @returns the color scheme or undefined if it doesn't exist
    * @hidden
    */
-  _getScheme(schemename: string): __Scheme | undefined {
+  _getScheme(schemename: string): BaseScheme | undefined {
     if (schemename && this._schemes[schemename])
       return Object.assign({}, this._schemes[schemename]);
     console.warn(`Unable to retrieve color scheme '${schemename}'`);
@@ -776,11 +785,11 @@ class GUI {
   /**
    * <p>Adds a new color scheme to those already available. It does not replace an
    * existing scheme.</p>
-   * @param schemename the name of the color schmem
+   * @param schemename the name of the color scheme
    * @param scheme  the color scheme
    * @returns this gui instance
    */
-  addScheme(schemename: string, scheme: __Scheme) {
+  addScheme(schemename: string, scheme: any): any {
     if (typeof schemename === 'string' && !scheme) {
       if (!this._schemes[schemename])
         this._schemes[schemename] = scheme;

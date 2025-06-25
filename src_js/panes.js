@@ -8,6 +8,7 @@ class CvsPane extends CvsBaseControl {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h);
+        /** @hidden */ this._background = 'rgba(0,0,0,0.6)';
         this._x = x;
         this._y = y;
         this._w = w;
@@ -33,6 +34,31 @@ class CvsPane extends CvsBaseControl {
      */
     depth() {
         return this._depth;
+    }
+    /**
+     * <p>Sets the pane background color to use when open. There are 2 predined option ...</p>
+     * <ol>
+     * <li>'dark' semi transparent black background  : 'rgba(0,0,0,0.6)'</li>
+     * <li>'light' semi transparent white background  : 'rgba(255,255,255,0.6)'</li>
+     * </ol>
+     * <p>Alternatively the user can provide any valid CSS color specification but if
+     * invalid the results are unpredicatable and likely to cause the sketch to fail.</p>
+     *
+     * @param rgba 'light', 'dark' or valid CSS color specification
+     * @returns this control
+     */
+    background(rgba) {
+        switch (rgba) {
+            case 'dark':
+                this._background = 'rgba(0,0,0,0.6)';
+                break;
+            case 'light':
+                this._background = 'rgba(255,255,255,0.6)';
+                break;
+            default:
+                this._background = rgba;
+        }
+        return this;
     }
     /**
      * <p>Close this pane</p>
@@ -120,9 +146,9 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let cs = this._scheme || this._gui.scheme();
+            //let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(cs['TINT_6']);
+            p.fill(this._background);
             p.beginShape(p.TRIANGLE_STRIP);
             p.vertex(0, 0);
             p.vertex(0, this._h);
@@ -141,9 +167,9 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let cs = this._scheme || this._gui.scheme();
+            // let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(cs['TINT_6']);
+            p.fill(this._background);
             p.rect(0, 0, this._w, this._h);
         }
         for (let c of this._children)

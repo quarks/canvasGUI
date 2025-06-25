@@ -4,7 +4,7 @@
  * inside the bottom and right-hand-side edges of the view. When the mouse is
  * near the centre a slider will appear which can be used to change the scale.</p>
  *
- * <p>THis control also supports layers where multiple images can be layered
+ * <p>This control also supports layers where multiple images can be layered
  * to make the final visual.</p>
  *
  */
@@ -345,7 +345,7 @@ class CvsViewer extends CvsBufferedControl {
     _updateControlVisual() {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        b.background(cs['GREY_5']);
+        b.background(cs['G_7']);
         let wscale = this._wscale;
         let wcx = this._wcx;
         let wcy = this._wcy;

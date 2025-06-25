@@ -54,7 +54,7 @@ class GUI {
         this._selectDrawMethod();
     }
     // ##################################################################
-    // #########     Factory methods to create controls    ##############
+    // ######     Factory methods to create controls and layouts  #######
     /**
     * Create a slider control
     * @param name unique name for this control
@@ -141,6 +141,30 @@ class GUI {
         return this.addControl(new CvsLabel(this, name, x, y, w, h));
     }
     /**
+    * Create a viewer
+    * @param name unique name for this control
+    * @param x left-hand pixel position
+    * @param y top pixel position
+    * @param w width
+    * @param h height
+    * @returns an image viewer
+    */
+    viewer(name, x, y, w, h) {
+        return this.addControl(new CvsViewer(this, name, x, y, w, h));
+    }
+    /**
+    * Create a joystick
+    * @param name unique name for this control
+    * @param x left-hand pixel position
+    * @param y top pixel position
+    * @param w width
+    * @param h height
+    * @returns a joystick control
+    */
+    joystick(name, x, y, w, h) {
+        return this.addControl(new CvsJoystick(this, name, x, y, w, h));
+    }
+    /**
     * Create a scroller control
     * @param name unique name for this control
     * @param x left-hand pixel position
@@ -152,18 +176,6 @@ class GUI {
     */
     __scroller(name, x, y, w, h) {
         return this.addControl(new CvsScroller(this, name, x, y, w, h));
-    }
-    /**
-    * Create a viewer
-    * @param name unique name for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns an image viewer
-    */
-    viewer(name, x, y, w, h) {
-        return this.addControl(new CvsViewer(this, name, x, y, w, h));
     }
     /**
      * @hidden
@@ -201,6 +213,20 @@ class GUI {
             default: ctrl = new CvsPaneEast(this, name, depth);
         }
         return this.addControl(ctrl);
+    }
+    /**
+     * Get a grid layout for a given pixel position and size in the display area.
+     * Initially the grid repreents a single cell but the number and size of
+     * horizontal and vertical cells should be set before creating the controls.
+     * @since 1.1.0
+     * @param x left edge position
+     * @param y top edge position
+     * @param w grid width
+     * @param h grid height
+     * @returns the grid layout
+     */
+    grid(x, y, w, h) {
+        return new GridLayout(x, y, w, h);
     }
     // ###########        End of factory methods             ############
     // ##################################################################
@@ -662,6 +688,8 @@ class GUI {
         this._schemes['yellow'] = new YellowScheme();
         this._schemes['purple'] = new PurpleScheme();
         this._schemes['orange'] = new OrangeScheme();
+        this._schemes['light'] = new LightScheme();
+        this._schemes['dark'] = new DarkScheme();
         this._scheme = this._schemes['blue'];
     }
     /**
@@ -702,7 +730,7 @@ class GUI {
     /**
      * <p>Adds a new color scheme to those already available. It does not replace an
      * existing scheme.</p>
-     * @param schemename the name of the color schmem
+     * @param schemename the name of the color scheme
      * @param scheme  the color scheme
      * @returns this gui instance
      */
@@ -838,69 +866,101 @@ GUI._announced = false;
 //# sourceMappingURL=canvas_gui.js.map
 class BaseScheme {
     constructor() {
-        this['WHITE'] = 'rgb(255, 255, 255)';
-        this['BLACK'] = 'rgb(0, 0, 0)';
-        this['CLEAR'] = 'rgba(0, 0, 0, 0)';
-        for (let i = 0; i < 10; i++) {
-            this[`GREY_${i}`] = `hsb(0,0%,${90 - i * 6}%)`;
-        }
-        for (let i = 0; i < 10; i++) {
-            this[`TINT_${i}`] = `rgba(10,0,0,${i * 0.1})`;
+        this._tints();
+    }
+    _color(hue) {
+        this[`C_0`] = `hsb(${hue}, 40%, 100%)`;
+        this[`C_1`] = `hsb(${hue}, 40%, 90%)`;
+        this[`C_2`] = `hsb(${hue}, 40%, 80%)`;
+        this[`C_3`] = `hsb(${hue}, 40%, 70%)`;
+        this[`C_4`] = `hsb(${hue}, 70%, 100%)`;
+        this[`C_5`] = `hsb(${hue}, 70%, 88%)`;
+        this[`C_6`] = `hsb(${hue}, 70%, 76%)`;
+        this[`C_7`] = `hsb(${hue}, 70%, 64%)`;
+        this[`C_8`] = `hsb(${hue}, 70%, 52%)`;
+        this[`C_9`] = `hsb(${hue}, 70%, 40%)`;
+    }
+    _mono(low, high) {
+        let cn = 0;
+        for (let i = 0; i < 15; i++) {
+            let grey = Math.floor(low + (high - low) * i / 14);
+            this[`C_${cn++}`] = `rgb(${grey}, ${grey}, ${grey})`;
         }
     }
-    _colors(h, s0 = 40, s1 = 70, b = 100) {
-        let cn = 0, i;
-        for (i = 0; i <= 4; ++i) {
-            this[`COLOR_${cn++}`] = `hsba(${h}, ${s0}%, ${b}%, ${0.6 + i * 0.1})`;
-        }
-        for (let i = 0; i <= 3; ++i) {
-            this[`COLOR_${cn++}`] = `hsb(${h}, ${s0}%, ${100 - i * 10}%)`;
-        }
-        for (let i = 0; i <= 5; ++i) {
-            this[`COLOR_${cn++}`] = `hsb(${h}, ${s1}%, ${100 - i * 12}%)`;
-        }
+    _grey(theme) {
+        let grey = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
+        if (theme === 'dark')
+            grey.reverse();
+        for (let i = 0; i < grey.length; i++)
+            this[`G_${i}`] = `hsb(0,0%,${grey[i]}%)`;
     }
-}
-class BlueScheme extends BaseScheme {
-    constructor() {
-        super();
-        this._colors(240);
-    }
-}
-class GreenScheme extends BaseScheme {
-    constructor() {
-        super();
-        this._colors(120);
+    _tints() {
+        let alpha = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+        for (let i = 0; i < alpha.length; i++)
+            this[`T_${i}`] = `rgba(0,0,0,${alpha[i]})`;
     }
 }
 class RedScheme extends BaseScheme {
     constructor() {
         super();
-        this._colors(0);
-    }
-}
-class CyanScheme extends BaseScheme {
-    constructor() {
-        super();
-        this._colors(180);
-    }
-}
-class YellowScheme extends BaseScheme {
-    constructor() {
-        super();
-        this._colors(60);
-    }
-}
-class PurpleScheme extends BaseScheme {
-    constructor() {
-        super();
-        this._colors(300);
+        this._color(0);
+        this._grey('light');
     }
 }
 class OrangeScheme extends BaseScheme {
     constructor() {
         super();
-        this._colors(30);
+        this._color(30);
+        this._grey('light');
+    }
+}
+class YellowScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._color(60);
+        this._grey('light');
+    }
+}
+class GreenScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._color(120);
+        this._grey('light');
+    }
+}
+class CyanScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._color(180);
+        this._grey('light');
+    }
+}
+class BlueScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._color(224);
+        this._grey('light');
+    }
+}
+class PurpleScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._color(300);
+        this._grey('light');
+    }
+}
+class LightScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._mono(254, 64);
+        this._grey('light');
+    }
+}
+class DarkScheme extends BaseScheme {
+    constructor() {
+        super();
+        this._mono(64, 254);
+        this._grey('dark');
     }
 }
 //# sourceMappingURL=colorschemes.js.map
@@ -1052,7 +1112,6 @@ class CvsBaseControl {
         /** @hidden */ this._clickAllowed = false;
         /** @hidden */ this._active = false;
         /** @hidden */ this._opaque = true;
-        /** @hidden */ this._scheme = undefined;
         /** @hidden */ this._bufferInvalid = true;
         /** <p>The event handler for this control. Although it is permitted to set
          * this property directly it is recommended that the <code>setAction(...)</code>
@@ -1086,6 +1145,7 @@ class CvsBaseControl {
      * <p>Calculates the absolute position on the canvas taking into account
      * any ancestors</p>
      * @returns the actual position in the canvas
+     * @hidden
      */
     getAbsXY() {
         if (!this._parent) {
@@ -1100,8 +1160,8 @@ class CvsBaseControl {
     }
     /**
      * <p>Sets or gets the color scheme used by this control.</p>
-     * @param id
-     * @param cascade
+     * @param id the color scheme id e.g. 'blue'
+     * @param cascade if true propogate scheme to all child controls.
      * @returns this control or the control's color scheme
      */
     scheme(id, cascade) {
@@ -1161,7 +1221,6 @@ class CvsBaseControl {
         for (let i = 0; i < this._children.length; i++) {
             if (control === this._children[i]) {
                 let pos = control.getAbsXY();
-                //control.xy(pos.x, pos.y);
                 control._x = pos.x;
                 control._y = pos.y;
                 control._parent = null;
@@ -1460,7 +1519,7 @@ class CvsBaseControl {
     }
     /** @hidden */
     _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs['TINT_4']);
+        b.fill(cs['T_4']);
         b.noStroke();
         b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -1513,6 +1572,7 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
+//# sourceMappingURL=basecontrol.js.map
 /*
 ##############################################################################
  CvsBufferedControl
@@ -1557,10 +1617,10 @@ class CvsBufferedControl extends CvsBaseControl {
      * @param duration how long the tip remains visible (milliseconds)
      * @returns this control
      */
-    tooltip(tiptext, duration) {
+    tooltip(tiptext, duration = 1600) {
         let tt = this._gui.__tooltip(this._name + '.tooltip')
             .text(tiptext)
-            .showTime(duration || 1600)
+            .showTime(duration)
             .shrink();
         this.addChild(tt);
         if (tt instanceof CvsTooltip) {
@@ -1579,6 +1639,7 @@ class CvsBufferedControl extends CvsBaseControl {
         return this;
     }
 }
+//# sourceMappingURL=bufferedcontrol.js.map
 /**
  * <p>This class represents a horizontal slider with a draggable thumb to
  * define a value within user defined limits.</p>
@@ -1704,10 +1765,8 @@ class CvsSlider extends CvsBufferedControl {
         px -= 10; // Adjust mouse to start of track
         let ty = this._buffer.height / 2;
         let tx = this._t01 * (this._buffer.width - 20);
-        if (Math.abs(tx - px) <= tol && Math.abs(py - ty) <= tol) {
-            return 1;
-        }
-        return 0;
+        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
+            ? 1 : 0;
     }
     /** @hidden */
     _handleMouse(e) {
@@ -1796,12 +1855,12 @@ class CvsSlider extends CvsBufferedControl {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
         let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
-        const OPAQUE = cs['COLOR_3'];
-        const TICKS = cs['GREY_9'];
-        const UNUSED_TRACK = cs['GREY_6'];
-        const USED_TRACK = cs['GREY_1'];
-        const HIGHLIGHT = cs['COLOR_14'];
-        const THUMB = cs['COLOR_10'];
+        const OPAQUE = cs['C_0'];
+        const TICKS = cs['G_9'];
+        const UNUSED_TRACK = cs['G_4'];
+        const USED_TRACK = cs['G_1'];
+        const HIGHLIGHT = cs['C_9'];
+        const THUMB = cs['C_6'];
         b.push();
         b.clear();
         if (this._opaque) {
@@ -1814,8 +1873,7 @@ class CvsSlider extends CvsBufferedControl {
         // Now draw ticks
         b.stroke(TICKS);
         b.strokeWeight(1);
-        let n, dT;
-        n = this._majorTicks * this._minorTicks;
+        let dT, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             dT = tw / n;
             for (let i = 0; i <= n; i++) { // minor ticks
@@ -1825,7 +1883,7 @@ class CvsSlider extends CvsBufferedControl {
         }
         n = this._majorTicks;
         if (n >= 2) {
-            dT = tw / n; //this._majorTicks
+            dT = tw / n;
             for (let i = 0; i <= n; i++) { // major ticks
                 let tx = i * dT;
                 b.line(tx, -majorT, tx, majorT);
@@ -1858,6 +1916,7 @@ class CvsSlider extends CvsBufferedControl {
         return { w: this._w, h: 20 };
     }
 }
+//# sourceMappingURL=slider.js.map
 /**
  * <p>This class represents a slider with 2 draggable thumbs to
  * define a value within user defined limits.</p>
@@ -2029,15 +2088,15 @@ class CvsRanger extends CvsSlider {
         let cs = this._scheme || this._gui.scheme();
         let tw = b.width - 20;
         let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
-        const OPAQUE = cs['COLOR_3'];
-        const TICKS = cs['GREY_9'];
-        const UNUSED_TRACK = cs['GREY_6'];
-        const USED_TRACK = cs['GREY_1'];
-        const HIGHLIGHT = cs['COLOR_14'];
-        const THUMB = cs['COLOR_10'];
+        const OPAQUE = cs['C_0'];
+        const TICKS = cs['G_9'];
+        const UNUSED_TRACK = cs['G_4'];
+        const USED_TRACK = cs['G_1'];
+        const HIGHLIGHT = cs['C_9'];
+        const THUMB = cs['C_6'];
         b.push();
         b.clear();
-        // Backkground
+        // Background
         if (this._opaque) {
             b.noStroke();
             b.fill(OPAQUE);
@@ -2048,8 +2107,7 @@ class CvsRanger extends CvsSlider {
         // Now draw ticks
         b.stroke(TICKS);
         b.strokeWeight(1);
-        let n, dT;
-        n = this._majorTicks * this._minorTicks;
+        let dT, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             dT = tw / n;
             for (let i = 0; i <= n; i++) { // minor ticks
@@ -2091,6 +2149,7 @@ class CvsRanger extends CvsSlider {
         this._bufferInvalid = false;
     }
 }
+//# sourceMappingURL=ranger.js.map
 /**
  * </p>The base class for any control that displays text as part of its
  * visual interface</p>
@@ -2291,6 +2350,85 @@ class CvsTextIcon extends CvsText {
     }
 }
 /**
+ * <p>Simple label with text and / or icon</p>
+ */
+class CvsLabel extends CvsTextIcon {
+    /** @hidden */
+    constructor(gui, name, x, y, w, h) {
+        super(gui, name, x || 0, y || 0, w || 60, h || 16);
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        let ts = this._textSize || this._gui.textSize();
+        let cs = this._scheme || this._gui.scheme();
+        let b = this._buffer;
+        let p = this._p;
+        let icon = this._icon;
+        let iconAlign = this._iconAlign;
+        let textAlign = this._textAlign;
+        let lines = this._lines;
+        let gap = this._gap;
+        const OPAQUE = cs['C_0'];
+        const FORE = cs['C_8'];
+        b.push();
+        b.clear();
+        // Background
+        if (this._opaque) {
+            b.noStroke();
+            b.fill(OPAQUE);
+            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+        }
+        if (icon) {
+            let px = 0, py;
+            switch (iconAlign) {
+                case p.LEFT:
+                    px = gap;
+                    break;
+                case p.RIGHT:
+                    px = this._w - icon.width - gap;
+                    break;
+            }
+            if (lines.length == 0) // no text so center icon
+                px = (this._w - icon.width) / 2;
+            py = (this._h - icon.height + gap) / 2;
+            b.image(this._icon, px, py);
+        }
+        if (lines.length > 0) {
+            b.textSize(ts);
+            let x0 = gap, x1 = this._w - gap, sx = 0;
+            // Determine extent of text area
+            if (icon && iconAlign == p.LEFT)
+                x0 += icon.width;
+            if (icon && iconAlign == p.RIGHT)
+                x1 -= icon.width;
+            let tw = x1 - x0;
+            let th = this._tbox.h;
+            let py = b.textAscent() + (this._h - th) / 2;
+            b.fill(FORE);
+            for (let line of lines) {
+                switch (textAlign) {
+                    case p.LEFT:
+                        sx = x0;
+                        break;
+                    case p.CENTER:
+                        sx = x0 + (tw - b.textWidth(line)) / 2;
+                        break;
+                    case p.RIGHT:
+                        sx = x1 - b.textWidth(line) - gap;
+                        break;
+                }
+                b.text(line, sx, py);
+                py += b.textLeading();
+            }
+        }
+        b.pop();
+        b.updatePixels();
+        // last line in this method should be
+        this._bufferInvalid = false;
+    }
+}
+//# sourceMappingURL=texticon.js.map
+/**
  * <p>This class is to create simple buttons with text and / or icons on its face.</p>
  */
 class CvsButton extends CvsTextIcon {
@@ -2308,9 +2446,9 @@ class CvsButton extends CvsTextIcon {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        let BACK = cs['COLOR_4'];
-        let FORE = cs['COLOR_13'];
-        let HIGHLIGHT = cs['COLOR_14'];
+        const BACK = cs['C_0'];
+        const FORE = cs['C_8'];
+        const HIGHLIGHT = cs['C_9'];
         b.push();
         b.clear();
         // Backkground
@@ -2452,60 +2590,201 @@ class CvsButton extends CvsTextIcon {
         }
     }
 }
+//# sourceMappingURL=button.js.map
 /**
- * This class supports simple true-false checkbox
+ * <p>A tooltip is a simply text hint that appears near to a control with the
+ * mouse over it.</p>
+ *
+ * <p>The tooltip's relative position to thr dontrol is automatically set to
+ * make sure it is visible inside the canvas area.</p>
+ * @hidden
  */
-class CvsCheckbox extends CvsText {
+class CvsTooltip extends CvsText {
+    /** @hidden */
+    constructor(gui, name) {
+        super(gui, name);
+        this._gap = 1;
+        this._visible = false;
+        this._showTime = 0;
+    }
+    /**
+       * <p>Sets the text to be displayed in the tooltip.</p>
+       * <p>Processing constants are used to define the alignment.</p>
+       * @param t the text to display
+       * @returns this control
+       */
+    text(t) {
+        if (Array.isArray(t))
+            this._lines = t;
+        else {
+            let lines = t.toString().split('\n');
+            this._lines = [];
+            for (let line of lines)
+                this._lines.push(line);
+        }
+        // If necessary expand the control to surround text
+        let s = this._minControlSize();
+        this._w = Math.max(this._w, s.w);
+        this._h = Math.max(this._h, s.h);
+        this.invalidateBuffer();
+        return this;
+    }
+    /**
+     * <p>Set the time to display the tooltip
+     * @param duration display time in ms
+     * @returns this control
+     */
+    showTime(duration) {
+        this._showTime = duration;
+        return this;
+    }
+    /** @hidden */
+    _updateState(owner, prevOver, currOver) {
+        if (owner.isVisible() && prevOver != currOver)
+            if (currOver > 0) {
+                this.show();
+                setTimeout(() => { this.hide(); }, this._showTime);
+            }
+    }
+    /** @hidden */
+    _validatePosition() {
+        let p = this._parent;
+        let pp = p.getAbsXY(), px = pp.x, py = pp.y;
+        let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
+        // Start tip in default location
+        this._x = 0, this._y = -this._h;
+        if (py + this._y < 0)
+            this._y += this._h + ph;
+        if (px + this._x + this._w > this._gui.canvasWidth())
+            this._x -= this._w - pa.w;
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        let ts = this._textSize || this._gui.tipTextSize();
+        let cs = this._parent.scheme() || this._gui.scheme();
+        let b = this._buffer;
+        let lines = this._lines;
+        let gap = this._gap;
+        const BACK = cs['C_0'];
+        const FORE = cs['C_8'];
+        b.push();
+        b.clear();
+        // Backkground
+        b.stroke(FORE);
+        b.fill(BACK);
+        b.rect(0, 0, this._w - 1, this._h - 1);
+        b.fill(FORE).noStroke();
+        if (lines.length > 0) {
+            b.textSize(ts);
+            let x0 = gap, x1 = this._w - gap, sx = 0;
+            // Determine extent of text area
+            let tw = x1 - x0;
+            let th = this._tbox.h;
+            let py = b.textAscent() + (this._h - th) / 2;
+            for (let line of lines) {
+                sx = x0 + (tw - b.textWidth(line)) / 2;
+                b.text(line, sx, py);
+                py += b.textLeading();
+            }
+        }
+        b.pop();
+        b.updatePixels();
+        // last line in this method should be
+        this._bufferInvalid = false;
+    }
+    /** @hidden */
+    _minControlSize() {
+        let b = this._buffer;
+        let lines = this._lines;
+        let ts = this._textSize || this._gui.tipTextSize();
+        let tbox = this._tbox;
+        let sw = 0, sh = 0, gap = this._gap;
+        // Calculate minimum length and height of are to hold
+        // multiple lines of text
+        if (lines.length > 0) {
+            if (!b)
+                this._validateBuffer();
+            b.textSize(ts);
+            tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
+            tbox.h = (lines.length - 1) * b.textLeading() + b.textAscent() + b.textDescent();
+            gap += this._gap;
+        }
+        sw += tbox.w + gap;
+        sh = Math.max(tbox.h, sh) + 2 * gap;
+        return { w: sw, h: sh };
+    }
+}
+//# sourceMappingURL=tooltip.js.map
+/*
+ ##############################################################################
+ CvsScroller
+ This class represents a simple scrollbar. Although it can be used as a
+ distinct control it is more likely to be used as part of a larger control
+ such as CvsViewer.
+ ##############################################################################
+ */
+/**
+ * <p>The scroller is used to scroll thorugh an object larger than the
+ * display area.</p>
+ * @hidden
+ */
+class CvsScroller extends CvsBufferedControl {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 18);
-        this._selected = false;
-        this._iconAlign = this._p.LEFT;
-        this._textAlign = this._p.LEFT;
+        super(gui, name, x || 0, y || 0, w || 100, h || 20);
+        /** @hidden */ this._value = 0.5;
+        /** @hidden */ this._dvalue = 0.5;
+        /** @hidden */ this._used = 0.1;
+        /** @hidden */ this._s_value = 0.5;
+        /** @hidden */ this._s_dvalue = 0.5;
+        /** @hidden */ this._s_mx = 0.5;
+        /** @hidden */ this._minV = this._used / 2;
+        /** @hidden */ this._maxV = 1 - this._used / 2;
+        /** @hidden */ this._BORDER = 10;
+        /** @hidden */ this._THEIGHT = 8;
+        /** @hidden */ this._THUMB_HEIGHT = 12;
+        /** @hidden */ this._MIN_THUMB_WIDTH = 10;
+        this._TLENGTH = this._w - 3 * this._BORDER;
+        this._c = gui.corners();
+        this._opaque = false;
     }
-    /**
-     * <p>Gets or sets the icon and alignment relative to any text in the control.</p>
-     * <p>Processing constants are used to define the icon alignment.</p>
-     * @param align LEFT or RIGHT
-     * @returns this control or the current icon alignment
-     */
-    iconAlign(align) {
-        if (!align)
-            return this._iconAlign;
-        if (align == this._p.LEFT || align == this._p.RIGHT) {
-            this._iconAlign = align;
+    update(v, u) {
+        // If a used value is available then set it
+        if (Number.isFinite(u) && u !== this._used) {
+            this._used = u;
+            this._minV = this._used / 2;
+            this._maxV = 1 - this._used / 2;
             this.invalidateBuffer();
         }
-        return this;
-    }
-    /**
-     * <p>Make this checkbox true</p>
-     * @returns this control
-     */
-    select() {
-        if (!this._selected) {
-            this._selected = true;
-            this.invalidateBuffer();
+        if (Number.isFinite(v) && v !== this._value) {
+            v = this._p.constrain(v, 0, 1);
+            let dv = v, u2 = this._used / 2;
+            if (v < u2)
+                dv = u2;
+            else if (v > 1 - u2)
+                dv = 1 - u2;
+            if (this._value != v || this._dvalue != dv) {
+                this._value = v;
+                this._dvalue = dv;
+                this.invalidateBuffer();
+            }
         }
-        return this;
     }
-    /**
-     * <p>Make this checkbox false</p>
-     * @returns this control
-     */
-    deselect() {
-        if (this._selected) {
-            this._selected = false;
-            this.invalidateBuffer();
+    getValue() {
+        return this._value;
+    }
+    getUsed() {
+        return this._used;
+    }
+    /** @hidden */
+    _whereOver(px, py, tol = 20) {
+        let tx = this._BORDER + this._dvalue * this._TLENGTH;
+        let ty = this._h / 2;
+        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
+        if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= tol / 2) {
+            return 1;
         }
-        return this;
-    }
-    /**
-     *
-     * @returns true if this checkbox is selecetd
-     */
-    isSelected() {
-        return this._selected;
+        return 0;
     }
     /** @hidden */
     _handleMouse(e) {
@@ -2516,16 +2795,17 @@ class CvsCheckbox extends CvsText {
         mx = r.x;
         my = r.y;
         this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        this._over = this._whereOver(mx, my, this._THUMB_HEIGHT); // Store current mouse over state
+        if (this._pover != this._over)
+            this.invalidateBuffer();
         if (this._tooltip)
             this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
+        this._processEvent(e, mx);
         return false;
     }
     /** @hidden */
     _handleTouch(e) {
-        // e.preventDefault();
+        e.preventDefault();
         let pos = this.getAbsXY();
         const rect = this._gui._canvas.getBoundingClientRect();
         const t = e.changedTouches[0];
@@ -2535,22 +2815,22 @@ class CvsCheckbox extends CvsText {
         mx = r.x;
         my = r.y;
         this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._over = this._whereOver(mx, my, Math.max(this._THUMB_HEIGHT, 20)); // Store current mouse over state
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
             this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
+        this._processEvent(e, mx);
     }
     /** @hidden */
     _processEvent(e, ...info) {
+        let mx = info[0];
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 if (this._over > 0) {
-                    // Use these to see if there is movement between mosuseDown and mouseUp
-                    this._clickAllowed = true;
-                    this._dragging = true;
                     this._active = true;
+                    this._s_value = this._value;
+                    this._s_mx = mx;
                     this.invalidateBuffer();
                 }
                 break;
@@ -2558,20 +2838,19 @@ class CvsCheckbox extends CvsText {
             case 'mouseup':
             case 'touchend':
                 if (this._active) {
-                    if (this._clickAllowed) {
-                        this._selected = !this._selected;
-                        this.action({ source: this, p5Event: e, selected: this._selected });
-                    }
-                    this._over = 0;
-                    this._clickAllowed = false;
-                    this._dragging = false;
+                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
                     this._active = false;
                     this.invalidateBuffer();
                 }
                 break;
             case 'mousemove':
             case 'touchmove':
-                this._clickAllowed = false;
+                if (this._active) {
+                    let delta = (mx - this._s_mx) / this._TLENGTH;
+                    this.update(this._s_value + delta);
+                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
+                    this.invalidateBuffer();
+                }
                 break;
             case 'mouseover':
                 break;
@@ -2581,77 +2860,39 @@ class CvsCheckbox extends CvsText {
     }
     /** @hidden */
     _updateControlVisual() {
-        let ts = this._textSize || this._gui.textSize();
-        let cs = this._scheme || this._gui.scheme();
         let b = this._buffer;
-        //let icon = this._icon;
-        let iconAlign = this._iconAlign;
-        let isize = this._p.constrain(Number(ts) * 0.7, 12, 16);
-        let textAlign = this._textAlign;
-        let lines = this._lines;
-        let gap = this._gap;
-        let BACK = cs['COLOR_3'];
-        let FORE = cs['COLOR_13'];
-        let HIGHLIGHT = cs['COLOR_14'];
+        let cs = this._scheme || this._gui.scheme();
+        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH), thumbSizeY = this._THUMB_HEIGHT;
+        let tx = this._dvalue * this._TLENGTH;
+        const OPAQUE = cs['C_0'];
+        const TICKS = cs['G_8'];
+        const UNUSED_TRACK = cs['G_4'];
+        const HIGHLIGHT = cs['C_9'];
+        const THUMB = cs['C_5'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(BACK);
+            b.fill(OPAQUE);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
-        // Start with box and tick
-        b.push();
-        let px = (iconAlign == this._p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
-        b.translate(px, b.height / 2);
-        b.stroke(FORE);
-        b.fill(cs['WHITE']);
-        b.strokeWeight(1.5);
-        b.rect(-isize / 2, -isize / 2, isize, isize, 3);
-        if (this._selected) {
-            b.stroke(FORE);
-            b.strokeWeight(2.5);
-            b.line(-0.281 * isize, 0, -0.188 * isize, 0.313 * isize);
-            b.line(0.270 * isize, -0.27 * isize, -0.188 * isize, 0.313 * isize);
-        }
-        b.pop();
-        if (lines.length > 0) {
-            b.textSize(ts);
-            let x0 = gap, x1 = this._w - gap, sx = 0;
-            // Determine extent of text area
-            if (iconAlign == this._p.LEFT)
-                x0 += isize + gap;
-            if (iconAlign == this._p.RIGHT)
-                x1 -= isize + gap;
-            let tw = x1 - x0;
-            let th = this._tbox.h;
-            let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(FORE);
-            for (let line of lines) {
-                switch (textAlign) {
-                    case this._p.LEFT:
-                        sx = x0;
-                        break;
-                    case this._p.CENTER:
-                        sx = x0 + (tw - b.textWidth(line)) / 2;
-                        break;
-                    case this._p.RIGHT:
-                        sx = x1 - b.textWidth(line) - gap;
-                        break;
-                }
-                b.text(line, sx, py);
-                py += b.textLeading();
-            }
-        }
-        // Mouse over control
-        if (this._over > 0) {
-            b.stroke(HIGHLIGHT);
+        // Now translate to track left edge - track centre
+        b.translate(this._BORDER, b.height / 2);
+        // draw track
+        b.fill(UNUSED_TRACK);
+        b.stroke(TICKS);
+        b.strokeWeight(1);
+        b.rect(0, -this._THEIGHT / 2, this._TLENGTH, this._THEIGHT);
+        // Draw thumb
+        b.fill(THUMB);
+        b.noStroke();
+        if (this._active || this._over > 0) {
             b.strokeWeight(2);
-            b.noFill();
-            b.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
+            b.stroke(HIGHLIGHT);
         }
+        b.rect(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY, this._c[0], this._c[1], this._c[2], this._c[3]);
         if (!this._enabled)
-            this._disable_hightlight(b, cs, 0, 0, this._w, this._h);
+            this._disable_hightlight(b, cs, 0, -this._h / 2, this._w - 20, this._h);
         b.pop();
         b.updatePixels();
         // last line in this method should be
@@ -2659,28 +2900,10 @@ class CvsCheckbox extends CvsText {
     }
     /** @hidden */
     _minControlSize() {
-        let b = this._buffer;
-        let lines = this._lines;
-        let tbox = this._tbox;
-        let sw = 0, sh = 0, gap = this._gap;
-        let ts = this._textSize || this._gui.textSize();
-        let isize = this._p.constrain(Number(ts) * 0.7, 12, 16);
-        // Calculate minimum length and height of are to hold
-        // multiple lines of text
-        if (lines.length > 0) {
-            if (!b)
-                this._validateBuffer();
-            let ts = this._textSize || this._gui.textSize();
-            b.textSize(ts);
-            tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
-            tbox.h = (lines.length - 1) * b.textLeading() + b.textAscent() + b.textDescent();
-            //gap += this._gap;
-        }
-        sw += tbox.w + gap + isize;
-        sh = Math.max(this._tbox.h, isize + gap) + 2 * gap;
-        return { w: sw, h: sh };
+        return { w: this._w, h: 20 };
     }
 }
+//# sourceMappingURL=scroller.js.map
 /**
  * <p>The option group manages a group of option buttons where only one can
  * be selected at any time.</p>
@@ -2880,9 +3103,11 @@ class CvsOption extends CvsText {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        let BACK = cs['COLOR_3'];
-        let FORE = cs['COLOR_13'];
-        let HIGHLIGHT = cs['COLOR_14'];
+        const BACK = cs['C_0'];
+        const FORE = cs['C_8'];
+        const ICON_BG = cs['G_0'];
+        const ICON_FG = cs['G_10'];
+        const HIGHLIGHT = cs['C_9'];
         b.push();
         b.clear();
         // If opaque
@@ -2895,12 +3120,12 @@ class CvsOption extends CvsText {
         b.push();
         let px = (iconAlign == p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
         b.translate(px, b.height / 2);
-        b.stroke(FORE);
-        b.fill(cs['WHITE']);
+        b.stroke(ICON_FG);
+        b.fill(ICON_BG);
         b.strokeWeight(1.5);
         b.ellipse(0, 0, isize, isize);
         if (this._selected) {
-            b.fill(FORE);
+            b.fill(ICON_FG);
             b.noStroke();
             b.ellipse(0, 0, isize / 2, isize / 2);
         }
@@ -2970,276 +3195,61 @@ class CvsOption extends CvsText {
         return { w: sw, h: sh };
     }
 }
+//# sourceMappingURL=option.js.map
 /**
- * <p>Simple label with text and / or icon</p>
+ * This class supports simple true-false checkbox
  */
-class CvsLabel extends CvsTextIcon {
+class CvsCheckbox extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 60, h || 16);
-    }
-    /** @hidden */
-    _updateControlVisual() {
-        let ts = this._textSize || this._gui.textSize();
-        let cs = this._scheme || this._gui.scheme();
-        let b = this._buffer;
-        let p = this._p;
-        let icon = this._icon;
-        let iconAlign = this._iconAlign;
-        let textAlign = this._textAlign;
-        let lines = this._lines;
-        let gap = this._gap;
-        let OPAQUE = cs['COLOR_4'];
-        let FORE = cs['COLOR_13'];
-        b.push();
-        b.clear();
-        // Background
-        if (this._opaque) {
-            b.noStroke();
-            b.fill(OPAQUE);
-            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
-        }
-        if (icon) {
-            let px = 0, py;
-            switch (iconAlign) {
-                case p.LEFT:
-                    px = gap;
-                    break;
-                case p.RIGHT:
-                    px = this._w - icon.width - gap;
-                    break;
-            }
-            if (lines.length == 0) // no text so center icon
-                px = (this._w - icon.width) / 2;
-            py = (this._h - icon.height + gap) / 2;
-            b.image(this._icon, px, py);
-        }
-        if (lines.length > 0) {
-            b.textSize(ts);
-            let x0 = gap, x1 = this._w - gap, sx = 0;
-            // Determine extent of text area
-            if (icon && iconAlign == p.LEFT)
-                x0 += icon.width;
-            if (icon && iconAlign == p.RIGHT)
-                x1 -= icon.width;
-            let tw = x1 - x0;
-            let th = this._tbox.h;
-            let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(FORE);
-            for (let line of lines) {
-                switch (textAlign) {
-                    case p.LEFT:
-                        sx = x0;
-                        break;
-                    case p.CENTER:
-                        sx = x0 + (tw - b.textWidth(line)) / 2;
-                        break;
-                    case p.RIGHT:
-                        sx = x1 - b.textWidth(line) - gap;
-                        break;
-                }
-                b.text(line, sx, py);
-                py += b.textLeading();
-            }
-        }
-        b.pop();
-        b.updatePixels();
-        // last line in this method should be
-        this._bufferInvalid = false;
-    }
-}
-/**
- * <p>A tooltip is a simply text hint that appears near to a control with the
- * mouse over it.</p>
- *
- * <p>The tooltip's relative position to thr dontrol is automatically set to
- * make sure it is visible inside the canvas area.</p>
- * @hidden
- */
-class CvsTooltip extends CvsText {
-    /** @hidden */
-    constructor(gui, name) {
-        super(gui, name);
-        this._gap = 1;
-        this._visible = false;
-        this._showTime = 0;
+        super(gui, name, x || 0, y || 0, w || 80, h || 18);
+        this._selected = false;
+        this._iconAlign = this._p.LEFT;
+        this._textAlign = this._p.LEFT;
     }
     /**
-       * <p>Sets the text to be displayed in the tooltip.</p>
-       * <p>Processing constants are used to define the alignment.</p>
-       * @param t the text to display
-       * @returns this control
-       */
-    text(t) {
-        if (Array.isArray(t))
-            this._lines = t;
-        else {
-            let lines = t.toString().split('\n');
-            this._lines = [];
-            for (let line of lines)
-                this._lines.push(line);
-        }
-        // If necessary expand the control to surround text
-        let s = this._minControlSize();
-        this._w = Math.max(this._w, s.w);
-        this._h = Math.max(this._h, s.h);
-        this.invalidateBuffer();
-        return this;
-    }
-    /**
-     * <p>Set the time to display the tooltip
-     * @param duration display time in ms
-     * @returns this control
+     * <p>Gets or sets the icon and alignment relative to any text in the control.</p>
+     * <p>Processing constants are used to define the icon alignment.</p>
+     * @param align LEFT or RIGHT
+     * @returns this control or the current icon alignment
      */
-    showTime(duration) {
-        this._showTime = duration;
-        return this;
-    }
-    /** @hidden */
-    _updateState(owner, prevOver, currOver) {
-        if (owner.isVisible() && prevOver != currOver)
-            if (currOver > 0) {
-                this.show();
-                setTimeout(() => { this.hide(); }, this._showTime);
-            }
-    }
-    /** @hidden */
-    _validatePosition() {
-        let p = this._parent;
-        let pp = p.getAbsXY(), px = pp.x, py = pp.y;
-        let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
-        // Start tip in default location
-        this._x = 0, this._y = -this._h;
-        if (py + this._y < 0)
-            this._y += this._h + ph;
-        if (px + this._x + this._w > this._gui.canvasWidth())
-            this._x -= this._w - pa.w;
-    }
-    /** @hidden */
-    _updateControlVisual() {
-        let ts = this._textSize || this._gui.tipTextSize();
-        let cs = this._scheme || this._gui.scheme();
-        let b = this._buffer;
-        let lines = this._lines;
-        let gap = this._gap;
-        let BACK = cs['COLOR_4'];
-        let FORE = cs['COLOR_13'];
-        b.push();
-        b.clear();
-        // Backkground
-        b.stroke(FORE);
-        b.fill(BACK);
-        b.rect(0, 0, this._w - 1, this._h - 1);
-        b.fill(FORE).noStroke();
-        if (lines.length > 0) {
-            b.textSize(ts);
-            let x0 = gap, x1 = this._w - gap, sx = 0;
-            // Determine extent of text area
-            let tw = x1 - x0;
-            let th = this._tbox.h;
-            let py = b.textAscent() + (this._h - th) / 2;
-            for (let line of lines) {
-                sx = x0 + (tw - b.textWidth(line)) / 2;
-                b.text(line, sx, py);
-                py += b.textLeading();
-            }
-        }
-        b.pop();
-        b.updatePixels();
-        // last line in this method should be
-        this._bufferInvalid = false;
-    }
-    /** @hidden */
-    _minControlSize() {
-        let b = this._buffer;
-        let lines = this._lines;
-        let ts = this._textSize || this._gui.tipTextSize();
-        let tbox = this._tbox;
-        let sw = 0, sh = 0, gap = this._gap;
-        // Calculate minimum length and height of are to hold
-        // multiple lines of text
-        if (lines.length > 0) {
-            if (!b)
-                this._validateBuffer();
-            b.textSize(ts);
-            tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
-            tbox.h = (lines.length - 1) * b.textLeading() + b.textAscent() + b.textDescent();
-            gap += this._gap;
-        }
-        sw += tbox.w + gap;
-        sh = Math.max(tbox.h, sh) + 2 * gap;
-        return { w: sw, h: sh };
-    }
-}
-/*
- ##############################################################################
- CvsScroller
- This class represents a simple scrollbar. Although it can be used as a
- distinct control it is more likely to be used as part of a larger control such as CvsViewer
- ##############################################################################
- */
-/**
- * <p>The scroller is used to scroll thorugh an object larger than the
- * display area.</p>
- * @hidden
- */
-class CvsScroller extends CvsBufferedControl {
-    /** @hidden */
-    constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 20);
-        /** @hidden */ this._value = 0.5;
-        /** @hidden */ this._dvalue = 0.5;
-        /** @hidden */ this._used = 0.1;
-        /** @hidden */ this._s_value = 0.5;
-        /** @hidden */ this._s_dvalue = 0.5;
-        /** @hidden */ this._s_mx = 0.5;
-        /** @hidden */ this._minV = this._used / 2;
-        /** @hidden */ this._maxV = 1 - this._used / 2;
-        /** @hidden */ this._BORDER = 10;
-        /** @hidden */ this._THEIGHT = 8;
-        /** @hidden */ this._THUMB_HEIGHT = 12;
-        /** @hidden */ this._MIN_THUMB_WIDTH = 10;
-        this._TLENGTH = this._w - 3 * this._BORDER;
-        this._c = gui.corners();
-        this._opaque = false;
-    }
-    update(v, u) {
-        // If a used value is available then set it
-        if (Number.isFinite(u) && u !== this._used) {
-            this._used = u;
-            this._minV = this._used / 2;
-            this._maxV = 1 - this._used / 2;
+    iconAlign(align) {
+        if (!align)
+            return this._iconAlign;
+        if (align == this._p.LEFT || align == this._p.RIGHT) {
+            this._iconAlign = align;
             this.invalidateBuffer();
         }
-        if (Number.isFinite(v) && v !== this._value) {
-            v = this._p.constrain(v, 0, 1);
-            let dv = v, u2 = this._used / 2;
-            if (v < u2)
-                dv = u2;
-            else if (v > 1 - u2)
-                dv = 1 - u2;
-            if (this._value != v || this._dvalue != dv) {
-                this._value = v;
-                this._dvalue = dv;
-                this.invalidateBuffer();
-            }
+        return this;
+    }
+    /**
+     * <p>Make this checkbox true</p>
+     * @returns this control
+     */
+    select() {
+        if (!this._selected) {
+            this._selected = true;
+            this.invalidateBuffer();
         }
+        return this;
     }
-    getValue() {
-        return this._value;
-    }
-    getUsed() {
-        return this._used;
-    }
-    /** @hidden */
-    _whereOver(px, py, tol = 20) {
-        let tx = this._BORDER + this._dvalue * this._TLENGTH;
-        let ty = this._h / 2;
-        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
-        if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= tol / 2) {
-            return 1;
+    /**
+     * <p>Make this checkbox false</p>
+     * @returns this control
+     */
+    deselect() {
+        if (this._selected) {
+            this._selected = false;
+            this.invalidateBuffer();
         }
-        return 0;
+        return this;
+    }
+    /**
+     *
+     * @returns true if this checkbox is selecetd
+     */
+    isSelected() {
+        return this._selected;
     }
     /** @hidden */
     _handleMouse(e) {
@@ -3250,17 +3260,16 @@ class CvsScroller extends CvsBufferedControl {
         mx = r.x;
         my = r.y;
         this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, this._THUMB_HEIGHT); // Store current mouse over state
-        if (this._pover != this._over)
-            this.invalidateBuffer();
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
             this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
+        this._processEvent(e);
         return false;
     }
     /** @hidden */
     _handleTouch(e) {
-        e.preventDefault();
+        // e.preventDefault();
         let pos = this.getAbsXY();
         const rect = this._gui._canvas.getBoundingClientRect();
         const t = e.changedTouches[0];
@@ -3270,22 +3279,22 @@ class CvsScroller extends CvsBufferedControl {
         mx = r.x;
         my = r.y;
         this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, Math.max(this._THUMB_HEIGHT, 20)); // Store current mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
         this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
         if (this._tooltip)
             this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
+        this._processEvent(e);
     }
     /** @hidden */
     _processEvent(e, ...info) {
-        let mx = info[0];
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 if (this._over > 0) {
+                    // Use these to see if there is movement between mosuseDown and mouseUp
+                    this._clickAllowed = true;
+                    this._dragging = true;
                     this._active = true;
-                    this._s_value = this._value;
-                    this._s_mx = mx;
                     this.invalidateBuffer();
                 }
                 break;
@@ -3293,19 +3302,20 @@ class CvsScroller extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 if (this._active) {
-                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
+                    if (this._clickAllowed) {
+                        this._selected = !this._selected;
+                        this.action({ source: this, p5Event: e, selected: this._selected });
+                    }
+                    this._over = 0;
+                    this._clickAllowed = false;
+                    this._dragging = false;
                     this._active = false;
                     this.invalidateBuffer();
                 }
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
-                    let delta = (mx - this._s_mx) / this._TLENGTH;
-                    this.update(this._s_value + delta);
-                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
-                    this.invalidateBuffer();
-                }
+                this._clickAllowed = false;
                 break;
             case 'mouseover':
                 break;
@@ -3315,39 +3325,77 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let b = this._buffer;
+        let ts = this._textSize || this._gui.textSize();
         let cs = this._scheme || this._gui.scheme();
-        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH), thumbSizeY = this._THUMB_HEIGHT;
-        let tx = this._dvalue * this._TLENGTH;
-        const OPAQUE = cs['COLOR_3'];
-        const TICKS = cs['GREY_8'];
-        const UNUSED_TRACK = cs['GREY_4'];
-        const HIGHLIGHT = cs['COLOR_14'];
-        const THUMB = cs['COLOR_10'];
+        let b = this._buffer;
+        let iconAlign = this._iconAlign;
+        let isize = this._p.constrain(Number(ts) * 0.7, 12, 16);
+        let textAlign = this._textAlign;
+        let lines = this._lines;
+        let gap = this._gap;
+        const BACK = cs['C_0'];
+        const FORE = cs['C_8'];
+        const ICON_BG = cs['G_0'];
+        const ICON_FG = cs['G_10'];
+        const HIGHLIGHT = cs['C_9'];
         b.push();
         b.clear();
         if (this._opaque) {
             b.noStroke();
-            b.fill(OPAQUE);
+            b.fill(BACK);
             b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
-        // Now translate to track left edge - track centre
-        b.translate(this._BORDER, b.height / 2);
-        // draw track
-        b.fill(UNUSED_TRACK);
-        b.stroke(TICKS);
-        b.strokeWeight(1);
-        b.rect(0, -this._THEIGHT / 2, this._TLENGTH, this._THEIGHT);
-        // Draw thumb
-        b.fill(THUMB);
-        b.noStroke();
-        if (this._active || this._over > 0) {
-            b.strokeWeight(2);
-            b.stroke(HIGHLIGHT);
+        // Start with box and tick
+        b.push();
+        let px = (iconAlign == this._p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
+        b.translate(px, b.height / 2);
+        b.stroke(ICON_FG);
+        b.fill(ICON_BG);
+        b.strokeWeight(1.5);
+        b.rect(-isize / 2, -isize / 2, isize, isize, 3);
+        if (this._selected) {
+            b.strokeWeight(2.5);
+            b.line(-0.281 * isize, 0, -0.188 * isize, 0.313 * isize);
+            b.line(0.270 * isize, -0.27 * isize, -0.188 * isize, 0.313 * isize);
         }
-        b.rect(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY, this._c[0], this._c[1], this._c[2], this._c[3]);
+        b.pop();
+        if (lines.length > 0) {
+            b.textSize(ts);
+            let x0 = gap, x1 = this._w - gap, sx = 0;
+            // Determine extent of text area
+            if (iconAlign == this._p.LEFT)
+                x0 += isize + gap;
+            if (iconAlign == this._p.RIGHT)
+                x1 -= isize + gap;
+            let tw = x1 - x0;
+            let th = this._tbox.h;
+            let py = b.textAscent() + (this._h - th) / 2;
+            b.fill(FORE);
+            for (let line of lines) {
+                switch (textAlign) {
+                    case this._p.LEFT:
+                        sx = x0;
+                        break;
+                    case this._p.CENTER:
+                        sx = x0 + (tw - b.textWidth(line)) / 2;
+                        break;
+                    case this._p.RIGHT:
+                        sx = x1 - b.textWidth(line) - gap;
+                        break;
+                }
+                b.text(line, sx, py);
+                py += b.textLeading();
+            }
+        }
+        // Mouse over control
+        if (this._over > 0) {
+            b.stroke(HIGHLIGHT);
+            b.strokeWeight(2);
+            b.noFill();
+            b.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
+        }
         if (!this._enabled)
-            this._disable_hightlight(b, cs, 0, -this._h / 2, this._w - 20, this._h);
+            this._disable_hightlight(b, cs, 0, 0, this._w, this._h);
         b.pop();
         b.updatePixels();
         // last line in this method should be
@@ -3355,17 +3403,36 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _minControlSize() {
-        return { w: this._w, h: 20 };
+        let b = this._buffer;
+        let lines = this._lines;
+        let tbox = this._tbox;
+        let sw = 0, sh = 0, gap = this._gap;
+        let ts = this._textSize || this._gui.textSize();
+        let isize = this._p.constrain(Number(ts) * 0.7, 12, 16);
+        // Calculate minimum length and height of are to hold
+        // multiple lines of text
+        if (lines.length > 0) {
+            if (!b)
+                this._validateBuffer();
+            let ts = this._textSize || this._gui.textSize();
+            b.textSize(ts);
+            tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
+            tbox.h = (lines.length - 1) * b.textLeading() + b.textAscent() + b.textDescent();
+            //gap += this._gap;
+        }
+        sw += tbox.w + gap + isize;
+        sh = Math.max(this._tbox.h, isize + gap) + 2 * gap;
+        return { w: sw, h: sh };
     }
 }
-//# sourceMappingURL=controls.js.map
+//# sourceMappingURL=checkbox.js.map
 /**
  * <p>This control is used to scroll and zoom on an image.</p>
  * <p>When the mouse moves over the control scrollbars will appear (if needed)
  * inside the bottom and right-hand-side edges of the view. When the mouse is
  * near the centre a slider will appear which can be used to change the scale.</p>
  *
- * <p>THis control also supports layers where multiple images can be layered
+ * <p>This control also supports layers where multiple images can be layered
  * to make the final visual.</p>
  *
  */
@@ -3705,7 +3772,7 @@ class CvsViewer extends CvsBufferedControl {
     _updateControlVisual() {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        b.background(cs['GREY_5']);
+        b.background(cs['G_7']);
         let wscale = this._wscale;
         let wcx = this._wcx;
         let wcy = this._wcy;
@@ -3819,11 +3886,11 @@ class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
-        this._linkOffset = 0;
-        this._prevCsrIdx = 0;
-        this._currCsrIdx = 0;
-        this._textInvalid = false;
-        this._cursorOn = false;
+        /** @hidden */ this._linkOffset = 0;
+        /** @hidden */ this._prevCsrIdx = 0;
+        /** @hidden */ this._currCsrIdx = 0;
+        /** @hidden */ this._textInvalid = false;
+        /** @hidden */ this._cursorOn = false;
         this.textAlign(this._p.LEFT);
         this._c = [0, 0, 0, 0];
     }
@@ -4023,26 +4090,6 @@ class CvsTextField extends CvsText {
     _cursorX(buff, line, idx) {
         return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
     }
-    // /** @hidden */
-    // _handleMouse(e: MouseEvent) { // textfields
-    //     let pos = this.getAbsXY();
-    //     let mx = this._p.mouseX - pos.x;
-    //     let my = this._p.mouseY - pos.y;
-    //     let r = this._orientation.xy(mx, my, this._w, this._h);
-    //     mx = r.x;
-    //     my = r.y;
-    //     this._pover = this._over;                 // Store previous mouse over state
-    //     this._over = this._whereOver(mx, my);     // Store current mouse over state
-    //     this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-    //     if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-    //     switch (e.type) {
-    //         case 'mousedown':
-    //             if (this._over > 0)
-    //                 this._activate();
-    //             break;
-    //     }
-    //     return false;
-    // }
     /** @hidden */
     _handleMouse(e) {
         let pos = this.getAbsXY();
@@ -4091,7 +4138,7 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */
     _handleKey(e) {
-        //let ts = Number(this._textSize || this._gui.textSize());
+        // let ts = Number(this._textSize || this._gui.textSize());
         let mtw = this._maxTextWidthPixels(); // maximun text width in pixels
         let line = this._getLine(); // get text
         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
@@ -4217,17 +4264,17 @@ class CvsTextField extends CvsText {
         let line = this._lines.length > 0 ? this._lines[0] : '';
         let tv = this._textInvalid;
         let sx = 2 * this._gap;
-        let BACK = cs['COLOR_0'];
-        let FORE = cs['COLOR_14'];
-        let CURSOR = cs['BLACK'];
-        let HIGHLIGHT = cs['COLOR_14'];
-        let SELECT = cs['COLOR_4'];
+        let BACK = cs['C_0'];
+        let FORE = cs['C_9'];
+        const CURSOR = cs['G_10'];
+        const HIGHLIGHT = cs['C_9'];
+        const SELECT = cs['C_0'];
         b.push();
-        b.background(cs['WHITE']); // white background
+        b.background(cs['G_0']); // white background
         b.noStroke();
         if (!this._active) {
-            BACK = tv ? cs['COLOR_14'] : cs['COLOR_0'];
-            FORE = tv ? cs['COLOR_2'] : cs['COLOR_14'];
+            BACK = tv ? cs['C_9'] : cs['C_0'];
+            FORE = tv ? cs['C_0'] : cs['C_9'];
             b.stroke(FORE);
             b.strokeWeight(1.5);
             b.fill(BACK);
@@ -4275,6 +4322,296 @@ class CvsTextField extends CvsText {
     }
 }
 //# sourceMappingURL=textfield.js.map
+/**
+ * <p>This class simulates a simple joystick.</p>
+ *
+ * <p>Use the <code>setAction</code> method to specify the action-method that
+ * will be used to process action-info objects created when the joystick is
+ * moved.</p>
+ *
+ * <p>The action-info object has several very useful fields dthat describes
+ * the state of the joystick, they include -</p>
+ * <ul>
+ * <li><code>dead</code></li>
+ * <p>If the stick is in the dead zone which surrounds the stick's
+ * rest state then this value will be <code>true</code>.</p>
+ * <li><code>X</code>, <code>Y</code> and <code>XY</code></li>
+ * <p>Early joysticks used mechanical switches had just 9 states. Of these 8
+ * are used to represent the direction the joystick is pushed and 1 for the
+ * rest state. These variables can be used to detect the current state of
+ * the joystick.</p>
+ * <pre>
+ *      <b>X</b>                                 <b>XY</b>
+ * -1   0   +1                        5   6   7
+ *   \  |  /   -1                      \  |  /
+ *    \ | /                             \ | /
+ *  --- + ---   0   <b>Y</b>               4 --- O --- 0      O is the dead zone
+ *    / | \                             / | \             so <b>XY</b> = -1
+ *   /  |  \    +1                     /  |  \
+ *                                    3   2   1
+ * </pre>
+ * <li><code>mag</code> and <code>angle</code></li>
+ * <p>The joysticks state can also be represented by the distance and angle
+ * the stick has been pushed.</p>
+ * <ul>
+ * <li><code>mag</code> : has a value in range &ge; 0 and &le; 1 representing
+ * the distance the stick has been pushed.</li>
+ * <li><code>angle</code> : has a value in range &ge; 0 and &lt; 2.Pi
+ * representing the angle the stick makes to the poistive x axis in the
+ * clockwise direction.</li>
+ * </ul>
+ * <li><code>final</code> : has the value <code>false</code> if the stick is
+ * still being moved and <code>false</code> if the stick has been released.
+ * </li>
+ * </ul>
+ * <p>When the joystick is released it will return back to its rest state
+ * i.e. centered.</p>
+ * @since 1.1.0
+ */
+class CvsJoystick extends CvsBufferedControl {
+    /**
+      * @hidden
+      * @param gui the gui controller
+      * @param name unique name for this control
+      * @param x left-hand pixel position
+      * @param y top pixel position
+      * @param w width
+      * @param h height
+      */
+    constructor(gui, name, x, y, w, h) {
+        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        this._size = Math.min(w, h);
+        this._pr0 = 0.05 * this._size;
+        this._pr1 = 0.40 * this._size;
+        this._tSize = Math.max(0.075 * this._size, 8);
+        this._tmrID = undefined;
+        this._nSlices = 4;
+        this._nRings = 2;
+        // Initial values for testing
+        this._ang = 0;
+        this._td = 0;
+        this._ta = 0;
+        this._opaque = false;
+    }
+    /**
+     * <p>Apply decoration to the joystick active area</p>
+     * @param nslices number of slices
+     * @param nrings number of rings
+     * @returns this control
+     */
+    decor(nslices, nrings) {
+        this._nSlices = Math.round(nslices);
+        this._nRings = Math.round(nrings);
+        this.invalidateBuffer();
+        return this;
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        let b = this._buffer;
+        let cs = this._scheme || this._gui.scheme();
+        let [tx, ty] = this._getThumbXY();
+        const OPAQUE = cs['C_0'];
+        const BACK = cs['C_0'];
+        const BORDER = cs['C_5'];
+        const ROD = cs['C_7']; // was G_5
+        const THUMB_OFF = cs['C_5'];
+        const THUMB_OVER = cs['C_8'];
+        const THUMB_FORE = cs['C_9'];
+        const DECOR = cs['T_2'];
+        const DEAD_ZONE = cs['T_4'];
+        b.push();
+        b.clear();
+        if (this._opaque) {
+            b.noStroke();
+            b.fill(OPAQUE);
+            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+        }
+        b.translate(b.width / 2, b.height / 2);
+        // dial face background
+        b.noStroke();
+        b.fill(BACK);
+        b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
+        // Dial face slices
+        if (this._nSlices > 1) {
+            let a = 2 * Math.PI / this._nSlices;
+            b.push();
+            b.stroke(DECOR);
+            b.strokeWeight(1.5);
+            for (let i = 0; i < this._nSlices; i++) {
+                b.line(this._pr0, 0, this._pr1, 0);
+                b.rotate(a);
+            }
+            b.pop();
+        }
+        // Dial radial ticks
+        if (this._nRings > 1) {
+            let delta = (this._pr1 - this._pr0) / (this._nRings);
+            b.push();
+            b.stroke(DECOR);
+            b.strokeWeight(1.5);
+            b.noFill();
+            for (let i = 1; i < this._nRings; i++) {
+                let d = this._pr0 + i * delta;
+                b.ellipse(0, 0, 2 * d, 2 * d);
+            }
+            b.pop();
+        }
+        // Dial border
+        b.stroke(BORDER);
+        b.strokeWeight(Math.max(4, 0.025 * this._size));
+        b.noFill();
+        b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
+        // Dead zone
+        b.fill(DEAD_ZONE);
+        b.noStroke();
+        b.ellipse(0, 0, this._pr0 * 2, this._pr0 * 2);
+        // Stick                                                                                    
+        b.stroke(ROD);
+        b.strokeWeight(this._size * 0.05);
+        b.line(0, 0, tx, ty);
+        // Thumb
+        b.strokeWeight(2);
+        b.stroke(THUMB_FORE);
+        if (this._active || this._over > 0)
+            b.fill(THUMB_OVER);
+        else
+            b.fill(THUMB_OFF);
+        b.ellipse(tx, ty, this._tSize * 2, this._tSize * 2);
+        b.pop();
+        b.updatePixels();
+        // last line in this method should be
+        this._bufferInvalid = false;
+    }
+    /**
+     * <p>See if the position [px, py] is over the control.</p>
+     * @hidden
+     * @param px horizontal position
+     * @param py vertical position
+     * @param tol tolerance in pixels
+     * @returns 0 if not over the control of &ge;1
+     */
+    _whereOver(px, py, tol = this._tSize) {
+        let [tx, ty] = this._getThumbXY();
+        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
+            ? 1 : 0;
+    }
+    /**
+     * Converts the polar position to cartesian cooordinates.
+     * @hidden
+     */
+    _getThumbXY() {
+        return [this._td * Math.cos(this._ta), this._td * Math.sin(this._ta)];
+    }
+    /**
+     * Converts cartesian to polar cooordinates, constraing the radius to fit
+     * the display.
+     * @hidden
+     */
+    _getThumbDA(x, y) {
+        let d = Math.sqrt(x * x + y * y);
+        d = d < 0 ? 0 : d > this._pr1 ? this._pr1 : d;
+        return [d, Math.atan2(y, x)];
+    }
+    /**
+     * Gets a 'value' object representing the current state of the joystick.
+     * @hidden
+     */
+    _getValue() {
+        let [tx, ty] = this._getThumbXY();
+        let sX = tx < -this._pr0 ? -1 : tx > this._pr0 ? 1 : 0;
+        let sY = ty < -this._pr0 ? -1 : ty > this._pr0 ? 1 : 0;
+        let ta = this._ta;
+        ta = ta >= 0 ? ta : ta + 2 * Math.PI;
+        let a = (ta + Math.PI / 8) % (2 * Math.PI);
+        let dead = this._td <= this._pr0;
+        let sXY = dead ? -1 : Math.floor(4 * a / Math.PI);
+        let tm = (this._td - this._pr0) / (this._pr1 - this._pr0);
+        tm = tm < 0 ? 0 : tm > 1 ? 1 : tm;
+        let v = { X: sX, Y: sY, XY: sXY, mag: tm, angle: ta, dead: dead };
+        return v;
+    }
+    /** @hidden */
+    _handleMouse(e) {
+        let pos = this.getAbsXY();
+        let mx = this._p.mouseX - pos.x - this._w / 2;
+        let my = this._p.mouseY - pos.y - this._h / 2;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x;
+        my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx, my);
+        return false;
+    }
+    /** @hidden */
+    _handleTouch(e) {
+        e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let mx = t.clientX - rect.left - pos.x - this._w / 2;
+        let my = t.clientY - rect.top - pos.y - this._h / 2;
+        let r = this._orientation.xy(mx, my, this._w, this._h);
+        mx = r.x;
+        my = r.y;
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx, my);
+    }
+    /** @hidden */
+    _processEvent(e, ...info) {
+        let mx = info[0], my = info[1];
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                if (this._over > 0) {
+                    this._active = true;
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                if (this._active) {
+                    let r = { source: this, p5Event: e, final: true, ...this._getValue() };
+                    this.action(r);
+                    this._active = false;
+                    this.invalidateBuffer();
+                    if (!this._tmrID)
+                        this._tmrID = setInterval(() => {
+                            this._td -= 0.07 * this._size;
+                            if (this._td <= 0) {
+                                clearInterval(this._tmrID);
+                                this._tmrID = undefined;
+                                this._td = 0;
+                            }
+                            this.invalidateBuffer();
+                        }, 25);
+                }
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                if (this._active) {
+                    [this._td, this._ta] = this._getThumbDA(mx, my);
+                    let r = { source: this, p5Event: e, final: false, ...this._getValue() };
+                    this.action(r);
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+    }
+}
+//# sourceMappingURL=joystick.js.map
 /*
 ##############################################################################
  CvsPane
@@ -4285,6 +4622,7 @@ class CvsPane extends CvsBaseControl {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h);
+        /** @hidden */ this._background = 'rgba(0,0,0,0.6)';
         this._x = x;
         this._y = y;
         this._w = w;
@@ -4310,6 +4648,31 @@ class CvsPane extends CvsBaseControl {
      */
     depth() {
         return this._depth;
+    }
+    /**
+     * <p>Sets the pane background color to use when open. There are 2 predined option ...</p>
+     * <ol>
+     * <li>'dark' semi transparent black background  : 'rgba(0,0,0,0.6)'</li>
+     * <li>'light' semi transparent white background  : 'rgba(255,255,255,0.6)'</li>
+     * </ol>
+     * <p>Alternatively the user can provide any valid CSS color specification but if
+     * invalid the results are unpredicatable and likely to cause the sketch to fail.</p>
+     *
+     * @param rgba 'light', 'dark' or valid CSS color specification
+     * @returns this control
+     */
+    background(rgba) {
+        switch (rgba) {
+            case 'dark':
+                this._background = 'rgba(0,0,0,0.6)';
+                break;
+            case 'light':
+                this._background = 'rgba(255,255,255,0.6)';
+                break;
+            default:
+                this._background = rgba;
+        }
+        return this;
     }
     /**
      * <p>Close this pane</p>
@@ -4397,9 +4760,9 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let cs = this._scheme || this._gui.scheme();
+            //let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(cs['TINT_6']);
+            p.fill(this._background);
             p.beginShape(p.TRIANGLE_STRIP);
             p.vertex(0, 0);
             p.vertex(0, this._h);
@@ -4418,9 +4781,9 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            let cs = this._scheme || this._gui.scheme();
+            // let cs = this._scheme || this._gui.scheme();
             p.noStroke();
-            p.fill(cs['TINT_6']);
+            p.fill(this._background);
             p.rect(0, 0, this._w, this._h);
         }
         for (let c of this._children)
@@ -4729,142 +5092,198 @@ class CvsPaneWest extends CvsPane {
     }
 }
 //# sourceMappingURL=panes.js.map
-// This file contains code for a future update to canvasGUI and simplifies 
-// arranging controls in a grid like fashion.
 /**
- * Get a grid layout for a given pixel position and size in the display area.
- * Initially the grid repreents a single cell but the number and size of
- * horizontal and vertical cells should be set before creating the controls.
- * @param {*} x left edge position
- * @param {*} y top edge position
- * @param {*} w grid width
- * @param {*} h grid height
- * @returns the grid layout
- */
-// function createGrid(x, y, w, h) {
-//     return new GridLayout(x, y, w, h);
-// }
-/**
- * This class is used to define a flexible grid layout of cells that can be
- * used to specify the position and size of canvasGUI controls used in a
- * sketch.
+ * <p>This class represents a rectangular grid layout of cells that can be
+ * used to specify the position and size of canvasGUI controls. </p>
+ * <p>The grid layout enables the user to</p>
+ * <ul>
+ * <li>Define the overall size and position of the grid in pixels.</li>
+ * <li>Define the number and relative width of the columns.</li>
+ * <li>Define the number and relative height of the rows.</li>
+ * <li>Position controls within the grid</li>
+ * <li>Allow controls to span multiple columns and/or rows</li>
+ * </ul>
+ * <p>The methds <code>cols</code>, <code>rows</code> and <code>cells</code>
+ * are used to set the number and/or the relative cell size within the grid
+ * area. Passing integers to these methods will create cells of equal widths
+ * and equal
+ * heights.</p>
+ * <p>To have columns of different widths or rows with different heights then
+ * the parameter must be an array of numbers, the array length represents the
+ * number of cells and the array values represent their relative sizes.</p>
+ * <p>An example will make this clearer, consider the following code</p>
+ * <p><code>grid.cols([10, 24, 16]).rows(4); </code><br>
+ * <code>grid.size([10, 24, 16], 4); </code></p>
+ * <p>Both lines perform the same action by specifying a grid of 3 variable
+ * width columns and 4 equal height rows. The row height in pixels will be
+ * the 0.25 x the grid area height.</p>
+ * <p>To caluclate the column widths divide each array element by the sum of
+ * all the array values. Calculating and dividing by the sum (50) creates. If
+ * we do that the array elements becomes <code>[0.2, 0.48, 0.32]</code> and
+ * to find the column pixel widths, simply multiply these values by grid area
+ * width.</p>
  *
- *
+ * @since 1.1.0
  */
 class GridLayout {
     /**
-     * Create a grid layout for a given pixel position and size in the
-     * display area.
-     * Once included in the canvasGUI library the user will not instantiate
-     * this class directly but rather in the same way as the controls.
+     * <p>Instantiates a grid layout for a given pixel position and size in
+     * the display area. All parameters values are rounded to the nearest
+     * integer.</p>
      *
-     * @param {*} x left edge position
-     * @param {*} y top edge position
-     * @param {*} w grid width
-     * @param {*} h grid height
+     * @param x left edge position
+     * @param y top edge position
+     * @param w grid width
+     * @param h grid height
+     * @hidden
      */
     constructor(x, y, w, h) {
-        /** @hidden */ this.x = 0;
-        /** @hidden */ this.y = 0;
-        /** @hidden */ this.w = 0;
-        /** @hidden */ this.h = 0;
-        /** @hidden */ this.ix = 2;
-        /** @hidden */ this.iy = 2;
-        this.x = Math.round(x);
-        this.y = Math.round(y);
-        this.w = Math.round(w);
-        this.h = Math.round(h);
-        this.ix = 2;
-        this.iy = 2;
-        this.cx = [0, 1];
-        this.cy = [0, 1];
+        /** @hidden */ this._x = 0;
+        /** @hidden */ this._y = 0;
+        /** @hidden */ this._w = 0;
+        /** @hidden */ this._h = 0;
+        /** @hidden */ this._ix = 2;
+        /** @hidden */ this._iy = 2;
+        this._x = Math.round(x);
+        this._y = Math.round(y);
+        this._w = Math.round(w);
+        this._h = Math.round(h);
+        this._ix = 2;
+        this._iy = 2;
+        this._cx = [0, 1];
+        this._cy = [0, 1];
+    }
+    /** Get the left position of the grid */
+    get x() { return this._x; }
+    /** Get the top edge position of the grid */
+    get y() { return this._y; }
+    /** Get the grid's width in pixels */
+    get w() { return this._w; }
+    /** Get the grid's height in pixels */
+    get h() { return this._h; }
+    /** the number of columns in the grid */
+    get nbrCols() { return this._cx.length - 1; }
+    /** the number of rows in the grid */
+    get nbrRows() { return this._cy.length - 1; }
+    /**
+     * Reposition the grid
+     * @param x left edge position to use
+     * @param y top edge position to use
+     * @returns this grid
+     */
+    xy(x, y) {
+        this._x = Math.round(x);
+        this._y = Math.round(y);
+        return this;
     }
     /**
-     * Set the number and relative widths of the horizontal cells.
+     * Resize the grid
+     * @param w new grid width
+     * @param h new grid height
+     * @returns this grid
+     */
+    wh(w, h) {
+        this._w = Math.round(w);
+        this._h = Math.round(h);
+        return this;
+    }
+    /**
+     * <p>Set the number and relative widths of the horizontal cells.</p>
      *
-     * @param {*} n number or an array containing relative widths
+     * @param n number or an array containing relative widths
      * @returns this grid
      */
     cols(n) {
         let values = this._makeNormArray(n);
         if (values.length > 0)
-            this.cx = values;
+            this._cx = values;
         return this;
     }
     /**
-     * Set the number and relative heights of the vertical cells.
+     * <p>Set the number and relative heights of the vertical cells.</p>
      *
-     * @param {*} n number or an array containing relative heights
+     * @param n number or an array containing relative heights
      * @returns this grid
      */
     rows(n) {
         let values = this._makeNormArray(n);
         if (values.length > 0)
-            this.cy = values;
+            this._cy = values;
         return this;
     }
     /**
-     * Set the number and relative sizes of the cells in both horizontal
-     * and vertical dimensions.
-     * @param {*} nc number or an array containing relative widths
-     * @param {*} nr number or an array containing relative height
+     * <p>Set the number and relative sizes of the cells in both horizontal
+     * and vertical dimensions.</p>
+     *
+     * @param nc number or an array containing relative widths
+     * @param nr number or an array containing relative height
      * @returns this grid
      */
-    cells(nc, nr) {
+    size(nc, nr) {
         this.cols(nc);
         this.rows(nr);
         return this;
     }
     /**
-     * Get the position and size for the control for the specified cells taking
-     * into account the insets which provide spacing between the cells.
-     * @param {*} px horizontal cell number
-     * @param {*} py vertical cell number
-     * @param {*} pw number of hrizontal cells to span
-     * @param {*} ph number of vertical cells to span
-     * @returns this grid
+     * <p>Get the position and size for the control that fits the specified
+     * cells taking into account the insets which provide a clear border
+     * between the control and the cell boundary.</p>
+     * <p>The top-left cell number is [0, 0]</p>
+     * @param px horizontal cell number
+     * @param py vertical cell number
+     * @param pw number of horizontal cells to span
+     * @param ph number of vertical cells to span
+     * @returns the array [x, y, w, h]
      */
     cell(px, py, pw = 1, ph = 1) {
-        return this._calcRect(px, py, pw, ph, this.ix, this.iy);
+        return this._calcRect(px, py, pw, ph, this._ix, this._iy);
     }
     /**
-     * Get the position and size for the specified cells ignoring insets.
-     * This can be used to define rectangles that surround groups of controls.
-     * @param {*} px horizontal cell number
-     * @param {*} py vertical cell number
-     * @param {*} pw number of hrizontal cells to span
-     * @param {*} ph number of vertical cells to span
-     * @returns this grid
+     * <p>Get the position and size for the specified cells ignoring insets.
+     * This can be used to define rectangles that surround groups of
+     * controls.<p>
+     * <p>The top-left cell number is [0, 0]</p>
+     * @param px horizontal cell number
+     * @param py vertical cell number
+     * @param pw number of hrizontal cells to span
+     * @param ph number of vertical cells to span
+     * @returns the array [x, y, w, h]
      */
     border(px, py, pw = 1, ph = 1) {
         return this._calcRect(px, py, pw, ph);
     }
     /**
-     *
-     * @param {*} hinset horizontal inset
-     * @param {*} vinset vertical inset
+     * <p>The gap (pixels) between the cell border and the control.</p>
+     * @param hinset horizontal inset
+     * @param vinset vertical inset
      * @returns this grid
      */
     insets(hinset = 2, vinset = 2) {
-        this.ix = Math.round(hinset);
-        this.iy = Math.round(vinset);
+        this._ix = Math.round(hinset);
+        this._iy = Math.round(vinset);
         return this;
     }
+    /** @hidden */
     _calcRect(px, py, pw, ph, insetX = 0, insetY = 0) {
         [px, py, pw, ph] = this._validateCellPositions(px, py, pw, ph);
-        let x = Math.round(this.cx[px] * this.w + this.x + insetX);
-        let w = Math.round((this.cx[px + pw] - this.cx[px]) * this.w - 2 * insetX);
-        let y = Math.round(this.cy[py] * this.h + this.y + insetY);
-        let h = Math.round((this.cy[py + ph] - this.cy[py]) * this.h - 2 * insetY);
+        let x = Math.round(this._cx[px] * this._w + this._x + insetX);
+        let w = Math.round((this._cx[px + pw] - this._cx[px]) * this._w - 2 * insetX);
+        let y = Math.round(this._cy[py] * this._h + this._y + insetY);
+        let h = Math.round((this._cy[py + ph] - this._cy[py]) * this._h - 2 * insetY);
         return [x, y, w, h];
     }
+    /** @hidden */
     _validateCellPositions(px, py, pw = 1, ph = 1) {
-        px = constrain(px, 0, this.cx.length - 2);
-        py = constrain(py, 0, this.cy.length - 2);
-        pw = constrain(pw, 1, this.cx.length - px - 1);
-        ph = constrain(ph, 1, this.cy.length - py - 1);
+        function constrain(v, n0, n1) {
+            return v < n0 ? n0 : v > n1 ? n1 : v;
+        }
+        px = constrain(px, 0, this._cx.length - 2);
+        py = constrain(py, 0, this._cy.length - 2);
+        pw = constrain(pw, 1, this._cx.length - px - 1);
+        ph = constrain(ph, 1, this._cy.length - py - 1);
         return [px, py, pw, ph];
     }
+    /** @hidden */
     _makeNormArray(n) {
         let size = [], pos = [0];
         if (Array.isArray(n)) {

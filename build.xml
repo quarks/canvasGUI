@@ -28,7 +28,7 @@
         <exec executable="npx">
             <arg line="google-closure-compiler ${gcc.run.line}" />
         </exec>
-        <delete dir="${temp}" />      
+        <delete dir="${temp}" />
     </target>
 
     <!-- Concatenate the JavaScript files and store result in 'dist/lib/???.ts' -->

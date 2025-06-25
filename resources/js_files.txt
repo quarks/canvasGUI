@@ -1,9 +1,19 @@
 canvas_gui.js
 colorschemes.js
 orientations.js
-controls.js
+basecontrol.js
+bufferedcontrol.js
+slider.js
+ranger.js
+texticon.js
+button.js
+tooltip.js
+scroller.js
+option.js
+checkbox.js
 viewer.js
 textfield.js
+joystick.js
 panes.js
 grid.js
 
