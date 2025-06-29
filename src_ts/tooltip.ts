@@ -82,8 +82,8 @@ class CvsTooltip extends CvsText {
         let lines = this._lines;
         let gap = this._gap;
 
-        const BACK = cs['C_0'];
-        const FORE = cs['C_8'];
+        const BACK = cs['C_3'];
+        const FORE = cs['C_9'];
 
         b.push();
         b.clear();

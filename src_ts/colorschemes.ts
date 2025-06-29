@@ -5,28 +5,28 @@ class BaseScheme {
     }
 
     _color(hue: number) {
-        this[`C_0`] = `hsb(${hue}, 40%, 100%)`;
-        this[`C_1`] = `hsb(${hue}, 40%, 90%)`;
-        this[`C_2`] = `hsb(${hue}, 40%, 80%)`;
-        this[`C_3`] = `hsb(${hue}, 40%, 70%)`;
-        this[`C_4`] = `hsb(${hue}, 70%, 100%)`;
-        this[`C_5`] = `hsb(${hue}, 70%, 88%)`;
-        this[`C_6`] = `hsb(${hue}, 70%, 76%)`;
-        this[`C_7`] = `hsb(${hue}, 70%, 64%)`;
-        this[`C_8`] = `hsb(${hue}, 70%, 52%)`;
-        this[`C_9`] = `hsb(${hue}, 70%, 40%)`;
+        this[`C_0`] = `hsb(${hue}, 10%, 100%)`;
+        this[`C_1`] = `hsb(${hue}, 20%, 100%)`;
+        this[`C_2`] = `hsb(${hue}, 30%, 100%)`;
+        this[`C_3`] = `hsb(${hue}, 40%, 100%)`;
+        this[`C_4`] = `hsb(${hue}, 60%, 100%)`;
+        this[`C_5`] = `hsb(${hue}, 70%, 90%)`;
+        this[`C_6`] = `hsb(${hue}, 80%, 80%)`;
+        this[`C_7`] = `hsb(${hue}, 90%, 75%)`;
+        this[`C_8`] = `hsb(${hue}, 90%, 50%)`;
+        this[`C_9`] = `hsb(${hue}, 90%, 40%)`;
     }
 
     _mono(low: number, high: number) {
         let cn = 0;
-        for (let i = 0; i < 15; i++) {
-            let grey = Math.floor(low + (high - low) * i / 14);
+        for (let i = 0; i < 10; i++) {
+            let grey = Math.floor(low + (high - low) * i / 10);
             this[`C_${cn++}`] = `rgb(${grey}, ${grey}, ${grey})`;
         }
     }
 
     _grey(theme) {
-        let grey = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
+        let grey = [100, 80, 70, 60, 50, 40, 30, 20, 10, 0];
         if (theme === 'dark') grey.reverse();
         for (let i = 0; i < grey.length; i++)
             this[`G_${i}`] = `hsb(0,0%,${grey[i]}%)`;
@@ -99,7 +99,7 @@ class PurpleScheme extends BaseScheme {
 class LightScheme extends BaseScheme {
     constructor() {
         super();
-        this._mono(254, 64);
+        this._mono(254, 0);
         this._grey('light');
     }
 }
@@ -107,7 +107,7 @@ class LightScheme extends BaseScheme {
 class DarkScheme extends BaseScheme {
     constructor() {
         super();
-        this._mono(64, 254);
+        this._mono(0, 254);
         this._grey('dark');
     }
 }

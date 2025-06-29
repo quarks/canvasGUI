@@ -72,6 +72,30 @@ class GridLayout {
     /** the number of rows in the grid */
     get nbrRows() { return this._cy.length - 1; }
     /**
+     * Internal pixel boundary values for the columns.
+     * (relative to top-left position of the grid)
+     */
+    get intPxlCols() { return this._cx.map(v => Math.round(v * this._w)); }
+    /**
+     * External (display) pixel boundary values for the columns.
+     * (includes top-left position of the grid)
+     */
+    get extPxlCols() { return this._cx.map(v => this._x + Math.round(v * this._w)); }
+    /** Normalised internal boundary values for the columns. */
+    get normCols() { return [...this._cx]; }
+    /**
+     * Internal pixel boundary values for the rows.
+     * (relative to top-left position of the grid)
+     */
+    get intPxlRows() { return this._cy.map(v => Math.round(v * this._h)); }
+    /**
+     * External (display) pixel boundary values for the rows.
+     * (includes top-left position of the grid)
+     */
+    get extPxlRows() { return this._cy.map(v => this._y + Math.round(v * this._h)); }
+    /** Normalised internal boundary values for the rows. */
+    get normRows() { return [...this._cy]; }
+    /**
      * Reposition the grid
      * @param x left edge position to use
      * @param y top edge position to use

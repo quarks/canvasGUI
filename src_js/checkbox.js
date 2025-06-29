@@ -135,10 +135,10 @@ class CvsCheckbox extends CvsText {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        const BACK = cs['C_0'];
+        const BACK = cs['C_3'];
         const FORE = cs['C_8'];
         const ICON_BG = cs['G_0'];
-        const ICON_FG = cs['G_10'];
+        const ICON_FG = cs['G_9'];
         const HIGHLIGHT = cs['C_9'];
         b.push();
         b.clear();

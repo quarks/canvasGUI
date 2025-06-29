@@ -174,9 +174,9 @@ class CvsRanger extends CvsSlider {
         let tw = b.width - 20;
         let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
 
-        const OPAQUE = cs['C_0'];
-        const TICKS = cs['G_9'];
-        const UNUSED_TRACK = cs['G_4'];
+        const OPAQUE = cs['C_3'];
+        const TICKS = cs['G_7'];
+        const UNUSED_TRACK = cs['G_3'];
         const USED_TRACK = cs['G_1'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_6'];

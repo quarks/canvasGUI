@@ -216,7 +216,7 @@ class CvsLabel extends CvsTextIcon {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        const OPAQUE = cs['C_0'];
+        const OPAQUE = cs['C_3'];
         const FORE = cs['C_8'];
         b.push();
         b.clear();

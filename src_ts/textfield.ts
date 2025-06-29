@@ -430,26 +430,25 @@ class CvsTextField extends CvsText {
         let b = this._buffer;
         b.textSize(ts);
         let line = this._lines.length > 0 ? this._lines[0] : '';
-        let tv = this._textInvalid;
+        let tiv = this._textInvalid;
         let sx = 2 * this._gap;
 
-        let BACK = cs['C_0'];
+        let BACK = cs['C_1'];
         let FORE = cs['C_9'];
-        const CURSOR = cs['G_10'];
+        const CURSOR = cs['G_9'];
         const HIGHLIGHT = cs['C_9'];
-        const SELECT = cs['C_0'];
+        const SELECT = cs['C_3'];
 
         b.push();
         b.background(cs['G_0']); // white background
         b.noStroke();
-        if (!this._active) {
-            BACK = tv ? cs['C_9'] : cs['C_0'];
-            FORE = tv ? cs['C_0'] : cs['C_9'];
+        if (!this._active) { // Colors depend on whether text is valid
+            BACK = tiv ? cs['C_9'] : cs['C_1'];
+            FORE = tiv ? cs['C_3'] : cs['C_9'];
             b.stroke(FORE); b.strokeWeight(1.5); b.fill(BACK);
             b.rect(0, 0, this._w, this._h);
         }
-        else {
-            // Active so display any selection
+        else { // Active so display any selection
             if (this._currCsrIdx != this._prevCsrIdx) {
                 let px = this._cursorX(b, line, this._prevCsrIdx);
                 let cx = this._cursorX(b, line, this._currCsrIdx);

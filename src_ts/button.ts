@@ -19,7 +19,7 @@ class CvsButton extends CvsTextIcon {
         let lines = this._lines;
         let gap = this._gap;
 
-        const BACK = cs['C_0'];
+        const BACK = cs['C_3'];
         const FORE = cs['C_8'];
         const HIGHLIGHT = cs['C_9'];
 

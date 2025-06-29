@@ -1,6 +1,6 @@
 
 function setup() {
-    let p5canvas = createCanvas(620, 400);
+    let p5canvas = createCanvas(620, 360);
     p5canvas.parent('paper');
 
     blue = new BlueScheme();
@@ -54,7 +54,7 @@ function showGreys() {
     stroke(0); strokeWeight(1);
     translate(430, 30);
     greys.forEach(scheme => {
-        for (let n = 0; n <= 10; n++) {
+        for (let n = 0; n <= 9; n++) {
             fill(scheme[`G_${n}`]);
             rect(0, n * 30, 40, 30);
         }
@@ -65,7 +65,7 @@ function showGreys() {
     translate(400, 50);
     textSize(20);
     fill(0);
-    for (let n = 0; n <= 10; n++) {
+    for (let n = 0; n <= 9; n++) {
         text(n, 0, 30 * n);
         text(n, 120, 30 * n);
     }

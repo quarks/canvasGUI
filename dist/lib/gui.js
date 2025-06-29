@@ -869,26 +869,26 @@ class BaseScheme {
         this._tints();
     }
     _color(hue) {
-        this[`C_0`] = `hsb(${hue}, 40%, 100%)`;
-        this[`C_1`] = `hsb(${hue}, 40%, 90%)`;
-        this[`C_2`] = `hsb(${hue}, 40%, 80%)`;
-        this[`C_3`] = `hsb(${hue}, 40%, 70%)`;
-        this[`C_4`] = `hsb(${hue}, 70%, 100%)`;
-        this[`C_5`] = `hsb(${hue}, 70%, 88%)`;
-        this[`C_6`] = `hsb(${hue}, 70%, 76%)`;
-        this[`C_7`] = `hsb(${hue}, 70%, 64%)`;
-        this[`C_8`] = `hsb(${hue}, 70%, 52%)`;
-        this[`C_9`] = `hsb(${hue}, 70%, 40%)`;
+        this[`C_0`] = `hsb(${hue}, 10%, 100%)`;
+        this[`C_1`] = `hsb(${hue}, 20%, 100%)`;
+        this[`C_2`] = `hsb(${hue}, 30%, 100%)`;
+        this[`C_3`] = `hsb(${hue}, 40%, 100%)`;
+        this[`C_4`] = `hsb(${hue}, 60%, 100%)`;
+        this[`C_5`] = `hsb(${hue}, 70%, 90%)`;
+        this[`C_6`] = `hsb(${hue}, 80%, 80%)`;
+        this[`C_7`] = `hsb(${hue}, 90%, 75%)`;
+        this[`C_8`] = `hsb(${hue}, 90%, 50%)`;
+        this[`C_9`] = `hsb(${hue}, 90%, 40%)`;
     }
     _mono(low, high) {
         let cn = 0;
-        for (let i = 0; i < 15; i++) {
-            let grey = Math.floor(low + (high - low) * i / 14);
+        for (let i = 0; i < 10; i++) {
+            let grey = Math.floor(low + (high - low) * i / 10);
             this[`C_${cn++}`] = `rgb(${grey}, ${grey}, ${grey})`;
         }
     }
     _grey(theme) {
-        let grey = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
+        let grey = [100, 80, 70, 60, 50, 40, 30, 20, 10, 0];
         if (theme === 'dark')
             grey.reverse();
         for (let i = 0; i < grey.length; i++)
@@ -952,14 +952,14 @@ class PurpleScheme extends BaseScheme {
 class LightScheme extends BaseScheme {
     constructor() {
         super();
-        this._mono(254, 64);
+        this._mono(254, 0);
         this._grey('light');
     }
 }
 class DarkScheme extends BaseScheme {
     constructor() {
         super();
-        this._mono(64, 254);
+        this._mono(0, 254);
         this._grey('dark');
     }
 }
@@ -1855,9 +1855,9 @@ class CvsSlider extends CvsBufferedControl {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
         let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
-        const OPAQUE = cs['C_0'];
-        const TICKS = cs['G_9'];
-        const UNUSED_TRACK = cs['G_4'];
+        const OPAQUE = cs['C_3'];
+        const TICKS = cs['G_7'];
+        const UNUSED_TRACK = cs['G_3'];
         const USED_TRACK = cs['G_1'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_6'];
@@ -2088,9 +2088,9 @@ class CvsRanger extends CvsSlider {
         let cs = this._scheme || this._gui.scheme();
         let tw = b.width - 20;
         let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
-        const OPAQUE = cs['C_0'];
-        const TICKS = cs['G_9'];
-        const UNUSED_TRACK = cs['G_4'];
+        const OPAQUE = cs['C_3'];
+        const TICKS = cs['G_7'];
+        const UNUSED_TRACK = cs['G_3'];
         const USED_TRACK = cs['G_1'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_6'];
@@ -2368,7 +2368,7 @@ class CvsLabel extends CvsTextIcon {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        const OPAQUE = cs['C_0'];
+        const OPAQUE = cs['C_3'];
         const FORE = cs['C_8'];
         b.push();
         b.clear();
@@ -2446,7 +2446,7 @@ class CvsButton extends CvsTextIcon {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        const BACK = cs['C_0'];
+        const BACK = cs['C_3'];
         const FORE = cs['C_8'];
         const HIGHLIGHT = cs['C_9'];
         b.push();
@@ -2665,8 +2665,8 @@ class CvsTooltip extends CvsText {
         let b = this._buffer;
         let lines = this._lines;
         let gap = this._gap;
-        const BACK = cs['C_0'];
-        const FORE = cs['C_8'];
+        const BACK = cs['C_3'];
+        const FORE = cs['C_9'];
         b.push();
         b.clear();
         // Backkground
@@ -2864,9 +2864,9 @@ class CvsScroller extends CvsBufferedControl {
         let cs = this._scheme || this._gui.scheme();
         let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH), thumbSizeY = this._THUMB_HEIGHT;
         let tx = this._dvalue * this._TLENGTH;
-        const OPAQUE = cs['C_0'];
+        const OPAQUE = cs['C_3'];
         const TICKS = cs['G_8'];
-        const UNUSED_TRACK = cs['G_4'];
+        const UNUSED_TRACK = cs['G_3'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_5'];
         b.push();
@@ -3103,10 +3103,10 @@ class CvsOption extends CvsText {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        const BACK = cs['C_0'];
+        const BACK = cs['C_3'];
         const FORE = cs['C_8'];
         const ICON_BG = cs['G_0'];
-        const ICON_FG = cs['G_10'];
+        const ICON_FG = cs['G_9'];
         const HIGHLIGHT = cs['C_9'];
         b.push();
         b.clear();
@@ -3333,10 +3333,10 @@ class CvsCheckbox extends CvsText {
         let textAlign = this._textAlign;
         let lines = this._lines;
         let gap = this._gap;
-        const BACK = cs['C_0'];
+        const BACK = cs['C_3'];
         const FORE = cs['C_8'];
         const ICON_BG = cs['G_0'];
-        const ICON_FG = cs['G_10'];
+        const ICON_FG = cs['G_9'];
         const HIGHLIGHT = cs['C_9'];
         b.push();
         b.clear();
@@ -4262,26 +4262,25 @@ class CvsTextField extends CvsText {
         let b = this._buffer;
         b.textSize(ts);
         let line = this._lines.length > 0 ? this._lines[0] : '';
-        let tv = this._textInvalid;
+        let tiv = this._textInvalid;
         let sx = 2 * this._gap;
-        let BACK = cs['C_0'];
+        let BACK = cs['C_1'];
         let FORE = cs['C_9'];
-        const CURSOR = cs['G_10'];
+        const CURSOR = cs['G_9'];
         const HIGHLIGHT = cs['C_9'];
-        const SELECT = cs['C_0'];
+        const SELECT = cs['C_3'];
         b.push();
         b.background(cs['G_0']); // white background
         b.noStroke();
-        if (!this._active) {
-            BACK = tv ? cs['C_9'] : cs['C_0'];
-            FORE = tv ? cs['C_0'] : cs['C_9'];
+        if (!this._active) { // Colors depend on whether text is valid
+            BACK = tiv ? cs['C_9'] : cs['C_1'];
+            FORE = tiv ? cs['C_3'] : cs['C_9'];
             b.stroke(FORE);
             b.strokeWeight(1.5);
             b.fill(BACK);
             b.rect(0, 0, this._w, this._h);
         }
-        else {
-            // Active so display any selection
+        else { // Active so display any selection
             if (this._currCsrIdx != this._prevCsrIdx) {
                 let px = this._cursorX(b, line, this._prevCsrIdx);
                 let cx = this._cursorX(b, line, this._currCsrIdx);
@@ -4341,14 +4340,14 @@ class CvsTextField extends CvsText {
  * rest state. These variables can be used to detect the current state of
  * the joystick.</p>
  * <pre>
- *      <b>X</b>                                 <b>XY</b>
- * -1   0   +1                        5   6   7
- *   \  |  /   -1                      \  |  /
- *    \ | /                             \ | /
- *  --- + ---   0   <b>Y</b>               4 --- O --- 0      O is the dead zone
- *    / | \                             / | \             so <b>XY</b> = -1
- *   /  |  \    +1                     /  |  \
- *                                    3   2   1
+ *      <b>X</b>                                       <b>XY</b>
+ * -1   0   +1                              5   6   7
+ *   \  |  /   -1                            \  |  /
+ *    \ | /                                   \ | /
+ *  --- O ---   0   <b>Y</b>      O is the       4 --- O --- 0    <b>XY</b> = -1 when in
+ *    / | \                dead zone          / | \         the dead zone.
+ *   /  |  \    +1                           /  |  \
+ *                                          3   2   1
  * </pre>
  * <li><code>mag</code> and <code>angle</code></li>
  * <p>The joysticks state can also be represented by the distance and angle
@@ -4383,7 +4382,7 @@ class CvsJoystick extends CvsBufferedControl {
         this._size = Math.min(w, h);
         this._pr0 = 0.05 * this._size;
         this._pr1 = 0.40 * this._size;
-        this._tSize = Math.max(0.075 * this._size, 8);
+        this._tSize = Math.max(0.075 * this._size, 6);
         this._tmrID = undefined;
         this._nSlices = 4;
         this._nRings = 2;
@@ -4405,19 +4404,28 @@ class CvsJoystick extends CvsBufferedControl {
         this.invalidateBuffer();
         return this;
     }
+    /**
+     * Set the thumb size.
+     * @param ts the diameter of the thumb
+     * @returns this control
+     */
+    thumbSize(ts) {
+        this._tSize = ts;
+        return this;
+    }
     /** @hidden */
     _updateControlVisual() {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
         let [tx, ty] = this._getThumbXY();
-        const OPAQUE = cs['C_0'];
-        const BACK = cs['C_0'];
-        const BORDER = cs['C_5'];
-        const ROD = cs['C_7']; // was G_5
-        const THUMB_OFF = cs['C_5'];
+        const OPAQUE = cs['C_3'];
+        const DIAL_FACE = cs['C_1'];
+        const DIAL_BORDER = cs['C_7'];
+        const ROD = cs['C_7'];
+        const THUMB_OFF = cs['C_4'];
         const THUMB_OVER = cs['C_8'];
-        const THUMB_FORE = cs['C_9'];
-        const DECOR = cs['T_2'];
+        const THUMB_STROKE = cs['C_9'];
+        const DECOR = cs['C_6'];
         const DEAD_ZONE = cs['T_4'];
         b.push();
         b.clear();
@@ -4429,7 +4437,7 @@ class CvsJoystick extends CvsBufferedControl {
         b.translate(b.width / 2, b.height / 2);
         // dial face background
         b.noStroke();
-        b.fill(BACK);
+        b.fill(DIAL_FACE);
         b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // Dial face slices
         if (this._nSlices > 1) {
@@ -4457,8 +4465,8 @@ class CvsJoystick extends CvsBufferedControl {
             b.pop();
         }
         // Dial border
-        b.stroke(BORDER);
-        b.strokeWeight(Math.max(4, 0.025 * this._size));
+        b.stroke(DIAL_BORDER);
+        b.strokeWeight(Math.max(3, 0.025 * this._size));
         b.noFill();
         b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // Dead zone
@@ -4471,7 +4479,7 @@ class CvsJoystick extends CvsBufferedControl {
         b.line(0, 0, tx, ty);
         // Thumb
         b.strokeWeight(2);
-        b.stroke(THUMB_FORE);
+        b.stroke(THUMB_STROKE);
         if (this._active || this._over > 0)
             b.fill(THUMB_OVER);
         else
@@ -5165,6 +5173,30 @@ class GridLayout {
     get nbrCols() { return this._cx.length - 1; }
     /** the number of rows in the grid */
     get nbrRows() { return this._cy.length - 1; }
+    /**
+     * Internal pixel boundary values for the columns.
+     * (relative to top-left position of the grid)
+     */
+    get intPxlCols() { return this._cx.map(v => Math.round(v * this._w)); }
+    /**
+     * External (display) pixel boundary values for the columns.
+     * (includes top-left position of the grid)
+     */
+    get extPxlCols() { return this._cx.map(v => this._x + Math.round(v * this._w)); }
+    /** Normalised internal boundary values for the columns. */
+    get normCols() { return [...this._cx]; }
+    /**
+     * Internal pixel boundary values for the rows.
+     * (relative to top-left position of the grid)
+     */
+    get intPxlRows() { return this._cy.map(v => Math.round(v * this._h)); }
+    /**
+     * External (display) pixel boundary values for the rows.
+     * (includes top-left position of the grid)
+     */
+    get extPxlRows() { return this._cy.map(v => this._y + Math.round(v * this._h)); }
+    /** Normalised internal boundary values for the rows. */
+    get normRows() { return [...this._cy]; }
     /**
      * Reposition the grid
      * @param x left edge position to use

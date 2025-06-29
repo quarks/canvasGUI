@@ -17,14 +17,14 @@
  * rest state. These variables can be used to detect the current state of 
  * the joystick.</p>
  * <pre>
- *      <b>X</b>                                 <b>XY</b>
- * -1   0   +1                        5   6   7
- *   \  |  /   -1                      \  |  /
- *    \ | /                             \ | /
- *  --- + ---   0   <b>Y</b>               4 --- O --- 0      O is the dead zone
- *    / | \                             / | \             so <b>XY</b> = -1
- *   /  |  \    +1                     /  |  \
- *                                    3   2   1
+ *      <b>X</b>                                       <b>XY</b>
+ * -1   0   +1                              5   6   7
+ *   \  |  /   -1                            \  |  /
+ *    \ | /                                   \ | /
+ *  --- O ---   0   <b>Y</b>      O is the       4 --- O --- 0    <b>XY</b> = -1 when in
+ *    / | \                dead zone          / | \         the dead zone.
+ *   /  |  \    +1                           /  |  \
+ *                                          3   2   1
  * </pre>
  * <li><code>mag</code> and <code>angle</code></li>
  * <p>The joysticks state can also be represented by the distance and angle 
@@ -75,7 +75,7 @@ class CvsJoystick extends CvsBufferedControl {
         super(gui, name, x || 0, y || 0, w || 40, h || 40);
         this._size = Math.min(w, h);
         this._pr0 = 0.05 * this._size; this._pr1 = 0.40 * this._size;
-        this._tSize = Math.max(0.075 * this._size, 8);
+        this._tSize = Math.max(0.075 * this._size, 6);
         this._tmrID = undefined;
         this._nSlices = 4;
         this._nRings = 2;
@@ -99,20 +99,30 @@ class CvsJoystick extends CvsBufferedControl {
         return this;
     }
 
+    /**
+     * Set the thumb size. 
+     * @param ts the diameter of the thumb
+     * @returns this control
+     */
+    thumbSize(ts: number) {
+        this._tSize = ts;
+        return this;
+    }
+
     /** @hidden */
     _updateControlVisual(): void { // CvsStick
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
         let [tx, ty] = this._getThumbXY();
 
-        const OPAQUE = cs['C_0'];
-        const BACK = cs['C_0'];
-        const BORDER = cs['C_5'];
-        const ROD = cs['C_7'];  // was G_5
-        const THUMB_OFF = cs['C_5'];
+        const OPAQUE = cs['C_3'];
+        const DIAL_FACE = cs['C_1'];
+        const DIAL_BORDER = cs['C_7'];
+        const ROD = cs['C_7'];
+        const THUMB_OFF = cs['C_4'];
         const THUMB_OVER = cs['C_8'];
-        const THUMB_FORE = cs['C_9'];
-        const DECOR = cs['T_2'];
+        const THUMB_STROKE = cs['C_9'];
+        const DECOR = cs['C_6'];
         const DEAD_ZONE = cs['T_4'];
 
         b.push();
@@ -124,7 +134,7 @@ class CvsJoystick extends CvsBufferedControl {
         }
         b.translate(b.width / 2, b.height / 2);
         // dial face background
-        b.noStroke(); b.fill(BACK);
+        b.noStroke(); b.fill(DIAL_FACE);
         b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // Dial face slices
         if (this._nSlices > 1) {
@@ -148,7 +158,7 @@ class CvsJoystick extends CvsBufferedControl {
             b.pop();
         }
         // Dial border
-        b.stroke(BORDER); b.strokeWeight(Math.max(4, 0.025 * this._size)); b.noFill();
+        b.stroke(DIAL_BORDER); b.strokeWeight(Math.max(3, 0.025 * this._size)); b.noFill();
         b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // Dead zone
         b.fill(DEAD_ZONE); b.noStroke();
@@ -157,7 +167,7 @@ class CvsJoystick extends CvsBufferedControl {
         b.stroke(ROD); b.strokeWeight(this._size * 0.05);
         b.line(0, 0, tx, ty);
         // Thumb
-        b.strokeWeight(2); b.stroke(THUMB_FORE);
+        b.strokeWeight(2); b.stroke(THUMB_STROKE);
         if (this._active || this._over > 0)
             b.fill(THUMB_OVER);
         else

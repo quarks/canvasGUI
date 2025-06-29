@@ -147,9 +147,9 @@ class CvsScroller extends CvsBufferedControl {
         let cs = this._scheme || this._gui.scheme();
         let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH), thumbSizeY = this._THUMB_HEIGHT;
         let tx = this._dvalue * this._TLENGTH;
-        const OPAQUE = cs['C_0'];
+        const OPAQUE = cs['C_3'];
         const TICKS = cs['G_8'];
-        const UNUSED_TRACK = cs['G_4'];
+        const UNUSED_TRACK = cs['G_3'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_5'];
         b.push();
