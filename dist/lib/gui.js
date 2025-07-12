@@ -2174,7 +2174,6 @@ class CvsText extends CvsBufferedControl {
         this.textAlign(align);
         // If necessary expand the control to surround text
         let s = this._minControlSize();
-        //console.log(`'${this.name()}'   Size: ${this._w} x ${this._y}   Min size: ${s.w} x ${s.h}`)
         this._w = Math.max(this._w, s.w);
         this._h = Math.max(this._h, s.h);
         this.invalidateBuffer();
@@ -3977,8 +3976,6 @@ class CvsTextField extends CvsText {
         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
         let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= line.length);
-        // console.log(`Has selection ${hasSelection}  ::  Tab left ${tabLeft}  ::  Tab right ${tabRight}`);
-        // console.log(`Curr ${this._currCurrIdx}  ::  Prev ${this._prevCurrIdx}  ::  Line length ${line.length}`);
         if (e.type == 'keydown') {
             // Visible character
             if (e.key.length == 1) {
@@ -4575,7 +4572,7 @@ class CvsKnob extends CvsSlider {
      * The default value is 90&deg; which means the gap center is facing
      * south.</p>
      *
-     * @param ang ga in range &ge;0 and $le;360
+     * @param ang must be in the range &ge; 0 and &le; 360
      * @returns this control
      */
     gap(ang) {
@@ -4682,8 +4679,6 @@ class CvsKnob extends CvsSlider {
         py -= this._h / 2;
         let d2 = px * px + py * py;
         let rt = this._kRad + tol;
-        // console.log(`px: ${px}  py: ${py}    d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`);
-        // console.log(`d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`)
         return d2 <= rt * rt ? 1 : 0;
     }
     /** @hidden */

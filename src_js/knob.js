@@ -113,7 +113,7 @@ class CvsKnob extends CvsSlider {
      * The default value is 90&deg; which means the gap center is facing
      * south.</p>
      *
-     * @param ang ga in range &ge;0 and $le;360
+     * @param ang must be in the range &ge; 0 and &le; 360
      * @returns this control
      */
     gap(ang) {
@@ -220,8 +220,6 @@ class CvsKnob extends CvsSlider {
         py -= this._h / 2;
         let d2 = px * px + py * py;
         let rt = this._kRad + tol;
-        // console.log(`px: ${px}  py: ${py}    d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`);
-        // console.log(`d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`)
         return d2 <= rt * rt ? 1 : 0;
     }
     /** @hidden */

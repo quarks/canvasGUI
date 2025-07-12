@@ -233,8 +233,6 @@ class CvsKnob extends CvsSlider {
         px -= this._w / 2; py -= this._h / 2;
         let d2 = px * px + py * py;
         let rt = this._kRad + tol;
-        // console.log(`px: ${px}  py: ${py}    d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`);
-        // console.log(`d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`)
         return d2 <= rt * rt ? 1 : 0;
     }
 

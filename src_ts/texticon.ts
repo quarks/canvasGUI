@@ -37,7 +37,6 @@ abstract class CvsText extends CvsBufferedControl {
         this.textAlign(align);
         // If necessary expand the control to surround text
         let s = this._minControlSize();
-        //console.log(`'${this.name()}'   Size: ${this._w} x ${this._y}   Min size: ${s.w} x ${s.h}`)
         this._w = Math.max(this._w, s.w);
         this._h = Math.max(this._h, s.h);
         this.invalidateBuffer();

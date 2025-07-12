@@ -262,8 +262,6 @@ class CvsTextField extends CvsText {
         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
         let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= line.length);
-        // console.log(`Has selection ${hasSelection}  ::  Tab left ${tabLeft}  ::  Tab right ${tabRight}`);
-        // console.log(`Curr ${this._currCurrIdx}  ::  Prev ${this._prevCurrIdx}  ::  Line length ${line.length}`);
         if (e.type == 'keydown') {
             // Visible character
             if (e.key.length == 1) {
