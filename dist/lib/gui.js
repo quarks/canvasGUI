@@ -165,6 +165,18 @@ class GUI {
         return this.addControl(new CvsJoystick(this, name, x, y, w, h));
     }
     /**
+    * Create a joystick
+    * @param name unique name for this control
+    * @param x left-hand pixel position
+    * @param y top pixel position
+    * @param w width
+    * @param h height
+    * @returns a joystick control
+    */
+    knob(name, x, y, w, h) {
+        return this.addControl(new CvsKnob(this, name, x, y, w, h));
+    }
+    /**
     * Create a scroller control
     * @param name unique name for this control
     * @param x left-hand pixel position
@@ -866,7 +878,7 @@ GUI._announced = false;
 //# sourceMappingURL=canvas_gui.js.map
 class BaseScheme {
     constructor() {
-        this._tints();
+        this._greyTints();
     }
     _color(hue) {
         this[`C_0`] = `hsb(${hue}, 10%, 100%)`;
@@ -894,10 +906,15 @@ class BaseScheme {
         for (let i = 0; i < grey.length; i++)
             this[`G_${i}`] = `hsb(0,0%,${grey[i]}%)`;
     }
-    _tints() {
-        let alpha = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+    _greyTints() {
+        let alpha = [0.05, 0.075, 0.1, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7];
         for (let i = 0; i < alpha.length; i++)
             this[`T_${i}`] = `rgba(0,0,0,${alpha[i]})`;
+    }
+    _whiteTints() {
+        let alpha = [0.25, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9];
+        for (let i = 0; i < alpha.length; i++)
+            this[`T_${i}`] = `rgba(255,255,255,${alpha[i]})`;
     }
 }
 class RedScheme extends BaseScheme {
@@ -961,6 +978,7 @@ class DarkScheme extends BaseScheme {
         super();
         this._mono(0, 254);
         this._grey('dark');
+        this._whiteTints(); // Override dark tints
     }
 }
 //# sourceMappingURL=colorschemes.js.map
@@ -995,10 +1013,10 @@ class OrientNorth {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': w - y, 'y': x, 'w': h, 'h': w };
+        return [w - y, x, h, w];
     }
     wh(w, h) {
-        return { 'w': h, 'h': w };
+        return [h, w];
     }
 }
 class OrientSouth {
@@ -1020,10 +1038,10 @@ class OrientSouth {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': y, 'y': h - x, 'w': h, 'h': w };
+        return [y, h - x, h, w];
     }
     wh(w, h) {
-        return { 'w': h, 'h': w };
+        return [h, w];
     }
 }
 class OrientEast {
@@ -1045,10 +1063,11 @@ class OrientEast {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': x, 'y': y, 'w': w, 'h': h };
+        return [x, y, w, h];
     }
     wh(w, h) {
-        return { 'w': w, 'h': h };
+        // return { 'w': w, 'h': h };
+        return [w, h];
     }
 }
 class OrientWest {
@@ -1070,10 +1089,10 @@ class OrientWest {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': w - x, 'y': h - y, 'w': w, 'h': h };
+        return [w - x, h - y, w, h];
     }
     wh(w, h) {
-        return { 'w': w, 'h': h };
+        return [w, h];
     }
 }
 //# sourceMappingURL=orientations.js.map
@@ -1292,7 +1311,7 @@ class CvsBaseControl {
         return this;
     }
     /**
-     * A control becomes active when the mous btton is pressed over it.
+     * A control becomes active when the mouse btton is pressed over it.
      * This method has little practical use except when debugging.
      * @hidden
      * @returns true if this control is expecting more mouse events
@@ -1519,7 +1538,7 @@ class CvsBaseControl {
     }
     /** @hidden */
     _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs['T_4']);
+        b.fill(cs['T_5']);
         b.noStroke();
         b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -1572,6 +1591,44 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
+/**
+ * Mixin for initialising mouse event data
+ * @hidden
+ */
+const processMouse = {
+    /** @hidden */
+    _handleMouse(e) {
+        let pos = this.getAbsXY();
+        let [mx, my, w, h] = this._orientation.xy(this._p.mouseX - pos.x, this._p.mouseY - pos.y, this._w, this._h);
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx, my, w, h);
+        return false;
+    }
+};
+/**
+ * Mixin for initialising touch event data
+ * @hidden
+ */
+const processTouch = {
+    /** @hidden */
+    _handleTouch(e) {
+        e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let [mx, my, w, h] = this._orientation.xy(t.clientX - rect.left - pos.x, t.clientY - rect.top - pos.y, this._w, this._h);
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, 5); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx, my, w, h);
+    }
+};
 //# sourceMappingURL=basecontrol.js.map
 /*
 ##############################################################################
@@ -1692,7 +1749,7 @@ class CvsSlider extends CvsBufferedControl {
     /**
      * <p>The track can be divided up into a number of domains separated with major ticks. The
      * major domains and be further divided into subdomains separated with minor ticks. If the
-     * final parameter is true then values retqurned by the slider are consrained to the
+     * final parameter is true then values returned by the slider are consrained to the
      * tick values.</p>
      * @param {number} major the number of major domains on the track
      * @param {number} minor the number of minor domains  between major ticks
@@ -1767,40 +1824,6 @@ class CvsSlider extends CvsBufferedControl {
         let tx = this._t01 * (this._buffer.width - 20);
         return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
             ? 1 : 0;
-    }
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
     }
     /** @hidden */
     _processEvent(e, ...info) {
@@ -1916,6 +1939,7 @@ class CvsSlider extends CvsBufferedControl {
         return { w: this._w, h: 20 };
     }
 }
+Object.assign(CvsSlider.prototype, processMouse, processTouch);
 //# sourceMappingURL=slider.js.map
 /**
  * <p>This class represents a slider with 2 draggable thumbs to
@@ -1994,46 +2018,9 @@ class CvsRanger extends CvsSlider {
         return 0;
     }
     /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        // If this control is active remember the thumb that was pressed
-        // otherwise check the current position
-        this._tIdx = this._active ? this._tIdx : this._over - 1;
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._tIdx = this._active ? this._tIdx : this._over - 1;
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-    }
-    /** @hidden */
     _processEvent(e, ...info) {
         let mx = info[0];
+        this._tIdx = this._active ? this._tIdx : this._over - 1;
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -2149,6 +2136,7 @@ class CvsRanger extends CvsSlider {
         this._bufferInvalid = false;
     }
 }
+Object.assign(CvsRanger.prototype, processMouse, processTouch);
 //# sourceMappingURL=ranger.js.map
 /**
  * </p>The base class for any control that displays text as part of its
@@ -2519,41 +2507,7 @@ class CvsButton extends CvsTextIcon {
             this._parent.validateTabs();
     }
     /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        // e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
-    }
-    /** @hidden */
-    _processEvent(e) {
+    _processEvent(e, ...info) {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -2590,12 +2544,12 @@ class CvsButton extends CvsTextIcon {
         }
     }
 }
+Object.assign(CvsButton.prototype, processMouse, processTouch);
 //# sourceMappingURL=button.js.map
 /**
  * <p>A tooltip is a simply text hint that appears near to a control with the
  * mouse over it.</p>
- *
- * <p>The tooltip's relative position to thr dontrol is automatically set to
+ * <p>The tooltip's relative position to the control is automatically set to
  * make sure it is visible inside the canvas area.</p>
  * @hidden
  */
@@ -2646,17 +2600,28 @@ class CvsTooltip extends CvsText {
                 setTimeout(() => { this.hide(); }, this._showTime);
             }
     }
+    // /** @hidden */
+    // _validatePosition() {
+    //     let p = this._parent;
+    //     let pp = p.getAbsXY(), px = pp.x, py = pp.y;
+    //     let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
+    //     // Start tip in default location
+    //     this._x = 0, this._y = -this._h;
+    //     if (py + this._y < 0)
+    //         this._y += this._h + ph;
+    //     if (px + this._x + this._w > this._gui.canvasWidth())
+    //         this._x -= this._w - pa.w;
+    // }
     /** @hidden */
     _validatePosition() {
         let p = this._parent;
-        let pp = p.getAbsXY(), px = pp.x, py = pp.y;
-        let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
-        // Start tip in default location
+        let { x: px, y: py } = p.getAbsXY();
+        let [pw, ph] = p.orientation().wh(p.w(), p.h());
         this._x = 0, this._y = -this._h;
         if (py + this._y < 0)
             this._y += this._h + ph;
         if (px + this._x + this._w > this._gui.canvasWidth())
-            this._x -= this._w - pa.w;
+            this._x -= this._w - pw;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -2787,41 +2752,6 @@ class CvsScroller extends CvsBufferedControl {
         return 0;
     }
     /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, this._THUMB_HEIGHT); // Store current mouse over state
-        if (this._pover != this._over)
-            this.invalidateBuffer();
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, Math.max(this._THUMB_HEIGHT, 20)); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-    }
-    /** @hidden */
     _processEvent(e, ...info) {
         let mx = info[0];
         switch (e.type) {
@@ -2903,6 +2833,7 @@ class CvsScroller extends CvsBufferedControl {
         return { w: this._w, h: 20 };
     }
 }
+Object.assign(CvsScroller.prototype, processMouse, processTouch);
 //# sourceMappingURL=scroller.js.map
 /**
  * <p>The option group manages a group of option buttons where only one can
@@ -3016,40 +2947,6 @@ class CvsOption extends CvsText {
         this._optGroup = this._gui.getOptionGroup(optGroupName);
         this._optGroup.add(this);
         return this;
-    }
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        // e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
     }
     /** @hidden */
     _processEvent(e, ...info) {
@@ -3195,6 +3092,7 @@ class CvsOption extends CvsText {
         return { w: sw, h: sh };
     }
 }
+Object.assign(CvsOption.prototype, processMouse, processTouch);
 //# sourceMappingURL=option.js.map
 /**
  * This class supports simple true-false checkbox
@@ -3250,40 +3148,6 @@ class CvsCheckbox extends CvsText {
      */
     isSelected() {
         return this._selected;
-    }
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        // e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
     }
     /** @hidden */
     _processEvent(e, ...info) {
@@ -3425,6 +3289,7 @@ class CvsCheckbox extends CvsText {
         return { w: sw, h: sh };
     }
 }
+Object.assign(CvsCheckbox.prototype, processMouse, processTouch);
 //# sourceMappingURL=checkbox.js.map
 /**
  * <p>This control is used to scroll and zoom on an image.</p>
@@ -4091,38 +3956,6 @@ class CvsTextField extends CvsText {
         return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
     }
     /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        this._processEvent(e, mx);
-    }
-    /** @hidden */
     _processEvent(e, ...info) {
         switch (e.type) {
             case 'mousedown':
@@ -4320,48 +4153,56 @@ class CvsTextField extends CvsText {
         this._bufferInvalid = false;
     }
 }
+Object.assign(CvsTextField.prototype, processMouse, processTouch);
 //# sourceMappingURL=textfield.js.map
 /**
- * <p>This class simulates a simple joystick.</p>
+ * <p>This class simulates a multi-mode joystick. Each of the three possible
+ * modes apply different constraints to the range of movement allowed they
+ * are -.</p>
+ * <p><code>'X0'</code> : can move in any direction (360&deg;).<br>
+ * <code>'X4'</code> : constrained to the 4 main compass directions
+ * (N, E, S, W).<br>
+ * <code>'X8'</code> : constrained to the 8 main compass directions
+ * (N, NE, E, SE, S, SW, W, NW).</p>
  *
- * <p>Use the <code>setAction</code> method to specify the action-method that
- * will be used to process action-info objects created when the joystick is
- * moved.</p>
- *
+ * <p>To handle events use the <code>setAction</code> method to specify
+ * the action-method that will be used to process action-info objects
+ * created when the joystick is moved.</p>
  * <p>The action-info object has several very useful fields dthat describes
  * the state of the joystick, they include -</p>
+ * <p>
  * <ul>
+ * <li><code>dir</code></li>
+ * <p>An integer that indicates the direction the stick is pushed. The values
+ * returned depend on the current mode -</p>
+ * <pre>
+ * <b>Direction values for X4 and X8 modes</b>
+ *      5   6   7
+ *       \  |  /
+ *        \ | /
+ *    4 --- <b>Z</b> --- 0       <b>Z</b> is the dead zone.
+ *        / | \
+ *       /  |  \          If control is in mode 'X0' or the joystick
+ *      3   2   1         position is in the dead zone the the value is -1
+ * </pre>
+ * <p><code>'X0'</code> : always -1<br>
+ * <code>'X4'</code> : 0, 2, 4 or 6<br>
+ * <code>'X8'</code> : 0, 1, 2, 3, 4, 5, 6 or 7</p>
+ *
  * <li><code>dead</code></li>
  * <p>If the stick is in the dead zone which surrounds the stick's
  * rest state then this value will be <code>true</code>.</p>
- * <li><code>X</code>, <code>Y</code> and <code>XY</code></li>
- * <p>Early joysticks used mechanical switches had just 9 states. Of these 8
- * are used to represent the direction the joystick is pushed and 1 for the
- * rest state. These variables can be used to detect the current state of
- * the joystick.</p>
- * <pre>
- *      <b>X</b>                                       <b>XY</b>
- * -1   0   +1                              5   6   7
- *   \  |  /   -1                            \  |  /
- *    \ | /                                   \ | /
- *  --- O ---   0   <b>Y</b>      O is the       4 --- O --- 0    <b>XY</b> = -1 when in
- *    / | \                dead zone          / | \         the dead zone.
- *   /  |  \    +1                           /  |  \
- *                                          3   2   1
- * </pre>
- * <li><code>mag</code> and <code>angle</code></li>
- * <p>The joysticks state can also be represented by the distance and angle
- * the stick has been pushed.</p>
- * <ul>
+ *
  * <li><code>mag</code> : has a value in range &ge; 0 and &le; 1 representing
  * the distance the stick has been pushed.</li>
- * <li><code>angle</code> : has a value in range &ge; 0 and &lt; 2.Pi
+ *
+ * <li><code>angle</code> : has a value in range &ge; 0 and &lt; 2&pi;
  * representing the angle the stick makes to the poistive x axis in the
- * clockwise direction.</li>
- * </ul>
+ * clockwise direction. In modes X4 and X8 the angles will be constrained to
+ * the permitted directions.</li>
+ *
  * <li><code>final</code> : has the value <code>false</code> if the stick is
- * still being moved and <code>false</code> if the stick has been released.
- * </li>
+ * still being moved and <code>false</code> if the stick has been released.</li>
  * </ul>
  * <p>When the joystick is released it will return back to its rest state
  * i.e. centered.</p>
@@ -4383,25 +4224,26 @@ class CvsJoystick extends CvsBufferedControl {
         this._pr0 = 0.05 * this._size;
         this._pr1 = 0.40 * this._size;
         this._tSize = Math.max(0.075 * this._size, 6);
-        this._tmrID = undefined;
-        this._nSlices = 4;
-        this._nRings = 2;
-        // Initial values for testing
+        this._mode = 'X0';
+        this._mag = 0;
         this._ang = 0;
-        this._td = 0;
-        this._ta = 0;
         this._opaque = false;
+        this._tmrID = undefined;
     }
-    /**
-     * <p>Apply decoration to the joystick active area</p>
-     * @param nslices number of slices
-     * @param nrings number of rings
-     * @returns this control
-     */
-    decor(nslices, nrings) {
-        this._nSlices = Math.round(nslices);
-        this._nRings = Math.round(nrings);
-        this.invalidateBuffer();
+    mode(m) {
+        if (!m)
+            return this._mode;
+        m = m.toUpperCase();
+        (m);
+        switch (m) {
+            case 'X0':
+            case 'X4':
+            case 'X8':
+                if (this._mode != m) {
+                    this._mode = m;
+                    this.invalidateBuffer();
+                }
+        }
         return this;
     }
     /**
@@ -4413,20 +4255,124 @@ class CvsJoystick extends CvsBufferedControl {
         this._tSize = ts;
         return this;
     }
+    /**
+     * <p>See if the position [px, py] is over the control.</p>
+     * @hidden
+     * @param px horizontal position
+     * @param py vertical position
+     * @param tol tolerance in pixels
+     * @returns 0 if not over the control of &ge;1
+     */
+    _whereOver(px, py, tol = this._tSize) {
+        // adjust position to centre of knob
+        px -= this._w / 2;
+        py -= this._h / 2;
+        let [tx, ty] = this._getThumbXY();
+        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
+            ? 1 : 0;
+    }
+    /**
+     * Converts the polar position to cartesian cooordinates.
+     * @hidden
+     */
+    _getThumbXY() {
+        return [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
+    }
+    /**
+     * Validates the mouse / touch position based on joystick size and mode.
+     * @hidden
+     */
+    _validateThumbPosition(x, y) {
+        let mag = this._p.constrain(Math.sqrt(x * x + y * y), 0, this._pr1);
+        let ang = Math.atan2(y, x);
+        ang += ang < 0 ? 2 * Math.PI : 0;
+        let dead = mag <= this._pr0;
+        let dir = -1, da;
+        switch (this._mode) {
+            case 'X4':
+                da = Math.PI / 2;
+                dir = Math.floor((ang + da / 2) / da) % 4;
+                ang = da * dir;
+                dir *= 2;
+                break;
+            case 'X8':
+                da = Math.PI / 4;
+                dir = Math.floor((ang + da / 2) / da) % 8;
+                ang = da * dir;
+                break;
+        }
+        [this._mag, this._ang, this._dir, this._dead] = [mag, ang, dir, dead];
+    }
+    /** @hidden */
+    _processEvent(e, ...info) {
+        /** @hidden */
+        function getValue(source, event, fini) {
+            let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
+            return {
+                source: source, p5Event: event, final: fini, mag: mag,
+                angle: source._ang, dir: source._dir, dead: source._dead,
+            };
+        }
+        let mx = info[0], my = info[1];
+        mx -= this._w / 2;
+        my -= this._h / 2;
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                if (this._over > 0) {
+                    this._active = true;
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                if (this._active) {
+                    this._validateThumbPosition(mx, my);
+                    this.action(getValue(this, e, true));
+                    this._active = false;
+                    this.invalidateBuffer();
+                    if (!this._tmrID)
+                        this._tmrID = setInterval(() => {
+                            this._mag -= 0.07 * this._size;
+                            if (this._mag <= 0) {
+                                clearInterval(this._tmrID);
+                                this._tmrID = undefined;
+                                this._mag = 0;
+                            }
+                            this.invalidateBuffer();
+                        }, 25);
+                }
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                if (this._active) {
+                    this._validateThumbPosition(mx, my);
+                    this.action(getValue(this, e, false));
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+    }
     /** @hidden */
     _updateControlVisual() {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        let [tx, ty] = this._getThumbXY();
+        let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
         const OPAQUE = cs['C_3'];
         const DIAL_FACE = cs['C_1'];
-        const DIAL_BORDER = cs['C_7'];
-        const ROD = cs['C_7'];
-        const THUMB_OFF = cs['C_4'];
-        const THUMB_OVER = cs['C_8'];
+        const DIAL_TINT = cs['T_0'];
+        const DIAL_BORDER = cs['C_9'];
         const THUMB_STROKE = cs['C_9'];
-        const DECOR = cs['C_6'];
-        const DEAD_ZONE = cs['T_4'];
+        const THUMB_OFF = cs['C_4'];
+        const THUMB_OVER = cs['C_6'];
+        const ROD = cs['C_7'];
+        const MARKERS = cs['C_8'];
+        const DEAD_ZONE = cs['T_5'];
         b.push();
         b.clear();
         if (this._opaque) {
@@ -4439,30 +4385,51 @@ class CvsJoystick extends CvsBufferedControl {
         b.noStroke();
         b.fill(DIAL_FACE);
         b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
-        // Dial face slices
-        if (this._nSlices > 1) {
-            let a = 2 * Math.PI / this._nSlices;
-            b.push();
-            b.stroke(DECOR);
-            b.strokeWeight(1.5);
-            for (let i = 0; i < this._nSlices; i++) {
-                b.line(this._pr0, 0, this._pr1, 0);
-                b.rotate(a);
-            }
-            b.pop();
-        }
-        // Dial radial ticks
-        if (this._nRings > 1) {
-            let delta = (this._pr1 - this._pr0) / (this._nRings);
-            b.push();
-            b.stroke(DECOR);
-            b.strokeWeight(1.5);
-            b.noFill();
-            for (let i = 1; i < this._nRings; i++) {
-                let d = this._pr0 + i * delta;
-                b.ellipse(0, 0, 2 * d, 2 * d);
-            }
-            b.pop();
+        // dial face highlight
+        let s = 0, e = 0.26 * this._size, da = 0;
+        b.fill(DIAL_TINT);
+        b.noStroke(); //b.stroke(DIAL_TINT); b.strokeWeight(2);
+        b.ellipse(0, 0, e * 2, e * 2);
+        b.ellipse(0, 0, e * 1.25, e * 1.25);
+        // Dial face markers
+        b.stroke(MARKERS);
+        switch (this._mode) {
+            case 'X0':
+                s = this._pr1;
+                e = 0.33 * this._size;
+                da = Math.PI / 8;
+                b.push();
+                b.strokeWeight(0.75);
+                e = 0.3 * this._size;
+                for (let i = 0; i < 16; i++) {
+                    b.line(s, 0, e, 0);
+                    b.rotate(da);
+                }
+                b.pop();
+                break;
+            case 'X8':
+                s = this._pr0;
+                e = 0.33 * this._size;
+                da = Math.PI / 4;
+                b.push();
+                b.strokeWeight(1);
+                for (let i = 0; i < 8; i++) {
+                    b.line(s, 0, e, 0);
+                    b.rotate(da);
+                }
+                b.pop();
+            case 'X4':
+                s = this._pr0;
+                e = this._pr1;
+                da = Math.PI / 2;
+                b.push();
+                b.strokeWeight(1.5);
+                for (let i = 0; i < 4; i++) {
+                    b.line(s, 0, e, 0);
+                    b.rotate(da);
+                }
+                b.pop();
+                break;
         }
         // Dial border
         b.stroke(DIAL_BORDER);
@@ -4490,95 +4457,182 @@ class CvsJoystick extends CvsBufferedControl {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+}
+Object.assign(CvsJoystick.prototype, processMouse, processTouch);
+//# sourceMappingURL=joystick.js.map
+/**
+ * <p>This class represents a turnable knob with a surrounding status track
+ * (optional). Three modes are available to rotate the knob.</p>
+ * <p>Major and minor tick marks can be added to the status track and
+ * supports stick-to-ticks if wanted. </p>
+ * @since 1.1.0
+ */
+class CvsKnob extends CvsSlider {
     /**
-     * <p>See if the position [px, py] is over the control.</p>
      * @hidden
-     * @param px horizontal position
-     * @param py vertical position
-     * @param tol tolerance in pixels
-     * @returns 0 if not over the control of &ge;1
+     * @param gui the gui controller
+     * @param name unique name for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
      */
-    _whereOver(px, py, tol = this._tSize) {
-        let [tx, ty] = this._getThumbXY();
-        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
-            ? 1 : 0;
+    constructor(gui, name, x, y, w, h) {
+        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        // Mouse / touch mode
+        /** @hidden */ this._mode = CvsKnob.X_MODE;
+        /** @hidden */ this._sensitivity = 0.005;
+        this._size = Math.min(w, h);
+        this._turnArc = 2 * Math.PI; // Full turn of 360 degrees
+        this._gapPos = 0.5 * Math.PI; // South
+        this._tw = 0;
+        this._kRad = 0.5 * this._size;
+        this._gRad = this._kRad - 4;
+        this._opaque = true;
     }
     /**
-     * Converts the polar position to cartesian cooordinates.
-     * @hidden
+     * <p>Sets the interaction mode for rotating the knob.</p>
+     * <ul>
+     * <li><code>'x'</code> : dragging left and right turns the knob anticlockwise and clockwise respectively.</li>
+     * <li><code>'y'</code> : dragging down and up turns the knob anticlockwise and clockwise respectively.</li>
+     * <li><code>'a'</code> : dragging in a circular motion round the knob center turns the knob to face the drag point.</li>
+     * </ul>
+     * <p>Rotation is constrained within the maximum turn angle for this knob.</p>
+     * <p>Any other parameter value is ignored and the mode is unchanged.</p>
+     *
+     * @param mode 'x', 'y' or 'a'
+     * @returns this control
      */
-    _getThumbXY() {
-        return [this._td * Math.cos(this._ta), this._td * Math.sin(this._ta)];
+    mode(mode) {
+        switch (mode) {
+            case 'x':
+                this._mode = CvsKnob.X_MODE;
+                break;
+            case 'y':
+                this._mode = CvsKnob.Y_MODE;
+                break;
+            case 'a':
+                this._mode = CvsKnob.A_MODE;
+                break;
+        }
+        return this;
     }
     /**
-     * Converts cartesian to polar cooordinates, constraing the radius to fit
-     * the display.
-     * @hidden
+     * <p>Only applies to modes 'x' and 'y'. It controls how far the knob
+     * rotates for a given drag distance.</p>
+     * <p>The drag distance needed to rotate the knob by the maximum turn
+     * angle is the reciprocal of the parameter value i.e. <code>1.0 / sens</code>.</p>
+     * <p>The default value is 0.005 which equates to a drag distance of 200 pixels
+     * and the minimum permitted value is 0.0025 (400 pixels).</p>
+     *
+     * @param svty &ge;0.0025
+     * @returns this control
      */
-    _getThumbDA(x, y) {
-        let d = Math.sqrt(x * x + y * y);
-        d = d < 0 ? 0 : d > this._pr1 ? this._pr1 : d;
-        return [d, Math.atan2(y, x)];
+    sensitivity(svty) {
+        if (svty != 0) {
+            let sgn = svty < 0 ? -1 : 1;
+            let mag = Math.abs(svty);
+            this._sensitivity = sgn * (mag < 0.0025 ? 0.0025 : mag);
+        }
+        return this;
     }
     /**
-     * Gets a 'value' object representing the current state of the joystick.
+     * <p>Sets the width of the track surrounding the central knob-grip. The
+     * value will be constrained so the minimum width is 6 pixels upto
+     * the radius of the knob.</p>
+     * <p>The track is used to display current value bar as well as any user
+     * specified ticks.</p>
+     *
+     * @param tw the width of the value track
+     * @returns this control
+     */
+    track(tw) {
+        tw = this._p.constrain(tw, 6, this._kRad);
+        this._gRad = this._kRad - tw;
+        this._tw = tw;
+        this.invalidateBuffer();
+        return this;
+    }
+    /**
+     * <p>Sets the maximum angle the knob can be turned in degrees. Angles
+     * outside the range &gt;0&deg; and &le;360&deg; will be ignored and
+     * the current turn angle is unchanged.</p>
+     * @param ang max.turn angle &gt;0 and &le;360 degrees
+     * @returns this control
+     */
+    turnAngle(ang) {
+        if (ang > 0 && ang <= 360) {
+            this._turnArc = this._p.radians(ang);
+            this.invalidateBuffer();
+        }
+        return this;
+    }
+    /**
+     * <p>If the turn angle is &lt 360&deg; then there will be an 'unused'
+     * section of track. This is called the gap and this method sets the
+     * position of the gap center effectively rotating the whole knob.</p>
+     * <p>The angle is 0&deg; along positive x-axis and increases clockwise.
+     * The default value is 90&deg; which means the gap center is facing
+     * south.</p>
+     *
+     * @param ang ga in range &ge;0 and $le;360
+     * @returns this control
+     */
+    gap(ang) {
+        if (ang >= 0 && ang <= 360) {
+            this._gapPos = this._p.radians(ang);
+            this.invalidateBuffer();
+        }
+        return this;
+    }
+    /**
+     * Converts XY position to a parmetric value in the range
+     * 0 and 1 inclusive.
+     *
      * @hidden
      */
-    _getValue() {
-        let [tx, ty] = this._getThumbXY();
-        let sX = tx < -this._pr0 ? -1 : tx > this._pr0 ? 1 : 0;
-        let sY = ty < -this._pr0 ? -1 : ty > this._pr0 ? 1 : 0;
-        let ta = this._ta;
-        ta = ta >= 0 ? ta : ta + 2 * Math.PI;
-        let a = (ta + Math.PI / 8) % (2 * Math.PI);
-        let dead = this._td <= this._pr0;
-        let sXY = dead ? -1 : Math.floor(4 * a / Math.PI);
-        let tm = (this._td - this._pr0) / (this._pr1 - this._pr0);
-        tm = tm < 0 ? 0 : tm > 1 ? 1 : tm;
-        let v = { X: sX, Y: sY, XY: sXY, mag: tm, angle: ta, dead: dead };
-        return v;
-    }
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x - this._w / 2;
-        let my = this._p.mouseY - pos.y - this._h / 2;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x - this._w / 2;
-        let my = t.clientY - rect.top - pos.y - this._h / 2;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my);
+    _tFromXY(x, y) {
+        function fixAngle(a) {
+            return a < 0 ? a + 2 * Math.PI : a;
+        }
+        let constrain = this._p.constrain;
+        let t = this._t01, under = false, over = false;
+        switch (this._mode) {
+            case CvsKnob.X_MODE:
+                t = this._t01 + (x - this._prevX) * this._sensitivity;
+                under = t < 0;
+                over = t > 1;
+                t = constrain(t, 0, 1);
+                break;
+            case CvsKnob.Y_MODE:
+                t = this._t01 - (y - this._prevY) * this._sensitivity;
+                under = t < 0;
+                over = t > 1;
+                t = constrain(t, 0, 1);
+                break;
+            case CvsKnob.A_MODE:
+                let low = Math.PI - this._turnArc / 2;
+                let high = 2 * Math.PI - low;
+                let ang = fixAngle(Math.atan2(y, x));
+                ang = fixAngle(ang - this._gapPos);
+                under = ang < low;
+                over = ang > high;
+                t = this._p.map(ang, low, high, 0, 1, true);
+                break;
+        }
+        return { t: t, under: under, over: over };
     }
     /** @hidden */
     _processEvent(e, ...info) {
-        let mx = info[0], my = info[1];
+        let [mx, my] = info;
+        mx -= this._w / 2;
+        my -= this._h / 2; // Make relative to knob centre
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 if (this._over > 0) {
+                    this._prevX = mx;
+                    this._prevY = my;
                     this._active = true;
                     this.invalidateBuffer();
                 }
@@ -4587,29 +4641,25 @@ class CvsJoystick extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 if (this._active) {
-                    let r = { source: this, p5Event: e, final: true, ...this._getValue() };
-                    this.action(r);
+                    let next = this._tFromXY(mx, my);
+                    this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
+                    this.action({ source: this, p5Event: e, value: this.value(), final: true });
                     this._active = false;
                     this.invalidateBuffer();
-                    if (!this._tmrID)
-                        this._tmrID = setInterval(() => {
-                            this._td -= 0.07 * this._size;
-                            if (this._td <= 0) {
-                                clearInterval(this._tmrID);
-                                this._tmrID = undefined;
-                                this._td = 0;
-                            }
-                            this.invalidateBuffer();
-                        }, 25);
                 }
                 break;
             case 'mousemove':
             case 'touchmove':
                 if (this._active) {
-                    [this._td, this._ta] = this._getThumbDA(mx, my);
-                    let r = { source: this, p5Event: e, final: false, ...this._getValue() };
-                    this.action(r);
-                    this.invalidateBuffer();
+                    let next = this._tFromXY(mx, my);
+                    let t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
+                    if (this._t01 != t01) {
+                        this._prevX = mx;
+                        this._prevY = my;
+                        this._t01 = t01;
+                        this.action({ source: this, p5Event: e, value: this.value(), final: false });
+                        this.invalidateBuffer();
+                    }
                 }
                 break;
             case 'mouseover':
@@ -4618,8 +4668,133 @@ class CvsJoystick extends CvsBufferedControl {
                 break;
         }
     }
+    /**
+     * <p>See if the position [px, py] is over the control.</p>
+     * @hidden
+     * @param px horizontal position
+     * @param py vertical position
+     * @param tol knob radius tolerance in pixels
+     * @returns 1 if over any part of the knob otherwise return 0
+     */
+    _whereOver(px, py, tol = 0) {
+        // adjust position to centre of knob
+        px -= this._w / 2;
+        py -= this._h / 2;
+        let d2 = px * px + py * py;
+        let rt = this._kRad + tol;
+        // console.log(`px: ${px}  py: ${py}    d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`);
+        // console.log(`d2: ${d2}   rt2: ${rt * rt}      over: ${d2 <= rt * rt}`)
+        return d2 <= rt * rt ? 1 : 0;
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        let b = this._buffer;
+        let cs = this._scheme || this._gui.scheme();
+        const OPAQUE = cs['C_3'];
+        const GRIP_OFF = cs['C_7'], GRIP_STROKE = cs['C_8'];
+        const MARKER = cs['C_3'];
+        const HIGHLIGHT = cs['C_9'];
+        const TRACK_BACK = cs['C_3'], TRACK_ARC = cs['C_1'];
+        const TICKS = cs['G_8'];
+        const USED_TRACK = cs['G_2'], UNUSED_TRACK = cs['T_1'];
+        b.clear();
+        if (this._opaque) {
+            b.noStroke();
+            b.fill(OPAQUE);
+            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+        }
+        let arc = this._turnArc, gap = 2 * Math.PI - arc, lowA = gap / 2;
+        let rOut = this._kRad, rIn = this._gRad;
+        let dOut = 2 * rOut, dIn = 2 * rIn;
+        b.push();
+        b.translate(b.width / 2, b.height / 2);
+        b.rotate(this._gapPos + lowA);
+        // Draw full background and track arc
+        b.noStroke();
+        b.fill(TRACK_BACK);
+        b.ellipse(0, 0, dOut, dOut);
+        b.fill(TRACK_ARC);
+        b.arc(0, 0, dOut, dOut, 0, this._turnArc);
+        // Draw ticks? 
+        let n = this._majorTicks * this._minorTicks;
+        if (n >= 2) {
+            let b0 = this._tw, b1 = 0.65 * b0;
+            b.stroke(TICKS);
+            let da = arc / n;
+            b.push();
+            {
+                b.strokeWeight(0.9);
+                // minor ticks
+                for (let i = 0; i <= n; i++) {
+                    b.line(rIn, 0, rIn + b1, 0);
+                    b.rotate(da);
+                }
+            }
+            b.pop();
+            n = this._majorTicks;
+            if (n >= 2) {
+                let da = arc / n;
+                b.push();
+                {
+                    b.strokeWeight(1);
+                    // major ticks
+                    for (let i = 0; i <= n; i++) {
+                        b.line(rIn, 0, rIn + b0, 0);
+                        b.rotate(da);
+                    }
+                }
+                b.pop();
+            }
+            // Unused track
+            b.noStroke();
+            b.fill(UNUSED_TRACK);
+            b.arc(0, 0, dIn + b0, dIn + b0, 0, arc);
+            // Unused track
+            b.fill(USED_TRACK);
+            b.arc(0, 0, dIn + b0, dIn + b0, 0, this._t01 * arc);
+        }
+        // Grip section
+        b.stroke(GRIP_STROKE);
+        b.strokeWeight(1.5);
+        b.fill(GRIP_OFF);
+        b.ellipse(0, 0, dIn, dIn);
+        // Grip arrow marker
+        b.push();
+        {
+            b.rotate(this._t01 * arc);
+            let ms = 0.2 * rIn;
+            b.fill(MARKER);
+            b.noStroke();
+            b.beginShape();
+            b.vertex(-ms, 0);
+            b.vertex(0, -ms);
+            b.vertex(rIn, 0);
+            b.vertex(0, ms);
+            b.endShape(this._p.CLOSE);
+        }
+        b.pop();
+        // Is over highlight?
+        if (this._over || this._active) {
+            b.noFill();
+            b.stroke(HIGHLIGHT);
+            b.strokeWeight(3);
+            b.arc(0, 0, 2 * this._kRad, 2 * this._kRad, 0, arc);
+        }
+        b.pop();
+        b.updatePixels();
+        // last line in this method should be
+        this._bufferInvalid = false;
+    }
+    /** @hidden */
+    _minControlSize() {
+        return { w: this._size, h: this._size };
+    }
 }
-//# sourceMappingURL=joystick.js.map
+/** @hidden */ CvsKnob.X_MODE = 1;
+/** @hidden */ CvsKnob.Y_MODE = 2;
+/** @hidden */ CvsKnob.A_MODE = 3;
+Object.assign(CvsKnob.prototype, processMouse, processTouch);
+//# sourceMappingURL=knob.js.map
 /*
 ##############################################################################
  CvsPane
@@ -4768,7 +4943,6 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            //let cs = this._scheme || this._gui.scheme();
             p.noStroke();
             p.fill(this._background);
             p.beginShape(p.TRIANGLE_STRIP);
@@ -4789,7 +4963,6 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            // let cs = this._scheme || this._gui.scheme();
             p.noStroke();
             p.fill(this._background);
             p.rect(0, 0, this._w, this._h);

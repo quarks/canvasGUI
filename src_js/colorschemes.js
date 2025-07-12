@@ -1,6 +1,6 @@
 class BaseScheme {
     constructor() {
-        this._tints();
+        this._greyTints();
     }
     _color(hue) {
         this[`C_0`] = `hsb(${hue}, 10%, 100%)`;
@@ -28,10 +28,15 @@ class BaseScheme {
         for (let i = 0; i < grey.length; i++)
             this[`G_${i}`] = `hsb(0,0%,${grey[i]}%)`;
     }
-    _tints() {
-        let alpha = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+    _greyTints() {
+        let alpha = [0.05, 0.075, 0.1, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7];
         for (let i = 0; i < alpha.length; i++)
             this[`T_${i}`] = `rgba(0,0,0,${alpha[i]})`;
+    }
+    _whiteTints() {
+        let alpha = [0.25, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9];
+        for (let i = 0; i < alpha.length; i++)
+            this[`T_${i}`] = `rgba(255,255,255,${alpha[i]})`;
     }
 }
 class RedScheme extends BaseScheme {
@@ -95,6 +100,7 @@ class DarkScheme extends BaseScheme {
         super();
         this._mono(0, 254);
         this._grey('dark');
+        this._whiteTints(); // Override dark tints
     }
 }
 //# sourceMappingURL=colorschemes.js.map

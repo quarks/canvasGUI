@@ -213,7 +213,7 @@ class CvsBaseControl {
         return this;
     }
     /**
-     * A control becomes active when the mous btton is pressed over it.
+     * A control becomes active when the mouse btton is pressed over it.
      * This method has little practical use except when debugging.
      * @hidden
      * @returns true if this control is expecting more mouse events
@@ -440,7 +440,7 @@ class CvsBaseControl {
     }
     /** @hidden */
     _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs['T_4']);
+        b.fill(cs['T_5']);
         b.noStroke();
         b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
     }
@@ -493,4 +493,42 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
+/**
+ * Mixin for initialising mouse event data
+ * @hidden
+ */
+const processMouse = {
+    /** @hidden */
+    _handleMouse(e) {
+        let pos = this.getAbsXY();
+        let [mx, my, w, h] = this._orientation.xy(this._p.mouseX - pos.x, this._p.mouseY - pos.y, this._w, this._h);
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx, my, w, h);
+        return false;
+    }
+};
+/**
+ * Mixin for initialising touch event data
+ * @hidden
+ */
+const processTouch = {
+    /** @hidden */
+    _handleTouch(e) {
+        e.preventDefault();
+        let pos = this.getAbsXY();
+        const rect = this._gui._canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        let [mx, my, w, h] = this._orientation.xy(t.clientX - rect.left - pos.x, t.clientY - rect.top - pos.y, this._w, this._h);
+        this._pover = this._over; // Store previous mouse over state
+        this._over = this._whereOver(mx, my, 5); // Store current mouse over state
+        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+        if (this._tooltip)
+            this._tooltip._updateState(this, this._pover, this._over);
+        this._processEvent(e, mx, my, w, h);
+    }
+};
 //# sourceMappingURL=basecontrol.js.map

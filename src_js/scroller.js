@@ -70,41 +70,6 @@ class CvsScroller extends CvsBufferedControl {
         return 0;
     }
     /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, this._THUMB_HEIGHT); // Store current mouse over state
-        if (this._pover != this._over)
-            this.invalidateBuffer();
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, Math.max(this._THUMB_HEIGHT, 20)); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-    }
-    /** @hidden */
     _processEvent(e, ...info) {
         let mx = info[0];
         switch (e.type) {
@@ -186,4 +151,5 @@ class CvsScroller extends CvsBufferedControl {
         return { w: this._w, h: 20 };
     }
 }
+Object.assign(CvsScroller.prototype, processMouse, processTouch);
 //# sourceMappingURL=scroller.js.map

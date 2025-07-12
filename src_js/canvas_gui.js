@@ -160,6 +160,18 @@ class GUI {
         return this.addControl(new CvsJoystick(this, name, x, y, w, h));
     }
     /**
+    * Create a joystick
+    * @param name unique name for this control
+    * @param x left-hand pixel position
+    * @param y top pixel position
+    * @param w width
+    * @param h height
+    * @returns a joystick control
+    */
+    knob(name, x, y, w, h) {
+        return this.addControl(new CvsKnob(this, name, x, y, w, h));
+    }
+    /**
     * Create a scroller control
     * @param name unique name for this control
     * @param x left-hand pixel position

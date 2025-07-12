@@ -1,6 +1,6 @@
 
 function setup() {
-    let p5canvas = createCanvas(620, 360);
+    let p5canvas = createCanvas(640, 360);
     p5canvas.parent('paper');
 
     blue = new BlueScheme();
@@ -20,11 +20,13 @@ function draw() {
     push();
     background(255);
     stroke(0, 112); strokeWeight(1);
-    for (let p = 10; p < 2.5 * height; p += 20) line(0, p, p, 0);
+    for (let p = 10; p < 3 * height; p += 20) line(0, p, p, 0);
     showColors();
     showGreys();
     showTints();
+    showLightTints();
     pop();
+    noLoop();
 }
 
 function showColors() {
@@ -76,8 +78,23 @@ function showTints() {
     push();
     stroke(0); strokeWeight(1);
     translate(550, 30);
-    for (let i = 0; i <= 9; i++) {
+    for (let i = 0; i <= 8; i++) {
         fill(blue['T_' + i]);
+        rect(0, i * 30, 40, 30);
+    }
+    pop();
+}
+
+function showLightTints() {
+    push();
+
+    translate(590, 30);
+    noStroke(); fill(0, 0, 0, 128);
+    rect(0, 0, 40, 270)
+    stroke(0); strokeWeight(1);
+    for (let i = 0; i <= 8; i++) {
+        fill(dark['T_' + i]);
+        // console.log(dark['T_' + i])
         rect(0, i * 30, 40, 30);
     }
     pop();

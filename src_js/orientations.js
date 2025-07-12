@@ -29,10 +29,10 @@ class OrientNorth {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': w - y, 'y': x, 'w': h, 'h': w };
+        return [w - y, x, h, w];
     }
     wh(w, h) {
-        return { 'w': h, 'h': w };
+        return [h, w];
     }
 }
 class OrientSouth {
@@ -54,10 +54,10 @@ class OrientSouth {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': y, 'y': h - x, 'w': h, 'h': w };
+        return [y, h - x, h, w];
     }
     wh(w, h) {
-        return { 'w': h, 'h': w };
+        return [h, w];
     }
 }
 class OrientEast {
@@ -79,10 +79,11 @@ class OrientEast {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': x, 'y': y, 'w': w, 'h': h };
+        return [x, y, w, h];
     }
     wh(w, h) {
-        return { 'w': w, 'h': h };
+        // return { 'w': w, 'h': h };
+        return [w, h];
     }
 }
 class OrientWest {
@@ -104,10 +105,10 @@ class OrientWest {
         p.endShape();
     }
     xy(x, y, w, h) {
-        return { 'x': w - x, 'y': h - y, 'w': w, 'h': h };
+        return [w - x, h - y, w, h];
     }
     wh(w, h) {
-        return { 'w': w, 'h': h };
+        return [w, h];
     }
 }
 //# sourceMappingURL=orientations.js.map

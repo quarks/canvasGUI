@@ -75,46 +75,9 @@ class CvsRanger extends CvsSlider {
         return 0;
     }
     /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        // If this control is active remember the thumb that was pressed
-        // otherwise check the current position
-        this._tIdx = this._active ? this._tIdx : this._over - 1;
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._tIdx = this._active ? this._tIdx : this._over - 1;
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-    }
-    /** @hidden */
     _processEvent(e, ...info) {
         let mx = info[0];
+        this._tIdx = this._active ? this._tIdx : this._over - 1;
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -230,4 +193,5 @@ class CvsRanger extends CvsSlider {
         this._bufferInvalid = false;
     }
 }
+Object.assign(CvsRanger.prototype, processMouse, processTouch);
 //# sourceMappingURL=ranger.js.map

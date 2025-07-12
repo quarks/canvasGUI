@@ -1,8 +1,7 @@
 /**
  * <p>A tooltip is a simply text hint that appears near to a control with the 
  * mouse over it.</p>
- * 
- * <p>The tooltip's relative position to thr dontrol is automatically set to 
+ * <p>The tooltip's relative position to the control is automatically set to 
  * make sure it is visible inside the canvas area.</p>
  * @hidden
  */
@@ -61,17 +60,29 @@ class CvsTooltip extends CvsText {
             }
     }
 
+    // /** @hidden */
+    // _validatePosition() {
+    //     let p = this._parent;
+    //     let pp = p.getAbsXY(), px = pp.x, py = pp.y;
+    //     let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
+    //     // Start tip in default location
+    //     this._x = 0, this._y = -this._h;
+    //     if (py + this._y < 0)
+    //         this._y += this._h + ph;
+    //     if (px + this._x + this._w > this._gui.canvasWidth())
+    //         this._x -= this._w - pa.w;
+    // }
+
     /** @hidden */
     _validatePosition() {
         let p = this._parent;
-        let pp = p.getAbsXY(), px = pp.x, py = pp.y;
-        let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
-        // Start tip in default location
+        let { x: px, y: py } = p.getAbsXY();
+        let [pw, ph] = p.orientation().wh(p.w(), p.h())
         this._x = 0, this._y = -this._h;
         if (py + this._y < 0)
             this._y += this._h + ph;
         if (px + this._x + this._w > this._gui.canvasWidth())
-            this._x -= this._w - pa.w;
+            this._x -= this._w - pw;
     }
 
     /** @hidden */

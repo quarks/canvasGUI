@@ -60,7 +60,7 @@ class CvsSlider extends CvsBufferedControl {
     /**
      * <p>The track can be divided up into a number of domains separated with major ticks. The
      * major domains and be further divided into subdomains separated with minor ticks. If the
-     * final parameter is true then values retqurned by the slider are consrained to the 
+     * final parameter is true then values returned by the slider are consrained to the 
      * tick values.</p>
      * @param {number} major the number of major domains on the track
      * @param {number} minor the number of minor domains  between major ticks
@@ -140,38 +140,6 @@ class CvsSlider extends CvsBufferedControl {
         let tx = this._t01 * (this._buffer.width - 20);
         return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
             ? 1 : 0;
-    }
-
-    /** @hidden */
-    _handleMouse(e: MouseEvent) { //    CvsSlider
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x; my = r.y;
-        this._pover = this._over;                 // Store previous mouse over state
-        this._over = this._whereOver(mx, my);     // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
-        return false;
-    }
-
-    /** @hidden */
-    _handleTouch(e: TouchEvent) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x; my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx);
     }
 
     /** @hidden */
@@ -293,3 +261,6 @@ class CvsSlider extends CvsBufferedControl {
     }
 
 }
+
+
+Object.assign(CvsSlider.prototype, processMouse, processTouch);

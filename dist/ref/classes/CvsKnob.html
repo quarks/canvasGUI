@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>CvsSlider | canvas-gui</title><meta name="description" content="Documentation for canvas-gui"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>CvsKnob | canvas-gui</title><meta name="description" content="Documentation for canvas-gui"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container">
 <div class="table-cell" id="tsd-search" data-base="..">
 <div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
@@ -11,24 +11,23 @@
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb">
 <li><a href="../modules.html">canvas-gui</a></li>
-<li><a href="CvsSlider.html">CvsSlider</a></li></ul>
-<h1>Class CvsSlider</h1></div>
+<li><a href="CvsKnob.html">CvsKnob</a></li></ul>
+<h1>Class CvsKnob</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>This class represents a horizontal slider with a draggable thumb to 
-define a value within user defined limits.</p>
-<p>Major and minor tick marks can be added to the bar and supports 
-stick-to-ticks if wanted.</p></div></section>
+<div class="tsd-comment tsd-typography"><p>This class represents a turnable knob with a surrounding status track
+(optional). Three modes are available to rotate the knob.</p>
+<p>Major and minor tick marks can be added to the status track and  
+supports stick-to-ticks if wanted. </p>
+<h3>Since</h3><p>1.1.0</p>
+</div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
-<li><a href="CvsBufferedControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBufferedControl</a>
+<li><a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a>
 <ul class="tsd-hierarchy">
-<li><span class="target">CvsSlider</span>
-<ul class="tsd-hierarchy">
-<li><a href="CvsRanger.html" class="tsd-signature-type" data-tsd-kind="Class">CvsRanger</a></li>
-<li><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></li></ul></li></ul></li></ul></section><aside class="tsd-sources">
+<li><span class="target">CvsKnob</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:1880</li></ul></aside>
+<li>Defined in index.ts:4783</li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -36,73 +35,84 @@ stick-to-ticks if wanted.</p></div></section>
 <div class="tsd-accordion-details">
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Properties</h3>
-<div class="tsd-index-list"><a href="CvsSlider.html#_limit0" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-1024-path"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)" id="icon-1024-text"></path></svg><span>_limit0</span></a>
-<a href="CvsSlider.html#_limit1" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_limit1</span></a>
-<a href="CvsSlider.html#_majorTicks" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_major<wbr/>Ticks</span></a>
-<a href="CvsSlider.html#_minorTicks" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_minor<wbr/>Ticks</span></a>
-<a href="CvsSlider.html#_s2ticks" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_s2ticks</span></a>
-<a href="CvsSlider.html#_t01" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_t01</span></a>
-<a href="CvsSlider.html#action" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>action</span></a>
+<div class="tsd-index-list"><a href="CvsKnob.html#_limit0" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-1024-path"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)" id="icon-1024-text"></path></svg><span>_limit0</span></a>
+<a href="CvsKnob.html#_limit1" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_limit1</span></a>
+<a href="CvsKnob.html#_majorTicks" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_major<wbr/>Ticks</span></a>
+<a href="CvsKnob.html#_minorTicks" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_minor<wbr/>Ticks</span></a>
+<a href="CvsKnob.html#_s2ticks" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_s2ticks</span></a>
+<a href="CvsKnob.html#_t01" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_t01</span></a>
+<a href="CvsKnob.html#action" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>action</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Methods</h3>
-<div class="tsd-index-list"><a href="CvsSlider.html#addChild" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>add<wbr/>Child</span></a>
-<a href="CvsSlider.html#corners" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>corners</span></a>
-<a href="CvsSlider.html#disable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>disable</span></a>
-<a href="CvsSlider.html#enable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>enable</span></a>
-<a href="CvsSlider.html#getParent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Parent</span></a>
-<a href="CvsSlider.html#hide" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>hide</span></a>
-<a href="CvsSlider.html#invalidateBuffer" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>invalidate<wbr/>Buffer</span></a>
-<a href="CvsSlider.html#isEnabled" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Enabled</span></a>
-<a href="CvsSlider.html#isValid" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Valid</span></a>
-<a href="CvsSlider.html#isVisible" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Visible</span></a>
-<a href="CvsSlider.html#leaveParent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>leave<wbr/>Parent</span></a>
-<a href="CvsSlider.html#limits" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>limits</span></a>
-<a href="CvsSlider.html#name" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>name</span></a>
-<a href="CvsSlider.html#opaque" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>opaque</span></a>
-<a href="CvsSlider.html#orient" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>orient</span></a>
-<a href="CvsSlider.html#parent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>parent</span></a>
-<a href="CvsSlider.html#removeChild" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>remove<wbr/>Child</span></a>
-<a href="CvsSlider.html#scheme" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>scheme</span></a>
-<a href="CvsSlider.html#setAction" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Action</span></a>
-<a href="CvsSlider.html#show" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>show</span></a>
-<a href="CvsSlider.html#shrink" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>shrink</span></a>
-<a href="CvsSlider.html#ticks" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>ticks</span></a>
-<a href="CvsSlider.html#tipTextSize" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>tip<wbr/>Text<wbr/>Size</span></a>
-<a href="CvsSlider.html#tooltip" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>tooltip</span></a>
-<a href="CvsSlider.html#transparent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>transparent</span></a>
-<a href="CvsSlider.html#value" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>value</span></a>
+<div class="tsd-index-list"><a href="CvsKnob.html#addChild" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>add<wbr/>Child</span></a>
+<a href="CvsKnob.html#corners" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>corners</span></a>
+<a href="CvsKnob.html#disable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>disable</span></a>
+<a href="CvsKnob.html#enable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>enable</span></a>
+<a href="CvsKnob.html#gap" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>gap</span></a>
+<a href="CvsKnob.html#getParent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Parent</span></a>
+<a href="CvsKnob.html#hide" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>hide</span></a>
+<a href="CvsKnob.html#invalidateBuffer" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>invalidate<wbr/>Buffer</span></a>
+<a href="CvsKnob.html#isEnabled" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Enabled</span></a>
+<a href="CvsKnob.html#isValid" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Valid</span></a>
+<a href="CvsKnob.html#isVisible" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Visible</span></a>
+<a href="CvsKnob.html#leaveParent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>leave<wbr/>Parent</span></a>
+<a href="CvsKnob.html#limits" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>limits</span></a>
+<a href="CvsKnob.html#mode" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>mode</span></a>
+<a href="CvsKnob.html#name" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>name</span></a>
+<a href="CvsKnob.html#opaque" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>opaque</span></a>
+<a href="CvsKnob.html#orient" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>orient</span></a>
+<a href="CvsKnob.html#parent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>parent</span></a>
+<a href="CvsKnob.html#removeChild" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>remove<wbr/>Child</span></a>
+<a href="CvsKnob.html#scheme" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>scheme</span></a>
+<a href="CvsKnob.html#sensitivity" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>sensitivity</span></a>
+<a href="CvsKnob.html#setAction" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Action</span></a>
+<a href="CvsKnob.html#show" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>show</span></a>
+<a href="CvsKnob.html#shrink" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>shrink</span></a>
+<a href="CvsKnob.html#ticks" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>ticks</span></a>
+<a href="CvsKnob.html#tipTextSize" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>tip<wbr/>Text<wbr/>Size</span></a>
+<a href="CvsKnob.html#tooltip" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>tooltip</span></a>
+<a href="CvsKnob.html#track" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>track</span></a>
+<a href="CvsKnob.html#transparent" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>transparent</span></a>
+<a href="CvsKnob.html#turnAngle" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>turn<wbr/>Angle</span></a>
+<a href="CvsKnob.html#value" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>value</span></a>
 </div></section></div></details></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_limit0" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a id="_limit0" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_limit0</span><a href="#_limit0" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
 <div class="tsd-signature">_limit0<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#_limit0">_limit0</a></p>
 <ul>
 <li>Defined in index.ts:1882</li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_limit1" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a id="_limit1" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_limit1</span><a href="#_limit1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_limit1<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#_limit1">_limit1</a></p>
 <ul>
 <li>Defined in index.ts:1883</li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_majorTicks" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a id="_majorTicks" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_major<wbr/>Ticks</span><a href="#_majorTicks" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_major<wbr/>Ticks<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#_majorTicks">_majorTicks</a></p>
 <ul>
 <li>Defined in index.ts:1884</li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_minorTicks" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a id="_minorTicks" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_minor<wbr/>Ticks</span><a href="#_minorTicks" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_minor<wbr/>Ticks<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#_minorTicks">_minorTicks</a></p>
 <ul>
 <li>Defined in index.ts:1885</li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_s2ticks" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a id="_s2ticks" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_s2ticks</span><a href="#_s2ticks" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_s2ticks<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#_s2ticks">_s2ticks</a></p>
 <ul>
 <li>Defined in index.ts:1886</li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_t01" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a id="_t01" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_t01</span><a href="#_t01" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_t01<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#_t01">_t01</a></p>
 <ul>
 <li>Defined in index.ts:1881</li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a id="action" class="tsd-anchor"></a>
@@ -111,7 +121,7 @@ stick-to-ticks if wanted.</p></div></section>
 <div class="tsd-comment tsd-typography"><p>The event handler for this control. Although it is permitted to set 
 this property directly it is recommended that the <code>setAction(...)</code>
 method is used to define the event handler actions.</p></div><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#action">action</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#action">action</a></p>
 <ul>
 <li>Defined in index.ts:1267</li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
@@ -137,7 +147,7 @@ If rx and ry are not provided then it uses the values set in the child.</p>
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> ry: <span class="tsd-signature-type">number</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#addChild">addChild</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#addChild">addChild</a></p>
 <ul>
 <li>Defined in index.ts:1359</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="corners" class="tsd-anchor"></a>
@@ -156,7 +166,7 @@ If rx and ry are not provided then it uses the values set in the child.</p>
 <div class="tsd-comment tsd-typography"><p>an array of 4 corner radii</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#corners">corners</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#corners">corners</a></p>
 <ul>
 <li>Defined in index.ts:1835</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="disable" class="tsd-anchor"></a>
@@ -175,7 +185,7 @@ If rx and ry are not provided then it uses the values set in the child.</p>
 <div class="tsd-comment tsd-typography"><p>if true disable child controls</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#disable">disable</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#disable">disable</a></p>
 <ul>
 <li>Defined in index.ts:1503</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="enable" class="tsd-anchor"></a>
@@ -194,9 +204,32 @@ If rx and ry are not provided then it uses the values set in the child.</p>
 <div class="tsd-comment tsd-typography"><p>if true enable child controls</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#enable">enable</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#enable">enable</a></p>
 <ul>
 <li>Defined in index.ts:1486</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="gap" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>gap</span><a href="#gap" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="gap.gap-1">gap<span class="tsd-signature-symbol">(</span>ang<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#gap.gap-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>If the turn angle is &lt 360&deg; then there will be an 'unused' 
+section of track. This is called the gap and this method sets the 
+position of the gap center effectively rotating the whole knob.</p>
+<p>The angle is 0&deg; along positive x-axis and increases clockwise.
+The default value is 90&deg; which means the gap center is facing 
+south.</p>
+<h3>Returns</h3><p>this control</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>ang: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>must be in the range &ge; 0 and &le; 360</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in index.ts:4911</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="getParent" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get<wbr/>Parent</span><a href="#getParent" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -206,7 +239,7 @@ If rx and ry are not provided then it uses the values set in the child.</p>
 <h3>Returns</h3><p>this controls parent</p>
 </div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#getParent">getParent</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#getParent">getParent</a></p>
 <ul>
 <li>Defined in index.ts:1412</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="hide" class="tsd-anchor"></a>
@@ -225,20 +258,20 @@ If rx and ry are not provided then it uses the values set in the child.</p>
 <div class="tsd-comment tsd-typography"><p>if true hide children</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#hide">hide</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#hide">hide</a></p>
 <ul>
 <li>Defined in index.ts:1532</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="invalidateBuffer" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>invalidate<wbr/>Buffer</span><a href="#invalidateBuffer" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="invalidateBuffer.invalidateBuffer-1">invalidate<wbr/>Buffer<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a><a href="#invalidateBuffer.invalidateBuffer-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="invalidateBuffer.invalidateBuffer-1">invalidate<wbr/>Buffer<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#invalidateBuffer.invalidateBuffer-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Invalidates the control's buffer forcing it to validate it on the 
 next frame</p>
 <h3>Returns</h3><p>this control</p>
 </div>
-<h4 class="tsd-returns-title">Returns <a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#invalidateBuffer">invalidateBuffer</a></p>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#invalidateBuffer">invalidateBuffer</a></p>
 <ul>
 <li>Defined in index.ts:1668</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isEnabled" class="tsd-anchor"></a>
@@ -250,12 +283,12 @@ next frame</p>
 <h3>Returns</h3><p>true if the control is enabled else false</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#isEnabled">isEnabled</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#isEnabled">isEnabled</a></p>
 <ul>
 <li>Defined in index.ts:1477</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="isValid" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isValid" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Valid</span><a href="#isValid" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 <li class="tsd-signature tsd-anchor-link" id="isValid.isValid-1">is<wbr/>Valid<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><a href="#isValid.isValid-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography">
@@ -269,6 +302,7 @@ next frame</p>
 <div class="tsd-comment tsd-typography"><p>scale value to test</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#isValid">isValid</a></p>
 <ul>
 <li>Defined in index.ts:1928</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isVisible" class="tsd-anchor"></a>
@@ -282,7 +316,7 @@ next frame</p>
 <h3>Since</h3><p>0.9.3</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#isVisible">isVisible</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#isVisible">isVisible</a></p>
 <ul>
 <li>Defined in index.ts:1544</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="leaveParent" class="tsd-anchor"></a>
@@ -294,12 +328,12 @@ next frame</p>
 <h3>Returns</h3><p>this control</p>
 </div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#leaveParent">leaveParent</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#leaveParent">leaveParent</a></p>
 <ul>
 <li>Defined in index.ts:1402</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="limits" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="limits" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>limits</span><a href="#limits" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 <li class="tsd-signature tsd-anchor-link" id="limits.limits-1">limits<span class="tsd-signature-symbol">(</span>l0<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, l1<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a><a href="#limits.limits-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Set the lower and upper limits for the slider</p>
@@ -318,8 +352,34 @@ next frame</p>
 <div class="tsd-comment tsd-typography"><p>upper limit</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#limits">limits</a></p>
 <ul>
 <li>Defined in index.ts:1915</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="mode" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>mode</span><a href="#mode" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="mode.mode-1">mode<span class="tsd-signature-symbol">(</span>mode<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#mode.mode-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Sets the interaction mode for rotating the knob.</p>
+<ul>
+<li><code>'x'</code> : dragging left and right turns the knob anticlockwise and clockwise respectively.</li>
+<li><code>'y'</code> : dragging down and up turns the knob anticlockwise and clockwise respectively.</li>
+<li><code>'a'</code> : dragging in a circular motion round the knob center turns the knob to face the drag point.</li>
+</ul>
+<p>Rotation is constrained within the maximum turn angle for this knob.</p>
+<p>Any other parameter value is ignored and the mode is unchanged.</p>
+<h3>Returns</h3><p>this control</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>mode: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>&#39;x&#39;, &#39;y&#39; or &#39;a&#39;</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in index.ts:4838</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="name" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -329,7 +389,7 @@ next frame</p>
 <h3>Returns</h3><p>the unique identier for this control</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#name">name</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#name">name</a></p>
 <ul>
 <li>Defined in index.ts:1300</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="opaque" class="tsd-anchor"></a>
@@ -342,7 +402,7 @@ on the controls color scheme</p>
 <h3>Returns</h3><p>this control</p>
 </div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#opaque">opaque</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#opaque">opaque</a></p>
 <ul>
 <li>Defined in index.ts:1553</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="orient" class="tsd-anchor"></a>
@@ -361,7 +421,7 @@ on the controls color scheme</p>
 <div class="tsd-comment tsd-typography"><p>&#39;north&#39;, &#39;south&#39;, &#39;east&#39; or &#39;west&#39;</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#orient">orient</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#orient">orient</a></p>
 <ul>
 <li>Defined in index.ts:1443</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="parent" class="tsd-anchor"></a>
@@ -388,13 +448,13 @@ on the controls color scheme</p>
 <div class="tsd-comment tsd-typography"><p>y position relative to parent</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#parent">parent</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#parent">parent</a></p>
 <ul>
 <li>Defined in index.ts:1347</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="removeChild" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>remove<wbr/>Child</span><a href="#removeChild" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="removeChild.removeChild-1">remove<wbr/>Child<span class="tsd-signature-symbol">(</span>c<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a><a href="#removeChild.removeChild-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="removeChild.removeChild-1">remove<wbr/>Child<span class="tsd-signature-symbol">(</span>c<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#removeChild.removeChild-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Remove a child control from this one so that it stays in same screen position</p>
 <h3>Returns</h3><p>this control</p>
@@ -406,8 +466,8 @@ on the controls color scheme</p>
 <h5>c: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h5>
 <div class="tsd-comment tsd-typography"><p>the control to remove or its name</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#removeChild">removeChild</a></p>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#removeChild">removeChild</a></p>
 <ul>
 <li>Defined in index.ts:1381</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="scheme" class="tsd-anchor"></a>
@@ -430,13 +490,36 @@ on the controls color scheme</p>
 <div class="tsd-comment tsd-typography"><p>if true propogate scheme to all child controls.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#scheme">scheme</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#scheme">scheme</a></p>
 <ul>
 <li>Defined in index.ts:1326</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="sensitivity" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>sensitivity</span><a href="#sensitivity" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="sensitivity.sensitivity-1">sensitivity<span class="tsd-signature-symbol">(</span>svty<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#sensitivity.sensitivity-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Only applies to modes 'x' and 'y'. It controls how far the knob 
+rotates for a given drag distance.</p>
+<p>The drag distance needed to rotate the knob by the maximum turn 
+angle is the reciprocal of the parameter value i.e. <code>1.0 / sens</code>.</p>
+<p>The default value is 0.005 which equates to a drag distance of 200 pixels
+and the minimum permitted value is 0.0025 (400 pixels).</p>
+<h3>Returns</h3><p>this control</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>svty: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>&ge;0.0025</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in index.ts:4858</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="setAction" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>set<wbr/>Action</span><a href="#setAction" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="setAction.setAction-1">set<wbr/>Action<span class="tsd-signature-symbol">(</span>event_handler<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a><a href="#setAction.setAction-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="setAction.setAction-1">set<wbr/>Action<span class="tsd-signature-symbol">(</span>event_handler<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#setAction.setAction-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>This sets the event handler to be used when this control fires
 an event. The parameter can take three forms:</p>
@@ -454,8 +537,8 @@ an event. The parameter can take three forms:</p>
 <h5>event_handler: <span class="tsd-signature-type">Function</span></h5>
 <div class="tsd-comment tsd-typography"><p>the function to handle this controls event</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#setAction">setAction</a></p>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#setAction">setAction</a></p>
 <ul>
 <li>Defined in index.ts:1428</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="show" class="tsd-anchor"></a>
@@ -474,7 +557,7 @@ an event. The parameter can take three forms:</p>
 <div class="tsd-comment tsd-typography"><p>if true show children</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#show">show</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#show">show</a></p>
 <ul>
 <li>Defined in index.ts:1519</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="shrink" class="tsd-anchor"></a>
@@ -495,12 +578,12 @@ an event. The parameter can take three forms:</p>
 <div class="tsd-comment tsd-typography"><p>the dimension to shrink</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#shrink">shrink</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#shrink">shrink</a></p>
 <ul>
 <li>Defined in index.ts:1574</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="ticks" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="ticks" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>ticks</span><a href="#ticks" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 <li class="tsd-signature tsd-anchor-link" id="ticks.ticks-1">ticks<span class="tsd-signature-symbol">(</span>major<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, minor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, stick2ticks<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><a href="#ticks.ticks-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>The track can be divided up into a number of domains separated with major ticks. The
@@ -525,12 +608,13 @@ tick values.</p>
 <div class="tsd-comment tsd-typography"><p>slider value is constrainged to tick values</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#ticks">ticks</a></p>
 <ul>
 <li>Defined in index.ts:1943</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="tipTextSize" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tip<wbr/>Text<wbr/>Size</span><a href="#tipTextSize" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="tipTextSize.tipTextSize-1">tip<wbr/>Text<wbr/>Size<span class="tsd-signature-symbol">(</span>tsize<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a><a href="#tipTextSize.tipTextSize-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="tipTextSize.tipTextSize-1">tip<wbr/>Text<wbr/>Size<span class="tsd-signature-symbol">(</span>tsize<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#tipTextSize.tipTextSize-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Sets the size of the text to use in the tooltip</p>
 </div>
@@ -541,14 +625,14 @@ tick values.</p>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> tsize: <span class="tsd-signature-type">number</span></h5>
 <div class="tsd-comment tsd-typography"><p>text size for this tooltip</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#tipTextSize">tipTextSize</a></p>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#tipTextSize">tipTextSize</a></p>
 <ul>
 <li>Defined in index.ts:1867</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="tooltip" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tooltip</span><a href="#tooltip" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="tooltip.tooltip-1">tooltip<span class="tsd-signature-symbol">(</span>tiptext<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, duration<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a><a href="#tooltip.tooltip-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="tooltip.tooltip-1">tooltip<span class="tsd-signature-symbol">(</span>tiptext<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, duration<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#tooltip.tooltip-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Create a tooltip for this control</p>
 
@@ -565,10 +649,32 @@ tick values.</p>
 <h5>duration: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 1600</span></h5>
 <div class="tsd-comment tsd-typography"><p>how long the tip remains visible (milliseconds)</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="CvsSlider.html" class="tsd-signature-type" data-tsd-kind="Class">CvsSlider</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#tooltip">tooltip</a></p>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#tooltip">tooltip</a></p>
 <ul>
 <li>Defined in index.ts:1850</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="track" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>track</span><a href="#track" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="track.track-1">track<span class="tsd-signature-symbol">(</span>tw<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#track.track-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Sets the width of the track surrounding the central knob-grip. The
+value will be constrained so the minimum width is 6 pixels upto
+the radius of the knob.</p>
+<p>The track is used to display current value bar as well as any user
+specified ticks.</p>
+<h3>Returns</h3><p>this control</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>tw: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>the width of the value track</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in index.ts:4877</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="transparent" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>transparent</span><a href="#transparent" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -578,12 +684,32 @@ tick values.</p>
 <h3>Returns</h3><p>this control</p>
 </div>
 <h4 class="tsd-returns-title">Returns <a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="CvsBufferedControl.html">CvsBufferedControl</a>.<a href="CvsBufferedControl.html#transparent">transparent</a></p>
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#transparent">transparent</a></p>
 <ul>
 <li>Defined in index.ts:1562</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="value" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>value</span><a href="#value" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="turnAngle" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>turn<wbr/>Angle</span><a href="#turnAngle" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="turnAngle.turnAngle-1">turn<wbr/>Angle<span class="tsd-signature-symbol">(</span>ang<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a><a href="#turnAngle.turnAngle-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Sets the maximum angle the knob can be turned in degrees. Angles
+outside the range &gt;0&deg; and &le;360&deg; will be ignored and
+the current turn angle is unchanged.</p>
+<h3>Returns</h3><p>this control</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>ang: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>max.turn angle &gt;0 and &le;360 degrees</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="CvsKnob.html" class="tsd-signature-type" data-tsd-kind="Class">CvsKnob</a></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in index.ts:4892</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="value" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>value</span><a href="#value" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 <li class="tsd-signature tsd-anchor-link" id="value.value-1">value<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a><a href="#value.value-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>If the parameter value is withing the slider limits it will move the thumb
@@ -600,6 +726,7 @@ limits this methods returns the current slider value.</p>
 <div class="tsd-comment tsd-typography"><p>the selected value to be set</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><a href="CvsBaseControl.html" class="tsd-signature-type" data-tsd-kind="Class">CvsBaseControl</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="CvsSlider.html">CvsSlider</a>.<a href="CvsSlider.html#value">value</a></p>
 <ul>
 <li>Defined in index.ts:1957</li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -625,41 +752,46 @@ limits this methods returns the current slider value.</p>
 <ul></ul></li></ul></div></details></nav>
 <nav class="tsd-navigation secondary menu-sticky">
 <ul>
-<li class="current tsd-kind-class"><a href="CvsSlider.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-class)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6" id="icon-128-path"></rect><path d="M11.898 16.1201C11.098 16.1201 10.466 15.8961 10.002 15.4481C9.53803 15.0001 9.30603 14.3841 9.30603 13.6001V9.64012C9.30603 8.85612 9.53803 8.24012 10.002 7.79212C10.466 7.34412 11.098 7.12012 11.898 7.12012C12.682 7.12012 13.306 7.34812 13.77 7.80412C14.234 8.25212 14.466 8.86412 14.466 9.64012H13.386C13.386 9.14412 13.254 8.76412 12.99 8.50012C12.734 8.22812 12.37 8.09212 11.898 8.09212C11.426 8.09212 11.054 8.22412 10.782 8.48812C10.518 8.75212 10.386 9.13212 10.386 9.62812V13.6001C10.386 14.0961 10.518 14.4801 10.782 14.7521C11.054 15.0161 11.426 15.1481 11.898 15.1481C12.37 15.1481 12.734 15.0161 12.99 14.7521C13.254 14.4801 13.386 14.0961 13.386 13.6001H14.466C14.466 14.3761 14.234 14.9921 13.77 15.4481C13.306 15.8961 12.682 16.1201 11.898 16.1201Z" fill="var(--color-text)" id="icon-128-text"></path></svg><span>Cvs<wbr/>Slider</span></a>
+<li class="current tsd-kind-class"><a href="CvsKnob.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-class)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6" id="icon-128-path"></rect><path d="M11.898 16.1201C11.098 16.1201 10.466 15.8961 10.002 15.4481C9.53803 15.0001 9.30603 14.3841 9.30603 13.6001V9.64012C9.30603 8.85612 9.53803 8.24012 10.002 7.79212C10.466 7.34412 11.098 7.12012 11.898 7.12012C12.682 7.12012 13.306 7.34812 13.77 7.80412C14.234 8.25212 14.466 8.86412 14.466 9.64012H13.386C13.386 9.14412 13.254 8.76412 12.99 8.50012C12.734 8.22812 12.37 8.09212 11.898 8.09212C11.426 8.09212 11.054 8.22412 10.782 8.48812C10.518 8.75212 10.386 9.13212 10.386 9.62812V13.6001C10.386 14.0961 10.518 14.4801 10.782 14.7521C11.054 15.0161 11.426 15.1481 11.898 15.1481C12.37 15.1481 12.734 15.0161 12.99 14.7521C13.254 14.4801 13.386 14.0961 13.386 13.6001H14.466C14.466 14.3761 14.234 14.9921 13.77 15.4481C13.306 15.8961 12.682 16.1201 11.898 16.1201Z" fill="var(--color-text)" id="icon-128-text"></path></svg><span>Cvs<wbr/>Knob</span></a>
 <ul>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="CvsSlider.html#_limit0" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_limit0</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="CvsSlider.html#_limit1" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_limit1</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="CvsSlider.html#_majorTicks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_major<wbr/>Ticks</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="CvsSlider.html#_minorTicks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_minor<wbr/>Ticks</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="CvsSlider.html#_s2ticks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_s2ticks</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="CvsSlider.html#_t01" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_t01</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#action" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>action</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#addChild" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>add<wbr/>Child</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#corners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>corners</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#disable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>disable</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#enable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>enable</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#getParent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Parent</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#hide" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>hide</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#invalidateBuffer" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>invalidate<wbr/>Buffer</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#isEnabled" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Enabled</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsSlider.html#isValid" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Valid</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#isVisible" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Visible</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#leaveParent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>leave<wbr/>Parent</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsSlider.html#limits" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>limits</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#name" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>name</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#opaque" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>opaque</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#orient" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>orient</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#parent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>parent</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#removeChild" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>remove<wbr/>Child</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#scheme" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>scheme</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#setAction" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Action</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#show" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>show</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#shrink" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>shrink</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsSlider.html#ticks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>ticks</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#tipTextSize" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>tip<wbr/>Text<wbr/>Size</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#tooltip" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>tooltip</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsSlider.html#transparent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>transparent</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsSlider.html#value" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>value</a></li></ul></li></ul></nav></div></div>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a href="CvsKnob.html#_limit0" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_limit0</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a href="CvsKnob.html#_limit1" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_limit1</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a href="CvsKnob.html#_majorTicks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_major<wbr/>Ticks</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a href="CvsKnob.html#_minorTicks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_minor<wbr/>Ticks</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a href="CvsKnob.html#_s2ticks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_s2ticks</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-inherited"><a href="CvsKnob.html#_t01" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_t01</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#action" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>action</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#addChild" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>add<wbr/>Child</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#corners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>corners</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#disable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>disable</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#enable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>enable</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsKnob.html#gap" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>gap</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#getParent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Parent</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#hide" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>hide</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#invalidateBuffer" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>invalidate<wbr/>Buffer</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#isEnabled" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Enabled</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#isValid" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Valid</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#isVisible" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Visible</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#leaveParent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>leave<wbr/>Parent</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#limits" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>limits</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsKnob.html#mode" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>mode</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#name" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>name</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#opaque" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>opaque</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#orient" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>orient</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#parent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>parent</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#removeChild" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>remove<wbr/>Child</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#scheme" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>scheme</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsKnob.html#sensitivity" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>sensitivity</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#setAction" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Action</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#show" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>show</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#shrink" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>shrink</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#ticks" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>ticks</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#tipTextSize" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>tip<wbr/>Text<wbr/>Size</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#tooltip" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>tooltip</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsKnob.html#track" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>track</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#transparent" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>transparent</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="CvsKnob.html#turnAngle" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>turn<wbr/>Angle</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="CvsKnob.html#value" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>value</a></li></ul></li></ul></nav></div></div>
 <div class="container tsd-generator">
 <p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>
 <div class="overlay"></div><script src="../assets/main.js"></script></body></html>

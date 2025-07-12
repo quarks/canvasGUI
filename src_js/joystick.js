@@ -1,44 +1,51 @@
 /**
- * <p>This class simulates a simple joystick.</p>
+ * <p>This class simulates a multi-mode joystick. Each of the three possible
+ * modes apply different constraints to the range of movement allowed they
+ * are -.</p>
+ * <p><code>'X0'</code> : can move in any direction (360&deg;).<br>
+ * <code>'X4'</code> : constrained to the 4 main compass directions
+ * (N, E, S, W).<br>
+ * <code>'X8'</code> : constrained to the 8 main compass directions
+ * (N, NE, E, SE, S, SW, W, NW).</p>
  *
- * <p>Use the <code>setAction</code> method to specify the action-method that
- * will be used to process action-info objects created when the joystick is
- * moved.</p>
- *
+ * <p>To handle events use the <code>setAction</code> method to specify
+ * the action-method that will be used to process action-info objects
+ * created when the joystick is moved.</p>
  * <p>The action-info object has several very useful fields dthat describes
  * the state of the joystick, they include -</p>
+ * <p>
  * <ul>
+ * <li><code>dir</code></li>
+ * <p>An integer that indicates the direction the stick is pushed. The values
+ * returned depend on the current mode -</p>
+ * <pre>
+ * <b>Direction values for X4 and X8 modes</b>
+ *      5   6   7
+ *       \  |  /
+ *        \ | /
+ *    4 --- <b>Z</b> --- 0       <b>Z</b> is the dead zone.
+ *        / | \
+ *       /  |  \          If control is in mode 'X0' or the joystick
+ *      3   2   1         position is in the dead zone the the value is -1
+ * </pre>
+ * <p><code>'X0'</code> : always -1<br>
+ * <code>'X4'</code> : 0, 2, 4 or 6<br>
+ * <code>'X8'</code> : 0, 1, 2, 3, 4, 5, 6 or 7</p>
+ *
  * <li><code>dead</code></li>
  * <p>If the stick is in the dead zone which surrounds the stick's
  * rest state then this value will be <code>true</code>.</p>
- * <li><code>X</code>, <code>Y</code> and <code>XY</code></li>
- * <p>Early joysticks used mechanical switches had just 9 states. Of these 8
- * are used to represent the direction the joystick is pushed and 1 for the
- * rest state. These variables can be used to detect the current state of
- * the joystick.</p>
- * <pre>
- *      <b>X</b>                                       <b>XY</b>
- * -1   0   +1                              5   6   7
- *   \  |  /   -1                            \  |  /
- *    \ | /                                   \ | /
- *  --- O ---   0   <b>Y</b>      O is the       4 --- O --- 0    <b>XY</b> = -1 when in
- *    / | \                dead zone          / | \         the dead zone.
- *   /  |  \    +1                           /  |  \
- *                                          3   2   1
- * </pre>
- * <li><code>mag</code> and <code>angle</code></li>
- * <p>The joysticks state can also be represented by the distance and angle
- * the stick has been pushed.</p>
- * <ul>
+ *
  * <li><code>mag</code> : has a value in range &ge; 0 and &le; 1 representing
  * the distance the stick has been pushed.</li>
- * <li><code>angle</code> : has a value in range &ge; 0 and &lt; 2.Pi
+ *
+ * <li><code>angle</code> : has a value in range &ge; 0 and &lt; 2&pi;
  * representing the angle the stick makes to the poistive x axis in the
- * clockwise direction.</li>
- * </ul>
+ * clockwise direction. In modes X4 and X8 the angles will be constrained to
+ * the permitted directions.</li>
+ *
  * <li><code>final</code> : has the value <code>false</code> if the stick is
- * still being moved and <code>false</code> if the stick has been released.
- * </li>
+ * still being moved and <code>false</code> if the stick has been released.</li>
  * </ul>
  * <p>When the joystick is released it will return back to its rest state
  * i.e. centered.</p>
@@ -60,25 +67,26 @@ class CvsJoystick extends CvsBufferedControl {
         this._pr0 = 0.05 * this._size;
         this._pr1 = 0.40 * this._size;
         this._tSize = Math.max(0.075 * this._size, 6);
-        this._tmrID = undefined;
-        this._nSlices = 4;
-        this._nRings = 2;
-        // Initial values for testing
+        this._mode = 'X0';
+        this._mag = 0;
         this._ang = 0;
-        this._td = 0;
-        this._ta = 0;
         this._opaque = false;
+        this._tmrID = undefined;
     }
-    /**
-     * <p>Apply decoration to the joystick active area</p>
-     * @param nslices number of slices
-     * @param nrings number of rings
-     * @returns this control
-     */
-    decor(nslices, nrings) {
-        this._nSlices = Math.round(nslices);
-        this._nRings = Math.round(nrings);
-        this.invalidateBuffer();
+    mode(m) {
+        if (!m)
+            return this._mode;
+        m = m.toUpperCase();
+        (m);
+        switch (m) {
+            case 'X0':
+            case 'X4':
+            case 'X8':
+                if (this._mode != m) {
+                    this._mode = m;
+                    this.invalidateBuffer();
+                }
+        }
         return this;
     }
     /**
@@ -90,20 +98,124 @@ class CvsJoystick extends CvsBufferedControl {
         this._tSize = ts;
         return this;
     }
+    /**
+     * <p>See if the position [px, py] is over the control.</p>
+     * @hidden
+     * @param px horizontal position
+     * @param py vertical position
+     * @param tol tolerance in pixels
+     * @returns 0 if not over the control of &ge;1
+     */
+    _whereOver(px, py, tol = this._tSize) {
+        // adjust position to centre of knob
+        px -= this._w / 2;
+        py -= this._h / 2;
+        let [tx, ty] = this._getThumbXY();
+        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
+            ? 1 : 0;
+    }
+    /**
+     * Converts the polar position to cartesian cooordinates.
+     * @hidden
+     */
+    _getThumbXY() {
+        return [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
+    }
+    /**
+     * Validates the mouse / touch position based on joystick size and mode.
+     * @hidden
+     */
+    _validateThumbPosition(x, y) {
+        let mag = this._p.constrain(Math.sqrt(x * x + y * y), 0, this._pr1);
+        let ang = Math.atan2(y, x);
+        ang += ang < 0 ? 2 * Math.PI : 0;
+        let dead = mag <= this._pr0;
+        let dir = -1, da;
+        switch (this._mode) {
+            case 'X4':
+                da = Math.PI / 2;
+                dir = Math.floor((ang + da / 2) / da) % 4;
+                ang = da * dir;
+                dir *= 2;
+                break;
+            case 'X8':
+                da = Math.PI / 4;
+                dir = Math.floor((ang + da / 2) / da) % 8;
+                ang = da * dir;
+                break;
+        }
+        [this._mag, this._ang, this._dir, this._dead] = [mag, ang, dir, dead];
+    }
+    /** @hidden */
+    _processEvent(e, ...info) {
+        /** @hidden */
+        function getValue(source, event, fini) {
+            let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
+            return {
+                source: source, p5Event: event, final: fini, mag: mag,
+                angle: source._ang, dir: source._dir, dead: source._dead,
+            };
+        }
+        let mx = info[0], my = info[1];
+        mx -= this._w / 2;
+        my -= this._h / 2;
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                if (this._over > 0) {
+                    this._active = true;
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                if (this._active) {
+                    this._validateThumbPosition(mx, my);
+                    this.action(getValue(this, e, true));
+                    this._active = false;
+                    this.invalidateBuffer();
+                    if (!this._tmrID)
+                        this._tmrID = setInterval(() => {
+                            this._mag -= 0.07 * this._size;
+                            if (this._mag <= 0) {
+                                clearInterval(this._tmrID);
+                                this._tmrID = undefined;
+                                this._mag = 0;
+                            }
+                            this.invalidateBuffer();
+                        }, 25);
+                }
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                if (this._active) {
+                    this._validateThumbPosition(mx, my);
+                    this.action(getValue(this, e, false));
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+    }
     /** @hidden */
     _updateControlVisual() {
         let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        let [tx, ty] = this._getThumbXY();
+        let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
         const OPAQUE = cs['C_3'];
         const DIAL_FACE = cs['C_1'];
-        const DIAL_BORDER = cs['C_7'];
-        const ROD = cs['C_7'];
-        const THUMB_OFF = cs['C_4'];
-        const THUMB_OVER = cs['C_8'];
+        const DIAL_TINT = cs['T_0'];
+        const DIAL_BORDER = cs['C_9'];
         const THUMB_STROKE = cs['C_9'];
-        const DECOR = cs['C_6'];
-        const DEAD_ZONE = cs['T_4'];
+        const THUMB_OFF = cs['C_4'];
+        const THUMB_OVER = cs['C_6'];
+        const ROD = cs['C_7'];
+        const MARKERS = cs['C_8'];
+        const DEAD_ZONE = cs['T_5'];
         b.push();
         b.clear();
         if (this._opaque) {
@@ -116,30 +228,51 @@ class CvsJoystick extends CvsBufferedControl {
         b.noStroke();
         b.fill(DIAL_FACE);
         b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
-        // Dial face slices
-        if (this._nSlices > 1) {
-            let a = 2 * Math.PI / this._nSlices;
-            b.push();
-            b.stroke(DECOR);
-            b.strokeWeight(1.5);
-            for (let i = 0; i < this._nSlices; i++) {
-                b.line(this._pr0, 0, this._pr1, 0);
-                b.rotate(a);
-            }
-            b.pop();
-        }
-        // Dial radial ticks
-        if (this._nRings > 1) {
-            let delta = (this._pr1 - this._pr0) / (this._nRings);
-            b.push();
-            b.stroke(DECOR);
-            b.strokeWeight(1.5);
-            b.noFill();
-            for (let i = 1; i < this._nRings; i++) {
-                let d = this._pr0 + i * delta;
-                b.ellipse(0, 0, 2 * d, 2 * d);
-            }
-            b.pop();
+        // dial face highlight
+        let s = 0, e = 0.26 * this._size, da = 0;
+        b.fill(DIAL_TINT);
+        b.noStroke(); //b.stroke(DIAL_TINT); b.strokeWeight(2);
+        b.ellipse(0, 0, e * 2, e * 2);
+        b.ellipse(0, 0, e * 1.25, e * 1.25);
+        // Dial face markers
+        b.stroke(MARKERS);
+        switch (this._mode) {
+            case 'X0':
+                s = this._pr1;
+                e = 0.33 * this._size;
+                da = Math.PI / 8;
+                b.push();
+                b.strokeWeight(0.75);
+                e = 0.3 * this._size;
+                for (let i = 0; i < 16; i++) {
+                    b.line(s, 0, e, 0);
+                    b.rotate(da);
+                }
+                b.pop();
+                break;
+            case 'X8':
+                s = this._pr0;
+                e = 0.33 * this._size;
+                da = Math.PI / 4;
+                b.push();
+                b.strokeWeight(1);
+                for (let i = 0; i < 8; i++) {
+                    b.line(s, 0, e, 0);
+                    b.rotate(da);
+                }
+                b.pop();
+            case 'X4':
+                s = this._pr0;
+                e = this._pr1;
+                da = Math.PI / 2;
+                b.push();
+                b.strokeWeight(1.5);
+                for (let i = 0; i < 4; i++) {
+                    b.line(s, 0, e, 0);
+                    b.rotate(da);
+                }
+                b.pop();
+                break;
         }
         // Dial border
         b.stroke(DIAL_BORDER);
@@ -167,133 +300,6 @@ class CvsJoystick extends CvsBufferedControl {
         // last line in this method should be
         this._bufferInvalid = false;
     }
-    /**
-     * <p>See if the position [px, py] is over the control.</p>
-     * @hidden
-     * @param px horizontal position
-     * @param py vertical position
-     * @param tol tolerance in pixels
-     * @returns 0 if not over the control of &ge;1
-     */
-    _whereOver(px, py, tol = this._tSize) {
-        let [tx, ty] = this._getThumbXY();
-        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
-            ? 1 : 0;
-    }
-    /**
-     * Converts the polar position to cartesian cooordinates.
-     * @hidden
-     */
-    _getThumbXY() {
-        return [this._td * Math.cos(this._ta), this._td * Math.sin(this._ta)];
-    }
-    /**
-     * Converts cartesian to polar cooordinates, constraing the radius to fit
-     * the display.
-     * @hidden
-     */
-    _getThumbDA(x, y) {
-        let d = Math.sqrt(x * x + y * y);
-        d = d < 0 ? 0 : d > this._pr1 ? this._pr1 : d;
-        return [d, Math.atan2(y, x)];
-    }
-    /**
-     * Gets a 'value' object representing the current state of the joystick.
-     * @hidden
-     */
-    _getValue() {
-        let [tx, ty] = this._getThumbXY();
-        let sX = tx < -this._pr0 ? -1 : tx > this._pr0 ? 1 : 0;
-        let sY = ty < -this._pr0 ? -1 : ty > this._pr0 ? 1 : 0;
-        let ta = this._ta;
-        ta = ta >= 0 ? ta : ta + 2 * Math.PI;
-        let a = (ta + Math.PI / 8) % (2 * Math.PI);
-        let dead = this._td <= this._pr0;
-        let sXY = dead ? -1 : Math.floor(4 * a / Math.PI);
-        let tm = (this._td - this._pr0) / (this._pr1 - this._pr0);
-        tm = tm < 0 ? 0 : tm > 1 ? 1 : tm;
-        let v = { X: sX, Y: sY, XY: sXY, mag: tm, angle: ta, dead: dead };
-        return v;
-    }
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x - this._w / 2;
-        let my = this._p.mouseY - pos.y - this._h / 2;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my);
-        return false;
-    }
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x - this._w / 2;
-        let my = t.clientY - rect.top - pos.y - this._h / 2;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 20); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my);
-    }
-    /** @hidden */
-    _processEvent(e, ...info) {
-        let mx = info[0], my = info[1];
-        switch (e.type) {
-            case 'mousedown':
-            case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseout':
-            case 'mouseup':
-            case 'touchend':
-                if (this._active) {
-                    let r = { source: this, p5Event: e, final: true, ...this._getValue() };
-                    this.action(r);
-                    this._active = false;
-                    this.invalidateBuffer();
-                    if (!this._tmrID)
-                        this._tmrID = setInterval(() => {
-                            this._td -= 0.07 * this._size;
-                            if (this._td <= 0) {
-                                clearInterval(this._tmrID);
-                                this._tmrID = undefined;
-                                this._td = 0;
-                            }
-                            this.invalidateBuffer();
-                        }, 25);
-                }
-                break;
-            case 'mousemove':
-            case 'touchmove':
-                if (this._active) {
-                    [this._td, this._ta] = this._getThumbDA(mx, my);
-                    let r = { source: this, p5Event: e, final: false, ...this._getValue() };
-                    this.action(r);
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseover':
-                break;
-            case 'wheel':
-                break;
-        }
-    }
 }
+Object.assign(CvsJoystick.prototype, processMouse, processTouch);
 //# sourceMappingURL=joystick.js.map

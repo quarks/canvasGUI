@@ -83,40 +83,7 @@ class CvsButton extends CvsTextIcon {
     }
 
     /** @hidden */
-    _handleMouse(e: MouseEvent) { // button
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x;
-        my = r.y;
-        this._pover = this._over;                 // Store previous mouse over state
-        this._over = this._whereOver(mx, my);     // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
-        return false;
-    }
-
-    /** @hidden */
-    _handleTouch(e: TouchEvent) {
-        // e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        let r = this._orientation.xy(mx, my, this._w, this._h);
-        mx = r.x; my = r.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e);
-    }
-
-    /** @hidden */
-    _processEvent(e) {
+    _processEvent(e, ...info) {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -155,3 +122,5 @@ class CvsButton extends CvsTextIcon {
     }
 
 }
+
+Object.assign(CvsButton.prototype, processMouse, processTouch);

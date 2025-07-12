@@ -33,11 +33,11 @@ class OrientNorth {
     }
 
     xy(x: number, y: number, w: number, h: number) {
-        return { 'x': w - y, 'y': x, 'w': h, 'h': w };
+        return [w - y, x, h, w];
     }
 
     wh(w: number, h: number) {
-        return { 'w': h, 'h': w };
+        return [h, w];
     }
 }
 
@@ -63,11 +63,11 @@ class OrientSouth {
     }
 
     xy(x: number, y: number, w: number, h: number) {
-        return { 'x': y, 'y': h - x, 'w': h, 'h': w };
+        return [y, h - x, h, w];
     }
 
     wh(w: number, h: number) {
-        return { 'w': h, 'h': w };
+        return [h, w];
     }
 }
 
@@ -93,11 +93,12 @@ class OrientEast {
     }
 
     xy(x: number, y: number, w: number, h: number) {
-        return { 'x': x, 'y': y, 'w': w, 'h': h };
+        return [x, y, w, h];
     }
 
     wh(w: number, h: number) {
-        return { 'w': w, 'h': h };
+        // return { 'w': w, 'h': h };
+        return [w, h];
     }
 }
 
@@ -123,11 +124,11 @@ class OrientWest {
     }
 
     xy(x: number, y: number, w: number, h: number) {
-        return { 'x': w - x, 'y': h - y, 'w': w, 'h': h };
+        return [w - x, h - y, w, h];
     }
 
     wh(w: number, h: number) {
-        return { 'w': w, 'h': h };
+        return [w, h];
     }
 }
 

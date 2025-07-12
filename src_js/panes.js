@@ -146,7 +146,6 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            //let cs = this._scheme || this._gui.scheme();
             p.noStroke();
             p.fill(this._background);
             p.beginShape(p.TRIANGLE_STRIP);
@@ -167,7 +166,6 @@ class CvsPane extends CvsBaseControl {
         p.push();
         p.translate(this._x, this._y);
         if (this._visible && this._tabstate != 'closed') {
-            // let cs = this._scheme || this._gui.scheme();
             p.noStroke();
             p.fill(this._background);
             p.rect(0, 0, this._w, this._h);
