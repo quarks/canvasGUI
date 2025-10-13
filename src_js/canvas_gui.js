@@ -47,6 +47,10 @@ class GUI {
         this._addTouchEventHandlers();
         // Choose 2D / 3D rendering methods
         this._selectDrawMethod();
+        // Camera method depends on major version of p5js since 1.1.1
+        this._getCamera = Number(p.VERSION.split('.')[0]) == 1
+            ? function () { return this._renderer._curCamera; } // V1
+            : function () { return this._renderer.states.curCamera; }; // V2
     }
     // ##################################################################
     // ######     Factory methods to create controls and layouts  #######
@@ -383,7 +387,7 @@ class GUI {
     _handleFocusEvents(e) {
         switch (e.type) {
             case 'focusout':
-                // Deactivate any textfiles(s) - stop the flashing cursor
+                // Deactivate any textfields(s) - stop the flashing cursor
                 for (let c of this._ctrls)
                     if (c.isActive()) {
                         c['_deactivate']?.();
@@ -784,7 +788,7 @@ class GUI {
             // Now prepare renderer for standard 2D output to draw GUI
             gl.disable(gl.DEPTH_TEST);
             renderer.resetMatrix();
-            renderer._curCamera.ortho(0, w, -h, 0, -d, d);
+            this._getCamera().ortho(0, w, -h, 0, -d, d);
             // Draw GUI
             for (let c of this._ctrls)
                 if (!c.getParent())

@@ -118,7 +118,6 @@ class CvsButton extends CvsTextIcon {
             case 'wheel':
                 break;
         }
-
     }
 
 }
