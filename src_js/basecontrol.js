@@ -146,7 +146,7 @@ class CvsBaseControl {
     parent(parent, rx, ry) {
         let prnt = this._gui.$(parent);
         prnt.addChild(this, rx, ry);
-        this.z = prnt.z + 128;
+        this.z = prnt.z + DELTA_Z;
         this._gui.setRenderOrder();
         return this;
     }
@@ -167,7 +167,7 @@ class CvsBaseControl {
         control.x = rx;
         control.y = ry;
         control._parent = this;
-        control.z = this.z + 128;
+        control.z = this.z + DELTA_Z;
         this._children.push(control);
         this._gui.setRenderOrder();
         return this;

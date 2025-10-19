@@ -22,6 +22,30 @@ class CvsViewer extends CvsBufferedControl {
         /** @hidden */ this._usedX = 0;
         /** @hidden */ this._usedY = 0;
         /** @hidden */ this._frameWeight = 0;
+        /** @hidden */
+        this._handleMouse = function (e) {
+            let pos = this.getAbsXY();
+            let mx = this._p.mouseX - pos.x;
+            let my = this._p.mouseY - pos.y;
+            this._pover = this._over; // Store previous mouse over state
+            this._over = this._whereOver(mx, my); // Store current mouse over state
+            this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+            if (this._tooltip)
+                this._tooltip._updateState(this, this._pover, this._over);
+            // Hide scaler unless mouse is close to centre
+            if (this._scaler)
+                this._over == 2 ? this._scaler.show() : this._scaler.hide();
+            if (this._over >= 1) {
+                this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
+                this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
+            }
+            else {
+                this._scrH.hide();
+                this._scrV.hide();
+            }
+            this._processEvent(e, mx, my);
+            return false;
+        };
         this._scrH = gui.__scroller(this._id + "-scrH", 0, h - 20, w, 20).hide()
             .setAction((info) => {
             this.view(info.value * this._lw, this._wcy);
@@ -219,30 +243,6 @@ class CvsViewer extends CvsBufferedControl {
         if (px > 0 && px < w && py > 0 && py < h)
             return 1;
         return 0;
-    }
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        // Hide scaler unless mouse is close to centre
-        if (this._scaler)
-            this._over == 2 ? this._scaler.show() : this._scaler.hide();
-        if (this._over >= 1) {
-            this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
-            this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
-        }
-        else {
-            this._scrH.hide();
-            this._scrV.hide();
-        }
-        this._processEvent(e, mx, my);
-        return false;
     }
     /** @hidden */
     _handleTouch(e) {

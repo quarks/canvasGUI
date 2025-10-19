@@ -4,13 +4,9 @@
  * @version 2.0.0
  */
 const CANVAS_GUI_VERSION = '2.0.0';
+const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const GUIS = new Map();
-const ANNOUNCED = false;
-const CLOG = console.log;
-const CWARN = console.warn;
-const CERROR = console.error;
-const CASSERT = console.assert;
-const CCLEAR = console.clear;
+const DELTA_Z = 64, PANE_Z = 2048;
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -21,6 +17,7 @@ const CCLEAR = console.clear;
  *
  */
 class GUI {
+    // /** @hidden */ protected _cCtx; // show buffer canvas context
     /**
      * Create a GUI object to create and manage the GUI controls for
      * an HTML canvas.
@@ -65,7 +62,7 @@ class GUI {
         this._addMouseEventHandlers();
         this._addTouchEventHandlers();
         // Choose 2D / 3D rendering methods  
-        this._drawOverlay = this._is3D ? this._drawHudWEBGL : this._drawHudP2D;
+        this._drawHud = this._is3D ? this._drawHudWEBGL : this._drawHudP2D;
         // Prepare buffers
         this._validateGuiBuffers();
         // Camera method depends on major version of p5js
@@ -75,6 +72,7 @@ class GUI {
     }
     /**
      * Make sure we have an overlay buffer and a pick buffer of the correct size
+     * @hidden
      */
     _validateGuiBuffers() {
         let p = this._p;
@@ -481,7 +479,7 @@ class GUI {
     // -----------------------------------------------------------------------
     /**
      * <p>Get the control given it's unique name.</p>
-     * @param id control's unique name for this control
+     * @param id unique ID for the control to find
      * @returns  get the associated control
     */
     $(id) {
@@ -863,7 +861,7 @@ class GUI {
                 if (!c.getParent())
                     c._draw(this._hud, this._pickbuffer);
             this._p.pop();
-            this._drawOverlay();
+            this._drawHud();
         }
     }
     /**
@@ -902,23 +900,24 @@ class GUI {
         }
     }
     /**
-     *
-     * @param x 2D horizontal position in display
-     * @param y 2D vertical position in display
+     * <p>If the [x, y] display position is over a controls pick region then
+     * return an object containing the 'control' and the pick region ('part')
+     * number.</p>
+     * @param x horizontal pixel location
+     * @param y vertical pixel location
      * @returns an object containing the control hit and the control part number
      */
     getPicked(x, y) {
         let pkb = this._pickbuffer;
+        let result = { control: undefined, part: undefined };
         if (x >= 0 && x < pkb.width && y >= 0 && y < pkb.height) {
             let c = pkb.get().get(x, y); // [r, g, b, a]
             let rgb = (c[0] << 16) + (c[1] << 8) + c[2]; // rgb vlaue
             let ctl_col = rgb & this._COLOR_MASK;
-            let ctl = this._colorKey.get(ctl_col);
-            let pn = rgb & this._PART_MASK;
-            if (ctl)
-                return { hit: ctl, part: pn };
+            result.control = this._colorKey.get(ctl_col);
+            result.part = rgb & this._PART_MASK;
         }
-        return { hit: undefined, part: undefined };
+        return result;
     }
 }
 /**
@@ -1274,7 +1273,7 @@ class CvsBaseControl {
     parent(parent, rx, ry) {
         let prnt = this._gui.$(parent);
         prnt.addChild(this, rx, ry);
-        this.z = prnt.z + 128;
+        this.z = prnt.z + DELTA_Z;
         this._gui.setRenderOrder();
         return this;
     }
@@ -1295,7 +1294,7 @@ class CvsBaseControl {
         control.x = rx;
         control.y = ry;
         control._parent = this;
-        control.z = this.z + 128;
+        control.z = this.z + DELTA_Z;
         this._children.push(control);
         this._gui.setRenderOrder();
         return this;
@@ -3445,6 +3444,30 @@ class CvsViewer extends CvsBufferedControl {
         /** @hidden */ this._usedX = 0;
         /** @hidden */ this._usedY = 0;
         /** @hidden */ this._frameWeight = 0;
+        /** @hidden */
+        this._handleMouse = function (e) {
+            let pos = this.getAbsXY();
+            let mx = this._p.mouseX - pos.x;
+            let my = this._p.mouseY - pos.y;
+            this._pover = this._over; // Store previous mouse over state
+            this._over = this._whereOver(mx, my); // Store current mouse over state
+            this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
+            if (this._tooltip)
+                this._tooltip._updateState(this, this._pover, this._over);
+            // Hide scaler unless mouse is close to centre
+            if (this._scaler)
+                this._over == 2 ? this._scaler.show() : this._scaler.hide();
+            if (this._over >= 1) {
+                this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
+                this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
+            }
+            else {
+                this._scrH.hide();
+                this._scrV.hide();
+            }
+            this._processEvent(e, mx, my);
+            return false;
+        };
         this._scrH = gui.__scroller(this._id + "-scrH", 0, h - 20, w, 20).hide()
             .setAction((info) => {
             this.view(info.value * this._lw, this._wcy);
@@ -3641,30 +3664,6 @@ class CvsViewer extends CvsBufferedControl {
         if (px > 0 && px < w && py > 0 && py < h)
             return 1;
         return 0;
-    }
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        // Hide scaler unless mouse is close to centre
-        if (this._scaler)
-            this._over == 2 ? this._scaler.show() : this._scaler.hide();
-        if (this._over >= 1) {
-            this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
-            this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
-        }
-        else {
-            this._scrH.hide();
-            this._scrV.hide();
-        }
-        this._processEvent(e, mx, my);
-        return false;
     }
     /** @hidden */
     _handleTouch(e) {
@@ -4989,7 +4988,7 @@ class CvsPane extends CvsBaseControl {
         this._cornerRadius = 5;
         this._status = 'closed';
         this._timer = 0;
-        this._z = 8192;
+        this._z = PANE_Z;
     }
     /** @hidden */
     parent(p, rx, ry) {
@@ -5123,7 +5122,7 @@ class CvsPane extends CvsBaseControl {
             uib.fill(this._background);
             uib.rect(0, 0, this._w, this._h);
             pkb.noStroke();
-            pkb.fill(255, 0, 0);
+            pkb.fill('white');
             pkb.rect(0, 0, this._w, this._h);
             for (let c of this._children)
                 if (c._visible)

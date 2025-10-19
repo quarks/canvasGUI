@@ -170,13 +170,4 @@ abstract class CvsBufferedControl extends CvsBaseControl {
             this._tooltip.textSize(tsize);
         return this;
     }
-
-    // getPickColor() {
-    //     return this._gui.pickColor(this);
-    // }
-
-    // printPickColor() {
-    //     let c = this._gui.pickColor(this);
-    //     console.log(c);
-    // }
 }

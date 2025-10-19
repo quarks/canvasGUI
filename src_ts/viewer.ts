@@ -246,7 +246,7 @@ class CvsViewer extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _handleMouse(e: MouseEvent) { // viewer
+    _handleMouse = function (e: MouseEvent) { // viewer
         let pos = this.getAbsXY();
         let mx = this._p.mouseX - pos.x;
         let my = this._p.mouseY - pos.y;

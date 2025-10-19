@@ -16,7 +16,7 @@ class CvsPane extends CvsBaseControl {
         this._cornerRadius = 5;
         this._status = 'closed';
         this._timer = 0;
-        this._z = 8192;
+        this._z = PANE_Z;
     }
     /** @hidden */
     parent(p, rx, ry) {
@@ -150,7 +150,7 @@ class CvsPane extends CvsBaseControl {
             uib.fill(this._background);
             uib.rect(0, 0, this._w, this._h);
             pkb.noStroke();
-            pkb.fill(255, 0, 0);
+            pkb.fill('white');
             pkb.rect(0, 0, this._w, this._h);
             for (let c of this._children)
                 if (c._visible)
