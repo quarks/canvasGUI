@@ -224,7 +224,6 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
-        let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
         const OPAQUE = cs['C_3'];
         const GRIP_OFF = cs['C_7'], GRIP_STROKE = cs['C_8'];
@@ -233,93 +232,105 @@ class CvsKnob extends CvsSlider {
         const TRACK_BACK = cs['C_3'], TRACK_ARC = cs['C_1'];
         const TICKS = cs['G_8'];
         const USED_TRACK = cs['G_2'], UNUSED_TRACK = cs['T_1'];
-        b.clear();
+        let uib = this._uiBfr;
+        uib.clear();
         if (this._opaque) {
-            b.noStroke();
-            b.fill(OPAQUE);
-            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.noStroke();
+            uib.fill(OPAQUE);
+            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         let arc = this._turnArc, gap = 2 * Math.PI - arc, lowA = gap / 2;
         let rOut = this._kRad, rIn = this._gRad;
         let dOut = 2 * rOut, dIn = 2 * rIn;
-        b.push();
-        b.translate(b.width / 2, b.height / 2);
-        b.rotate(this._gapPos + lowA);
+        uib.push();
+        uib.translate(uib.width / 2, uib.height / 2);
+        uib.rotate(this._gapPos + lowA);
         // Draw full background and track arc
-        b.noStroke();
-        b.fill(TRACK_BACK);
-        b.ellipse(0, 0, dOut, dOut);
-        b.fill(TRACK_ARC);
-        b.arc(0, 0, dOut, dOut, 0, this._turnArc);
+        uib.noStroke();
+        uib.fill(TRACK_BACK);
+        uib.ellipse(0, 0, dOut, dOut);
+        uib.fill(TRACK_ARC);
+        uib.arc(0, 0, dOut, dOut, 0, this._turnArc);
         // Draw ticks? 
         let n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             let b0 = this._tw, b1 = 0.65 * b0;
-            b.stroke(TICKS);
+            uib.stroke(TICKS);
             let da = arc / n;
-            b.push();
+            uib.push();
             {
-                b.strokeWeight(0.9);
+                uib.strokeWeight(0.9);
                 // minor ticks
                 for (let i = 0; i <= n; i++) {
-                    b.line(rIn, 0, rIn + b1, 0);
-                    b.rotate(da);
+                    uib.line(rIn, 0, rIn + b1, 0);
+                    uib.rotate(da);
                 }
             }
-            b.pop();
+            uib.pop();
             n = this._majorTicks;
             if (n >= 2) {
                 let da = arc / n;
-                b.push();
+                uib.push();
                 {
-                    b.strokeWeight(1);
+                    uib.strokeWeight(1);
                     // major ticks
                     for (let i = 0; i <= n; i++) {
-                        b.line(rIn, 0, rIn + b0, 0);
-                        b.rotate(da);
+                        uib.line(rIn, 0, rIn + b0, 0);
+                        uib.rotate(da);
                     }
                 }
-                b.pop();
+                uib.pop();
             }
             // Unused track
-            b.noStroke();
-            b.fill(UNUSED_TRACK);
-            b.arc(0, 0, dIn + b0, dIn + b0, 0, arc);
+            uib.noStroke();
+            uib.fill(UNUSED_TRACK);
+            uib.arc(0, 0, dIn + b0, dIn + b0, 0, arc);
             // Unused track
-            b.fill(USED_TRACK);
-            b.arc(0, 0, dIn + b0, dIn + b0, 0, this._t01 * arc);
+            uib.fill(USED_TRACK);
+            uib.arc(0, 0, dIn + b0, dIn + b0, 0, this._t01 * arc);
         }
         // Grip section
-        b.stroke(GRIP_STROKE);
-        b.strokeWeight(1.5);
-        b.fill(GRIP_OFF);
-        b.ellipse(0, 0, dIn, dIn);
+        uib.stroke(GRIP_STROKE);
+        uib.strokeWeight(1.5);
+        uib.fill(GRIP_OFF);
+        uib.ellipse(0, 0, dIn, dIn);
         // Grip arrow marker
-        b.push();
+        uib.push();
         {
-            b.rotate(this._t01 * arc);
+            uib.rotate(this._t01 * arc);
             let ms = 0.2 * rIn;
-            b.fill(MARKER);
-            b.noStroke();
-            b.beginShape();
-            b.vertex(-ms, 0);
-            b.vertex(0, -ms);
-            b.vertex(rIn, 0);
-            b.vertex(0, ms);
-            b.endShape(this._p.CLOSE);
+            uib.fill(MARKER);
+            uib.noStroke();
+            uib.beginShape();
+            uib.vertex(-ms, 0);
+            uib.vertex(0, -ms);
+            uib.vertex(rIn, 0);
+            uib.vertex(0, ms);
+            uib.endShape(this._p.CLOSE);
         }
-        b.pop();
+        uib.pop();
         // Is over highlight?
         if (this._over || this._active) {
-            b.noFill();
-            b.stroke(HIGHLIGHT);
-            b.strokeWeight(3);
-            b.arc(0, 0, 2 * this._kRad, 2 * this._kRad, 0, arc);
+            uib.noFill();
+            uib.stroke(HIGHLIGHT);
+            uib.strokeWeight(3);
+            uib.arc(0, 0, 2 * this._kRad, 2 * this._kRad, 0, arc);
         }
-        b.pop();
-        b.updatePixels();
+        this._updateKnobPickBuffer(dOut);
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
+    }
+    _updateKnobPickBuffer(dOut) {
+        let c = this._gui.pickColor(this);
+        let pkb = this._pkBfr;
+        pkb.push();
+        pkb.clear();
+        pkb.translate(pkb.width / 2, pkb.height / 2);
+        pkb.noStroke();
+        pkb.fill(c.r, c.g, c.b);
+        pkb.ellipse(0, 0, dOut, dOut);
+        pkb.pop();
     }
     /** @hidden */
     _minControlSize() {

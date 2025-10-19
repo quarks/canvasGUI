@@ -62,9 +62,9 @@ class CvsRanger extends CvsSlider {
     /** @hidden */
     _whereOver(px, py, tol = 8) {
         // Check vertical position  
-        let ty = this._buffer.height / 2;
+        let ty = this._uiBfr.height / 2;
         if (Math.abs(py - ty) <= 8) {
-            let tw = this._buffer.width - 20;
+            let tw = this._uiBfr.width - 20;
             let t = this._t;
             px -= 10;
             if (Math.abs(t[0] * tw - px) <= tol)
@@ -106,7 +106,7 @@ class CvsRanger extends CvsSlider {
             case 'mousemove':
             case 'touchmove':
                 if (this._active) {
-                    let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
+                    let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
                     if (this._t[this._tIdx] != t01) {
@@ -128,69 +128,92 @@ class CvsRanger extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
-        let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        let tw = b.width - 20;
-        let trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
         const OPAQUE = cs['C_3'];
         const TICKS = cs['G_7'];
         const UNUSED_TRACK = cs['G_3'];
         const USED_TRACK = cs['G_1'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_6'];
-        b.push();
-        b.clear();
+        let uib = this._uiBfr;
+        let tw = uib.width - 20, tH = 8, tbSize = 12;
+        let ty = Math.round(uib.height / 2);
+        let majT = 10, minT = 7;
+        uib.push();
+        uib.clear();
         // Background
         if (this._opaque) {
-            b.noStroke();
-            b.fill(OPAQUE);
-            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.noStroke();
+            uib.fill(OPAQUE);
+            uib.rect(0, 0, this._w, this._h, ...this._c);
         }
         // Now translate to track left edge - track centre
-        b.translate(10, b.height / 2);
+        uib.translate(10, ty);
         // Now draw ticks
-        b.stroke(TICKS);
-        b.strokeWeight(1);
+        uib.stroke(TICKS);
+        uib.strokeWeight(1);
         let dT, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             dT = tw / n;
             for (let i = 0; i <= n; i++) { // minor ticks
-                let tx = i * dT;
-                b.line(tx, -minorT, tx, minorT);
+                let tickX = i * dT;
+                uib.line(tickX, -minT, tickX, minT);
             }
         }
         n = this._majorTicks;
         if (n >= 2) {
             dT = tw / this._majorTicks;
             for (let i = 0; i <= n; i++) { // major ticks
-                let tx = i * dT;
-                b.line(tx, -majorT, tx, majorT);
+                let tickX = i * dT;
+                uib.line(tickX, -majT, tickX, majT);
             }
         }
         // draw unused track
-        b.fill(UNUSED_TRACK);
-        b.rect(0, -trackW / 2, tw, trackW);
+        uib.fill(UNUSED_TRACK);
+        uib.rect(0, -tH / 2, tw, tH);
         // draw used track
         let tx0 = tw * Math.min(this._t[0], this._t[1]);
         let tx1 = tw * Math.max(this._t[0], this._t[1]);
-        b.fill(USED_TRACK);
-        b.rect(tx0, -trackW / 2, tx1 - tx0, trackW, this._c[0], this._c[1], this._c[2], this._c[3]);
-        // Draw thumb
+        uib.fill(USED_TRACK);
+        uib.rect(tx0, -tH / 2, tx1 - tx0, tH, ...this._c);
+        // Draw thumbs
         for (let tnbr = 0; tnbr < 2; tnbr++) {
-            b.fill(THUMB);
-            b.noStroke();
+            uib.fill(THUMB);
+            uib.noStroke();
             if ((this._active || this._over > 0) && tnbr == this._tIdx) {
-                b.strokeWeight(2);
-                b.stroke(HIGHLIGHT);
+                uib.strokeWeight(2);
+                uib.stroke(HIGHLIGHT);
             }
-            b.rect(this._t[tnbr] * tw - thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(this._t[tnbr] * tw - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._c);
         }
         if (!this._enabled)
-            this._disable_hightlight(b, cs, 0, -this._h / 2, this._w - 20, this._h);
-        b.pop();
-        b.updatePixels();
+            this._disable_hightlight(uib, cs, -10, -this._h / 2, this._w, this._h);
+        this._updateRangerPickBuffer(ty, tw, tH, tx0, tx1, tbSize);
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
+    }
+    _updateRangerPickBuffer(ty, tw, tH, tx0, tx1, tbSize) {
+        tx0 = Math.round(tx0);
+        tx1 = Math.round(tx1);
+        let c = this._gui.pickColor(this);
+        let pkb = this._pkBfr;
+        pkb.push();
+        pkb.clear();
+        pkb.noStroke();
+        // Now translate to track left edge - track centre
+        pkb.translate(10, ty);
+        // Track
+        pkb.fill(c.r, c.g, c.b + 5);
+        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        pkb.fill(c.r, c.g, c.b + 6);
+        pkb.rect(tx0, -tH / 2, tx1 - tx0, tH, ...this._c);
+        // Thumb
+        pkb.fill(c.r, c.g, c.b);
+        pkb.rect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
+        pkb.fill(c.r, c.g, c.b + 1);
+        pkb.rect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
+        pkb.pop();
     }
 }
 Object.assign(CvsRanger.prototype, processMouse, processTouch);

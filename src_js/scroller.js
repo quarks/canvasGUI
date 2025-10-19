@@ -108,43 +108,57 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH), thumbSizeY = this._THUMB_HEIGHT;
-        let tx = this._dvalue * this._TLENGTH;
         const OPAQUE = cs['C_3'];
         const TICKS = cs['G_8'];
         const UNUSED_TRACK = cs['G_3'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_5'];
-        b.push();
-        b.clear();
+        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
+        let thumbSizeY = this._THUMB_HEIGHT;
+        let tx = this._dvalue * this._TLENGTH;
+        let uib = this._uiBfr;
+        uib.push();
+        uib.clear();
         if (this._opaque) {
-            b.noStroke();
-            b.fill(OPAQUE);
-            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.noStroke();
+            uib.fill(OPAQUE);
+            uib.rect(0, 0, this._w, this._h, ...this._c);
         }
         // Now translate to track left edge - track centre
-        b.translate(this._BORDER, b.height / 2);
+        uib.translate(this._BORDER, uib.height / 2);
         // draw track
-        b.fill(UNUSED_TRACK);
-        b.stroke(TICKS);
-        b.strokeWeight(1);
-        b.rect(0, -this._THEIGHT / 2, this._TLENGTH, this._THEIGHT);
+        uib.fill(UNUSED_TRACK);
+        uib.stroke(TICKS);
+        uib.strokeWeight(1);
+        uib.rect(0, -this._THEIGHT / 2, this._TLENGTH, this._THEIGHT);
         // Draw thumb
-        b.fill(THUMB);
-        b.noStroke();
+        uib.fill(THUMB);
+        uib.noStroke();
         if (this._active || this._over > 0) {
-            b.strokeWeight(2);
-            b.stroke(HIGHLIGHT);
+            uib.strokeWeight(2);
+            uib.stroke(HIGHLIGHT);
         }
-        b.rect(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY, this._c[0], this._c[1], this._c[2], this._c[3]);
+        uib.rect(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY, ...this._c);
         if (!this._enabled)
-            this._disable_hightlight(b, cs, 0, -this._h / 2, this._w - 20, this._h);
-        b.pop();
-        b.updatePixels();
+            this._disable_hightlight(uib, cs, 0, -this._h / 2, this._w - 20, this._h);
+        this._updateScrollerPickBuffer(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY);
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
+    }
+    /** @hidden */
+    _updateScrollerPickBuffer(tx, ty, tw, th) {
+        let c = this._gui.pickColor(this);
+        let pkb = this._pkBfr;
+        pkb.push();
+        pkb.clear();
+        pkb.noStroke();
+        pkb.fill(c.r, c.g, c.b);
+        // Now translate to track left edge - track centre
+        pkb.translate(this._BORDER, 0); //pkb.height / 2);
+        pkb.rect(Math.round(tx), Math.round((pkb.height - th) / 2), tw, th);
+        pkb.pop();
     }
     /** @hidden */
     _minControlSize() {

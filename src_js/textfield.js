@@ -80,7 +80,7 @@ class CvsTextField extends CvsText {
         //setter
         this._textInvalid = false;
         t = t.toString().replaceAll('\n', ' ');
-        while (t.length > 0 && this._buffer.textWidth(t) >= this._maxTextWidthPixels()) {
+        while (t.length > 0 && this._uiBfr.textWidth(t) >= this._maxTextWidthPixels()) {
             t = t.substring(0, t.length - 1);
         }
         this._lines = [t];
@@ -174,7 +174,7 @@ class CvsTextField extends CvsText {
                 // If formatted text is provided and it fits the textfield accept it
                 if (r[1]) // Validator has returned formatted text
                     // See if it fits textfield
-                    if (this._buffer.textWidth(r[1]) < this._maxTextWidthPixels())
+                    if (this._uiBfr.textWidth(r[1]) < this._maxTextWidthPixels())
                         this._lines[0] = r[1];
                     else
                         this._textInvalid = true;
@@ -270,7 +270,7 @@ class CvsTextField extends CvsText {
                 }
                 // Add new character provided it is hort enough to dosplay safely
                 line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
-                if (this._buffer.textWidth(line) < mtw) {
+                if (this._uiBfr.textWidth(line) < mtw) {
                     this._currCsrIdx++;
                     this._prevCsrIdx++;
                     this._lines[0] = line;
@@ -375,63 +375,59 @@ class CvsTextField extends CvsText {
     _updateControlVisual() {
         let ts = Number(this._textSize || this._gui.textSize());
         let cs = this._scheme || this._gui.scheme();
-        let b = this._buffer;
-        b.textSize(ts);
         let line = this._lines.length > 0 ? this._lines[0] : '';
-        let tiv = this._textInvalid;
-        let sx = 2 * this._gap;
-        let BACK = cs['C_1'];
-        let FORE = cs['C_9'];
-        const CURSOR = cs['G_9'];
-        const HIGHLIGHT = cs['C_9'];
-        const SELECT = cs['C_3'];
-        b.push();
-        b.background(cs['G_0']); // white background
-        b.noStroke();
+        let tiv = this._textInvalid, sx = 2 * this._gap;
+        const CURSOR = cs['G_9'], HIGHLIGHT = cs['C_9'], SELECT = cs['C_3'];
+        let BACK = cs['C_1'], FORE = cs['C_9'];
+        let uib = this._uiBfr;
+        uib.push();
+        uib.textSize(ts);
+        uib.background(cs['G_0']); // white background
+        uib.noStroke();
         if (!this._active) { // Colors depend on whether text is valid
             BACK = tiv ? cs['C_9'] : cs['C_1'];
             FORE = tiv ? cs['C_3'] : cs['C_9'];
-            b.stroke(FORE);
-            b.strokeWeight(1.5);
-            b.fill(BACK);
-            b.rect(0, 0, this._w, this._h);
+            uib.stroke(FORE);
+            uib.strokeWeight(1.5);
+            uib.fill(BACK);
+            uib.rect(0, 0, this._w, this._h);
         }
         else { // Active so display any selection
             if (this._currCsrIdx != this._prevCsrIdx) {
-                let px = this._cursorX(b, line, this._prevCsrIdx);
-                let cx = this._cursorX(b, line, this._currCsrIdx);
-                b.noStroke();
-                b.fill(SELECT);
+                let px = this._cursorX(uib, line, this._prevCsrIdx);
+                let cx = this._cursorX(uib, line, this._currCsrIdx);
+                uib.noStroke();
+                uib.fill(SELECT);
                 let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
-                b.rect(cx0, 1, cx1, this._h - 2);
+                uib.rect(cx0, 1, cx1, this._h - 2);
             }
         }
-        b.fill(BACK);
+        uib.fill(BACK);
         // Draw text
-        b.textSize(ts);
-        b.textAlign(this._p.LEFT, this._p.TOP);
-        b.noStroke();
-        b.fill(FORE);
-        b.text(line, sx, (this._h - ts) / 2);
+        uib.textSize(ts);
+        uib.textAlign(this._p.LEFT, this._p.TOP);
+        uib.noStroke();
+        uib.fill(FORE);
+        uib.text(line, sx, (this._h - ts) / 2);
         // Draw cursor
         if (this._activate && this._cursorOn) {
-            let cx = this._cursorX(b, line, this._currCsrIdx);
-            b.stroke(CURSOR);
-            b.strokeWeight(1.5);
-            b.line(sx + cx, 4, sx + cx, this._h - 5);
+            let cx = this._cursorX(uib, line, this._currCsrIdx);
+            uib.stroke(CURSOR);
+            uib.strokeWeight(1.5);
+            uib.line(sx + cx, 4, sx + cx, this._h - 5);
         }
         // Mouse over highlight
         if (this._over > 0) {
-            b.stroke(HIGHLIGHT);
-            b.strokeWeight(2);
-            b.noFill();
-            b.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.stroke(HIGHLIGHT);
+            uib.strokeWeight(2);
+            uib.noFill();
+            uib.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         // Control disabled highlight
         if (!this._enabled)
-            this._disable_hightlight(b, cs, 0, 0, this._w, this._h);
-        b.pop();
-        b.updatePixels();
+            this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
+        this._updateRectControlPB();
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }

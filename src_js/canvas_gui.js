@@ -1,10 +1,17 @@
 const CANVAS_GUI_VERSION = '!!VERSION!!';
+const GUIS = new Map();
+const ANNOUNCED = false;
+const CLOG = console.log;
+const CWARN = console.warn;
+const CERROR = console.error;
+const CASSERT = console.assert;
+const CCLEAR = console.clear;
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
  * <ul>
  * <li>Create the UI controls e.g. buttons, sliders</li>
- * <li>Provides 7 color schemes for the controls</li>
+ * <li>Provides 9 color schemes for the controls</li>
  * </ul>
  *
  */
@@ -18,8 +25,8 @@ class GUI {
      * @param p the sketch instance
      */
     constructor(p5c, p = p5.instance) {
-        /** @hidden */ this._touchEventsEnabled = false; // 0.9.5
-        /** @hidden */ this._mouseEventsEnabled = false; // 0.9.4
+        /** @hidden */ this._touchEventsEnabled = false;
+        /** @hidden */ this._mouseEventsEnabled = false;
         /** @hidden */ this._keyEventsEnabled = false;
         /** @hidden */ this._eventsAllowed = true;
         /** @hidden */ this._visible = true;
@@ -27,14 +34,21 @@ class GUI {
         this._renderer = p5c;
         this._canvas = p5c.canvas;
         this._target = document.getElementById(p5c.canvas.id); // for keyboard events
-        this._p = p;
-        this._is3D = false; // set when initialsing mouse event hadlers
+        this._p = p; // p5 instance
+        this._is3D = this._renderer.GL != undefined;
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
         this._corners = [4, 4, 4, 4];
         this._optionGroups = new Map();
         this._textSize = 12;
         this._tipTextSize = 10;
+        // Pick buffer
+        this._COLOR_STEP = 8;
+        this._PART_MASK = this._COLOR_STEP - 1;
+        this._COLOR_MASK = 0x00FFFFFF ^ this._PART_MASK;
+        this._NEXT_COLOR = this._COLOR_STEP;
+        this._colorKey = new Map();
+        this._ctrlKey = new Map();
         // Side panes
         this._panesEast = [];
         this._panesSouth = [];
@@ -45,139 +59,155 @@ class GUI {
         this._addFocusHandlers();
         this._addMouseEventHandlers();
         this._addTouchEventHandlers();
-        // Choose 2D / 3D rendering methods
-        this._selectDrawMethod();
-        // Camera method depends on major version of p5js since 1.1.1
+        // Choose 2D / 3D rendering methods  
+        this._drawOverlay = this._is3D ? this._drawHudWEBGL : this._drawHudP2D;
+        // Prepare buffers
+        this._validateGuiBuffers();
+        // Camera method depends on major version of p5js
         this._getCamera = Number(p.VERSION.split('.')[0]) == 1
             ? function () { return this._renderer._curCamera; } // V1
             : function () { return this._renderer.states.curCamera; }; // V2
     }
+    /**
+     * Make sure we have an overlay buffer and a pick buffer of the correct size
+     */
+    _validateGuiBuffers() {
+        let p = this._p;
+        if (!this._hud || this._hud.width != p.width || this._hud.height != p.height) {
+            this._hud = p.createGraphics(p.width, p.height);
+            this._hud.pixelDensity(window.devicePixelRatio);
+            this._hud.clear();
+            this._pickbuffer = p.createGraphics(p.width, p.height);
+            this._pickbuffer.pixelDensity(window.devicePixelRatio);
+            this._pickbuffer.clear();
+        }
+    }
     // ##################################################################
-    // ######     Factory methods to create controls and layouts  #######
+    // ######         Factory methods to create controls          #######
     /**
     * Create a slider control
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns slider control
     */
-    slider(name, x, y, w, h) {
-        return this.addControl(new CvsSlider(this, name, x, y, w, h));
+    slider(id, x, y, w, h) {
+        return this.addControl(new CvsSlider(this, id, x, y, w, h), true);
     }
     /**
     * Create a ranger control
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns ranger control
     */
-    ranger(name, x, y, w, h) {
-        return this.addControl(new CvsRanger(this, name, x, y, w, h));
+    ranger(id, x, y, w, h) {
+        return this.addControl(new CvsRanger(this, id, x, y, w, h), true);
     }
     /**
     * Create a button control
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns a button
     */
-    button(name, x, y, w, h) {
-        return this.addControl(new CvsButton(this, name, x, y, w, h));
+    button(id, x, y, w, h) {
+        return this.addControl(new CvsButton(this, id, x, y, w, h), true);
     }
     /**
     * Create a single line text input control
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns a textfield
     */
-    textfield(name, x, y, w, h) {
+    textfield(id, x, y, w, h) {
         this._addKeyEventHandlers();
-        return this.addControl(new CvsTextField(this, name, x, y, w, h));
+        return this.addControl(new CvsTextField(this, id, x, y, w, h), true);
     }
     /**
     * Create a checkbox control
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns a checkbox
     */
-    checkbox(name, x, y, w, h) {
-        return this.addControl(new CvsCheckbox(this, name, x, y, w, h));
+    checkbox(id, x, y, w, h) {
+        return this.addControl(new CvsCheckbox(this, id, x, y, w, h), true);
     }
     /**
     * Create an option (radio button) control
-    * @param name
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns an option button
     */
-    option(name, x, y, w, h) {
-        return this.addControl(new CvsOption(this, name, x, y, w, h));
+    option(id, x, y, w, h) {
+        return this.addControl(new CvsOption(this, id, x, y, w, h), true);
     }
     /**
     * Create a label control
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns a label
     */
-    label(name, x, y, w, h) {
-        return this.addControl(new CvsLabel(this, name, x, y, w, h));
+    label(id, x, y, w, h) {
+        return this.addControl(new CvsLabel(this, id, x, y, w, h), false);
     }
     /**
     * Create a viewer
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns an image viewer
     */
-    viewer(name, x, y, w, h) {
-        return this.addControl(new CvsViewer(this, name, x, y, w, h));
+    viewer(id, x, y, w, h) {
+        return this.addControl(new CvsViewer(this, id, x, y, w, h), true);
     }
     /**
     * Create a joystick
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns a joystick control
     */
-    joystick(name, x, y, w, h) {
-        return this.addControl(new CvsJoystick(this, name, x, y, w, h));
+    joystick(id, x, y, w, h) {
+        return this.addControl(new CvsJoystick(this, id, x, y, w, h), true);
     }
     /**
     * Create a joystick
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
     * @param h height
     * @returns a joystick control
     */
-    knob(name, x, y, w, h) {
-        return this.addControl(new CvsKnob(this, name, x, y, w, h));
+    knob(id, x, y, w, h) {
+        return this.addControl(new CvsKnob(this, id, x, y, w, h), true);
     }
     /**
     * Create a scroller control
-    * @param name unique name for this control
+    * @param id unique id for this control
     * @param x left-hand pixel position
     * @param y top pixel position
     * @param w width
@@ -185,16 +215,16 @@ class GUI {
     * @returns scroller control
     * @hidden
     */
-    __scroller(name, x, y, w, h) {
-        return this.addControl(new CvsScroller(this, name, x, y, w, h));
+    __scroller(id, x, y, w, h) {
+        return this.addControl(new CvsScroller(this, id, x, y, w, h), true);
     }
     /**
      * @hidden
-     * @param name auto generated unique name from parent control
+     * @param id auto generated unique id from parent control
      * @returns tooltip control
      */
-    __tooltip(name) {
-        return this.addControl(new CvsTooltip(this, name));
+    __tooltip(id) {
+        return this.addControl(new CvsTooltip(this, id), false);
     }
     /**
      * Create a side pane. The pane location is either 'north', 'south',
@@ -203,33 +233,35 @@ class GUI {
      * The pane will fill the whole width/height of the canvas depending on its
      * position. The user controls how far the pane extends into the canvas when
      * open.
-     * @param name unique name for this control
+     * @param id unique id for this control
      * @param location the pane position ('north', 'south', 'east' or 'west')
      * @param depth the maximum depth the pane expands into the canvas
      * @returns a side pane
      */
-    pane(name, location, depth) {
+    pane(id, location, depth) {
         let ctrl;
+        depth = Math.round(depth);
         switch (location) {
             case 'north':
-                ctrl = new CvsPaneNorth(this, name, depth);
+                ctrl = new CvsPaneNorth(this, id, depth);
                 break;
             case 'south':
-                ctrl = new CvsPaneSouth(this, name, depth);
+                ctrl = new CvsPaneSouth(this, id, depth);
                 break;
             case 'west':
-                ctrl = new CvsPaneWest(this, name, depth);
+                ctrl = new CvsPaneWest(this, id, depth);
                 break;
             case 'east':
-            default: ctrl = new CvsPaneEast(this, name, depth);
+            default: ctrl = new CvsPaneEast(this, id, depth);
         }
-        return this.addControl(ctrl);
+        return this.addControl(ctrl, false);
     }
+    // ###########        End of factory methods             ############
+    // ##################################################################
     /**
      * Get a grid layout for a given pixel position and size in the display area.
      * Initially the grid repreents a single cell but the number and size of
      * horizontal and vertical cells should be set before creating the controls.
-     * @since 1.1.0
      * @param x left edge position
      * @param y top edge position
      * @param w grid width
@@ -239,8 +271,6 @@ class GUI {
     grid(x, y, w, h) {
         return new GridLayout(x, y, w, h);
     }
-    // ###########        End of factory methods             ############
-    // ##################################################################
     /**
      * Returns the name of this GUI. If the GUI is not named then
      * the returned value is undefined.
@@ -248,21 +278,19 @@ class GUI {
      * @returns the name of this gui or undefined
      */
     name() {
-        return this._name;
+        return this._uid;
     }
     /**
      * Render any controls for this gui
      * @returns this gui
-     * @since 0.9.3
      */
     show() {
         this._visible = true;
         return this;
     }
     /**
-     * Do not render any controls for this gui
+     * Hides all the controls for this gui
      * @returns this gui
-     * @since 0.9.3
      */
     hide() {
         this._visible = false;
@@ -271,7 +299,6 @@ class GUI {
     /**
      * @returns true if gui rendering is allowed
      * @returns this gui
-     * @since 0.9.3
      */
     isVisible() {
         return this._visible;
@@ -279,7 +306,6 @@ class GUI {
     /**
      * Enable mouse/key event handling for this gui
      * @returns this gui
-     * @since 0.9.3
      */
     enable() {
         this._enabled = true;
@@ -288,7 +314,6 @@ class GUI {
     /**
      * Disable mouse/key event handling for this gui
      * @returns this gui
-     * @since 0.9.3
      */
     disable() {
         this._enabled = false;
@@ -296,7 +321,6 @@ class GUI {
     }
     /**
      * @returns true if this gui can respond to mouse/key events
-     * @since 0.9.3
      */
     isEnabled() {
         return this._enabled;
@@ -325,6 +349,7 @@ class GUI {
         canvas.addEventListener('focusout', (e) => { this._handleFocusEvents(e); });
         canvas.addEventListener('focusin', (e) => { this._handleFocusEvents(e); });
     }
+    /** @hidden */
     _addMouseEventHandlers() {
         if (!this._mouseEventsEnabled) {
             let canvas = this._canvas;
@@ -339,6 +364,7 @@ class GUI {
             this._mouseEventsEnabled = true;
         }
     }
+    /** @hidden */
     _addKeyEventHandlers() {
         if (!this._keyEventsEnabled) {
             this._target.setAttribute('tabindex', '0');
@@ -348,6 +374,7 @@ class GUI {
             this._keyEventsEnabled = true;
         }
     }
+    /** @hidden */
     _addTouchEventHandlers() {
         if (!this._touchEventsEnabled) {
             let canvas = this._canvas;
@@ -384,6 +411,7 @@ class GUI {
             }
         }
     }
+    /** @hidden */
     _handleFocusEvents(e) {
         switch (e.type) {
             case 'focusout':
@@ -423,60 +451,136 @@ class GUI {
     _handleMouseEvents(e) {
         // Find the currently active control and pass the event to it
         if (this._eventsAllowed && this._enabled && this.isVisible()) {
-            let activeControl;
+            let activeControl = undefined;
             for (let c of this._ctrls) {
                 if (c.isActive()) {
-                    activeControl = c;
-                    c._handleMouse(e);
-                    break;
+                    if (c._handleMouse) {
+                        activeControl = c;
+                        c._handleMouse(e);
+                        break;
+                    }
+                    else {
+                        c._active = false;
+                    }
                 }
             }
             // If no active control then pass the event to each enabled control in turn
             if (activeControl == undefined) {
                 for (let c of this._ctrls)
-                    if (c.isEnabled() && c.isVisible()) // 0.9.3 introduces visibility condition
+                    if (c.isEnabled() && c.isVisible() && c._handleMouse) // 0.9.3 introduces visibility condition
                         c._handleMouse(e);
             }
         }
         return false;
     }
-    // Select draw method based on P2D or WEBGL renderer
-    _selectDrawMethod() {
-        this._is3D = this._renderer.GL != undefined && this._renderer.GL != null;
-        this.draw = this._is3D ? this._drawControlsWEBGL : this._drawControlsP2D;
-    }
     // -----------------------------------------------------------------------
     /**
      * <p>Get the control given it's unique name.</p>
-     * @param name control's unique name for this control
+     * @param id control's unique name for this control
      * @returns  get the associated control
     */
-    $(name) {
-        return (typeof name === "string") ? this._controls.get(name) : name;
+    $(id) {
+        return (typeof id === "string") ? this._controls.get(id) : id;
     }
     /**
-     * <p>Adds a child control to this one.</p>
+     * <p>Adds a child control to this gui.</p>
      * @param control the child control to add
      * @returns the control just added
+     * @hidden
      */
-    addControl(control) {
-        console.assert(!this._controls.has(control.name()), `Control '${control.name()}' already exists and will be replaced.`);
-        this._controls.set(control.name(), control);
+    addControl(control, pickable = false) {
+        CASSERT(!this._controls.has(control.id), `Control '${control.id}' already exists and will be replaced.`);
+        // Map control by ID
+        this._controls.set(control.id, control);
         // Now find render order
         this._ctrls = [...this._controls.values()];
-        this._ctrls.sort((a, b) => { return a.z() - b.z(); });
+        this.setRenderOrder();
+        // this._ctrls.sort((a, b) => { return a.z - b.z });
+        if (pickable)
+            this.register(control);
         return control;
+    }
+    /**
+     * Sorts the controls so that they are rendered in order of their z
+     * value (low z --> high z)
+     * @hidden
+     */
+    setRenderOrder() {
+        this._ctrls.sort((a, b) => { return a.z - b.z; });
+    }
+    /**
+     * Add an object so it can be detected using this pick buffer.
+     * @param control the object to add
+     */
+    register(control) {
+        if (control && !this._ctrlKey.has(control)) {
+            this._ctrlKey.set(control, this._NEXT_COLOR);
+            this._colorKey.set(this._NEXT_COLOR, control);
+            this._NEXT_COLOR += this._COLOR_STEP;
+        }
+    }
+    /**
+     * Remove this object so it can't be detected using this pick buffer.
+     * @param {*} control the object to remove
+     */
+    deregister(control) {
+        if (control && this._ctrlKey.has(control)) {
+            let pc = this._ctrlKey.get(control);
+            this._ctrlKey.delete(control);
+            this._colorKey.delete(pc);
+        }
+    }
+    /**
+     *
+     * @param control the control we need the pick color for
+     * @returns the associated pick color numeric value (rgb)
+     */
+    pickColor(control) {
+        if (this._ctrlKey.has(control)) {
+            let pc = this._ctrlKey.get(control);
+            return { r: (pc >> 16) & 0xFF, g: (pc >> 8) & 0xFF, b: pc & 0xFF, };
+        }
+        return undefined;
+    }
+    /**
+    * Display the buffer in a canvas element with the given id.
+    * If there is no element with this id or if it is not a canvas element
+    * a canvas element will be created and appended to the body section.
+    *
+    * @param cvsID the id of a canvas element
+    */
+    showBuffer(cvsID, bfr = this._pickbuffer) {
+        let ele = document.getElementById(cvsID);
+        if (!ele) {
+            ele = document.createElement('canvas');
+            ele.setAttribute('id', cvsID);
+            document.getElementsByTagName('body')[0].append(ele);
+        }
+        ele.setAttribute('width', `${bfr.width}`);
+        ele.setAttribute('height', `${bfr.height}`);
+        ele.setAttribute('padding', '3px');
+        ele.style.border = '2px solid #000000';
+        if (ele instanceof HTMLCanvasElement) {
+            let dpr = window.devicePixelRatio;
+            let [src, sw, sh] = [bfr.canvas, bfr.width * dpr, bfr.height * dpr];
+            let ctx = ele.getContext('2d'), cvs = ctx.canvas;
+            ctx.drawImage(src, 0, 0, sw, sh, 0, 0, cvs.width, cvs.height);
+        }
     }
     /**
      * List the controls created so far
      * @hidden
      */
     listControls() {
-        console.log("List of controls");
-        for (let c of this._ctrls) {
-            console.log(c.name());
-        }
-        console.log('--------------------------------------------------------------');
+        CLOG("--------------------   List of controls   --------------------");
+        this._ctrls.forEach(c => {
+            let id = `${c.id}                               `.substring(0, 15);
+            let ctype = `${c.constructor.name}                   `.substring(0, 15);
+            let z = `Z: ${c.z}      `.substring(0, 10);
+            let pc = `Color key: ${this._ctrlKey.get(c)}`;
+            CLOG(id + ctype + z + pc);
+        });
+        CLOG('--------------------------------------------------------------');
     }
     /**
      * <p>Gets the option group associated with a given name.</p>
@@ -497,9 +601,8 @@ class GUI {
      * @returns the global text size or this control
      */
     textSize(gts) {
-        if (!Number.isFinite(gts)) {
+        if (!Number.isFinite(gts))
             return this._textSize;
-        }
         this._textSize = gts;
         // Update visual for all controls
         this._controls.forEach((c) => { c.invalidateBuffer(); });
@@ -539,9 +642,8 @@ class GUI {
      * @returns an array with the 4 corner radii
      */
     corners(c) {
-        if (Array.isArray(c) && c.length == 4) {
+        if (Array.isArray(c) && c.length == 4)
             this._corners = [...c];
-        }
         return [...this._corners];
     }
     /**
@@ -562,7 +664,6 @@ class GUI {
     /**
      * Close all side panes
      * Replaces _closeAll
-     * @since 0.9.3
      * @hidden
      */
     _closePanes() {
@@ -577,8 +678,6 @@ class GUI {
     }
     /**
      * Hide all side panes. This will also close any pane that is open.<br>
-     * Replaces hideAll
-     * @since 0.9.3
      */
     hidePanes() {
         this._closePanes();
@@ -593,8 +692,6 @@ class GUI {
     }
     /**
      * Show all pane tabs. All panes will be shown closed.
-     * Replaces showAll
-     * @since 0.9.3
      */
     showPanes() {
         for (let pane of this._panesEast)
@@ -618,10 +715,8 @@ class GUI {
         // Now find start position for the first tab
         let pos = (this.canvasHeight() - sum) / 2;
         for (let i = 0; i < n; i++) {
-            let pane = panes[i];
-            let tab = pane.tab();
-            let x = -tab._h;
-            let y = pos;
+            let pane = panes[i], tab = pane.tab();
+            let x = -tab._h, y = pos;
             pos += tab._w + 2;
             tab._x = x;
             tab._y = y;
@@ -640,10 +735,8 @@ class GUI {
         // Now find start position for the first tab
         let pos = (this.canvasHeight() - sum) / 2;
         for (let i = 0; i < n; i++) {
-            let pane = panes[i];
-            let tab = pane.tab();
-            let x = pane.depth();
-            let y = pos;
+            let pane = panes[i], tab = pane.tab();
+            let x = pane.depth(), y = pos;
             pos += tab._w + 2;
             tab._x = x;
             tab._y = y;
@@ -662,10 +755,8 @@ class GUI {
         // Now find start position for the first tab
         let pos = (this.canvasWidth() - sum) / 2;
         for (let i = 0; i < n; i++) {
-            let pane = panes[i];
-            let tab = pane.tab();
-            let x = pos;
-            let y = -tab._h;
+            let pane = panes[i], tab = pane.tab();
+            let x = pos, y = -tab._h;
             pos += tab._w + 2;
             tab._x = x;
             tab._y = y;
@@ -723,7 +814,7 @@ class GUI {
             });
         }
         else
-            console.error(`'${schemename}' is not a valid color scheme`);
+            CERROR(`'${schemename}' is not a valid color scheme`);
         return this;
     }
     /**
@@ -735,7 +826,7 @@ class GUI {
     _getScheme(schemename) {
         if (schemename && this._schemes[schemename])
             return Object.assign({}, this._schemes[schemename]);
-        console.warn(`Unable to retrieve color scheme '${schemename}'`);
+        CWARN(`Unable to retrieve color scheme '${schemename}'`);
         return undefined;
     }
     /**
@@ -750,7 +841,7 @@ class GUI {
             if (!this._schemes[schemename])
                 this._schemes[schemename] = scheme;
             else
-                console.error(`Cannot add scheme '${schemename}' because it already exists.'`);
+                CERROR(`Cannot add scheme '${schemename}' because it already exists.'`);
         }
         return this;
     }
@@ -758,29 +849,37 @@ class GUI {
      * The main draw method.
      * @hidden
      */
-    draw() { }
-    /**
-     * The P2D draw method
-     * @hidden
-     */
-    _drawControlsP2D() {
+    draw() {
+        this._hud.clear();
+        this._pickbuffer.clear();
         if (this._visible) {
             this._p.push();
             for (let c of this._ctrls)
                 if (!c.getParent())
-                    c._renderP2D();
+                    c._draw(this._hud, this._pickbuffer);
+            this._p.pop();
+            this._drawOverlay();
+        }
+    }
+    /**
+     * The V2 P2D draw method
+     * @hidden
+     */
+    _drawHudP2D() {
+        if (this._visible) {
+            this._p.push();
+            this._p.image(this._hud, 0, 0); // Display GUI controls
             this._p.pop();
         }
     }
     /**
-     * The WEBGL draw method
+     * The V1 WEBGL draw method
      * @hidden
      */
-    _drawControlsWEBGL() {
+    _drawHudWEBGL() {
         if (this._visible) {
             this._p.push();
-            let renderer = this._renderer;
-            let gl = renderer.drawingContext;
+            let renderer = this._renderer, gl = renderer.drawingContext;
             let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
             gl.flush();
             let mvMatrix = renderer.uMVMatrix.copy();
@@ -789,10 +888,7 @@ class GUI {
             gl.disable(gl.DEPTH_TEST);
             renderer.resetMatrix();
             this._getCamera().ortho(0, w, -h, 0, -d, d);
-            // Draw GUI
-            for (let c of this._ctrls)
-                if (!c.getParent())
-                    c._renderWEBGL();
+            this._p.image(this._hud, 0, 0); // Display GUI controls
             gl.flush();
             renderer.uMVMatrix.set(mvMatrix);
             renderer.uPMatrix.set(pMatrix);
@@ -801,77 +897,65 @@ class GUI {
         }
     }
     /**
-     * @hidden
+     *
+     * @param x 2D horizontal position in display
+     * @param y 2D vertical position in display
+     * @returns an object containing the control hit and the control part number
      */
-    static announce() {
-        if (!GUI._announced) {
-            console.log('================================================');
-            console.log(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2025 Peter Lager`);
-            console.log('================================================');
-            GUI._announced = true;
+    getPicked(x, y) {
+        let pkb = this._pickbuffer;
+        if (x >= 0 && x < pkb.width && y >= 0 && y < pkb.height) {
+            let c = pkb.get().get(x, y); // [r, g, b, a]
+            let rgb = (c[0] << 16) + (c[1] << 8) + c[2]; // rgb vlaue
+            let ctl_col = rgb & this._COLOR_MASK;
+            let ctl = this._colorKey.get(ctl_col);
+            let pn = rgb & this._PART_MASK;
+            if (ctl)
+                return { hit: ctl, part: pn };
         }
-    }
-    /**
-     * <p>Returns a GUI controller for a given canvas element.</p>
-     * <p>If a GUI has already been created for this canvas it will be returned,
-     * otherwise a new GUI will be created and returned</p>
-     * <p>A canvas can have more than one GUI associated with it but in that case
-     * each GUI must have a unique name.</p>
-     *
-     *
-     * @param p5c the renderer - the display canvas
-     * @param p the processing instance (required in Instance mode)
-     * @returns a GUI controller
-     */
-    static get(p5c, p = p5.instance) {
-        GUI.announce();
-        if (GUI._guis.has(p5c))
-            return GUI._guis.get(p5c);
-        // Need to create a GUI for this canvas
-        let gui = new GUI(p5c, p);
-        GUI._guis.set(p5c, gui);
-        return gui;
-    }
-    /**
-     * <p>Returns a named GUI controller.</p>
-     * <p>If an exisiting GUI has the same name it will be returned, otherwise
-     * a new GUI will be created and returned</p>
-     * <p>If the name parameter is not of type 'string' or an empty string then
-     * the returned value is undefined.</p>
-     *
-     * @param name unique name for the GUI
-     * @param p5c the renderer - the display canvas
-     * @param p the processing instance (required in Instance mode)
-     * @returns a GUI controller if valid name provided
-     */
-    static getNamed(name, p5c, p = p5.instance) {
-        GUI.announce();
-        if (typeof name === 'string' && name.length > 0) {
-            if (GUI._guis.has(name))
-                return GUI._guis.get(name);
-            // Need to create a GUI for this canvas
-            let gui = new GUI(p5c, p);
-            gui._name = name;
-            GUI._guis.set(name, gui);
-            return gui;
-        }
-        return undefined;
-    }
-    /**
-     * <p>Returns a previously created GUI controller for a given canvas
-     * or name. </p>
-     * @param key associated canvas or GUI name
-     * @returns  a matching GUI controller or undefined if not found
-     */
-    static find(key) {
-        return GUI._guis.get(key);
+        return { hit: undefined, part: undefined };
     }
 }
-// ##################################################################################
-// ##################################################################################
-// Class methods and attributes
-// ##################################################################################
-// ##################################################################################
-GUI._guis = new Map();
-GUI._announced = false;
+/**
+ * @hidden
+ */
+const ANNOUNCE_CANVAS_GUI = function () {
+    if (GUIS.size == 0) {
+        CLOG('================================================');
+        CLOG(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2025 Peter Lager`);
+        CLOG('================================================');
+    }
+};
+/**
+ * <p>Returns a named GUI controller.</p>
+ * <p>If an exisiting GUI has the same name it will be returned, otherwise
+ * a new GUI will be created and returned</p>
+ * <p>If the name parameter is not of type 'string' or an empty string then
+ * the returned value is undefined.</p>
+ *
+ * @param name unique name for the GUI
+ * @param p5c the renderer - the display canvas
+ * @param p the processing instance (required in Instance mode)
+ * @returns a GUI controller existing or new GUI with the given name.
+ */
+const createGUI = function (name, p5c, p = p5.instance) {
+    ANNOUNCE_CANVAS_GUI();
+    if (GUIS.has(name)) {
+        CWARN(`You already have a  GUI called '${name} it will not be replaced`);
+        return GUIS.get(name);
+    }
+    // Need to create a GUI for this canvas
+    let gui = new GUI(p5c, p);
+    GUIS.set(name, gui);
+    return gui;
+};
+/**
+ * <p>Get the GUI with the given name. If no such GUI exists then the
+ * function returns undefined. </p>
+ * @param name the name of the GUI to get
+ * @returns the matching GUI controller or undefined if not found.
+ */
+const getGUI = function (name) {
+    return GUIS.get(name);
+};
 //# sourceMappingURL=canvas_gui.js.map

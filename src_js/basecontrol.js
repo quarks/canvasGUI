@@ -13,17 +13,17 @@ class CvsBaseControl {
      * CvsBaseControl class
      * @hidden
      * @param gui
-     * @param name unique name for this control
+     * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
      * @param w width
      * @param h height
      */
-    constructor(gui, name, x, y, w, h) {
+    constructor(gui, id, x, y, w, h) {
         /** @hidden */ this._children = [];
         /** @hidden */ this._visible = true;
         /** @hidden */ this._enabled = true;
-        /** @hidden */ this._Z = 0;
+        /** @hidden */ this._z = 0;
         /** @hidden */ this._x = 0;
         /** @hidden */ this._y = 0;
         /** @hidden */ this._w = 0;
@@ -41,11 +41,11 @@ class CvsBaseControl {
         this.action = function () { };
         this._gui = gui;
         this._p = this._gui._p;
-        this._name = name;
-        this._x = x;
-        this._y = y;
-        this._w = w;
-        this._h = h;
+        this._id = id;
+        this._x = Math.round(x);
+        this._y = Math.round(y);
+        this._w = Math.round(w);
+        this._h = Math.round(h);
         this._parent = undefined;
         this._visible = true;
         this._enabled = true;
@@ -55,12 +55,41 @@ class CvsBaseControl {
         this._c = gui.corners(undefined);
     }
     ;
+    get x() { return this._x; }
+    set x(v) { this._x = Math.round(v); }
+    get y() { return this._y; }
+    set y(v) { this._y = Math.round(v); }
+    /** @hidden */
+    get z() { return this._z; }
+    /** @hidden */
+    set z(v) { this._z = v; }
+    get w() { return this._w; }
+    set w(v) { this._w = Math.round(v); }
+    get h() { return this._h; }
+    set h(v) { this._h = Math.round(v); }
+    /** the unique identifier for this control   */
+    get id() { return this._id; }
     /**
-     *
-     * @returns the unique identier for this control
+     * Move control to an absolute position
+     * @param x horizontal position
+     * @param y vertical position
+     * @returns this control
      */
-    name() {
-        return this._name;
+    moveTo(x, y) {
+        this.x = x;
+        this.y = y;
+        return this;
+    }
+    /**
+     * Move control relative to current position
+     * @param x horizontal distance
+     * @param y vertical distance
+     * @returns this control
+     */
+    moveBy(x, y) {
+        this.x += x;
+        this.y += y;
+        return this;
     }
     /**
      * <p>Calculates the absolute position on the canvas taking into account
@@ -99,42 +128,53 @@ class CvsBaseControl {
         return this._scheme;
     }
     /**
+     * <p>Invalidates the control's buffer forcing it to validate it on the
+     * next frame</p>
+     * @returns this control
+     */
+    invalidateBuffer() {
+        this._bufferInvalid = true;
+        return this;
+    }
+    /**
      * <p>Adds this control to another control which becomes its parent</p>
-     * @param p is the parental control or its name
+     * @param parent is the parental control or its id
      * @param rx x position relative to parent
      * @param ry  y position relative to parent
      * @returns this control
      */
-    parent(p, rx, ry) {
-        let parent = this._gui.$(p);
-        parent.addChild(this, rx, ry);
+    parent(parent, rx, ry) {
+        let prnt = this._gui.$(parent);
+        prnt.addChild(this, rx, ry);
+        this.z = prnt.z + 128;
+        this._gui.setRenderOrder();
         return this;
     }
     /**
      * <p>Add a child to this control using its relative position [rx, ry].
      * If rx and ry are not provided then it uses the values set in the child.</p>
-     * @param c is the actual control or its name
+     * @param c is the actual control or its id
      * @returns this control
      */
     addChild(c, rx, ry) {
         let control = this._gui.$(c);
-        rx = !Number.isFinite(rx) ? control._x : Number(rx);
-        ry = !Number.isFinite(ry) ? control._y : Number(ry);
-        // See if the control already has a parent and it is not remove
-        // from its parent.
-        if (!control._parent) {
+        rx = !Number.isFinite(rx) ? control.x : Number(rx);
+        ry = !Number.isFinite(ry) ? control.y : Number(ry);
+        // If the control already has a parent remove it ready for new parent.
+        if (!control._parent)
             control.leaveParent();
-        }
         // Position and add parent to control control
-        control._x = rx;
-        control._y = ry;
+        control.x = rx;
+        control.y = ry;
         control._parent = this;
+        control.z = this.z + 128;
         this._children.push(control);
+        this._gui.setRenderOrder();
         return this;
     }
     /**
      * <p>Remove a child control from this one so that it stays in same screen position</p>
-     * @param c the control to remove or its name
+     * @param c the control to remove or its id
      * @returns this control
      */
     removeChild(c) {
@@ -150,6 +190,7 @@ class CvsBaseControl {
             }
         }
         this._children = this._children.filter(Boolean);
+        this._gui.setRenderOrder();
         return this;
     }
     /**
@@ -157,13 +198,14 @@ class CvsBaseControl {
      * @returns this control
      */
     leaveParent() {
-        if (this._parent)
+        if (this._parent) {
             this._parent.removeChild(this);
+            this.z = 0;
+        }
         return this;
     }
     /**
-     *
-     * @returns this controls parent
+     * @hidden
      */
     getParent() {
         return this._parent;
@@ -185,7 +227,7 @@ class CvsBaseControl {
             this.action = event_handler;
         }
         else {
-            console.error(`The action for '$(this._name)' must be a function definition`);
+            console.error(`The action for '$(this._id)' must be a function definition`);
         }
         return this;
     }
@@ -238,7 +280,6 @@ class CvsBaseControl {
             this._enabled = true;
             this.invalidateBuffer();
         }
-        // this.invalidateBuffer(); // removed 0.9.3
         if (cascade)
             for (let c of this._children)
                 c.enable(cascade);
@@ -307,29 +348,29 @@ class CvsBaseControl {
         this._opaque = false;
         return this;
     }
-    /**
-     * <p>Shrink the control to fit contents.</p>
-     * <p>To shrink on one dimension only pass either 'w' (width) or 'h'
-     * (height) to indicate which dimmension to shrink</p>
-     * @param dim the dimension to shrink
-     * @returns this control
-     */
-    shrink(dim) {
-        let s = this._minControlSize();
-        switch (dim) {
-            case 'w':
-                this._w = s.w;
-                break;
-            case 'h':
-                this._h = s.h;
-                break;
-            default:
-                this._w = s.w;
-                this._h = s.h;
-        }
-        this.invalidateBuffer();
-        return this;
-    }
+    // /**
+    //  * <p>Shrink the control to fit contents.</p>
+    //  * <p>To shrink on one dimension only pass either 'w' (width) or 'h' 
+    //  * (height) to indicate which dimmension to shrink</p>
+    //  * @param dim the dimension to shrink 
+    //  * @returns this control
+    //  */
+    // shrink(dim?: string): CvsBaseControl {
+    //     let s = this._minControlSize();
+    //     switch (dim) {
+    //         case 'w':
+    //             this._w = s.w;
+    //             break;
+    //         case 'h':
+    //             this._h = s.h;
+    //             break;
+    //         default:
+    //             this._w = s.w;
+    //             this._h = s.h;
+    //     }
+    //     this.invalidateBuffer();
+    //     return this;
+    // }
     /**
      * If control has significant rounded corners then take them
      * into consideration
@@ -376,8 +417,7 @@ class CvsBaseControl {
     /** @hidden */
     _updateControlVisual() { }
     /** @hidden */
-    _handleMouse(e) { return true; }
-    ;
+    // _handleMouse(e: MouseEvent): boolean { return false };
     /** @hidden */
     _handleKey(e) { return true; }
     ;
@@ -386,64 +426,10 @@ class CvsBaseControl {
     /** @hidden */
     _processEvent(e, ...info) { }
     /**
-     * <p>This method ensures we have a buffer of the correct size for the control</p>
-     * @hidden
+     * @param uib ui overlay buffer
+     * @param pkb picker buffer
      */
-    _validateBuffer() {
-        let b = this._buffer;
-        if (b.width != this._w || b.height != this._h) {
-            this._buffer = this._p.createGraphics(this._w, this._h);
-            this.invalidateBuffer(); // Force a redraw of the buffer
-        }
-        if (this._bufferInvalid) {
-            this._updateControlVisual();
-            this._bufferInvalid = false;
-        }
-    }
-    /**
-     * <p>Invalidates the control's buffer forcing it to validate it on the
-     * next frame</p>
-     * @returns this control
-     */
-    invalidateBuffer() {
-        this._bufferInvalid = true;
-        return this;
-    }
-    /** @hidden */
-    _renderWEBGL() {
-        this._validateBuffer();
-        let p = this._p;
-        p.push();
-        p.noStroke(); // Fix for p5.js 1.6.0
-        p.translate(this._x, this._y);
-        if (this._visible)
-            this._orientation._renderWEBGL(p, this._w, this._h, this._buffer);
-        // Display children
-        for (let c of this._children)
-            if (c._visible)
-                c._renderWEBGL();
-        p.pop();
-    }
-    /** @hidden */
-    _renderP2D() {
-        this._validateBuffer();
-        let p = this._p;
-        p.push();
-        p.translate(this._x, this._y);
-        if (this._visible)
-            this._orientation._renderP2D(p, this._w, this._h, this._buffer);
-        // Display children
-        for (let c of this._children)
-            if (c._visible)
-                c._renderP2D();
-        p.pop();
-    }
-    /** @hidden */
-    _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs['T_5']);
-        b.noStroke();
-        b.rect(x, y, w, h, this._c[0], this._c[1], this._c[2], this._c[3]);
-    }
+    _draw(uib, pkb) { }
     /** @hidden */
     _eq(a, b) {
         return Math.abs(a - b) < 0.001;
@@ -451,26 +437,6 @@ class CvsBaseControl {
     /** @hidden */
     _neq(a, b) {
         return Math.abs(a - b) >= 0.001;
-    }
-    /** @hidden */
-    z() {
-        return this._Z;
-    }
-    /** @hidden */
-    x() {
-        return this._x;
-    }
-    /** @hidden */
-    y() {
-        return this._y;
-    }
-    /** @hidden */
-    w() {
-        return this._w;
-    }
-    /** @hidden */
-    h() {
-        return this._h;
     }
     /** @hidden */
     over() {

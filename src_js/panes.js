@@ -6,8 +6,8 @@
  */
 class CvsPane extends CvsBaseControl {
     /** @hidden */
-    constructor(gui, name, x, y, w, h) {
-        super(gui, name, x, y, w, h);
+    constructor(gui, id, x, y, w, h) {
+        super(gui, id, x, y, w, h);
         /** @hidden */ this._background = 'rgba(0,0,0,0.6)';
         this._x = x;
         this._y = y;
@@ -16,7 +16,7 @@ class CvsPane extends CvsBaseControl {
         this._cornerRadius = 5;
         this._status = 'closed';
         this._timer = 0;
-        this._Z = 128;
+        this._z = 8192;
     }
     /** @hidden */
     parent(p, rx, ry) {
@@ -140,40 +140,27 @@ class CvsPane extends CvsBaseControl {
                 break;
         }
     }
-    /** @hidden */
-    _renderWEBGL() {
-        let p = this._p;
-        p.push();
-        p.translate(this._x, this._y);
+    _draw(uib, pkb) {
+        uib.push();
+        uib.translate(this._x, this._y);
+        pkb.push();
+        pkb.drawingContext.setTransform(uib.drawingContext.getTransform());
         if (this._visible && this._tabstate != 'closed') {
-            p.noStroke();
-            p.fill(this._background);
-            p.beginShape(p.TRIANGLE_STRIP);
-            p.vertex(0, 0);
-            p.vertex(0, this._h);
-            p.vertex(this._w, 0);
-            p.vertex(this._w, this._h);
-            p.endShape();
+            uib.noStroke();
+            uib.fill(this._background);
+            uib.rect(0, 0, this._w, this._h);
+            pkb.noStroke();
+            pkb.fill(255, 0, 0);
+            pkb.rect(0, 0, this._w, this._h);
+            for (let c of this._children)
+                if (c._visible)
+                    c._draw(uib, pkb);
         }
-        for (let c of this._children)
-            if (c._visible)
-                c._renderWEBGL();
-        p.pop();
-    }
-    /** @hidden */
-    _renderP2D() {
-        let p = this._p;
-        p.push();
-        p.translate(this._x, this._y);
-        if (this._visible && this._tabstate != 'closed') {
-            p.noStroke();
-            p.fill(this._background);
-            p.rect(0, 0, this._w, this._h);
-        }
-        for (let c of this._children)
-            if (c._visible)
-                c._renderP2D();
-        p.pop();
+        // Display children
+        // for (let c of this._children)
+        //     if (c._visible) c._draw(uib, pkb);
+        pkb.pop();
+        uib.pop();
     }
     /**
      * <p>Sets the current text.</p>
@@ -310,13 +297,13 @@ class CvsPane extends CvsBaseControl {
 /** @hidden */ CvsPane._tabID = 1;
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
-    constructor(gui, name, depth) {
-        super(gui, name, 0, -depth, gui.canvasWidth(), depth);
+    constructor(gui, id, depth) {
+        super(gui, id, 0, -depth, gui.canvasWidth(), depth);
         this._depth = depth;
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab._name).setAction(this._tabAction);
+        tab.text(tab.id).setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
         tab._c = [0, 0, this._cornerRadius, this._cornerRadius];
@@ -350,13 +337,13 @@ class CvsPaneNorth extends CvsPane {
 }
 /** @hidden */
 class CvsPaneSouth extends CvsPane {
-    constructor(gui, name, depth) {
-        super(gui, name, 0, gui.canvasHeight(), gui.canvasWidth(), depth);
+    constructor(gui, id, depth) {
+        super(gui, id, 0, gui.canvasHeight(), gui.canvasWidth(), depth);
         this._depth = depth;
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab._name).setAction(this._tabAction);
+        tab.text(tab.id).setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
         tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
@@ -391,13 +378,13 @@ class CvsPaneSouth extends CvsPane {
 }
 /** @hidden */
 class CvsPaneEast extends CvsPane {
-    constructor(gui, name, depth) {
-        super(gui, name, gui.canvasWidth(), 0, depth, gui.canvasHeight());
+    constructor(gui, id, depth) {
+        super(gui, id, gui.canvasWidth(), 0, depth, gui.canvasHeight());
         this._depth = depth;
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab._name)
+        tab.text(tab.id)
             .orient('north')
             .setAction(this._tabAction);
         let s = tab._minControlSize();
@@ -440,7 +427,7 @@ class CvsPaneWest extends CvsPane {
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab._name)
+        tab.text(tab.id)
             .orient('south')
             .setAction(this._tabAction);
         let s = tab._minControlSize();

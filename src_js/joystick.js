@@ -77,7 +77,6 @@ class CvsJoystick extends CvsBufferedControl {
         if (!m)
             return this._mode;
         m = m.toUpperCase();
-        (m);
         switch (m) {
             case 'X0':
             case 'X4':
@@ -203,7 +202,6 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
         const OPAQUE = cs['C_3'];
@@ -216,89 +214,101 @@ class CvsJoystick extends CvsBufferedControl {
         const ROD = cs['C_7'];
         const MARKERS = cs['C_8'];
         const DEAD_ZONE = cs['T_5'];
-        b.push();
-        b.clear();
+        let uib = this._uiBfr;
+        uib.push();
+        uib.clear();
         if (this._opaque) {
-            b.noStroke();
-            b.fill(OPAQUE);
-            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.noStroke();
+            uib.fill(OPAQUE);
+            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
-        b.translate(b.width / 2, b.height / 2);
+        uib.translate(uib.width / 2, uib.height / 2);
         // dial face background
-        b.noStroke();
-        b.fill(DIAL_FACE);
-        b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
+        uib.noStroke();
+        uib.fill(DIAL_FACE);
+        uib.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // dial face highlight
         let s = 0, e = 0.26 * this._size, da = 0;
-        b.fill(DIAL_TINT);
-        b.noStroke(); //b.stroke(DIAL_TINT); b.strokeWeight(2);
-        b.ellipse(0, 0, e * 2, e * 2);
-        b.ellipse(0, 0, e * 1.25, e * 1.25);
+        uib.fill(DIAL_TINT);
+        uib.noStroke(); //b.stroke(DIAL_TINT); b.strokeWeight(2);
+        uib.ellipse(0, 0, e * 2, e * 2);
+        uib.ellipse(0, 0, e * 1.25, e * 1.25);
         // Dial face markers
-        b.stroke(MARKERS);
+        uib.stroke(MARKERS);
         switch (this._mode) {
             case 'X0':
                 s = this._pr1;
                 e = 0.33 * this._size;
                 da = Math.PI / 8;
-                b.push();
-                b.strokeWeight(0.75);
+                uib.push();
+                uib.strokeWeight(0.75);
                 e = 0.3 * this._size;
                 for (let i = 0; i < 16; i++) {
-                    b.line(s, 0, e, 0);
-                    b.rotate(da);
+                    uib.line(s, 0, e, 0);
+                    uib.rotate(da);
                 }
-                b.pop();
+                uib.pop();
                 break;
             case 'X8':
                 s = this._pr0;
                 e = 0.33 * this._size;
                 da = Math.PI / 4;
-                b.push();
-                b.strokeWeight(1);
+                uib.push();
+                uib.strokeWeight(1);
                 for (let i = 0; i < 8; i++) {
-                    b.line(s, 0, e, 0);
-                    b.rotate(da);
+                    uib.line(s, 0, e, 0);
+                    uib.rotate(da);
                 }
-                b.pop();
+                uib.pop();
             case 'X4':
                 s = this._pr0;
                 e = this._pr1;
                 da = Math.PI / 2;
-                b.push();
-                b.strokeWeight(1.5);
+                uib.push();
+                uib.strokeWeight(1.5);
                 for (let i = 0; i < 4; i++) {
-                    b.line(s, 0, e, 0);
-                    b.rotate(da);
+                    uib.line(s, 0, e, 0);
+                    uib.rotate(da);
                 }
-                b.pop();
+                uib.pop();
                 break;
         }
         // Dial border
-        b.stroke(DIAL_BORDER);
-        b.strokeWeight(Math.max(3, 0.025 * this._size));
-        b.noFill();
-        b.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
+        uib.stroke(DIAL_BORDER);
+        uib.strokeWeight(Math.max(3, 0.025 * this._size));
+        uib.noFill();
+        uib.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // Dead zone
-        b.fill(DEAD_ZONE);
-        b.noStroke();
-        b.ellipse(0, 0, this._pr0 * 2, this._pr0 * 2);
+        uib.fill(DEAD_ZONE);
+        uib.noStroke();
+        uib.ellipse(0, 0, this._pr0 * 2, this._pr0 * 2);
         // Stick                                                                                    
-        b.stroke(ROD);
-        b.strokeWeight(this._size * 0.05);
-        b.line(0, 0, tx, ty);
+        uib.stroke(ROD);
+        uib.strokeWeight(this._size * 0.05);
+        uib.line(0, 0, tx, ty);
         // Thumb
-        b.strokeWeight(2);
-        b.stroke(THUMB_STROKE);
+        uib.strokeWeight(2);
+        uib.stroke(THUMB_STROKE);
         if (this._active || this._over > 0)
-            b.fill(THUMB_OVER);
+            uib.fill(THUMB_OVER);
         else
-            b.fill(THUMB_OFF);
-        b.ellipse(tx, ty, this._tSize * 2, this._tSize * 2);
-        b.pop();
-        b.updatePixels();
+            uib.fill(THUMB_OFF);
+        uib.ellipse(tx, ty, this._tSize * 2, this._tSize * 2);
+        this._updateJoystickPickBuffer(tx, ty, this._tSize);
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
+    }
+    _updateJoystickPickBuffer(tx, ty, tSize) {
+        let c = this._gui.pickColor(this);
+        let pkb = this._pkBfr;
+        pkb.push();
+        pkb.clear();
+        pkb.translate(pkb.width / 2, pkb.height / 2);
+        pkb.noStroke();
+        pkb.fill(c.r, c.g, c.b);
+        pkb.ellipse(tx, ty, tSize * 2, tSize * 2);
+        pkb.pop();
     }
 }
 Object.assign(CvsJoystick.prototype, processMouse, processTouch);

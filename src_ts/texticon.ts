@@ -39,6 +39,7 @@ abstract class CvsText extends CvsBufferedControl {
         let s = this._minControlSize();
         this._w = Math.max(this._w, s.w);
         this._h = Math.max(this._h, s.h);
+        this._validateControlBuffers();
         this.invalidateBuffer();
         return this;
     }
@@ -86,6 +87,7 @@ abstract class CvsText extends CvsBufferedControl {
             let s = this._minControlSize();
             this._w = Math.max(this._w, s.w);
             this._h = Math.max(this._h, s.h);
+            this._validateControlBuffers();
             this.invalidateBuffer();
         }
         return this;
@@ -93,7 +95,7 @@ abstract class CvsText extends CvsBufferedControl {
 
     /** @hidden */
     _minControlSize() {
-        let b = this._buffer;
+        let b = this._uiBfr;
         let lines = this._lines;
         let ts = this._textSize || this._gui.textSize();
         let tbox = this._tbox;
@@ -150,6 +152,7 @@ abstract class CvsTextIcon extends CvsText {
         let s = this._minControlSize();
         this._w = Math.max(this._w, s.w);
         this._h = Math.max(this._h, s.h);
+        this._validateControlBuffers();
         this.invalidateBuffer();
         return this;
     }
@@ -167,6 +170,7 @@ abstract class CvsTextIcon extends CvsText {
             let s = this._minControlSize();
             this._w = Math.max(this._w, s.w);
             this._h = Math.max(this._h, s.h);
+            this._validateControlBuffers();
             this.invalidateBuffer();
         }
         return this;
@@ -186,7 +190,7 @@ abstract class CvsTextIcon extends CvsText {
 
     /** @hidden */
     _minControlSize() {
-        let b = this._buffer;
+        let b = this._uiBfr;
         let lines = this._lines;
         let icon = this._icon;
         let ts = this._textSize || this._gui.textSize();
@@ -208,7 +212,7 @@ abstract class CvsTextIcon extends CvsText {
         }
         sw += tbox.w + gap;
         sh = Math.max(this._tbox.h, sh) + gap;
-        return { w: sw, h: sh };
+        return { w: Math.ceil(sw), h: Math.ceil(sh) };
     }
 }
 
@@ -226,17 +230,11 @@ class CvsLabel extends CvsTextIcon {
     _updateControlVisual() { // CvsLabel
         let ts = this._textSize || this._gui.textSize();
         let cs = this._scheme || this._gui.scheme();
-        let b = this._buffer;
         let p = this._p;
-        let icon = this._icon;
-        let iconAlign = this._iconAlign;
-        let textAlign = this._textAlign;
-        let lines = this._lines;
-        let gap = this._gap;
-
-        const OPAQUE = cs['C_3'];
-        const FORE = cs['C_8'];
-
+        let icon = this._icon, iA = this._iconAlign, tA = this._textAlign;
+        let lines = this._lines, gap = this._gap;
+        const OPAQUE = cs['C_3'], FORE = cs['C_8'];
+        let b = this._uiBfr;
         b.push();
         b.clear();
         // Background
@@ -247,7 +245,7 @@ class CvsLabel extends CvsTextIcon {
         }
         if (icon) {
             let px = 0, py;
-            switch (iconAlign) {
+            switch (iA) {
                 case p.LEFT: px = gap; break;
                 case p.RIGHT: px = this._w - icon.width - gap; break;
             }
@@ -260,14 +258,14 @@ class CvsLabel extends CvsTextIcon {
             b.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
             // Determine extent of text area
-            if (icon && iconAlign == p.LEFT) x0 += icon.width;
-            if (icon && iconAlign == p.RIGHT) x1 -= icon.width;
+            if (icon && iA == p.LEFT) x0 += icon.width;
+            if (icon && iA == p.RIGHT) x1 -= icon.width;
             let tw = x1 - x0;
             let th = this._tbox.h;
             let py = b.textAscent() + (this._h - th) / 2;
             b.fill(FORE);
             for (let line of lines) {
-                switch (textAlign) {
+                switch (tA) {
                     case p.LEFT: sx = x0; break;
                     case p.CENTER: sx = x0 + (tw - b.textWidth(line)) / 2; break;
                     case p.RIGHT: sx = x1 - b.textWidth(line) - gap; break;
@@ -277,7 +275,6 @@ class CvsLabel extends CvsTextIcon {
             }
         }
         b.pop();
-        b.updatePixels();
         // last line in this method should be
         this._bufferInvalid = false;
     }

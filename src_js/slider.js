@@ -121,8 +121,8 @@ class CvsSlider extends CvsBufferedControl {
      */
     _whereOver(px, py, tol = 8) {
         px -= 10; // Adjust mouse to start of track
-        let ty = this._buffer.height / 2;
-        let tx = this._t01 * (this._buffer.width - 20);
+        let ty = this._uiBfr.height / 2;
+        let tx = this._t01 * (this._uiBfr.width - 20);
         return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
             ? 1 : 0;
     }
@@ -149,7 +149,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mousemove':
             case 'touchmove':
                 if (this._active) {
-                    let t01 = this._norm01(mx - 10, 0, this._buffer.width - 20);
+                    let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
                     if (this._t01 != t01) {
@@ -176,64 +176,85 @@ class CvsSlider extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        let tw = b.width - 20, trackW = 8, thumbSize = 12, majorT = 10, minorT = 7;
         const OPAQUE = cs['C_3'];
         const TICKS = cs['G_7'];
         const UNUSED_TRACK = cs['G_3'];
         const USED_TRACK = cs['G_1'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_6'];
-        b.push();
-        b.clear();
+        let uib = this._uiBfr;
+        let tw = uib.width - 20, tH = 8, tbSize = 12;
+        let ty = Math.round(uib.height / 2);
+        let majT = 10, minT = 7;
+        uib.push();
+        uib.clear();
         if (this._opaque) {
-            b.noStroke();
-            b.fill(OPAQUE);
-            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.noStroke();
+            uib.fill(OPAQUE);
+            uib.rect(0, 0, this._w, this._h, ...this._c);
         }
         // Now translate to track left edge - track centre
-        b.translate(10, b.height / 2);
+        uib.translate(10, ty);
         // Now draw ticks
-        b.stroke(TICKS);
-        b.strokeWeight(1);
+        uib.stroke(TICKS);
+        uib.strokeWeight(1);
         let dT, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             dT = tw / n;
             for (let i = 0; i <= n; i++) { // minor ticks
-                let tx = i * dT;
-                b.line(tx, -minorT, tx, minorT);
+                let tickX = i * dT;
+                uib.line(tickX, -minT, tickX, minT);
             }
         }
         n = this._majorTicks;
         if (n >= 2) {
             dT = tw / n;
             for (let i = 0; i <= n; i++) { // major ticks
-                let tx = i * dT;
-                b.line(tx, -majorT, tx, majorT);
+                let tickX = i * dT;
+                uib.line(tickX, -majT, tickX, majT);
             }
         }
         // draw unused track
-        b.fill(UNUSED_TRACK);
-        b.rect(0, -trackW / 2, tw, trackW);
+        uib.fill(UNUSED_TRACK);
+        uib.rect(0, -tH / 2, tw, tH);
         // draw used track
-        let tx = tw * this._t01;
-        b.fill(USED_TRACK);
-        b.rect(0, -trackW / 2, tx, trackW, this._c[0], this._c[1], this._c[2], this._c[3]);
+        let tbX = tw * this._t01;
+        uib.fill(USED_TRACK);
+        uib.rect(0, -tH / 2, tbX, tH, ...this._c);
         // Draw thumb
-        b.fill(THUMB);
-        b.noStroke();
+        uib.fill(THUMB);
+        uib.noStroke();
         if (this._active || this._over > 0) {
-            b.strokeWeight(2);
-            b.stroke(HIGHLIGHT);
+            uib.strokeWeight(2);
+            uib.stroke(HIGHLIGHT);
         }
-        b.rect(tx - thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize, this._c[0], this._c[1], this._c[2], this._c[3]);
+        uib.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._c);
         if (!this._enabled)
-            this._disable_hightlight(b, cs, 0, -this._h / 2, this._w - 20, this._h);
-        b.pop();
-        b.updatePixels();
+            this._disable_hightlight(uib, cs, -10, -this._h / 2, this._w, this._h);
+        this._updateSliderPickBuffer(ty, tw, tH, tbX, tbSize);
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
+    }
+    _updateSliderPickBuffer(ty, tw, tH, tbX, tbSize) {
+        tbX = Math.round(tbX);
+        let c = this._gui.pickColor(this);
+        let pkb = this._pkBfr;
+        pkb.push();
+        pkb.clear();
+        pkb.noStroke();
+        // Now translate to track left edge - track centre
+        pkb.translate(10, ty);
+        // Track
+        pkb.fill(c.r, c.g, c.b + 5);
+        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        pkb.fill(c.r, c.g, c.b + 6);
+        pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
+        // Thumb
+        pkb.fill(c.r, c.g, c.b);
+        pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
+        pkb.pop();
     }
     /** @hidden */
     _minControlSize() {

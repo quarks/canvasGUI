@@ -19,7 +19,6 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ protected _wscale: number = 1;
     /** @hidden */ protected _usedX: number = 0;
     /** @hidden */ protected _usedY: number = 0;
-    /** @hidden */ protected _o: __Overlap = { valid: false };
     /** @hidden */ protected _scrH: CvsScroller;
     /** @hidden */ protected _scrV: CvsScroller;
     /** @hidden */ protected _scaler: CvsSlider;
@@ -29,18 +28,19 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ protected _dcy: number;
     /** @hidden */ protected _pmx: number;
     /** @hidden */ protected _pmy: number;
+    /** @hidden */ protected _frameWeight: number = 0;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x, y, w, h);
 
-        this._scrH = gui.__scroller(this._name + "-scrH", 0, h - 20, w, 20).hide()
+        this._scrH = gui.__scroller(this._id + "-scrH", 0, h - 20, w, 20).hide()
             .setAction((info) => {
                 this.view(info.value * this._lw, this._wcy);
                 this.invalidateBuffer();
             });
 
-        this._scrV = gui.__scroller(this._name + "-scrV", w - 20, 0, h, 20).orient('south').hide()
+        this._scrV = gui.__scroller(this._id + "-scrV", w - 20, 0, h, 20).orient('south').hide()
             .setAction((info) => {
                 this.view(this._wcx, info.value * this._lh);
                 this.invalidateBuffer();
@@ -64,7 +64,7 @@ class CvsViewer extends CvsBufferedControl {
             let value = this._p.constrain(v, low, high);
             // If we don't have a scaler then create it
             if (!this._scaler) {
-                this._scaler = this._gui.slider(this._name + "-scaler",
+                this._scaler = this._gui.slider(this._id + "-scaler",
                     0.25 * this._w, 0.5 * this._h - 10, 0.5 * this._w, 20)
                     .hide()
                     .setAction((info) => {
@@ -219,6 +219,16 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
 
+    /**
+     * Sets the stroke weight to use for the frame. If not provided
+     * or &lt;0 then no frame is drawn.
+     * @param sw the stroke weight for the frame
+     * @returns this control
+     */
+    frame(sw = 0) {
+        this._frameWeight = sw < 0 ? 0 : sw;
+        return this;
+    }
 
     /** @hidden */
     _whereOver(px: number, py: number) {
@@ -370,34 +380,58 @@ class CvsViewer extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual() { // CvsViewer
-        let b = this._buffer;
         let cs = this._scheme || this._gui.scheme();
-        b.background(cs['G_7']);
-        let wscale = this._wscale;
+        let ws = this._wscale;
         let wcx = this._wcx;
         let wcy = this._wcy;
 
+        const OPAQUE = cs['C_2'];
+        const FRAME = cs['C_7'];
+
+        let uib = this._uiBfr;
+        uib.push();
+        if (this._opaque)
+            uib.background(OPAQUE);
+        else
+            uib.clear();
         // Get corners of requested view
-        let ww2 = Math.round(0.5 * this._w / wscale);
-        let wh2 = Math.round(0.5 * this._h / wscale);
-        this._o = this._overlap(0, 0, this._lw, this._lh, // image corners
+        let ww2 = Math.round(0.5 * this._w / ws);
+        let wh2 = Math.round(0.5 * this._h / ws);
+        let o = this._overlap(0, 0, this._lw, this._lh, // image corners
             wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2);  // world corners
+        let [x, y] = [Math.round(o.offsetX * ws), Math.round(o.offsetY * ws)];
+        let [w, h] = [Math.round(o.width * ws), Math.round(o.height * ws)];
         // If we have an offset then calculate the view image 
-        if (this._o.valid) {
-            let o = this._o;
-            // Calculate display offset
-            let view;
+        if (o.valid) { // Calculate display offset
             for (let i = 0, len = this._layers.length; i < len; i++) {
                 if (!this._hidden.has(i) && this._layers[i]) {
-                    // Get view image
-                    view = this._layers[i].get(o.left, o.top, o.width, o.height);
-                    // Adjust image for scale
-                    if (Math.abs(wscale - 1) > 0.01)
-                        view.resize(Math.round(wscale * o.width), Math.round(wscale * o.height));
-                    b.image(view, o.offsetX * wscale, o.offsetY * wscale, view.width, view.height);
+                    // Get view image and adjust for scale
+                    let view = this._layers[i].get(o.left, o.top, o.width, o.height);
+                    if (Math.abs(ws - 1) > 0.01) view.resize(w, h);
+                    uib.image(view, o.offsetX * ws, o.offsetY * ws, view.width, view.height);
                 }
             }
         }
+        if (this._frameWeight > 0) {
+            uib.noFill();
+            uib.stroke(FRAME);
+            uib.strokeWeight(this._frameWeight);
+            uib.rect(0, 0, uib.width, uib.height);
+        }
+        this._updateViewerPickBuffer(x, y, w, h);
+        uib.pop();
+    }
+
+    /** @hidden */
+    _updateViewerPickBuffer(x, y, w, h) {
+        let c = this._gui.pickColor(this);
+        let pkb = this._pkBfr;
+        pkb.push();
+        pkb.clear();
+        pkb.noStroke();
+        pkb.fill(c.r, c.g, c.b);
+        pkb.rect(x, y, w, h);
+        pkb.pop();
     }
 
     /** 

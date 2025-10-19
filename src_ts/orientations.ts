@@ -11,25 +11,8 @@ of the control irrespective of the orientation specified.
 */
 
 class OrientNorth {
-
-    _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.push();
-        p.translate(0, w);
-        p.rotate(1.5 * Math.PI);
-        p.image(buffer, 0, 0);
-        p.pop();
-    }
-
-    _renderWEBGL(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.noStroke();
-        p.textureMode(p.NORMAL);
-        p.texture(buffer);
-        p.beginShape(p.TRIANGLE_STRIP);
-        p.vertex(0, 0, 0, 1, 0);
-        p.vertex(0, w, 0, 0, 0);
-        p.vertex(h, 0, 0, 1, 1);
-        p.vertex(h, w, 0, 0, 1);
-        p.endShape();
+    getTransform(w: number, h: number) {
+        return { tx: 0, ty: w, rot: 1.5 * Math.PI };
     }
 
     xy(x: number, y: number, w: number, h: number) {
@@ -42,24 +25,8 @@ class OrientNorth {
 }
 
 class OrientSouth {
-
-    _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.push();
-        p.translate(h, 0);
-        p.rotate(Math.PI / 2);
-        p.image(buffer, 0, 0);
-        p.pop();
-    }
-
-    _renderWEBGL(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.textureMode(p.NORMAL);
-        p.texture(buffer);
-        p.beginShape(p.TRIANGLE_STRIP);
-        p.vertex(0, 0, 0, 0, 1);
-        p.vertex(0, w, 0, 1, 1);
-        p.vertex(h, 0, 0, 0, 0);
-        p.vertex(h, w, 0, 1, 0);
-        p.endShape();
+    getTransform(w: number, h: number) {
+        return { tx: h, ty: 0, rot: 0.5 * Math.PI };
     }
 
     xy(x: number, y: number, w: number, h: number) {
@@ -72,24 +39,8 @@ class OrientSouth {
 }
 
 class OrientEast {
-
-    _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.push();
-        p.translate(0, 0);
-        p.rotate(0);
-        p.image(buffer, 0, 0);
-        p.pop();
-    }
-
-    _renderWEBGL(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.textureMode(p.NORMAL);
-        p.texture(buffer);
-        p.beginShape(p.TRIANGLE_STRIP);
-        p.vertex(0, 0, 0, 0, 0);
-        p.vertex(0, h, 0, 0, 1);
-        p.vertex(w, 0, 0, 1, 0);
-        p.vertex(w, h, 0, 1, 1);
-        p.endShape();
+    getTransform(w: number, h: number) {
+        return { tx: 0, ty: 0, rot: 0 };
     }
 
     xy(x: number, y: number, w: number, h: number) {
@@ -97,30 +48,13 @@ class OrientEast {
     }
 
     wh(w: number, h: number) {
-        // return { 'w': w, 'h': h };
         return [w, h];
     }
 }
 
 class OrientWest {
-
-    _renderP2D(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.push();
-        p.translate(w, h);
-        p.rotate(Math.PI);
-        p.image(buffer, 0, 0);
-        p.pop();
-    }
-
-    _renderWEBGL(p: p5, w: number, h: number, buffer: p5.Renderer) {
-        p.textureMode(p.NORMAL);
-        p.texture(buffer);
-        p.beginShape(p.TRIANGLE_STRIP);
-        p.vertex(0, 0, 0, 1, 1);
-        p.vertex(0, h, 0, 1, 0);
-        p.vertex(w, 0, 0, 0, 1);
-        p.vertex(w, h, 0, 0, 0);
-        p.endShape();
+    getTransform(w: number, h: number) {
+        return { tx: w, ty: h, rot: Math.PI };
     }
 
     xy(x: number, y: number, w: number, h: number) {

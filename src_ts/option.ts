@@ -177,78 +177,72 @@ class CvsOption extends CvsText {
     _updateControlVisual() { //  CvsOption
         let ts = this._textSize || this._gui.textSize();
         let cs = this._scheme || this._gui.scheme();
-        let b = this._buffer;
         let p = this._p;
-        let iconAlign = this._iconAlign;
         let isize = p.constrain(Number(ts) * 0.7, 12, 16);
-        let textAlign = this._textAlign;
-        let lines = this._lines;
-        let gap = this._gap;
+        let iA = this._iconAlign, tA = this._textAlign;
+        let lines = this._lines, gap = this._gap;
+        const BACK = cs['C_3'], FORE = cs['C_8'], ICON_BG = cs['G_0'];
+        const ICON_FG = cs['G_9'], HIGHLIGHT = cs['C_9'];
+        let uib = this._uiBfr;
 
-        const BACK = cs['C_3'];
-        const FORE = cs['C_8'];
-        const ICON_BG = cs['G_0'];
-        const ICON_FG = cs['G_9'];
-        const HIGHLIGHT = cs['C_9'];
-
-        b.push();
-        b.clear();
+        uib.push();
+        uib.clear();
         // If opaque
         if (this._opaque) {
-            b.noStroke(); b.fill(BACK);
-            b.rect(0, 0, this._w, this._h,
+            uib.noStroke(); uib.fill(BACK);
+            uib.rect(0, 0, this._w, this._h,
                 this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         // Start with circle
-        b.push();
-        let px = (iconAlign == p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
-        b.translate(px, b.height / 2);
-        b.stroke(ICON_FG); b.fill(ICON_BG); b.strokeWeight(1.5);
-        b.ellipse(0, 0, isize, isize);
+        uib.push();
+        let px = (iA == p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
+        uib.translate(px, uib.height / 2);
+        uib.stroke(ICON_FG); uib.fill(ICON_BG); uib.strokeWeight(1.5);
+        uib.ellipse(0, 0, isize, isize);
         if (this._selected) {
-            b.fill(ICON_FG);
-            b.noStroke();
-            b.ellipse(0, 0, isize / 2, isize / 2);
+            uib.fill(ICON_FG);
+            uib.noStroke();
+            uib.ellipse(0, 0, isize / 2, isize / 2);
         }
-        b.pop();
+        uib.pop();
         if (lines.length > 0) {
-            b.textSize(ts);
+            uib.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
             // Determine extent of text area
-            if (iconAlign == p.LEFT) x0 += isize + gap;
-            if (iconAlign == p.RIGHT) x1 -= isize + gap;
+            if (iA == p.LEFT) x0 += isize + gap;
+            if (iA == p.RIGHT) x1 -= isize + gap;
             let tw = x1 - x0;
             let th = this._tbox.h;
-            let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(FORE);
+            let py = uib.textAscent() + (this._h - th) / 2;
+            uib.fill(FORE);
             for (let line of lines) {
-                switch (textAlign) {
+                switch (tA) {
                     case p.LEFT: sx = x0; break;
-                    case p.CENTER: sx = x0 + (tw - b.textWidth(line)) / 2; break;
-                    case p.RIGHT: sx = x1 - b.textWidth(line) - gap; break;
+                    case p.CENTER: sx = x0 + (tw - uib.textWidth(line)) / 2; break;
+                    case p.RIGHT: sx = x1 - uib.textWidth(line) - gap; break;
                 }
-                b.text(line, sx, py);
-                py += b.textLeading();
+                uib.text(line, sx, py);
+                py += uib.textLeading();
             }
         }
         // Mouse over control
         if (this._over > 0) {
-            b.stroke(HIGHLIGHT);
-            b.strokeWeight(2);
-            b.noFill();
-            b.rect(1, 1, this._w - 2, this._h - 2,
+            uib.stroke(HIGHLIGHT);
+            uib.strokeWeight(2);
+            uib.noFill();
+            uib.rect(1, 1, this._w - 2, this._h - 2,
                 this._c[0], this._c[1], this._c[2], this._c[3]);
         }
-        if (!this._enabled) this._disable_hightlight(b, cs, 0, 0, this._w, this._h);
-        b.pop();
-        b.updatePixels();
+        if (!this._enabled) this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
+        this._updateRectControlPB();
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }
 
     /** @hidden */
     _minControlSize() { // CvsOption
-        let b = this._buffer;
+        let b = this._uiBfr;
         let lines = this._lines;
         let tbox = this._tbox;
         let sw = 0, sh = 0, gap = this._gap;

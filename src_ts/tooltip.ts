@@ -77,7 +77,7 @@ class CvsTooltip extends CvsText {
     _validatePosition() {
         let p = this._parent;
         let { x: px, y: py } = p.getAbsXY();
-        let [pw, ph] = p.orientation().wh(p.w(), p.h())
+        let [pw, ph] = p.orientation().wh(p.w, p.h)
         this._x = 0, this._y = -this._h;
         if (py + this._y < 0)
             this._y += this._h + ph;
@@ -85,47 +85,44 @@ class CvsTooltip extends CvsText {
             this._x -= this._w - pw;
     }
 
+
     /** @hidden */
     _updateControlVisual() { // CvsTooltip
         let ts = this._textSize || this._gui.tipTextSize();
         let cs = this._parent.scheme() || this._gui.scheme();
-        let b = this._buffer;
-        let lines = this._lines;
-        let gap = this._gap;
+        let lines = this._lines, gap = this._gap;
+        const BACK = cs['C_3'], FORE = cs['C_9'];
 
-        const BACK = cs['C_3'];
-        const FORE = cs['C_9'];
-
-        b.push();
-        b.clear();
+        let uib = this._uiBfr;
+        uib.push();
+        uib.clear();
         // Backkground
-        b.stroke(FORE); b.fill(BACK);
-        b.rect(0, 0, this._w - 1, this._h - 1);
+        uib.stroke(FORE); uib.fill(BACK);
+        uib.rect(0, 0, this._w - 1, this._h - 1);
 
-        b.fill(FORE).noStroke();
+        uib.fill(FORE).noStroke();
         if (lines.length > 0) {
-            b.textSize(ts);
+            uib.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
             // Determine extent of text area
             let tw = x1 - x0;
             let th = this._tbox.h;
-            let py = b.textAscent() + (this._h - th) / 2;
+            let py = uib.textAscent() + (this._h - th) / 2;
 
             for (let line of lines) {
-                sx = x0 + (tw - b.textWidth(line)) / 2;
-                b.text(line, sx, py);
-                py += b.textLeading();
+                sx = x0 + (tw - uib.textWidth(line)) / 2;
+                uib.text(line, sx, py);
+                py += uib.textLeading();
             }
         }
-        b.pop();
-        b.updatePixels();
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }
 
     /** @hidden */
     _minControlSize() {
-        let b = this._buffer;
+        let b = this._uiBfr;
         let lines = this._lines;
         let ts = this._textSize || this._gui.tipTextSize();
         let tbox = this._tbox;
