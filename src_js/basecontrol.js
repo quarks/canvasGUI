@@ -31,7 +31,6 @@ class CvsBaseControl {
         /** @hidden */ this._over = 0;
         /** @hidden */ this._pover = 0;
         /** @hidden */ this._clickAllowed = false;
-        /** @hidden */ this._active = false;
         /** @hidden */ this._opaque = true;
         /** @hidden */ this._bufferInvalid = true;
         /** <p>The event handler for this control. Although it is permitted to set
@@ -255,15 +254,6 @@ class CvsBaseControl {
         return this;
     }
     /**
-     * A control becomes active when the mouse btton is pressed over it.
-     * This method has little practical use except when debugging.
-     * @hidden
-     * @returns true if this control is expecting more mouse events
-     */
-    isActive() {
-        return this._active;
-    }
-    /**
      * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
      * @returns true if the control is enabled else false
      */
@@ -418,6 +408,8 @@ class CvsBaseControl {
     _updateControlVisual() { }
     /** @hidden */
     // _handleMouse(e: MouseEvent): boolean { return false };
+    /** @hidden */
+    _doEvent(e, x, y, picked) { return null; }
     /** @hidden */
     _handleKey(e) { return true; }
     ;

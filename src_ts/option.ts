@@ -14,7 +14,6 @@ class CvsOptionGroup {
         this._group = new Set();
     }
 
-
     /** 
      * Add an option to this group
      * @hidden 
@@ -131,46 +130,45 @@ class CvsOption extends CvsText {
         return this;
     }
 
+
     /** @hidden */
-    _processEvent(e: any, ...info) {
+    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over > 0) {
-                    // Use these to see if there is movement between mosuseDown and mouseUp
-                    this._clickAllowed = true;
-                    this._dragging = true;
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
+                this._active = true;
+                this._clickAllowed = true; // false if mouse moves
+                this._part = picked.part;
+                this.isOver = true;
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
                 if (this._active) {
                     if (this._clickAllowed && !this._selected) {
-                        // If we have an opt group then use it to replace old selection with this one
                         if (this._optGroup) {
+                            // If we have an opt group then use it to replace 
+                            // old selection with this one
                             this.select();
                             this.action({ source: this, p5Event: e, selected: true });
                         }
                     }
+                    this._active = false;
+                    this._clickAllowed = false;
+                    this.isOver = false;
                 }
-                this._over = 0;
-                this._clickAllowed = false;
-                this._dragging = false;
-                this._active = false;
-                this.invalidateBuffer();
                 break;
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
+                this.isOver = (this == picked.control);
                 break;
             case 'mouseover':
                 break;
             case 'wheel':
                 break;
         }
+        return this._active ? this : null;
     }
 
     /** @hidden */
@@ -226,7 +224,7 @@ class CvsOption extends CvsText {
             }
         }
         // Mouse over control
-        if (this._over > 0) {
+        if (this.isOver) {
             uib.stroke(HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
@@ -263,5 +261,3 @@ class CvsOption extends CvsText {
     }
 
 }
-
-Object.assign(CvsOption.prototype, processMouse, processTouch);

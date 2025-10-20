@@ -47,24 +47,22 @@ class CvsCheckbox extends CvsText {
         return this;
     }
     /**
-     *
+     * Get the state of the checkbox.
      * @returns true if this checkbox is selecetd
      */
     isSelected() {
         return this._selected;
     }
     /** @hidden */
-    _processEvent(e, ...info) {
+    _doEvent(e, x, y, picked) {
+        // CLOG(`Checkbox doEvent  ${e.type}   ID: ${picked.control?.id}`);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over > 0) {
-                    // Use these to see if there is movement between mosuseDown and mouseUp
-                    this._clickAllowed = true;
-                    this._dragging = true;
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
+                this._active = true;
+                this._clickAllowed = true; // false if mouse moves
+                this._part = picked.part;
+                this.isOver = true;
                 break;
             case 'mouseout':
             case 'mouseup':
@@ -74,22 +72,22 @@ class CvsCheckbox extends CvsText {
                         this._selected = !this._selected;
                         this.action({ source: this, p5Event: e, selected: this._selected });
                     }
-                    this._over = 0;
-                    this._clickAllowed = false;
-                    this._dragging = false;
                     this._active = false;
-                    this.invalidateBuffer();
+                    this._clickAllowed = false;
+                    this.isOver = false;
                 }
                 break;
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
+                this.isOver = (this == picked.control);
                 break;
             case 'mouseover':
                 break;
             case 'wheel':
                 break;
         }
+        return this._active ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -152,7 +150,7 @@ class CvsCheckbox extends CvsText {
             }
         }
         // Mouse over control
-        if (this._over > 0) {
+        if (this._isOver) {
             uib.stroke(HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
@@ -189,5 +187,4 @@ class CvsCheckbox extends CvsText {
         return { w: sw, h: sh };
     }
 }
-Object.assign(CvsCheckbox.prototype, processMouse, processTouch);
 //# sourceMappingURL=checkbox.js.map

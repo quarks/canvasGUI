@@ -51,14 +51,16 @@ class CvsBaseControl {
     /** @hidden */ protected _pover: number = 0;
     /** @hidden */ protected _clickAllowed: boolean = false;
     /** @hidden */ protected _c: Array<number>;
-    /** @hidden */ public _active: boolean = false;
     /** @hidden */ protected _opaque: boolean = true;;
     /** @hidden */ protected _scheme: BaseScheme;
     /** @hidden */ protected _bufferInvalid: boolean = true;
     /** @hidden */ protected _uiBfr: p5.Renderer;
     /** @hidden */ protected _pkBfr: p5.Renderer;
 
-    /** @hidden */ public _handleMouse: Function;
+
+
+
+
 
 
     /** <p>The event handler for this control. Although it is permitted to set 
@@ -66,6 +68,9 @@ class CvsBaseControl {
      * method is used to define the event handler actions.</p> 
      */
     action: Function = function () { };
+
+    /** Not for V2   @hidden */ public _handleMouse: Function;
+
 
     /**
      * CvsBaseControl class
@@ -309,15 +314,7 @@ class CvsBaseControl {
         return this;
     }
 
-    /**
-     * A control becomes active when the mouse btton is pressed over it.
-     * This method has little practical use except when debugging.
-     * @hidden
-     * @returns true if this control is expecting more mouse events
-     */
-    isActive() {
-        return this._active;
-    }
+
 
     /**
      * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
@@ -482,6 +479,10 @@ class CvsBaseControl {
 
     /** @hidden */
     // _handleMouse(e: MouseEvent): boolean { return false };
+
+    /** @hidden */
+    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl { return null; }
+
 
     /** @hidden */
     _handleKey(e: KeyboardEvent): boolean { return true; };

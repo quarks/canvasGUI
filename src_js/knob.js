@@ -133,20 +133,19 @@ class CvsKnob extends CvsSlider {
         function fixAngle(a) {
             return a < 0 ? a + 2 * Math.PI : a;
         }
-        let constrain = this._p.constrain;
         let t = this._t01, under = false, over = false;
         switch (this._mode) {
             case CvsKnob.X_MODE:
                 t = this._t01 + (x - this._prevX) * this._sensitivity;
-                under = t < 0;
-                over = t > 1;
-                t = constrain(t, 0, 1);
+                under = (t < 0);
+                over = (t > 1);
+                t = this._p.constrain(t, 0, 1);
                 break;
             case CvsKnob.Y_MODE:
                 t = this._t01 - (y - this._prevY) * this._sensitivity;
-                under = t < 0;
-                over = t > 1;
-                t = constrain(t, 0, 1);
+                under = (t < 0);
+                over = (t > 1);
+                t = this._p.constrain(t, 0, 1);
                 break;
             case CvsKnob.A_MODE:
                 let low = Math.PI - this._turnArc / 2;
@@ -161,50 +160,50 @@ class CvsKnob extends CvsSlider {
         return { t: t, under: under, over: over };
     }
     /** @hidden */
-    _processEvent(e, ...info) {
-        let [mx, my] = info;
-        mx -= this._w / 2;
-        my -= this._h / 2; // Make relative to knob centre
+    _doEvent(e, x, y, picked) {
+        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        mx -= w / 2;
+        my -= h / 2; // Make relative to knob centre
+        let next;
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over > 0) {
-                    this._prevX = mx;
-                    this._prevY = my;
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
+                this._prevX = mx;
+                this._prevY = my;
+                this._active = true;
+                this.isOver = true;
+                this.invalidateBuffer();
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
-                    let next = this._tFromXY(mx, my);
-                    this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
-                    this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
+                next = this._tFromXY(mx, my);
+                this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
+                this.action({ source: this, p5Event: e, value: this.value(), final: true });
+                this._active = false;
+                this.invalidateBuffer();
                 break;
             case 'mousemove':
             case 'touchmove':
                 if (this._active) {
-                    let next = this._tFromXY(mx, my);
+                    next = this._tFromXY(mx, my);
                     let t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
                     if (this._t01 != t01) {
                         this._prevX = mx;
                         this._prevY = my;
                         this._t01 = t01;
                         this.action({ source: this, p5Event: e, value: this.value(), final: false });
-                        this.invalidateBuffer();
                     }
                 }
+                this.isOver = (this == picked.control);
+                this.invalidateBuffer();
                 break;
             case 'mouseover':
                 break;
             case 'wheel':
                 break;
         }
+        return this._active ? this : null;
     }
     /**
      * <p>See if the position [px, py] is over the control.</p>
@@ -310,7 +309,7 @@ class CvsKnob extends CvsSlider {
         }
         uib.pop();
         // Is over highlight?
-        if (this._over || this._active) {
+        if (this.isOver) {
             uib.noFill();
             uib.stroke(HIGHLIGHT);
             uib.strokeWeight(3);
@@ -340,5 +339,4 @@ class CvsKnob extends CvsSlider {
 /** @hidden */ CvsKnob.X_MODE = 1;
 /** @hidden */ CvsKnob.Y_MODE = 2;
 /** @hidden */ CvsKnob.A_MODE = 3;
-Object.assign(CvsKnob.prototype, processMouse, processTouch);
 //# sourceMappingURL=knob.js.map

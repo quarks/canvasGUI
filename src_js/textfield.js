@@ -30,7 +30,6 @@
  * The user can provide their own validation function which is checked when
  * the control is deativated.
  *
- * @since 0.9.3
  */
 class CvsTextField extends CvsText {
     /** @hidden */
@@ -182,6 +181,16 @@ class CvsTextField extends CvsText {
         }
     }
     /**
+     * Deactivate this control
+     * @hidden
+     */
+    _deactivate() {
+        this._active = false;
+        this._cursorOn = false;
+        clearInterval(this._clock);
+        this.invalidateBuffer();
+    }
+    /**
      * Activate this control to receive keyboard events. Occurs if the user
      * clicks on the control or is 'tabbed' into the control.
      * @hidden
@@ -214,16 +223,6 @@ class CvsTextField extends CvsText {
             } while (ctrl && (!ctrl.isEnabled() || !ctrl.isVisible()));
             ctrl?._activate();
         }
-    }
-    /**
-     * Deactivate this control
-     * @hidden
-     */
-    _deactivate() {
-        this._active = false;
-        this._cursorOn = false;
-        clearInterval(this._clock);
-        this.invalidateBuffer();
     }
     /**
      * We are only interested in the first line of text

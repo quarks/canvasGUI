@@ -12,7 +12,6 @@ const DELTA_Z = 64, PANE_Z = 2048;
  *
  */
 class GUI {
-    // /** @hidden */ protected _cCtx; // show buffer canvas context
     /**
      * Create a GUI object to create and manage the GUI controls for
      * an HTML canvas.
@@ -28,6 +27,13 @@ class GUI {
         /** @hidden */ this._eventsAllowed = true;
         /** @hidden */ this._visible = true;
         /** @hidden */ this._enabled = true;
+        // Temporary variables for event processing tests
+        this.mx = 0;
+        this.my = 0;
+        this.tx = 0;
+        this.ty = 0;
+        this.px = 0;
+        this.py = 0;
         this._renderer = p5c;
         this._canvas = p5c.canvas;
         this._target = document.getElementById(p5c.canvas.id); // for keyboard events
@@ -51,11 +57,15 @@ class GUI {
         this._panesSouth = [];
         this._panesWest = [];
         this._panesNorth = [];
-        // Event handlers for canvas
+        // Create color schemes
         this._initColorSchemes();
+        // Event handlers for canvas
         this._addFocusHandlers();
         this._addMouseEventHandlers();
         this._addTouchEventHandlers();
+        this._overCtrl = null;
+        this._activeCtrl = null;
+        this._activePart = 0;
         // Choose 2D / 3D rendering methods  
         this._drawHud = this._is3D ? this._drawHudWEBGL : this._drawHudP2D;
         // Prepare buffers
@@ -65,6 +75,12 @@ class GUI {
             ? function () { return this._renderer._curCamera; } // V1
             : function () { return this._renderer.states.curCamera; }; // V2
     }
+    get overCtrl() { return this._overCtrl; }
+    set overCtrl(v) { this._overCtrl = v; }
+    get activeCtrl() { return this._activeCtrl; }
+    set activeCtrl(v) { this._activeCtrl = v; }
+    get activePart() { return this._activePart; }
+    set activePart(v) { this._activePart = v; }
     /**
      * Make sure we have an overlay buffer and a pick buffer of the correct size
      * @hidden
@@ -352,13 +368,13 @@ class GUI {
         if (!this._mouseEventsEnabled) {
             let canvas = this._canvas;
             // Add mouse events
-            canvas.addEventListener('mousemove', (e) => { this._handleMouseEvents(e); });
-            canvas.addEventListener('mousedown', (e) => { this._handleMouseEvents(e); });
-            canvas.addEventListener('mouseup', (e) => { this._handleMouseEvents(e); });
-            canvas.addEventListener('wheel', (e) => { this._handleMouseEvents(e); });
+            canvas.addEventListener('mousedown', (e) => { this._processMouseEvent(e); });
+            canvas.addEventListener('mouseup', (e) => { this._processMouseEvent(e); });
+            canvas.addEventListener('mousemove', (e) => { this._processMouseEvent(e); });
+            canvas.addEventListener('wheel', (e) => { this._processMouseEvent(e); });
             // Leave and enter canvas
-            canvas.addEventListener('mouseout', (e) => { this._handleMouseEvents(e); });
-            canvas.addEventListener('mouseenter', (e) => { this._handleMouseEvents(e); });
+            canvas.addEventListener('mouseout', (e) => { this._processMouseEvent(e); });
+            canvas.addEventListener('mouseenter', (e) => { this._processMouseEvent(e); });
             this._mouseEventsEnabled = true;
         }
     }
@@ -376,49 +392,65 @@ class GUI {
     _addTouchEventHandlers() {
         if (!this._touchEventsEnabled) {
             let canvas = this._canvas;
-            // Add mouse events
-            canvas.addEventListener('touchstart', (e) => { this._handleTouchEvents(e); });
-            canvas.addEventListener('touchend', (e) => { this._handleTouchEvents(e); });
-            canvas.addEventListener('touchcancel', (e) => { this._handleTouchEvents(e); });
-            canvas.addEventListener('touchmove', (e) => { this._handleTouchEvents(e); });
+            // Add touch events
+            canvas.addEventListener('touchstart', (e) => { this._processTouchEvent(e); });
+            canvas.addEventListener('touchend', (e) => { this._processTouchEvent(e); });
+            canvas.addEventListener('touchmove', (e) => { this._processTouchEvent(e); });
+            canvas.addEventListener('touchcancel', (e) => { this._processTouchEvent(e); });
             this._touchEventsEnabled = true;
         }
     }
+    // ===============================================================================
+    //     V2 event handlers
+    _processMouseEvent(e) {
+        const rect = this._canvas.getBoundingClientRect();
+        this.mx = e.clientX - rect.left;
+        this.my = e.clientY - rect.top;
+        this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
+        // e.preventDefault();
+    }
+    _processTouchEvent(e) {
+        const rect = this._canvas.getBoundingClientRect();
+        const te = e.changedTouches[0];
+        this.tx = te.clientX - rect.left;
+        this.ty = te.clientY - rect.top;
+        this._processEvent(e, te.clientX - rect.left, te.clientY - rect.top);
+        // e.preventDefault();
+    }
     /**
-     * Called by the mouse event listeners
+     * Process mouse and text events after calculating [x, y] canvas position.
+     * @param e the mouse or touch event
+     * @param x the x position in the canvas
+     * @param y the y position in the canvas
      * @hidden
-     * @param e event
      */
-    _handleTouchEvents(e) {
-        // Find the currently active control and pass the event to it
-        if (this._eventsAllowed && this._enabled && this.isVisible()) {
-            let activeControl;
-            for (let c of this._ctrls) {
-                activeControl = undefined;
-                if (c.isActive()) {
-                    activeControl = c;
-                    c._handleTouch(e);
-                    break;
+    _processEvent(e, x, y) {
+        const picked = this.getPicked(x, y);
+        if (this.activeCtrl) {
+            this.activeCtrl = this.activeCtrl._doEvent(e, x, y, picked);
+        }
+        else {
+            // No active control so check for highlighting as pointer moves
+            const picked = this.getPicked(x, y);
+            if (e.type == 'mousemove' || e.type == 'touchmove') {
+                this.overCtrl?._doEvent(e, x, y, picked);
+                if (picked.control) {
+                    picked.control?._doEvent(e, x, y, picked);
+                    this.overCtrl = picked.control;
                 }
             }
-            // If no active control then pass the event to each enabled control in turn
-            if (activeControl == undefined) {
-                for (let c of this._ctrls)
-                    if (c.isEnabled() && c.isVisible()) // 0.9.3 introduces visibility condition
-                        c._handleTouch(e);
+            else {
+                this.activeCtrl = picked.control?._doEvent(e, x, y, picked);
             }
         }
     }
+    //     End of V2 event handlers
+    // ===============================================================================
     /** @hidden */
     _handleFocusEvents(e) {
         switch (e.type) {
             case 'focusout':
-                // Deactivate any textfields(s) - stop the flashing cursor
-                for (let c of this._ctrls)
-                    if (c.isActive()) {
-                        c['_deactivate']?.();
-                        c['validate']?.();
-                    }
+                // this._activeCtrl?._deactivate?.();
                 break;
             case 'focusin':
                 break;
@@ -432,42 +464,12 @@ class GUI {
     _handleKeyEvents(e) {
         // Find the currently active control and pass the event to it
         if (this._eventsAllowed && this._enabled && this.isVisible()) {
-            for (let c of this._ctrls) {
-                if (c.isActive()) {
-                    c._handleKey(e);
-                    break;
-                }
-            }
-        }
-        return false;
-    }
-    /**
-     * Called by the mouse event listeners
-     * @hidden
-     * @param e event
-     */
-    _handleMouseEvents(e) {
-        // Find the currently active control and pass the event to it
-        if (this._eventsAllowed && this._enabled && this.isVisible()) {
-            let activeControl = undefined;
-            for (let c of this._ctrls) {
-                if (c.isActive()) {
-                    if (c._handleMouse) {
-                        activeControl = c;
-                        c._handleMouse(e);
-                        break;
-                    }
-                    else {
-                        c._active = false;
-                    }
-                }
-            }
-            // If no active control then pass the event to each enabled control in turn
-            if (activeControl == undefined) {
-                for (let c of this._ctrls)
-                    if (c.isEnabled() && c.isVisible() && c._handleMouse) // 0.9.3 introduces visibility condition
-                        c._handleMouse(e);
-            }
+            // for (let c of this._ctrls) {
+            //   if (c.isActive()) {
+            //     c._handleKey(e);
+            //     break;
+            //   }
+            // }
         }
         return false;
     }
@@ -904,7 +906,7 @@ class GUI {
      */
     getPicked(x, y) {
         let pkb = this._pickbuffer;
-        let result = { control: undefined, part: undefined };
+        let result = { control: null, part: -1 };
         if (x >= 0 && x < pkb.width && y >= 0 && y < pkb.height) {
             let c = pkb.get().get(x, y); // [r, g, b, a]
             let rgb = (c[0] << 16) + (c[1] << 8) + c[2]; // rgb vlaue

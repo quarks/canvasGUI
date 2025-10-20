@@ -143,24 +143,24 @@ class CvsSlider extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _processEvent(e: any, ...info) {
-        let mx = info[0];
+    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
+        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over > 0) {
+                if (picked.part == 0) { // Thumb
                     this._active = true;
-                    this.invalidateBuffer();
+                    this._clickAllowed = true; // false if mouse moves
+                    this._part = picked.part;
+                    this.isOver = true;
                 }
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
-                    this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
+                this.action({ source: this, p5Event: e, value: this.value(), final: true });
+                this._active = false;
+                this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
@@ -172,15 +172,18 @@ class CvsSlider extends CvsBufferedControl {
                         this._t01 = t01;
                         this.action({ source: this, p5Event: e, value: this.value(), final: false });
                     }
-                    this.invalidateBuffer();
                 }
+                this.isOver = (this == picked.control);
+                this.invalidateBuffer();
                 break;
             case 'mouseover':
                 break;
             case 'wheel':
                 break;
         }
+        return this._active ? this : null;
     }
+
     /** 
      * For a given value p01 find the value at the nearest tick
      * @hidden 
@@ -242,7 +245,7 @@ class CvsSlider extends CvsBufferedControl {
         // Draw thumb
         uib.fill(THUMB);
         uib.noStroke();
-        if (this._active || this._over > 0) {
+        if (this._isOver) {
             uib.strokeWeight(2);
             uib.stroke(HIGHLIGHT);
         }
@@ -266,10 +269,10 @@ class CvsSlider extends CvsBufferedControl {
         // Now translate to track left edge - track centre
         pkb.translate(10, ty);
         // Track
-        pkb.fill(c.r, c.g, c.b + 5);
-        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
-        pkb.fill(c.r, c.g, c.b + 6);
-        pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
+        // pkb.fill(c.r, c.g, c.b + 5);
+        // pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        // pkb.fill(c.r, c.g, c.b + 6);
+        // pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
         // Thumb
         pkb.fill(c.r, c.g, c.b);
         pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
@@ -282,6 +285,3 @@ class CvsSlider extends CvsBufferedControl {
     }
 
 }
-
-
-Object.assign(CvsSlider.prototype, processMouse, processTouch);

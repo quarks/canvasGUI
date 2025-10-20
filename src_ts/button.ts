@@ -52,7 +52,7 @@ class CvsButton extends CvsTextIcon {
             }
         }
         // Mouse over add border highlight
-        if (this._over > 0) {
+        if (this._isOver) {
             uib.stroke(HIGHLIGHT); uib.strokeWeight(2); uib.noFill();
             uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
         }
@@ -69,17 +69,14 @@ class CvsButton extends CvsTextIcon {
     }
 
     /** @hidden */
-    _processEvent(e, ...info) {
+    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over > 0) {
-                    // _clickAllowed is set to false if mouse moves
-                    this._clickAllowed = true;
-                    this._dragging = true;
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
+                this._active = true;
+                this._clickAllowed = true; // false if mouse moves
+                this._part = picked.part;
+                this.isOver = true;
                 break;
             case 'mouseout':
             case 'mouseup':
@@ -87,24 +84,22 @@ class CvsButton extends CvsTextIcon {
                 if (this._active) {
                     if (this._clickAllowed)
                         this.action({ source: this, p5Event: e });
-                    this._over = 0;
-                    this._clickAllowed = false;
-                    this._dragging = false;
                     this._active = false;
-                    this.invalidateBuffer();
+                    this._clickAllowed = false;
+                    this.isOver = false;
                 }
                 break;
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
+                this.isOver = (this == picked.control);
                 break;
             case 'mouseover':
                 break;
             case 'wheel':
                 break;
         }
+        return this._active ? this : null;
     }
 
 }
-
-Object.assign(CvsButton.prototype, processMouse, processTouch);

@@ -146,6 +146,60 @@ class CvsJoystick extends CvsBufferedControl {
         [this._mag, this._ang, this._dir, this._dead] = [mag, ang, dir, dead];
     }
     /** @hidden */
+    _doEvent(e, x, y, picked) {
+        /** @hidden */
+        function getValue(source, event, fini) {
+            let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
+            return {
+                source: source, p5Event: event, final: fini, mag: mag,
+                angle: source._ang, dir: source._dir, dead: source._dead,
+            };
+        }
+        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        mx -= w / 2;
+        my -= h / 2; // Make relative to joystick centre
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                this._active = true;
+                this._part = picked.part;
+                this.isOver = true;
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                this._validateThumbPosition(mx, my);
+                this.action(getValue(this, e, true));
+                this._active = false;
+                this.invalidateBuffer();
+                if (!this._tmrID)
+                    this._tmrID = setInterval(() => {
+                        this._mag -= 0.07 * this._size;
+                        if (this._mag <= 0) {
+                            clearInterval(this._tmrID);
+                            this._tmrID = undefined;
+                            this._mag = 0;
+                        }
+                        this.invalidateBuffer();
+                    }, 25);
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                if (this._active) {
+                    this._validateThumbPosition(mx, my);
+                    this.action(getValue(this, e, false));
+                }
+                this.isOver = (this == picked.control);
+                this.invalidateBuffer();
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+        return this._active ? this : null;
+    }
+    /** @hidden */
     _processEvent(e, ...info) {
         /** @hidden */
         function getValue(source, event, fini) {
