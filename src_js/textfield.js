@@ -25,7 +25,7 @@
  *
  * No other controls can be used while a textfield control is active. Pressing
  * 'Enter' or attempting to move to a non-existant textfield deactivates the
- * current text field.
+ * current textfield.
  *
  * The user can provide their own validation function which is checked when
  * the control is deativated.
@@ -35,6 +35,7 @@ class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        /** @hidden */ this._nextActive = null;
         /** @hidden */ this._linkOffset = 0;
         /** @hidden */ this._prevCsrIdx = 0;
         /** @hidden */ this._currCsrIdx = 0;
@@ -45,7 +46,6 @@ class CvsTextField extends CvsText {
     }
     /**
      * Set a unique index number for this text field.
-     *
      *
      * @param idx unique index number
      * @param deltaIndex relative link when using up/down arrow keys
@@ -144,7 +144,18 @@ class CvsTextField extends CvsText {
         return this;
     }
     /**
-     * Uesr provide a validation function for this textfield
+     * Set the validation function to be used for this control.
+     *
+     * The function is created by the user and should return an array of
+     * two elements e.g.
+     * [ valid, valid-text ]
+     * Valid is a boolean indicating if the text is valid and
+     * valid-text can be the original text or amended in some way.
+     *
+     * For instance a textfield used for getting a persons name will be valid
+     * if there are 2 or more words and the valid-text will be the name
+     * but with the first letter of each word being capatilised.
+     *
      * @param vfunc the validation function
      * @returns this control
      */
@@ -185,10 +196,11 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _deactivate() {
-        this._active = false;
+        this.isActive = false;
         this._cursorOn = false;
         clearInterval(this._clock);
         this.invalidateBuffer();
+        this._nextActive = null;
     }
     /**
      * Activate this control to receive keyboard events. Occurs if the user
@@ -196,33 +208,39 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _activate(selectAll = false) {
-        this._active = true;
+        this.isActive = true;
         let line = this._getLine();
         this._currCsrIdx = line.length;
         this._prevCsrIdx = selectAll || this._textInvalid ? 0 : line.length;
         this._cursorOn = true;
+        // Clear any existing interval before creating a new one
+        clearInterval(this._clock);
         this._clock = setInterval(() => {
             this._cursorOn = !this._cursorOn;
             this.invalidateBuffer();
         }, 550);
         this.invalidateBuffer();
+        this._nextActive = this;
     }
     /**
      * Called when this control passes focus to a new control.
      * @param idx the index for the control to be activated
+     * @hidden
      */
     _activateNext(offset) {
         this._deactivate();
         this._validate();
-        let links = this._gui._links;
+        let links = this._gui._links, ctrl = null;
         if (links) {
-            let idx = this._linkIndex, ctrl;
+            let idx = this._linkIndex;
             do {
                 idx += offset;
                 ctrl = links.get(idx);
             } while (ctrl && (!ctrl.isEnabled() || !ctrl.isVisible()));
             ctrl?._activate();
+            this.invalidateBuffer();
         }
+        this._nextActive = ctrl;
     }
     /**
      * We are only interested in the first line of text
@@ -240,23 +258,9 @@ class CvsTextField extends CvsText {
         return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
     }
     /** @hidden */
-    _processEvent(e, ...info) {
-        switch (e.type) {
-            case 'mousedown':
-                if (this._over > 0)
-                    this._activate();
-                break;
-        }
-    }
-    /** @hidden */
-    _maxTextWidthPixels() {
-        let ts = Number(this._textSize || this._gui.textSize());
-        return this._w - (2 * this._gap) - ts / 2; // maximun text width in pixels
-    }
-    /** @hidden */
-    _handleKey(e) {
-        // let ts = Number(this._textSize || this._gui.textSize());
-        let mtw = this._maxTextWidthPixels(); // maximun text width in pixels
+    _doKeyEvent(e) {
+        this._nextActive = this;
+        let mtw = this._maxTextWidthPixels(); // maximum text width in pixels
         let line = this._getLine(); // get text
         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
@@ -275,13 +279,13 @@ class CvsTextField extends CvsText {
                     this._lines[0] = line;
                 }
                 this.invalidateBuffer();
-                return true;
             }
             switch (e.key) {
                 case 'ArrowLeft':
                     if (tabLeft) {
                         this._activateNext(-1);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     else {
                         if (this._currCsrIdx > 0) {
@@ -297,7 +301,8 @@ class CvsTextField extends CvsText {
                 case 'ArrowRight':
                     if (tabRight) {
                         this._activateNext(1);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     else {
                         if (this._currCsrIdx <= line.length) {
@@ -314,20 +319,22 @@ class CvsTextField extends CvsText {
                     if (!hasSelection) {
                         if (this._linkOffset !== 0)
                             this._activateNext(-this._linkOffset);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     break;
                 case 'ArrowDown':
                     if (!hasSelection) {
                         if (this._linkOffset !== 0)
                             this._activateNext(this._linkOffset);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     break;
                 case 'Enter':
                     this._deactivate();
                     this._validate();
-                    this.action({ source: this, p5Event: e, value: line });
+                    this.action({ source: this, p5Event: e, value: this._getLine() });
                     break;
                 case 'Backspace':
                     if (this._prevCsrIdx != this._currCsrIdx) {
@@ -356,9 +363,27 @@ class CvsTextField extends CvsText {
                 default:
             }
             this.invalidateBuffer();
-            return false;
+        } // End of key down
+        return this._nextActive;
+    }
+    /** @hidden */
+    _doEvent(e, x, y, picked) {
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                this._activate();
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                this.isOver = (this == picked.control);
+                break;
         }
-        return true;
+        return this._nextActive;
+    }
+    /** @hidden */
+    _maxTextWidthPixels() {
+        let ts = Number(this._textSize || this._gui.textSize());
+        return this._w - (2 * this._gap) - ts / 2; // maximun text width in pixels
     }
     /**
      * Remove any user selected text
@@ -383,7 +408,7 @@ class CvsTextField extends CvsText {
         uib.textSize(ts);
         uib.background(cs['G_0']); // white background
         uib.noStroke();
-        if (!this._active) { // Colors depend on whether text is valid
+        if (!this.isActive) { // Colors depend on whether text is valid
             BACK = tiv ? cs['C_9'] : cs['C_1'];
             FORE = tiv ? cs['C_3'] : cs['C_9'];
             uib.stroke(FORE);
@@ -416,7 +441,7 @@ class CvsTextField extends CvsText {
             uib.line(sx + cx, 4, sx + cx, this._h - 5);
         }
         // Mouse over highlight
-        if (this._over > 0) {
+        if (this.isOver) {
             uib.stroke(HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
@@ -431,5 +456,4 @@ class CvsTextField extends CvsText {
         this._bufferInvalid = false;
     }
 }
-Object.assign(CvsTextField.prototype, processMouse, processTouch);
 //# sourceMappingURL=textfield.js.map

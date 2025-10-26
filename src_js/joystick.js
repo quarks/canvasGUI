@@ -98,22 +98,6 @@ class CvsJoystick extends CvsBufferedControl {
         return this;
     }
     /**
-     * <p>See if the position [px, py] is over the control.</p>
-     * @hidden
-     * @param px horizontal position
-     * @param py vertical position
-     * @param tol tolerance in pixels
-     * @returns 0 if not over the control of &ge;1
-     */
-    _whereOver(px, py, tol = this._tSize) {
-        // adjust position to centre of knob
-        px -= this._w / 2;
-        py -= this._h / 2;
-        let [tx, ty] = this._getThumbXY();
-        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
-            ? 1 : 0;
-    }
-    /**
      * Converts the polar position to cartesian cooordinates.
      * @hidden
      */
@@ -161,7 +145,7 @@ class CvsJoystick extends CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
+                this.isActive = true;
                 this._part = picked.part;
                 this.isOver = true;
                 break;
@@ -170,7 +154,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'touchend':
                 this._validateThumbPosition(mx, my);
                 this.action(getValue(this, e, true));
-                this._active = false;
+                this.isActive = false;
                 this.invalidateBuffer();
                 if (!this._tmrID)
                     this._tmrID = setInterval(() => {
@@ -185,7 +169,7 @@ class CvsJoystick extends CvsBufferedControl {
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     this._validateThumbPosition(mx, my);
                     this.action(getValue(this, e, false));
                 }
@@ -197,62 +181,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
-    }
-    /** @hidden */
-    _processEvent(e, ...info) {
-        /** @hidden */
-        function getValue(source, event, fini) {
-            let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
-            return {
-                source: source, p5Event: event, final: fini, mag: mag,
-                angle: source._ang, dir: source._dir, dead: source._dead,
-            };
-        }
-        let mx = info[0], my = info[1];
-        mx -= this._w / 2;
-        my -= this._h / 2;
-        switch (e.type) {
-            case 'mousedown':
-            case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseout':
-            case 'mouseup':
-            case 'touchend':
-                if (this._active) {
-                    this._validateThumbPosition(mx, my);
-                    this.action(getValue(this, e, true));
-                    this._active = false;
-                    this.invalidateBuffer();
-                    if (!this._tmrID)
-                        this._tmrID = setInterval(() => {
-                            this._mag -= 0.07 * this._size;
-                            if (this._mag <= 0) {
-                                clearInterval(this._tmrID);
-                                this._tmrID = undefined;
-                                this._mag = 0;
-                            }
-                            this.invalidateBuffer();
-                        }, 25);
-                }
-                break;
-            case 'mousemove':
-            case 'touchmove':
-                if (this._active) {
-                    this._validateThumbPosition(mx, my);
-                    this.action(getValue(this, e, false));
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseover':
-                break;
-            case 'wheel':
-                break;
-        }
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -343,7 +272,7 @@ class CvsJoystick extends CvsBufferedControl {
         // Thumb
         uib.strokeWeight(2);
         uib.stroke(THUMB_STROKE);
-        if (this._active || this._over > 0)
+        if (this.isActive || this._over > 0)
             uib.fill(THUMB_OVER);
         else
             uib.fill(THUMB_OFF);
@@ -353,6 +282,7 @@ class CvsJoystick extends CvsBufferedControl {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+    /** @hidden */
     _updateJoystickPickBuffer(tx, ty, tSize) {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
@@ -365,5 +295,4 @@ class CvsJoystick extends CvsBufferedControl {
         pkb.pop();
     }
 }
-Object.assign(CvsJoystick.prototype, processMouse, processTouch);
 //# sourceMappingURL=joystick.js.map

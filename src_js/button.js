@@ -16,7 +16,7 @@ class CvsButton extends CvsTextIcon {
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
-        if (this._opaque) { // Background ?
+        if (this._opaque) {
             uib.noStroke();
             uib.fill(BACK);
             uib.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
@@ -76,9 +76,9 @@ class CvsButton extends CvsTextIcon {
         // Update pick buffer before restoring
         this._updateRectControlPB();
         uib.pop();
-        // last line in this method should be
+        // The last line in this method should be
         this._bufferInvalid = false;
-        // Finally if this is a Pane tab then must validate the tabs
+        // but if this is a pane-tab then must validate the tabs
         if (this._parent instanceof CvsPane)
             this._parent.validateTabs();
     }
@@ -87,7 +87,7 @@ class CvsButton extends CvsTextIcon {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
+                this.isActive = true;
                 this._clickAllowed = true; // false if mouse moves
                 this._part = picked.part;
                 this.isOver = true;
@@ -95,10 +95,10 @@ class CvsButton extends CvsTextIcon {
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     if (this._clickAllowed)
                         this.action({ source: this, p5Event: e });
-                    this._active = false;
+                    this.isActive = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }
@@ -113,7 +113,7 @@ class CvsButton extends CvsTextIcon {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
 }
 //# sourceMappingURL=button.js.map

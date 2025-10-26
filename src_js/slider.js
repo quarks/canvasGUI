@@ -75,6 +75,7 @@ class CvsSlider extends CvsBufferedControl {
             if ((value - this._limit0) * (value - this._limit1) <= 0) {
                 this.invalidateBuffer();
                 this._t01 = this._norm01(value);
+                // CLOG(`Slider setting value to ${value} _norm01 ${this._t01}  v2t ${this._v2t(value)}`)
                 return this;
             }
         }
@@ -109,7 +110,7 @@ class CvsSlider extends CvsBufferedControl {
      * @returns parametric value in range &ge;0 and &lt;1
      */
     _norm01(v, l0 = this._limit0, l1 = this._limit1) {
-        return this._p.constrain(this._p.map(v, l0, l1, 0, 1), 0, 1);
+        return this._p.map(v, l0, l1, 0, 1, true);
     }
     /**
      * <p>See if the position [px, py] is over the control.</p>
@@ -128,13 +129,14 @@ class CvsSlider extends CvsBufferedControl {
     }
     /** @hidden */
     _doEvent(e, x, y, picked) {
-        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        let absPos = this.getAbsXY();
+        let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 if (picked.part == 0) { // Thumb
-                    this._active = true;
-                    this._clickAllowed = true; // false if mouse moves
+                    this.isActive = true;
+                    // this._clickAllowed = true; // false if mouse moves
                     this._part = picked.part;
                     this.isOver = true;
                 }
@@ -143,12 +145,12 @@ class CvsSlider extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this._active = false;
+                this.isActive = false;
                 this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
@@ -165,7 +167,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
     /**
      * For a given value p01 find the value at the nearest tick
@@ -239,6 +241,7 @@ class CvsSlider extends CvsBufferedControl {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+    /** @hidden */
     _updateSliderPickBuffer(ty, tw, tH, tbX, tbSize) {
         tbX = Math.round(tbX);
         let c = this._gui.pickColor(this);

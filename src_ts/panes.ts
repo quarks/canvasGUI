@@ -133,7 +133,6 @@ abstract class CvsPane extends CvsBaseControl {
     }
 
     /**
-     * 
      * @returns true if the pane is open else false
      */
     isOpen(): boolean {
@@ -141,7 +140,6 @@ abstract class CvsPane extends CvsBaseControl {
     }
 
     /**
-     * 
      * @returns true if the pane is opening else false
      */
     isOpening(): boolean {
@@ -189,9 +187,6 @@ abstract class CvsPane extends CvsBaseControl {
             for (let c of this._children)
                 if (c._visible) c._draw(uib, pkb);
         }
-        // Display children
-        // for (let c of this._children)
-        //     if (c._visible) c._draw(uib, pkb);
         pkb.pop();
         uib.pop();
     }
@@ -259,16 +254,6 @@ abstract class CvsPane extends CvsBaseControl {
         return this.tab().shrink();
     }
 
-    /**
-     * A control becomes active when the mous btton is pressed over it.
-     * This method has little practical use except when debugging.
-     * @hidden
-     * @returns true if this control is expecting more mouse events
-     */
-    isActive() {
-        return this.tab()._active;
-    }
-
     /** @hidden */
     opaque(dim?: string): CvsBaseControl {
         console.warn("This method is not applicable to a pane");
@@ -283,11 +268,11 @@ abstract class CvsPane extends CvsBaseControl {
 
     /** @hidden */
     orient(dir: string) {
-        console.warn(`Cannot change orientation of a pane}`);
+        console.warn(`Changing orientation of a pane is not allowed !!!`);
         return this;
     }
+
     /**
-     * 
      * @returns the tab button
      */
     tab() {

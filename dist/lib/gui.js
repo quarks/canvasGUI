@@ -6,7 +6,7 @@
 const CANVAS_GUI_VERSION = '2.0.0';
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const GUIS = new Map();
-const DELTA_Z = 64, PANE_Z = 2048;
+const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -26,24 +26,17 @@ class GUI {
      * @param p the sketch instance
      */
     constructor(p5c, p = p5.instance) {
-        /** @hidden */ this._touchEventsEnabled = false;
-        /** @hidden */ this._mouseEventsEnabled = false;
-        /** @hidden */ this._keyEventsEnabled = false;
-        /** @hidden */ this._eventsAllowed = true;
+        // Prevent duplicate event handlers
+        /** @hidden */ this._touchListenersCreated = false;
+        /** @hidden */ this._mouseListenersCreated = false;
+        /** @hidden */ this._keyListenersCreated = false;
+        // Hide / disable GUI
         /** @hidden */ this._visible = true;
         /** @hidden */ this._enabled = true;
-        // Temporary variables for event processing tests
-        this.mx = 0;
-        this.my = 0;
-        this.tx = 0;
-        this.ty = 0;
-        this.px = 0;
-        this.py = 0;
         this._renderer = p5c;
         this._canvas = p5c.canvas;
         this._target = document.getElementById(p5c.canvas.id); // for keyboard events
         this._p = p; // p5 instance
-        this._is3D = this._renderer.GL != undefined;
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
         this._corners = [4, 4, 4, 4];
@@ -72,7 +65,7 @@ class GUI {
         this._activeCtrl = null;
         this._activePart = 0;
         // Choose 2D / 3D rendering methods  
-        this._drawHud = this._is3D ? this._drawHudWEBGL : this._drawHudP2D;
+        this._drawHud = p5c.GL ? this._drawHudWEBGL : this._drawHudP2D;
         // Prepare buffers
         this._validateGuiBuffers();
         // Camera method depends on major version of p5js
@@ -104,143 +97,144 @@ class GUI {
     // ##################################################################
     // ######         Factory methods to create controls          #######
     /**
-    * Create a slider control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns slider control
-    */
+     * Create a slider control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns slider control
+     */
     slider(id, x, y, w, h) {
         return this.addControl(new CvsSlider(this, id, x, y, w, h), true);
     }
     /**
-    * Create a ranger control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns ranger control
-    */
+     * Create a ranger control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns ranger control
+     */
     ranger(id, x, y, w, h) {
         return this.addControl(new CvsRanger(this, id, x, y, w, h), true);
     }
     /**
-    * Create a button control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a button
-    */
+     * Create a button control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a button
+     */
     button(id, x, y, w, h) {
         return this.addControl(new CvsButton(this, id, x, y, w, h), true);
     }
     /**
-    * Create a single line text input control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a textfield
-    */
+     * Create a single line text input control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a textfield
+     */
     textfield(id, x, y, w, h) {
         this._addKeyEventHandlers();
         return this.addControl(new CvsTextField(this, id, x, y, w, h), true);
     }
     /**
-    * Create a checkbox control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a checkbox
-    */
+     * Create a checkbox control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a checkbox
+     */
     checkbox(id, x, y, w, h) {
         return this.addControl(new CvsCheckbox(this, id, x, y, w, h), true);
     }
     /**
-    * Create an option (radio button) control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns an option button
-    */
+     * Create an option (radio button) control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns an option button
+     */
     option(id, x, y, w, h) {
         return this.addControl(new CvsOption(this, id, x, y, w, h), true);
     }
     /**
-    * Create a label control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a label
-    */
+     * Create a label control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a label
+     */
     label(id, x, y, w, h) {
         return this.addControl(new CvsLabel(this, id, x, y, w, h), false);
     }
     /**
-    * Create a viewer
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns an image viewer
-    */
+     * Create a viewer control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns an image viewer
+     */
     viewer(id, x, y, w, h) {
         return this.addControl(new CvsViewer(this, id, x, y, w, h), true);
     }
     /**
-    * Create a joystick
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a joystick control
-    */
+     * Create a joystick control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a joystick control
+     */
     joystick(id, x, y, w, h) {
         return this.addControl(new CvsJoystick(this, id, x, y, w, h), true);
     }
     /**
-    * Create a joystick
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a joystick control
-    */
+     * Create a knob control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a knob control
+     */
     knob(id, x, y, w, h) {
         return this.addControl(new CvsKnob(this, id, x, y, w, h), true);
     }
     /**
-    * Create a scroller control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns scroller control
-    * @hidden
-    */
+     * Create a scroller control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns scroller control
+     * @hidden
+     */
     __scroller(id, x, y, w, h) {
         return this.addControl(new CvsScroller(this, id, x, y, w, h), true);
     }
     /**
+     * Description placeholder
+     * @param {string} id
+     * @returns {CvsTooltip}
      * @hidden
-     * @param id auto generated unique id from parent control
-     * @returns tooltip control
      */
     __tooltip(id) {
         return this.addControl(new CvsTooltip(this, id), false);
@@ -345,32 +339,17 @@ class GUI {
         return this._enabled;
     }
     /**
-    * Stop handling mouse and key events
-    * @since 0.9.4
-    */
-    stopEventHandling() {
-        this._eventsAllowed = false;
-    }
-    /**
-    * Start handling mouse and key events
-    * @since 0.9.4
-    */
-    startEventHandling() {
-        this._eventsAllowed = true;
-    }
-    /**
-    * Adds event listeners to the HTML canvas object. It also sets the draw method
-    * based on whether the render is WEBGL or P2D
-    * @hidden
-    */
+     * Adds event listeners to the HTML canvas object. It also sets the draw method
+     * based on whether the render is WEBGL or P2D
+     * @hidden
+     */
     _addFocusHandlers() {
         let canvas = this._canvas;
-        canvas.addEventListener('focusout', (e) => { this._handleFocusEvents(e); });
-        canvas.addEventListener('focusin', (e) => { this._handleFocusEvents(e); });
+        canvas.addEventListener('focusout', (e) => { this._processFocusEvent(e); });
     }
     /** @hidden */
     _addMouseEventHandlers() {
-        if (!this._mouseEventsEnabled) {
+        if (!this._mouseListenersCreated) {
             let canvas = this._canvas;
             // Add mouse events
             canvas.addEventListener('mousedown', (e) => { this._processMouseEvent(e); });
@@ -380,62 +359,69 @@ class GUI {
             // Leave and enter canvas
             canvas.addEventListener('mouseout', (e) => { this._processMouseEvent(e); });
             canvas.addEventListener('mouseenter', (e) => { this._processMouseEvent(e); });
-            this._mouseEventsEnabled = true;
+            this._mouseListenersCreated = true;
         }
     }
     /** @hidden */
     _addKeyEventHandlers() {
-        if (!this._keyEventsEnabled) {
+        if (!this._keyListenersCreated) {
             this._target.setAttribute('tabindex', '0');
             this._target.focus();
-            this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); return false; });
-            this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e); return false; });
-            this._keyEventsEnabled = true;
+            this._target.addEventListener('keydown', (e) => { this._processKeyEvent(e); return false; });
+            this._target.addEventListener('keyup', (e) => { this._processKeyEvent(e); return false; });
+            this._keyListenersCreated = true;
         }
     }
     /** @hidden */
     _addTouchEventHandlers() {
-        if (!this._touchEventsEnabled) {
+        if (!this._touchListenersCreated) {
             let canvas = this._canvas;
             // Add touch events
             canvas.addEventListener('touchstart', (e) => { this._processTouchEvent(e); });
             canvas.addEventListener('touchend', (e) => { this._processTouchEvent(e); });
             canvas.addEventListener('touchmove', (e) => { this._processTouchEvent(e); });
             canvas.addEventListener('touchcancel', (e) => { this._processTouchEvent(e); });
-            this._touchEventsEnabled = true;
+            this._touchListenersCreated = true;
         }
     }
     // ===============================================================================
     //     V2 event handlers
+    /** @hidden */
     _processMouseEvent(e) {
-        const rect = this._canvas.getBoundingClientRect();
-        this.mx = e.clientX - rect.left;
-        this.my = e.clientY - rect.top;
-        this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
-        // e.preventDefault();
+        if (this._visible && this._enabled) {
+            const rect = this._canvas.getBoundingClientRect();
+            this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
+            // e.preventDefault();
+        }
     }
+    /** @hidden */
     _processTouchEvent(e) {
-        const rect = this._canvas.getBoundingClientRect();
-        const te = e.changedTouches[0];
-        this.tx = te.clientX - rect.left;
-        this.ty = te.clientY - rect.top;
-        this._processEvent(e, te.clientX - rect.left, te.clientY - rect.top);
-        // e.preventDefault();
+        if (this._visible && this._enabled) {
+            const rect = this._canvas.getBoundingClientRect();
+            const te = e.changedTouches[0];
+            this._processEvent(e, te.clientX - rect.left, te.clientY - rect.top);
+            // e.preventDefault();
+        }
     }
     /**
-     * Process mouse and text events after calculating [x, y] canvas position.
+     * Process mouse and touch events provided the active control is not
+     * a textfield.
      * @param e the mouse or touch event
      * @param x the x position in the canvas
      * @param y the y position in the canvas
      * @hidden
      */
     _processEvent(e, x, y) {
+        // Ignore mouse / touch events while we have an active textfield
+        if (this.activeCtrl instanceof CvsTextField)
+            return;
         const picked = this.getPicked(x, y);
         if (this.activeCtrl) {
             this.activeCtrl = this.activeCtrl._doEvent(e, x, y, picked);
         }
         else {
             // No active control so check for highlighting as pointer moves
+            // over a control
             const picked = this.getPicked(x, y);
             if (e.type == 'mousemove' || e.type == 'touchmove') {
                 this.overCtrl?._doEvent(e, x, y, picked);
@@ -449,41 +435,36 @@ class GUI {
             }
         }
     }
-    //     End of V2 event handlers
-    // ===============================================================================
+    /**
+     * Process the key event if the active control is a CvsTextField
+     * @hidden
+     * @param e keyboard event
+     */
+    _processKeyEvent(e) {
+        // Paas the event if the active control is a CvsTextField
+        if (this._visible && this._enabled && this._activeCtrl instanceof CvsTextField) {
+            this.activeCtrl = this.activeCtrl._doKeyEvent(e);
+        }
+    }
     /** @hidden */
-    _handleFocusEvents(e) {
+    _processFocusEvent(e) {
         switch (e.type) {
             case 'focusout':
-                // this._activeCtrl?._deactivate?.();
-                break;
-            case 'focusin':
+                if (this.activeCtrl instanceof CvsTextField) {
+                    this.activeCtrl.validate();
+                    this.activeCtrl._deactivate();
+                    this.activeCtrl = null;
+                }
                 break;
         }
     }
-    /**
-     * Called by the key event listeners
-     * @hidden
-     * @param e event
-     */
-    _handleKeyEvents(e) {
-        // Find the currently active control and pass the event to it
-        if (this._eventsAllowed && this._enabled && this.isVisible()) {
-            // for (let c of this._ctrls) {
-            //   if (c.isActive()) {
-            //     c._handleKey(e);
-            //     break;
-            //   }
-            // }
-        }
-        return false;
-    }
-    // -----------------------------------------------------------------------
+    //     End of V2 event handlers
+    // ===============================================================================
     /**
      * <p>Get the control given it's unique name.</p>
      * @param id unique ID for the control to find
      * @returns  get the associated control
-    */
+     */
     $(id) {
         return (typeof id === "string") ? this._controls.get(id) : id;
     }
@@ -500,7 +481,6 @@ class GUI {
         // Now find render order
         this._ctrls = [...this._controls.values()];
         this.setRenderOrder();
-        // this._ctrls.sort((a, b) => { return a.z - b.z });
         if (pickable)
             this.register(control);
         return control;
@@ -516,6 +496,7 @@ class GUI {
     /**
      * Add an object so it can be detected using this pick buffer.
      * @param control the object to add
+     * @hidden
      */
     register(control) {
         if (control && !this._ctrlKey.has(control)) {
@@ -526,7 +507,8 @@ class GUI {
     }
     /**
      * Remove this object so it can't be detected using this pick buffer.
-     * @param {*} control the object to remove
+     * @param control the object to remove
+     * @hidden
      */
     deregister(control) {
         if (control && this._ctrlKey.has(control)) {
@@ -536,7 +518,7 @@ class GUI {
         }
     }
     /**
-     *
+     * @hidden
      * @param control the control we need the pick color for
      * @returns the associated pick color numeric value (rgb)
      */
@@ -548,12 +530,12 @@ class GUI {
         return undefined;
     }
     /**
-    * Display the buffer in a canvas element with the given id.
-    * If there is no element with this id or if it is not a canvas element
-    * a canvas element will be created and appended to the body section.
-    *
-    * @param cvsID the id of a canvas element
-    */
+     * Display the buffer in a canvas element with the given id.
+     * If there is no element with this id or if it is not a canvas element
+     * a canvas element will be created and appended to the body section.
+     *
+     * @param cvsID the id of a canvas element
+     */
     showBuffer(cvsID, bfr = this._pickbuffer) {
         let ele = document.getElementById(cvsID);
         if (!ele) {
@@ -658,13 +640,6 @@ class GUI {
      */
     context() {
         return this._renderer;
-    }
-    /**
-     * <p>Is this a 3D renderer?</p>
-     * @returns true for WEBGL and false for P2D
-     */
-    is3D() {
-        return this._is3D;
     }
     /**
      * Close all side panes
@@ -786,6 +761,7 @@ class GUI {
             tab._y = y;
         }
     }
+    /** @hidden */
     _initColorSchemes() {
         this._schemes = [];
         this._schemes['blue'] = new BlueScheme();
@@ -871,35 +847,31 @@ class GUI {
      * @hidden
      */
     _drawHudP2D() {
-        if (this._visible) {
-            this._p.push();
-            this._p.image(this._hud, 0, 0); // Display GUI controls
-            this._p.pop();
-        }
+        this._p.push();
+        this._p.image(this._hud, 0, 0); // Display GUI controls
+        this._p.pop();
     }
     /**
      * The V1 WEBGL draw method
      * @hidden
      */
     _drawHudWEBGL() {
-        if (this._visible) {
-            this._p.push();
-            let renderer = this._renderer, gl = renderer.drawingContext;
-            let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
-            gl.flush();
-            let mvMatrix = renderer.uMVMatrix.copy();
-            let pMatrix = renderer.uPMatrix.copy();
-            // Now prepare renderer for standard 2D output to draw GUI
-            gl.disable(gl.DEPTH_TEST);
-            renderer.resetMatrix();
-            this._getCamera().ortho(0, w, -h, 0, -d, d);
-            this._p.image(this._hud, 0, 0); // Display GUI controls
-            gl.flush();
-            renderer.uMVMatrix.set(mvMatrix);
-            renderer.uPMatrix.set(pMatrix);
-            gl.enable(gl.DEPTH_TEST);
-            this._p.pop();
-        }
+        this._p.push();
+        let renderer = this._renderer, gl = renderer.drawingContext;
+        let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
+        gl.flush();
+        let mvMatrix = renderer.uMVMatrix.copy();
+        let pMatrix = renderer.uPMatrix.copy();
+        // Now prepare renderer for standard 2D output to draw GUI
+        gl.disable(gl.DEPTH_TEST);
+        renderer.resetMatrix();
+        this._getCamera().ortho(0, w, -h, 0, -d, d);
+        this._p.image(this._hud, 0, 0); // Display GUI controls
+        gl.flush();
+        renderer.uMVMatrix.set(mvMatrix);
+        renderer.uPMatrix.set(pMatrix);
+        gl.enable(gl.DEPTH_TEST);
+        this._p.pop();
     }
     /**
      * <p>If the [x, y] display position is over a controls pick region then
@@ -922,9 +894,7 @@ class GUI {
         return result;
     }
 }
-/**
- * @hidden
- */
+/** @hidden */
 const ANNOUNCE_CANVAS_GUI = function () {
     if (GUIS.size == 0) {
         CLOG('================================================');
@@ -1130,12 +1100,12 @@ class OrientWest {
 /*
 ##############################################################################
  CvsBaseControl
- This is the base class for controls and panes that don't require a buffer
+ The base class for controls and panes that don't require a graphics buffer.
  ##############################################################################
  */
 /**
  * <p>Base class for all controls</p>
- * <p>It provides most of the functionality for the controls</p>
+ * <p>It provides most of the functionality for the controls.</p>
  */
 class CvsBaseControl {
     /**
@@ -1159,12 +1129,15 @@ class CvsBaseControl {
         /** @hidden */ this._h = 0;
         /** @hidden */ this._over = 0;
         /** @hidden */ this._pover = 0;
+        /** @hidden */ this._active = false;
         /** @hidden */ this._clickAllowed = false;
         /** @hidden */ this._opaque = true;
         /** @hidden */ this._bufferInvalid = true;
-        /** <p>The event handler for this control. Although it is permitted to set
+        /**
+         * <p>The event handler for this control. Although it is permitted to set
          * this property directly it is recommended that the <code>setAction(...)</code>
          * method is used to define the event handler actions.</p>
+         * @hidden
          */
         this.action = function () { };
         this._gui = gui;
@@ -1183,20 +1156,37 @@ class CvsBaseControl {
         this._c = gui.corners(undefined);
     }
     ;
+    /** @hidden */
     get x() { return this._x; }
+    /** @hidden */
     set x(v) { this._x = Math.round(v); }
+    /** @hidden */
     get y() { return this._y; }
+    /** @hidden */
     set y(v) { this._y = Math.round(v); }
     /** @hidden */
     get z() { return this._z; }
     /** @hidden */
     set z(v) { this._z = v; }
+    /** @hidden */
     get w() { return this._w; }
+    /** @hidden */
     set w(v) { this._w = Math.round(v); }
+    /** @hidden */
     get h() { return this._h; }
+    /** @hidden */
     set h(v) { this._h = Math.round(v); }
     /** the unique identifier for this control   */
     get id() { return this._id; }
+    /**
+     * A control becomes active when the mouse button is pressed over it.
+     * This method has little practical use except when debugging.
+     * @hidden
+     * @returns true if this control is expecting more mouse events
+     */
+    get isActive() { return this._active; }
+    /** @hidden */
+    set isActive(b) { this._active = b; }
     /**
      * Move control to an absolute position
      * @param x horizontal position
@@ -1252,7 +1242,6 @@ class CvsBaseControl {
                     c.scheme(id, cascade);
             return this;
         }
-        // getter
         return this._scheme;
     }
     /**
@@ -1445,7 +1434,6 @@ class CvsBaseControl {
     }
     /**
      * @returns true if this control is visible
-     * @since 0.9.3
      */
     isVisible() {
         return this._visible;
@@ -1467,90 +1455,20 @@ class CvsBaseControl {
         this._opaque = false;
         return this;
     }
-    // /**
-    //  * <p>Shrink the control to fit contents.</p>
-    //  * <p>To shrink on one dimension only pass either 'w' (width) or 'h' 
-    //  * (height) to indicate which dimmension to shrink</p>
-    //  * @param dim the dimension to shrink 
-    //  * @returns this control
-    //  */
-    // shrink(dim?: string): CvsBaseControl {
-    //     let s = this._minControlSize();
-    //     switch (dim) {
-    //         case 'w':
-    //             this._w = s.w;
-    //             break;
-    //         case 'h':
-    //             this._h = s.h;
-    //             break;
-    //         default:
-    //             this._w = s.w;
-    //             this._h = s.h;
-    //     }
-    //     this.invalidateBuffer();
-    //     return this;
-    // }
-    /**
-     * If control has significant rounded corners then take them
-     * into consideration
-     * @since 0.9.4
-     * @hidden
-     */
-    _whereOver(px, py, tol = 0) {
-        const R = 5;
-        if (px > 0 && px < this._w && py > 0 && py < this._h) {
-            if (this._c[0] > R) { // top left
-                let dx = px - this._c[0];
-                let dy = py - this._c[0];
-                let off = dx < 0 && dy < 0 && dx * dx + dy * dy > this._c[0] * this._c[0];
-                if (off)
-                    return 0;
-            }
-            if (this._c[1] > R) { // top right
-                let dx = px - (this._w - this._c[1]);
-                let dy = py - this._c[1];
-                let off = dx > 0 && dy < 0 && dx * dx + dy * dy > this._c[1] * this._c[1];
-                if (off)
-                    return 0;
-            }
-            if (this._c[2] > R) { // bottom right
-                let dx = px - (this._w - this._c[2]);
-                let dy = py - (this._h - this._c[2]);
-                let off = dx > 0 && dy > 0 && dx * dx + dy * dy > this._c[2] * this._c[2];
-                if (off)
-                    return 0;
-            }
-            if (this._c[3] > R) { // bottom left
-                let dx = px - this._c[3];
-                let dy = py - (this._h - this._c[3]);
-                let off = dx < 0 && dy > 0 && dx * dx + dy * dy > this._c[3] * this._c[3];
-                if (off)
-                    return 0;
-            }
-            return 1;
-        }
-        return 0;
-    }
     /** @hidden */
     _minControlSize() { return null; }
     /** @hidden */
     _updateControlVisual() { }
     /** @hidden */
-    // _handleMouse(e: MouseEvent): boolean { return false };
+    _doEvent(e, x = 0, y = 0, picked) { return this; }
     /** @hidden */
-    _doEvent(e, x, y, picked) { return null; }
-    /** @hidden */
-    _handleKey(e) { return true; }
-    ;
-    /** @hidden */
-    _handleTouch(e) { }
-    /** @hidden */
-    _processEvent(e, ...info) { }
+    _doKeyEvent(e) { return this; }
     /**
      * @param uib ui overlay buffer
      * @param pkb picker buffer
+     * @hidden
      */
-    _draw(uib, pkb) { }
+    _draw(uib = null, pkb = null) { }
     /** @hidden */
     _eq(a, b) {
         return Math.abs(a - b) < 0.001;
@@ -1580,44 +1498,6 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
-/**
- * Mixin for initialising mouse event data
- * @hidden
- */
-const processMouse = {
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let [mx, my, w, h] = this._orientation.xy(this._p.mouseX - pos.x, this._p.mouseY - pos.y, this._w, this._h);
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my, w, h);
-        return false;
-    }
-};
-/**
- * Mixin for initialising touch event data
- * @hidden
- */
-const processTouch = {
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let [mx, my, w, h] = this._orientation.xy(t.clientX - rect.left - pos.x, t.clientY - rect.top - pos.y, this._w, this._h);
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 5); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my, w, h);
-    }
-};
 //# sourceMappingURL=basecontrol.js.map
 /*
 ##############################################################################
@@ -1645,10 +1525,11 @@ class CvsBufferedControl extends CvsBaseControl {
         /** @hidden */ this._tooltip = undefined;
         /** @hidden */ this._part = 0;
         /** @hidden */ this._isOver = false;
-        /** @hidden */ this._active = false;
         this._validateControlBuffers();
     }
+    /** @hidden */
     get isOver() { return this._isOver; }
+    /** @hidden */
     set isOver(b) {
         if (b != this._isOver) {
             this._isOver = b;
@@ -1656,32 +1537,9 @@ class CvsBufferedControl extends CvsBaseControl {
         }
     }
     /**
-     * A control becomes active when the mouse button is pressed over it.
-     * This method has little practical use except when debugging.
-     * @hidden
-     * @returns true if this control is expecting more mouse events
-     */
-    isActive() {
-        return this._active;
-    }
-    // /**
-    //  * Deactivate this control
-    //  * @hidden
-    //  */
-    // _deactivate() {
-    //     this._isOver = false;
-    //     this.invalidateBuffer();
-    // }
-    // /**
-    //  * Activate this control if the user clicks on the control.
-    //  * @hidden
-    //  */
-    // _activate(selectAll: boolean = false) {
-    //     this._isOver = true;
-    //     this.invalidateBuffer();
-    // }
-    /**
      * Make sure we have a ui buffer and a pick buffer of the correct size
+     * for this control.
+     * @hidden
      */
     _validateControlBuffers() {
         if (!this._uiBfr || this._uiBfr.width != this._w || this._uiBfr.height != this._h) {
@@ -1725,6 +1583,7 @@ class CvsBufferedControl extends CvsBaseControl {
      *
      * @param uib ui overlay buffer
      * @param pkb picker buffer
+     * @hidden
      */
     _draw(uib, pkb) {
         this._validateBuffer();
@@ -1895,6 +1754,7 @@ class CvsSlider extends CvsBufferedControl {
             if ((value - this._limit0) * (value - this._limit1) <= 0) {
                 this.invalidateBuffer();
                 this._t01 = this._norm01(value);
+                // CLOG(`Slider setting value to ${value} _norm01 ${this._t01}  v2t ${this._v2t(value)}`)
                 return this;
             }
         }
@@ -1929,7 +1789,7 @@ class CvsSlider extends CvsBufferedControl {
      * @returns parametric value in range &ge;0 and &lt;1
      */
     _norm01(v, l0 = this._limit0, l1 = this._limit1) {
-        return this._p.constrain(this._p.map(v, l0, l1, 0, 1), 0, 1);
+        return this._p.map(v, l0, l1, 0, 1, true);
     }
     /**
      * <p>See if the position [px, py] is over the control.</p>
@@ -1948,13 +1808,14 @@ class CvsSlider extends CvsBufferedControl {
     }
     /** @hidden */
     _doEvent(e, x, y, picked) {
-        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        let absPos = this.getAbsXY();
+        let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 if (picked.part == 0) { // Thumb
-                    this._active = true;
-                    this._clickAllowed = true; // false if mouse moves
+                    this.isActive = true;
+                    // this._clickAllowed = true; // false if mouse moves
                     this._part = picked.part;
                     this.isOver = true;
                 }
@@ -1963,12 +1824,12 @@ class CvsSlider extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this._active = false;
+                this.isActive = false;
                 this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
@@ -1985,7 +1846,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
     /**
      * For a given value p01 find the value at the nearest tick
@@ -2059,6 +1920,7 @@ class CvsSlider extends CvsBufferedControl {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+    /** @hidden */
     _updateSliderPickBuffer(ty, tw, tH, tbX, tbSize) {
         tbX = Math.round(tbX);
         let c = this._gui.pickColor(this);
@@ -2113,8 +1975,6 @@ class CvsRanger extends CvsSlider {
      * @returns this control or the low/high values
      */
     range(v0, v1) {
-        // if (!v0 || !v1)
-        //   return { low: this._t2v(this._t[0]), high: this._t2v(this._t[1]) };
         if (Number.isFinite(v0) && Number.isFinite(v1)) { // If two numbers then
             let t0 = this._norm01(Math.min(v0, v1));
             let t1 = this._norm01(Math.max(v0, v1));
@@ -2146,28 +2006,14 @@ class CvsRanger extends CvsSlider {
         return undefined;
     }
     /** @hidden */
-    _whereOver(px, py, tol = 8) {
-        // Check vertical position  
-        let ty = this._uiBfr.height / 2;
-        if (Math.abs(py - ty) <= 8) {
-            let tw = this._uiBfr.width - 20;
-            let t = this._t;
-            px -= 10;
-            if (Math.abs(t[0] * tw - px) <= tol)
-                return 1;
-            if (Math.abs(t[1] * tw - px) <= tol)
-                return 2;
-        }
-        return 0;
-    }
-    /** @hidden */
     _doEvent(e, x, y, picked) {
-        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        let absPos = this.getAbsXY();
+        let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 if (picked.part == 0 || picked.part == 1) { // A thumb
-                    this._active = true;
+                    this.isActive = true;
                     this._tIdx = picked.part; // Which thumb is the mouse over
                     this.isOver = true;
                 }
@@ -2175,7 +2021,7 @@ class CvsRanger extends CvsSlider {
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     let t0 = Math.min(this._t[0], this._t[1]);
                     let t1 = Math.max(this._t[0], this._t[1]);
                     this._t[0] = t0;
@@ -2184,13 +2030,13 @@ class CvsRanger extends CvsSlider {
                     this.action({
                         source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
                     });
-                    this._active = false;
+                    this.isActive = false;
                     this.invalidateBuffer();
                 }
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
@@ -2210,59 +2056,7 @@ class CvsRanger extends CvsSlider {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
-    }
-    /** @hidden */
-    _processEvent(e, ...info) {
-        let mx = info[0];
-        this._tIdx = this._active ? this._tIdx : this._over - 1;
-        switch (e.type) {
-            case 'mousedown':
-            case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
-                    this._tIdx = this._over - 1; // Which thumb is the mouse over
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseout':
-            case 'mouseup':
-            case 'touchend':
-                if (this._active) {
-                    let t0 = Math.min(this._t[0], this._t[1]);
-                    let t1 = Math.max(this._t[0], this._t[1]);
-                    this._t[0] = t0;
-                    this._t[1] = t1;
-                    this._tIdx = -1;
-                    this.action({
-                        source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
-                    });
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mousemove':
-            case 'touchmove':
-                if (this._active) {
-                    let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
-                    if (this._s2ticks)
-                        t01 = this._nearestTickT(t01);
-                    if (this._t[this._tIdx] != t01) {
-                        this._t[this._tIdx] = t01;
-                        let t0 = Math.min(this._t[0], this._t[1]);
-                        let t1 = Math.max(this._t[0], this._t[1]);
-                        this.action({
-                            source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
-                        });
-                    }
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseover':
-                break;
-            case 'wheel':
-                break;
-        }
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -2318,7 +2112,7 @@ class CvsRanger extends CvsSlider {
         for (let tnbr = 0; tnbr < 2; tnbr++) {
             uib.fill(THUMB);
             uib.noStroke();
-            if ((this._active || this.isOver) && tnbr == this._tIdx) {
+            if ((this.isActive || this.isOver) && tnbr == this._tIdx) {
                 uib.strokeWeight(2);
                 uib.stroke(HIGHLIGHT);
             }
@@ -2331,6 +2125,7 @@ class CvsRanger extends CvsSlider {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+    /** @hidden */
     _updateRangerPickBuffer(ty, tw, tH, tx0, tx1, tbSize) {
         tx0 = Math.round(tx0);
         tx1 = Math.round(tx1);
@@ -2354,7 +2149,6 @@ class CvsRanger extends CvsSlider {
         pkb.pop();
     }
 }
-Object.assign(CvsRanger.prototype, processMouse, processTouch);
 //# sourceMappingURL=ranger.js.map
 /**
  * </p>The base class for any control that displays text as part of its
@@ -2650,7 +2444,7 @@ class CvsButton extends CvsTextIcon {
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
-        if (this._opaque) { // Background ?
+        if (this._opaque) {
             uib.noStroke();
             uib.fill(BACK);
             uib.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
@@ -2710,9 +2504,9 @@ class CvsButton extends CvsTextIcon {
         // Update pick buffer before restoring
         this._updateRectControlPB();
         uib.pop();
-        // last line in this method should be
+        // The last line in this method should be
         this._bufferInvalid = false;
-        // Finally if this is a Pane tab then must validate the tabs
+        // but if this is a pane-tab then must validate the tabs
         if (this._parent instanceof CvsPane)
             this._parent.validateTabs();
     }
@@ -2721,7 +2515,7 @@ class CvsButton extends CvsTextIcon {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
+                this.isActive = true;
                 this._clickAllowed = true; // false if mouse moves
                 this._part = picked.part;
                 this.isOver = true;
@@ -2729,10 +2523,10 @@ class CvsButton extends CvsTextIcon {
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     if (this._clickAllowed)
                         this.action({ source: this, p5Event: e });
-                    this._active = false;
+                    this.isActive = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }
@@ -2747,7 +2541,7 @@ class CvsButton extends CvsTextIcon {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
 }
 //# sourceMappingURL=button.js.map
@@ -2897,8 +2691,9 @@ class CvsTooltip extends CvsText {
  */
 class CvsScroller extends CvsBufferedControl {
     /** @hidden */
-    constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 20);
+    constructor(gui, name, x = 0, y = 0, w = 100, h = 20) {
+        super(gui, name, x, y, w, h);
+        // All values are in the range 0-1
         /** @hidden */ this._value = 0.5;
         /** @hidden */ this._dvalue = 0.5;
         /** @hidden */ this._used = 0.1;
@@ -2907,31 +2702,37 @@ class CvsScroller extends CvsBufferedControl {
         /** @hidden */ this._s_mx = 0.5;
         /** @hidden */ this._minV = this._used / 2;
         /** @hidden */ this._maxV = 1 - this._used / 2;
-        /** @hidden */ this._BORDER = 10;
-        /** @hidden */ this._THEIGHT = 8;
-        /** @hidden */ this._THUMB_HEIGHT = 12;
-        /** @hidden */ this._MIN_THUMB_WIDTH = 10;
-        this._TLENGTH = this._w - 3 * this._BORDER;
+        /** @hidden */ this._inset = 2;
+        /** @hidden */ this._trackHeight = 8;
+        /** @hidden */ this._thumbHeight = 12;
+        /** @hidden */ this._minThumbWidth = 10;
+        this._trackWidth = w - 2 * this._inset;
         this._c = gui.corners();
         this._opaque = false;
     }
-    update(v, u) {
-        // If a used value is available then set it
-        if (Number.isFinite(u) && u !== this._used) {
-            this._used = u;
+    /**
+     * Update the scroller from an external source.
+     *
+     * @param value The scroller position (0-1)
+     * @param used The amount 'used' by the source
+     */
+    update(value, used) {
+        // If a used value is available then use it
+        if (Number.isFinite(used) && used !== this._used) {
+            this._used = used;
             this._minV = this._used / 2;
             this._maxV = 1 - this._used / 2;
             this.invalidateBuffer();
         }
-        if (Number.isFinite(v) && v !== this._value) {
-            v = this._p.constrain(v, 0, 1);
-            let dv = v, u2 = this._used / 2;
-            if (v < u2)
+        if (Number.isFinite(value) && value !== this._value) {
+            value = this._p.constrain(value, 0, 1);
+            let dv = value, u2 = this._used / 2;
+            if (value < u2)
                 dv = u2;
-            else if (v > 1 - u2)
+            else if (value > 1 - u2)
                 dv = 1 - u2;
-            if (this._value != v || this._dvalue != dv) {
-                this._value = v;
+            if (this._value != value || this._dvalue != dv) {
+                this._value = value;
                 this._dvalue = dv;
                 this.invalidateBuffer();
             }
@@ -2944,43 +2745,36 @@ class CvsScroller extends CvsBufferedControl {
         return this._used;
     }
     /** @hidden */
-    _whereOver(px, py, tol = 20) {
-        let tx = this._BORDER + this._dvalue * this._TLENGTH;
-        let ty = this._h / 2;
-        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
-        if (Math.abs(tx - px) <= thumbSizeX / 2 && Math.abs(ty - py) <= tol / 2) {
-            return 1;
-        }
-        return 0;
-    }
-    /** @hidden */
-    _processEvent(e, ...info) {
-        let mx = info[0];
+    _doEvent(e, x, y, picked) {
+        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        let [tw, halfUsed] = [this._trackWidth, this._used / 2];
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
+                if (picked.part == 0) { // Thumb
+                    this.isActive = true;
+                    this._part = picked.part;
                     this._s_value = this._value;
                     this._s_mx = mx;
-                    this.invalidateBuffer();
+                    this.isOver = true;
                 }
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
-                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
+                this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
+                this.isActive = false;
+                this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
-                    let delta = (mx - this._s_mx) / this._TLENGTH;
-                    this.update(this._s_value + delta);
-                    this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
+                if (this.isActive) {
+                    let newValue = this._s_value + (mx - this._s_mx) / tw;
+                    if (newValue - halfUsed >= 0 && newValue + halfUsed <= 1) {
+                        this.update(newValue);
+                        this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
+                    }
+                    this.isOver = (this == picked.control);
                     this.invalidateBuffer();
                 }
                 break;
@@ -2989,50 +2783,54 @@ class CvsScroller extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
         let cs = this._scheme || this._gui.scheme();
         const OPAQUE = cs['C_3'];
-        const TICKS = cs['G_8'];
+        const BORDER = cs['G_8'];
         const UNUSED_TRACK = cs['G_3'];
         const HIGHLIGHT = cs['C_9'];
         const THUMB = cs['C_5'];
-        let thumbSizeX = Math.max(this._used * this._TLENGTH, this._MIN_THUMB_WIDTH);
-        let thumbSizeY = this._THUMB_HEIGHT;
-        let tx = this._dvalue * this._TLENGTH;
+        let [w, h, inset, used] = [this._w, this._h, this._inset, this._used];
+        let [tx0, tx1] = [inset, w - inset];
+        let [tw, th] = [this._trackWidth, this._trackHeight];
+        let tbW = Math.max(used * tw, this._minThumbWidth);
+        let tbH = this._thumbHeight;
+        let tx = this._dvalue * this._trackWidth;
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
         if (this._opaque) {
             uib.noStroke();
             uib.fill(OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...this._c);
+            uib.rect(0, 0, w, h, ...this._c);
         }
         // Now translate to track left edge - track centre
-        uib.translate(this._BORDER, uib.height / 2);
+        uib.translate(inset, this._uiBfr.height / 2);
         // draw track
         uib.fill(UNUSED_TRACK);
-        uib.stroke(TICKS);
+        uib.stroke(BORDER);
         uib.strokeWeight(1);
-        uib.rect(0, -this._THEIGHT / 2, this._TLENGTH, this._THEIGHT);
+        uib.rect(0, -th / 2, tw, th);
         // Draw thumb
         uib.fill(THUMB);
         uib.noStroke();
-        if (this._active || this._over > 0) {
+        if (this.isActive || this.isOver) {
             uib.strokeWeight(2);
             uib.stroke(HIGHLIGHT);
         }
-        uib.rect(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY, ...this._c);
+        uib.rect(tx - tbW / 2, -tbH / 2, tbW, tbH, ...this._c);
         if (!this._enabled)
-            this._disable_hightlight(uib, cs, 0, -this._h / 2, this._w - 20, this._h);
-        this._updateScrollerPickBuffer(tx - thumbSizeX / 2, -thumbSizeY / 2, thumbSizeX, thumbSizeY);
+            this._disable_hightlight(uib, cs, 0, -h / 2, w - 20, h);
+        this._updateScrollerPickBuffer(tx - tbW / 2, -tbH / 2, tbW, tbH);
         uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }
     /** @hidden */
-    _updateScrollerPickBuffer(tx, ty, tw, th) {
+    _updateScrollerPickBuffer(tbX, tby, tbw, tbh) {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
         pkb.push();
@@ -3040,8 +2838,8 @@ class CvsScroller extends CvsBufferedControl {
         pkb.noStroke();
         pkb.fill(c.r, c.g, c.b);
         // Now translate to track left edge - track centre
-        pkb.translate(this._BORDER, 0); //pkb.height / 2);
-        pkb.rect(Math.round(tx), Math.round((pkb.height - th) / 2), tw, th);
+        pkb.translate(this._inset, this._pkBfr.height / 2);
+        pkb.rect(Math.round(tbX), Math.round(tby), tbw, tbh);
         pkb.pop();
     }
     /** @hidden */
@@ -3049,13 +2847,13 @@ class CvsScroller extends CvsBufferedControl {
         return { w: this._w, h: 20 };
     }
 }
-Object.assign(CvsScroller.prototype, processMouse, processTouch);
 //# sourceMappingURL=scroller.js.map
 /**
  * <p>The option group manages a group of option buttons where only one can
  * be selected at any time.</p>
  * <p>The user should <i>not</i> create instances of this class because the library
  * will make them when needed.</p>
+ * @hidden
  */
 class CvsOptionGroup {
     /** @hidden */
@@ -3169,7 +2967,7 @@ class CvsOption extends CvsText {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
+                this.isActive = true;
                 this._clickAllowed = true; // false if mouse moves
                 this._part = picked.part;
                 this.isOver = true;
@@ -3177,7 +2975,7 @@ class CvsOption extends CvsText {
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     if (this._clickAllowed && !this._selected) {
                         if (this._optGroup) {
                             // If we have an opt group then use it to replace 
@@ -3186,7 +2984,7 @@ class CvsOption extends CvsText {
                             this.action({ source: this, p5Event: e, selected: true });
                         }
                     }
-                    this._active = false;
+                    this.isActive = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }
@@ -3201,7 +2999,7 @@ class CvsOption extends CvsText {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -3329,7 +3127,7 @@ class CvsCheckbox extends CvsText {
         return this;
     }
     /**
-     * <p>Make this checkbox true</p>
+     * <p>Select this checkbox making it 'true'</p>
      * @returns this control
      */
     select() {
@@ -3340,7 +3138,7 @@ class CvsCheckbox extends CvsText {
         return this;
     }
     /**
-     * <p>Make this checkbox false</p>
+     * <p>Deelect this checkbox making it 'false'</p>
      * @returns this control
      */
     deselect() {
@@ -3352,31 +3150,31 @@ class CvsCheckbox extends CvsText {
     }
     /**
      * Get the state of the checkbox.
-     * @returns true if this checkbox is selecetd
+     * @returns true if this checkbox is selecd
      */
     isSelected() {
         return this._selected;
     }
     /** @hidden */
     _doEvent(e, x, y, picked) {
-        // CLOG(`Checkbox doEvent  ${e.type}   ID: ${picked.control?.id}`);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
-                this._clickAllowed = true; // false if mouse moves
+                this.isActive = true;
+                // will be set to false if the mouse is dragged
+                this._clickAllowed = true;
                 this._part = picked.part;
                 this.isOver = true;
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     if (this._clickAllowed) {
                         this._selected = !this._selected;
                         this.action({ source: this, p5Event: e, selected: this._selected });
                     }
-                    this._active = false;
+                    this.isActive = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }
@@ -3391,7 +3189,7 @@ class CvsCheckbox extends CvsText {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -3462,6 +3260,7 @@ class CvsCheckbox extends CvsText {
         }
         if (!this._enabled)
             this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
+        // Update pick buffer before restoring
         this._updateRectControlPB();
         uib.pop();
         // last line in this method should be
@@ -3508,6 +3307,7 @@ class CvsViewer extends CvsBufferedControl {
         super(gui, name, x, y, w, h);
         /** @hidden */ this._layers = [];
         /** @hidden */ this._hidden = new Set();
+        // Layer width and height (pixels)
         /** @hidden */ this._lw = 0;
         /** @hidden */ this._lh = 0;
         /** @hidden */ this._wcx = 0;
@@ -3515,37 +3315,15 @@ class CvsViewer extends CvsBufferedControl {
         /** @hidden */ this._wscale = 1;
         /** @hidden */ this._usedX = 0;
         /** @hidden */ this._usedY = 0;
+        /** @hidden */ this._scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
+        // this._value, used: this._used,
         /** @hidden */ this._frameWeight = 0;
-        /** @hidden */
-        this._handleMouse = function (e) {
-            let pos = this.getAbsXY();
-            let mx = this._p.mouseX - pos.x;
-            let my = this._p.mouseY - pos.y;
-            this._pover = this._over; // Store previous mouse over state
-            this._over = this._whereOver(mx, my); // Store current mouse over state
-            this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-            if (this._tooltip)
-                this._tooltip._updateState(this, this._pover, this._over);
-            // Hide scaler unless mouse is close to centre
-            if (this._scaler)
-                this._over == 2 ? this._scaler.show() : this._scaler.hide();
-            if (this._over >= 1) {
-                this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
-                this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
-            }
-            else {
-                this._scrH.hide();
-                this._scrV.hide();
-            }
-            this._processEvent(e, mx, my);
-            return false;
-        };
-        this._scrH = gui.__scroller(this._id + "-scrH", 0, h - 20, w, 20).hide()
+        this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
             .setAction((info) => {
             this.view(info.value * this._lw, this._wcy);
             this.invalidateBuffer();
         });
-        this._scrV = gui.__scroller(this._id + "-scrV", w - 20, 0, h, 20).orient('south').hide()
+        this._scrV = gui.__scroller(this._id + "-scrV", w - 24, 4, h - 28, 20).orient('south').hide()
             .setAction((info) => {
             this.view(this._wcx, info.value * this._lh);
             this.invalidateBuffer();
@@ -3568,13 +3346,20 @@ class CvsViewer extends CvsBufferedControl {
             let value = this._p.constrain(v, low, high);
             // If we don't have a scaler then create it
             if (!this._scaler) {
-                this._scaler = this._gui.slider(this._id + "-scaler", 0.25 * this._w, 0.5 * this._h - 10, 0.5 * this._w, 20)
+                let [w, h] = [this._w, this._h];
+                let sclrX = 0.25 * w, sclrY = 0.5 * h - 10;
+                let sclrW = 0.5 * w, sclrH = 20;
+                this._scaler = this._gui.slider(this._id + "-scaler", sclrX, sclrY, sclrW, sclrH)
                     .hide()
                     .setAction((info) => {
-                    this.scale(info.value);
+                    this._wscale = info.value;
                     this.invalidateBuffer();
                 });
                 this.addChild(this._scaler);
+                this._scalerZone = {
+                    x0: 0.15 * w, y0: 0.4 * h - 10,
+                    x1: 0.85 * w, y1: 0.6 * h + 10
+                };
             }
             // Now update the scroller
             this._scaler.limits(low, high);
@@ -3695,10 +3480,7 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     layers(img) {
-        if (Array.isArray(img))
-            this._layers = Array.from(img);
-        else
-            this._layers[0] = img;
+        this._layers = Array.isArray(img) ? Array.from(img) : [img];
         // Make all layers the same size as the first one
         let lw = this._lw = this._layers[0].width;
         let lh = this._lh = this._layers[0].height;
@@ -3724,85 +3506,71 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /** @hidden */
-    _whereOver(px, py) {
-        if (px > this._w - 20 && px < this._w && py > 0 && py < this._h - 20)
-            return 3; // over vertical scroller
-        if (px > 0 && px < this._w - 20 && py > this._h - 20 && py < this._h)
-            return 3; // over horizontal scroller
-        let w = this._w, w0 = 0.2 * w, w1 = 0.8 * w;
-        let h = this._h, h0 = 0.35 * h, h1 = 0.65 * h;
-        if (this._scaler && px > w0 && px < w1 && py > h0 && py < h1)
-            return 2; //over slider make visible area
-        if (px > 0 && px < w && py > 0 && py < h)
-            return 1;
-        return 0;
+    shrink(dim) {
+        console.warn("Cannot 'shrink' a viewer");
+        return this;
     }
     /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        // Hide scaler unless mouse is close to centre
-        if (this._scaler)
-            this._over == 2 ? this._scaler.show() : this._scaler.hide();
-        if (this._over >= 1) {
-            this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
-            this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
-        }
-        else {
-            this._scrH.hide();
-            this._scrV.hide();
-        }
-        this._processEvent(e, mx, my);
+    orient(dir) {
+        console.warn(`Changing orientation of a viewer is not allowed !!!`);
+        return this;
     }
     /** @hidden */
-    _processEvent(e, ...info) {
-        let mx = info[0], my = info[1];
+    _doEvent(e, x, y, picked) {
+        let absPos = this.getAbsXY();
+        let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
+        this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over == 1) {
-                    // Use these to see if there is movement between mouseDown and mouseUp
-                    this._clickAllowed = false;
-                    this._dragging = true;
-                    this._active = true;
-                    this.invalidateBuffer();
-                    // Remember starting values
-                    this._mx0 = this._pmx = mx;
-                    this._my0 = this._pmy = my;
-                    this._dcx = this._wcx;
-                    this._dcy = this._wcy;
-                }
+                this.isActive = true;
+                this.isOver = true;
+                this._dragging = true;
+                // Remember starting values
+                this._mx0 = this._pmx = mx;
+                this._my0 = this._pmy = my;
+                this._dcx = this._wcx;
+                this._dcy = this._wcy;
+                this._scrH.show();
+                this._scrV.show();
+                this.invalidateBuffer();
                 break;
             case 'mouseout':
                 this._scrH.hide();
                 this._scrV.hide();
-                if (this._active) {
-                    this._over = 0;
-                    this._clickAllowed = false;
-                }
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
-                    this._dragging = false;
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
+                this.action({
+                    source: this, p5Event: undefined,
+                    cX: this._wcx, cY: this._wcy, scale: this._wscale
+                });
+                this.isActive = false;
+                this._dragging = false;
+                this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active && this._dragging) {
-                    if (this._scaler)
-                        this._scaler.hide();
-                    this._validateMouseDrag(this._dcx + (this._mx0 - mx) / this._wscale, this._dcy + (this._my0 - my) / this._wscale);
+                // this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
+                if (this.isOver) {
+                    if (this._dragging) {
+                        this._scaler?.hide();
+                        this._validateMouseDrag(this._dcx + (this._mx0 - mx) / this._wscale, this._dcy + (this._my0 - my) / this._wscale);
+                        this.invalidateBuffer();
+                    }
+                    else if (this._scaler) {
+                        let a = this._scalerZone;
+                        let v = mx >= a.x0 && mx <= a.x1 && my >= a.y0 && my <= a.y1;
+                        if (v)
+                            this._scaler.show();
+                        else
+                            this._scaler.hide();
+                    }
+                    this._scrH.show();
+                    this._scrV.show();
+                }
+                else {
+                    this._scrH.hide();
+                    this._scrV.hide();
                 }
                 break;
             case 'mouseover':
@@ -3810,6 +3578,7 @@ class CvsViewer extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
+        return this.isOver ? this : null;
     }
     /** @hidden */
     _validateMouseDrag(ncx, ncy) {
@@ -3841,15 +3610,11 @@ class CvsViewer extends CvsBufferedControl {
         this.invalidateBuffer();
     }
     /** @hidden */
-    _xor(a, b) {
-        return (a || b) && !(a && b);
-    }
-    /** @hidden */
     _updateControlVisual() {
         let cs = this._scheme || this._gui.scheme();
-        let ws = this._wscale;
-        let wcx = this._wcx;
-        let wcy = this._wcy;
+        let p = this._p;
+        let [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
+        let [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
         const OPAQUE = cs['C_2'];
         const FRAME = cs['C_7'];
         let uib = this._uiBfr;
@@ -3859,12 +3624,12 @@ class CvsViewer extends CvsBufferedControl {
         else
             uib.clear();
         // Get corners of requested view
-        let ww2 = Math.round(0.5 * this._w / ws);
-        let wh2 = Math.round(0.5 * this._h / ws);
-        let o = this._overlap(0, 0, this._lw, this._lh, // image corners
+        let ww2 = Math.round(0.5 * w / ws);
+        let wh2 = Math.round(0.5 * h / ws);
+        let o = this._overlap(0, 0, lw, lh, // image corners
         wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2); // world corners
-        let [x, y] = [Math.round(o.offsetX * ws), Math.round(o.offsetY * ws)];
-        let [w, h] = [Math.round(o.width * ws), Math.round(o.height * ws)];
+        let [ox, oy] = [Math.round(o.offsetX * ws), Math.round(o.offsetY * ws)];
+        let [ow, oh] = [Math.round(o.width * ws), Math.round(o.height * ws)];
         // If we have an offset then calculate the view image 
         if (o.valid) { // Calculate display offset
             for (let i = 0, len = this._layers.length; i < len; i++) {
@@ -3872,7 +3637,7 @@ class CvsViewer extends CvsBufferedControl {
                     // Get view image and adjust for scale
                     let view = this._layers[i].get(o.left, o.top, o.width, o.height);
                     if (Math.abs(ws - 1) > 0.01)
-                        view.resize(w, h);
+                        view.resize(ow, oh);
                     uib.image(view, o.offsetX * ws, o.offsetY * ws, view.width, view.height);
                 }
             }
@@ -3883,7 +3648,7 @@ class CvsViewer extends CvsBufferedControl {
             uib.strokeWeight(this._frameWeight);
             uib.rect(0, 0, uib.width, uib.height);
         }
-        this._updateViewerPickBuffer(x, y, w, h);
+        this._updateViewerPickBuffer(ox, oy, ow, oh);
         uib.pop();
     }
     /** @hidden */
@@ -3932,14 +3697,8 @@ class CvsViewer extends CvsBufferedControl {
         };
     }
     /** @hidden */
-    shrink(dim) {
-        console.warn("Cannot change 'shrink' a viewer");
-        return this;
-    }
-    /** @hidden */
-    orient(dir) {
-        console.warn(`Cannot change orientation of a viewer to ${dir}`);
-        return this;
+    _xor(a, b) {
+        return (a || b) && !(a && b);
     }
     /** @hidden */
     _minControlSize() {
@@ -3984,6 +3743,7 @@ class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        /** @hidden */ this._nextActive = null;
         /** @hidden */ this._linkOffset = 0;
         /** @hidden */ this._prevCsrIdx = 0;
         /** @hidden */ this._currCsrIdx = 0;
@@ -3994,7 +3754,6 @@ class CvsTextField extends CvsText {
     }
     /**
      * Set a unique index number for this text field.
-     *
      *
      * @param idx unique index number
      * @param deltaIndex relative link when using up/down arrow keys
@@ -4134,10 +3893,11 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _deactivate() {
-        this._active = false;
+        this.isActive = false;
         this._cursorOn = false;
         clearInterval(this._clock);
         this.invalidateBuffer();
+        this._nextActive = null;
     }
     /**
      * Activate this control to receive keyboard events. Occurs if the user
@@ -4145,16 +3905,19 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _activate(selectAll = false) {
-        this._active = true;
+        this.isActive = true;
         let line = this._getLine();
         this._currCsrIdx = line.length;
         this._prevCsrIdx = selectAll || this._textInvalid ? 0 : line.length;
         this._cursorOn = true;
+        // Clear any existing interval before creating a new one
+        clearInterval(this._clock);
         this._clock = setInterval(() => {
             this._cursorOn = !this._cursorOn;
             this.invalidateBuffer();
         }, 550);
         this.invalidateBuffer();
+        this._nextActive = this;
     }
     /**
      * Called when this control passes focus to a new control.
@@ -4163,15 +3926,17 @@ class CvsTextField extends CvsText {
     _activateNext(offset) {
         this._deactivate();
         this._validate();
-        let links = this._gui._links;
+        let links = this._gui._links, ctrl = null;
         if (links) {
-            let idx = this._linkIndex, ctrl;
+            let idx = this._linkIndex;
             do {
                 idx += offset;
                 ctrl = links.get(idx);
             } while (ctrl && (!ctrl.isEnabled() || !ctrl.isVisible()));
             ctrl?._activate();
+            this.invalidateBuffer();
         }
+        this._nextActive = ctrl;
     }
     /**
      * We are only interested in the first line of text
@@ -4189,23 +3954,9 @@ class CvsTextField extends CvsText {
         return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
     }
     /** @hidden */
-    _processEvent(e, ...info) {
-        switch (e.type) {
-            case 'mousedown':
-                if (this._over > 0)
-                    this._activate();
-                break;
-        }
-    }
-    /** @hidden */
-    _maxTextWidthPixels() {
-        let ts = Number(this._textSize || this._gui.textSize());
-        return this._w - (2 * this._gap) - ts / 2; // maximun text width in pixels
-    }
-    /** @hidden */
-    _handleKey(e) {
-        // let ts = Number(this._textSize || this._gui.textSize());
-        let mtw = this._maxTextWidthPixels(); // maximun text width in pixels
+    _doKeyEvent(e) {
+        this._nextActive = this;
+        let mtw = this._maxTextWidthPixels(); // maximum text width in pixels
         let line = this._getLine(); // get text
         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
@@ -4224,13 +3975,13 @@ class CvsTextField extends CvsText {
                     this._lines[0] = line;
                 }
                 this.invalidateBuffer();
-                return true;
             }
             switch (e.key) {
                 case 'ArrowLeft':
                     if (tabLeft) {
                         this._activateNext(-1);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     else {
                         if (this._currCsrIdx > 0) {
@@ -4246,7 +3997,8 @@ class CvsTextField extends CvsText {
                 case 'ArrowRight':
                     if (tabRight) {
                         this._activateNext(1);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     else {
                         if (this._currCsrIdx <= line.length) {
@@ -4263,20 +4015,22 @@ class CvsTextField extends CvsText {
                     if (!hasSelection) {
                         if (this._linkOffset !== 0)
                             this._activateNext(-this._linkOffset);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     break;
                 case 'ArrowDown':
                     if (!hasSelection) {
                         if (this._linkOffset !== 0)
                             this._activateNext(this._linkOffset);
-                        this.action({ source: this, p5Event: e, value: line });
+                        this._validate();
+                        this.action({ source: this, p5Event: e, value: this._getLine() });
                     }
                     break;
                 case 'Enter':
                     this._deactivate();
                     this._validate();
-                    this.action({ source: this, p5Event: e, value: line });
+                    this.action({ source: this, p5Event: e, value: this._getLine() });
                     break;
                 case 'Backspace':
                     if (this._prevCsrIdx != this._currCsrIdx) {
@@ -4305,9 +4059,27 @@ class CvsTextField extends CvsText {
                 default:
             }
             this.invalidateBuffer();
-            return false;
+        } // End of key down
+        return this._nextActive;
+    }
+    /** @hidden */
+    _doEvent(e, x, y, picked) {
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                this._activate();
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                this.isOver = (this == picked.control);
+                break;
         }
-        return true;
+        return this._nextActive;
+    }
+    /** @hidden */
+    _maxTextWidthPixels() {
+        let ts = Number(this._textSize || this._gui.textSize());
+        return this._w - (2 * this._gap) - ts / 2; // maximun text width in pixels
     }
     /**
      * Remove any user selected text
@@ -4332,7 +4104,7 @@ class CvsTextField extends CvsText {
         uib.textSize(ts);
         uib.background(cs['G_0']); // white background
         uib.noStroke();
-        if (!this._active) { // Colors depend on whether text is valid
+        if (!this.isActive) { // Colors depend on whether text is valid
             BACK = tiv ? cs['C_9'] : cs['C_1'];
             FORE = tiv ? cs['C_3'] : cs['C_9'];
             uib.stroke(FORE);
@@ -4365,7 +4137,7 @@ class CvsTextField extends CvsText {
             uib.line(sx + cx, 4, sx + cx, this._h - 5);
         }
         // Mouse over highlight
-        if (this._over > 0) {
+        if (this.isOver) {
             uib.stroke(HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
@@ -4380,7 +4152,6 @@ class CvsTextField extends CvsText {
         this._bufferInvalid = false;
     }
 }
-Object.assign(CvsTextField.prototype, processMouse, processTouch);
 //# sourceMappingURL=textfield.js.map
 /**
  * <p>This class simulates a multi-mode joystick. Each of the three possible
@@ -4482,22 +4253,6 @@ class CvsJoystick extends CvsBufferedControl {
         return this;
     }
     /**
-     * <p>See if the position [px, py] is over the control.</p>
-     * @hidden
-     * @param px horizontal position
-     * @param py vertical position
-     * @param tol tolerance in pixels
-     * @returns 0 if not over the control of &ge;1
-     */
-    _whereOver(px, py, tol = this._tSize) {
-        // adjust position to centre of knob
-        px -= this._w / 2;
-        py -= this._h / 2;
-        let [tx, ty] = this._getThumbXY();
-        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
-            ? 1 : 0;
-    }
-    /**
      * Converts the polar position to cartesian cooordinates.
      * @hidden
      */
@@ -4545,7 +4300,7 @@ class CvsJoystick extends CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
+                this.isActive = true;
                 this._part = picked.part;
                 this.isOver = true;
                 break;
@@ -4554,7 +4309,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'touchend':
                 this._validateThumbPosition(mx, my);
                 this.action(getValue(this, e, true));
-                this._active = false;
+                this.isActive = false;
                 this.invalidateBuffer();
                 if (!this._tmrID)
                     this._tmrID = setInterval(() => {
@@ -4569,7 +4324,7 @@ class CvsJoystick extends CvsBufferedControl {
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     this._validateThumbPosition(mx, my);
                     this.action(getValue(this, e, false));
                 }
@@ -4581,62 +4336,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
-    }
-    /** @hidden */
-    _processEvent(e, ...info) {
-        /** @hidden */
-        function getValue(source, event, fini) {
-            let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
-            return {
-                source: source, p5Event: event, final: fini, mag: mag,
-                angle: source._ang, dir: source._dir, dead: source._dead,
-            };
-        }
-        let mx = info[0], my = info[1];
-        mx -= this._w / 2;
-        my -= this._h / 2;
-        switch (e.type) {
-            case 'mousedown':
-            case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseout':
-            case 'mouseup':
-            case 'touchend':
-                if (this._active) {
-                    this._validateThumbPosition(mx, my);
-                    this.action(getValue(this, e, true));
-                    this._active = false;
-                    this.invalidateBuffer();
-                    if (!this._tmrID)
-                        this._tmrID = setInterval(() => {
-                            this._mag -= 0.07 * this._size;
-                            if (this._mag <= 0) {
-                                clearInterval(this._tmrID);
-                                this._tmrID = undefined;
-                                this._mag = 0;
-                            }
-                            this.invalidateBuffer();
-                        }, 25);
-                }
-                break;
-            case 'mousemove':
-            case 'touchmove':
-                if (this._active) {
-                    this._validateThumbPosition(mx, my);
-                    this.action(getValue(this, e, false));
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseover':
-                break;
-            case 'wheel':
-                break;
-        }
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -4727,7 +4427,7 @@ class CvsJoystick extends CvsBufferedControl {
         // Thumb
         uib.strokeWeight(2);
         uib.stroke(THUMB_STROKE);
-        if (this._active || this._over > 0)
+        if (this.isActive || this._over > 0)
             uib.fill(THUMB_OVER);
         else
             uib.fill(THUMB_OFF);
@@ -4737,6 +4437,7 @@ class CvsJoystick extends CvsBufferedControl {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+    /** @hidden */
     _updateJoystickPickBuffer(tx, ty, tSize) {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
@@ -4749,7 +4450,6 @@ class CvsJoystick extends CvsBufferedControl {
         pkb.pop();
     }
 }
-Object.assign(CvsJoystick.prototype, processMouse, processTouch);
 //# sourceMappingURL=joystick.js.map
 /**
  * <p>This class represents a turnable knob with a surrounding status track
@@ -4923,7 +4623,7 @@ class CvsKnob extends CvsSlider {
             case 'touchstart':
                 this._prevX = mx;
                 this._prevY = my;
-                this._active = true;
+                this.isActive = true;
                 this.isOver = true;
                 this.invalidateBuffer();
                 break;
@@ -4933,12 +4633,12 @@ class CvsKnob extends CvsSlider {
                 next = this._tFromXY(mx, my);
                 this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this._active = false;
+                this.isActive = false;
                 this.invalidateBuffer();
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     next = this._tFromXY(mx, my);
                     let t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
                     if (this._t01 != t01) {
@@ -4956,23 +4656,7 @@ class CvsKnob extends CvsSlider {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
-    }
-    /**
-     * <p>See if the position [px, py] is over the control.</p>
-     * @hidden
-     * @param px horizontal position
-     * @param py vertical position
-     * @param tol knob radius tolerance in pixels
-     * @returns 1 if over any part of the knob otherwise return 0
-     */
-    _whereOver(px, py, tol = 0) {
-        // adjust position to centre of knob
-        px -= this._w / 2;
-        py -= this._h / 2;
-        let d2 = px * px + py * py;
-        let rt = this._kRad + tol;
-        return d2 <= rt * rt ? 1 : 0;
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -5073,6 +4757,7 @@ class CvsKnob extends CvsSlider {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+    /** @hidden */
     _updateKnobPickBuffer(dOut) {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
@@ -5202,14 +4887,12 @@ class CvsPane extends CvsBaseControl {
         }
     }
     /**
-     *
      * @returns true if the pane is open else false
      */
     isOpen() {
         return this._status == 'open';
     }
     /**
-     *
      * @returns true if the pane is opening else false
      */
     isOpening() {
@@ -5251,9 +4934,6 @@ class CvsPane extends CvsBaseControl {
                 if (c._visible)
                     c._draw(uib, pkb);
         }
-        // Display children
-        // for (let c of this._children)
-        //     if (c._visible) c._draw(uib, pkb);
         pkb.pop();
         uib.pop();
     }
@@ -5314,15 +4994,6 @@ class CvsPane extends CvsBaseControl {
     shrink(dim) {
         return this.tab().shrink();
     }
-    /**
-     * A control becomes active when the mous btton is pressed over it.
-     * This method has little practical use except when debugging.
-     * @hidden
-     * @returns true if this control is expecting more mouse events
-     */
-    isActive() {
-        return this.tab()._active;
-    }
     /** @hidden */
     opaque(dim) {
         console.warn("This method is not applicable to a pane");
@@ -5335,11 +5006,10 @@ class CvsPane extends CvsBaseControl {
     }
     /** @hidden */
     orient(dir) {
-        console.warn(`Cannot change orientation of a pane}`);
+        console.warn(`Changing orientation of a pane is not allowed !!!`);
         return this;
     }
     /**
-     *
      * @returns the tab button
      */
     tab() {
@@ -5588,8 +5258,6 @@ class CvsPaneWest extends CvsPane {
  * we do that the array elements becomes <code>[0.2, 0.48, 0.32]</code> and
  * to find the column pixel widths, simply multiply these values by grid area
  * width.</p>
- *
- * @since 1.1.0
  */
 class GridLayout {
     /**

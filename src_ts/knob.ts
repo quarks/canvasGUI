@@ -186,7 +186,7 @@ class CvsKnob extends CvsSlider {
             case 'touchstart':
                 this._prevX = mx;
                 this._prevY = my;
-                this._active = true;
+                this.isActive = true;
                 this.isOver = true;
                 this.invalidateBuffer();
                 break;
@@ -196,12 +196,12 @@ class CvsKnob extends CvsSlider {
                 next = this._tFromXY(mx, my);
                 this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this._active = false;
+                this.isActive = false;
                 this.invalidateBuffer();
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     next = this._tFromXY(mx, my);
                     let t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
                     if (this._t01 != t01) {
@@ -219,23 +219,7 @@ class CvsKnob extends CvsSlider {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
-    }
-
-    /**
-     * <p>See if the position [px, py] is over the control.</p> 
-     * @hidden
-     * @param px horizontal position
-     * @param py vertical position
-     * @param tol knob radius tolerance in pixels
-     * @returns 1 if over any part of the knob otherwise return 0
-     */
-    _whereOver(px: number, py: number, tol = 0): number {
-        // adjust position to centre of knob
-        px -= this._w / 2; py -= this._h / 2;
-        let d2 = px * px + py * py;
-        let rt = this._kRad + tol;
-        return d2 <= rt * rt ? 1 : 0;
+        return this.isActive ? this : null;
     }
 
     /** @hidden */
@@ -322,6 +306,7 @@ class CvsKnob extends CvsSlider {
         this._bufferInvalid = false;
     }
 
+    /** @hidden */
     _updateKnobPickBuffer(dOut) {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;

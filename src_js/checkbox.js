@@ -25,7 +25,7 @@ class CvsCheckbox extends CvsText {
         return this;
     }
     /**
-     * <p>Make this checkbox true</p>
+     * <p>Select this checkbox making it 'true'</p>
      * @returns this control
      */
     select() {
@@ -36,7 +36,7 @@ class CvsCheckbox extends CvsText {
         return this;
     }
     /**
-     * <p>Make this checkbox false</p>
+     * <p>Deelect this checkbox making it 'false'</p>
      * @returns this control
      */
     deselect() {
@@ -48,31 +48,31 @@ class CvsCheckbox extends CvsText {
     }
     /**
      * Get the state of the checkbox.
-     * @returns true if this checkbox is selecetd
+     * @returns true if this checkbox is selecd
      */
     isSelected() {
         return this._selected;
     }
     /** @hidden */
     _doEvent(e, x, y, picked) {
-        // CLOG(`Checkbox doEvent  ${e.type}   ID: ${picked.control?.id}`);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
-                this._clickAllowed = true; // false if mouse moves
+                this.isActive = true;
+                // will be set to false if the mouse is dragged
+                this._clickAllowed = true;
                 this._part = picked.part;
                 this.isOver = true;
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     if (this._clickAllowed) {
                         this._selected = !this._selected;
                         this.action({ source: this, p5Event: e, selected: this._selected });
                     }
-                    this._active = false;
+                    this.isActive = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }
@@ -87,7 +87,7 @@ class CvsCheckbox extends CvsText {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -158,6 +158,7 @@ class CvsCheckbox extends CvsText {
         }
         if (!this._enabled)
             this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
+        // Update pick buffer before restoring
         this._updateRectControlPB();
         uib.pop();
         // last line in this method should be

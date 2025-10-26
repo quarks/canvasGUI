@@ -161,7 +161,7 @@ class CvsJoystick extends CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
+                this.isActive = true;
                 this._part = picked.part;
                 this.isOver = true;
                 break;
@@ -170,7 +170,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'touchend':
                 this._validateThumbPosition(mx, my);
                 this.action(getValue(this, e, true));
-                this._active = false;
+                this.isActive = false;
                 this.invalidateBuffer();
                 if (!this._tmrID)
                     this._tmrID = setInterval(() => {
@@ -184,7 +184,7 @@ class CvsJoystick extends CvsBufferedControl {
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     this._validateThumbPosition(mx, my);
                     this.action(getValue(this, e, false));
                 }
@@ -196,7 +196,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
 
     /** @hidden */
@@ -274,7 +274,7 @@ class CvsJoystick extends CvsBufferedControl {
         uib.line(0, 0, tx, ty);
         // Thumb
         uib.strokeWeight(2); uib.stroke(THUMB_STROKE);
-        if (this._active || this._over > 0)
+        if (this.isActive || this._over > 0)
             uib.fill(THUMB_OVER);
         else
             uib.fill(THUMB_OFF);
@@ -285,6 +285,8 @@ class CvsJoystick extends CvsBufferedControl {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+
+    /** @hidden */
     _updateJoystickPickBuffer(tx: number, ty: number, tSize: number) {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
@@ -298,5 +300,3 @@ class CvsJoystick extends CvsBufferedControl {
     }
 
 }
-
-Object.assign(CvsJoystick.prototype, processMouse, processTouch);

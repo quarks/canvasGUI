@@ -30,8 +30,6 @@ class CvsRanger extends CvsSlider {
      * @returns this control or the low/high values
      */
     range(v0?: number, v1?: number): CvsBaseControl | Object {
-        // if (!v0 || !v1)
-        //   return { low: this._t2v(this._t[0]), high: this._t2v(this._t[1]) };
         if (Number.isFinite(v0) && Number.isFinite(v1)) { // If two numbers then
             let t0 = this._norm01(Math.min(v0, v1));
             let t1 = this._norm01(Math.max(v0, v1));
@@ -67,29 +65,14 @@ class CvsRanger extends CvsSlider {
     }
 
     /** @hidden */
-    _whereOver(px: number, py: number, tol = 8): number {
-        // Check vertical position  
-        let ty = this._uiBfr.height / 2;
-        if (Math.abs(py - ty) <= 8) {
-            let tw = this._uiBfr.width - 20;
-            let t = this._t;
-            px -= 10;
-            if (Math.abs(t[0] * tw - px) <= tol)
-                return 1;
-            if (Math.abs(t[1] * tw - px) <= tol)
-                return 2;
-        }
-        return 0
-    }
-
-    /** @hidden */
     _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
-        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        let absPos = this.getAbsXY();
+        let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 if (picked.part == 0 || picked.part == 1) { // A thumb
-                    this._active = true;
+                    this.isActive = true;
                     this._tIdx = picked.part;  // Which thumb is the mouse over
                     this.isOver = true;
                 }
@@ -97,20 +80,20 @@ class CvsRanger extends CvsSlider {
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     let t0 = Math.min(this._t[0], this._t[1]);
                     let t1 = Math.max(this._t[0], this._t[1]);
                     this._t[0] = t0; this._t[1] = t1; this._tIdx = -1;
                     this.action({
                         source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
                     });
-                    this._active = false;
+                    this.isActive = false;
                     this.invalidateBuffer();
                 }
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active) {
+                if (this.isActive) {
                     let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
@@ -130,58 +113,7 @@ class CvsRanger extends CvsSlider {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
-    }
-
-    /** @hidden */
-    _processEvent(e: any, ...info) {
-        let mx = info[0];
-        this._tIdx = this._active ? this._tIdx : this._over - 1;
-        switch (e.type) {
-            case 'mousedown':
-            case 'touchstart':
-                if (this._over > 0) {
-                    this._active = true;
-                    this._tIdx = this._over - 1;  // Which thumb is the mouse over
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseout':
-            case 'mouseup':
-            case 'touchend':
-                if (this._active) {
-                    let t0 = Math.min(this._t[0], this._t[1]);
-                    let t1 = Math.max(this._t[0], this._t[1]);
-                    this._t[0] = t0; this._t[1] = t1; this._tIdx = -1;
-                    this.action({
-                        source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
-                    });
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mousemove':
-            case 'touchmove':
-                if (this._active) {
-                    let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
-                    if (this._s2ticks)
-                        t01 = this._nearestTickT(t01);
-                    if (this._t[this._tIdx] != t01) {
-                        this._t[this._tIdx] = t01;
-                        let t0 = Math.min(this._t[0], this._t[1]);
-                        let t1 = Math.max(this._t[0], this._t[1]);
-                        this.action({
-                            source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
-                        });
-                    }
-                    this.invalidateBuffer();
-                }
-                break;
-            case 'mouseover':
-                break;
-            case 'wheel':
-                break;
-        }
+        return this.isActive ? this : null;
     }
 
     /** @hidden */
@@ -239,7 +171,7 @@ class CvsRanger extends CvsSlider {
         for (let tnbr = 0; tnbr < 2; tnbr++) {
             uib.fill(THUMB);
             uib.noStroke();
-            if ((this._active || this.isOver) && tnbr == this._tIdx) {
+            if ((this.isActive || this.isOver) && tnbr == this._tIdx) {
                 uib.strokeWeight(2);
                 uib.stroke(HIGHLIGHT);
             }
@@ -253,7 +185,7 @@ class CvsRanger extends CvsSlider {
         this._bufferInvalid = false;
     }
 
-
+    /** @hidden */
     _updateRangerPickBuffer(ty: number, tw: number, tH: number, tx0: number, tx1: number, tbSize: number) {
         tx0 = Math.round(tx0);
         tx1 = Math.round(tx1);
@@ -278,5 +210,3 @@ class CvsRanger extends CvsSlider {
     }
 
 }
-
-Object.assign(CvsRanger.prototype, processMouse, processTouch);

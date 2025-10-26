@@ -1,7 +1,7 @@
 /**
  * </p>The base class for any control that displays text as part of its
  * visual interface</p>
- *
+ * @hidden
  */
 class CvsText extends CvsBufferedControl {
     /** @hidden */
@@ -55,7 +55,6 @@ class CvsText extends CvsBufferedControl {
     }
     /**
      * <p>Renoves any text that the control might use ti  display itself.</p>
-     *
      * @returns this control
      */
     noText() {
@@ -111,7 +110,7 @@ class CvsText extends CvsBufferedControl {
 }
 /**
  * <p>This class enables icons to be added to any text control.</p>
- *
+ * @hidden
  */
 class CvsTextIcon extends CvsText {
     /** @hidden */

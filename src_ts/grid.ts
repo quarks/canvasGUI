@@ -28,8 +28,6 @@
  * we do that the array elements becomes <code>[0.2, 0.48, 0.32]</code> and
  * to find the column pixel widths, simply multiply these values by grid area 
  * width.</p>
- * 
- * @since 1.1.0
  */
 class GridLayout {
 

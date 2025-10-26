@@ -24,10 +24,11 @@ class CvsBufferedControl extends CvsBaseControl {
         /** @hidden */ this._tooltip = undefined;
         /** @hidden */ this._part = 0;
         /** @hidden */ this._isOver = false;
-        /** @hidden */ this._active = false;
         this._validateControlBuffers();
     }
+    /** @hidden */
     get isOver() { return this._isOver; }
+    /** @hidden */
     set isOver(b) {
         if (b != this._isOver) {
             this._isOver = b;
@@ -35,32 +36,9 @@ class CvsBufferedControl extends CvsBaseControl {
         }
     }
     /**
-     * A control becomes active when the mouse button is pressed over it.
-     * This method has little practical use except when debugging.
-     * @hidden
-     * @returns true if this control is expecting more mouse events
-     */
-    isActive() {
-        return this._active;
-    }
-    // /**
-    //  * Deactivate this control
-    //  * @hidden
-    //  */
-    // _deactivate() {
-    //     this._isOver = false;
-    //     this.invalidateBuffer();
-    // }
-    // /**
-    //  * Activate this control if the user clicks on the control.
-    //  * @hidden
-    //  */
-    // _activate(selectAll: boolean = false) {
-    //     this._isOver = true;
-    //     this.invalidateBuffer();
-    // }
-    /**
      * Make sure we have a ui buffer and a pick buffer of the correct size
+     * for this control.
+     * @hidden
      */
     _validateControlBuffers() {
         if (!this._uiBfr || this._uiBfr.width != this._w || this._uiBfr.height != this._h) {
@@ -104,6 +82,7 @@ class CvsBufferedControl extends CvsBaseControl {
      *
      * @param uib ui overlay buffer
      * @param pkb picker buffer
+     * @hidden
      */
     _draw(uib, pkb) {
         this._validateBuffer();

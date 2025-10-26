@@ -1,12 +1,12 @@
 /*
 ##############################################################################
  CvsBaseControl
- This is the base class for controls and panes that don't require a buffer
+ The base class for controls and panes that don't require a graphics buffer.
  ##############################################################################
  */
 /**
  * <p>Base class for all controls</p>
- * <p>It provides most of the functionality for the controls</p>
+ * <p>It provides most of the functionality for the controls.</p>
  */
 class CvsBaseControl {
     /**
@@ -30,12 +30,15 @@ class CvsBaseControl {
         /** @hidden */ this._h = 0;
         /** @hidden */ this._over = 0;
         /** @hidden */ this._pover = 0;
+        /** @hidden */ this._active = false;
         /** @hidden */ this._clickAllowed = false;
         /** @hidden */ this._opaque = true;
         /** @hidden */ this._bufferInvalid = true;
-        /** <p>The event handler for this control. Although it is permitted to set
+        /**
+         * <p>The event handler for this control. Although it is permitted to set
          * this property directly it is recommended that the <code>setAction(...)</code>
          * method is used to define the event handler actions.</p>
+         * @hidden
          */
         this.action = function () { };
         this._gui = gui;
@@ -54,20 +57,37 @@ class CvsBaseControl {
         this._c = gui.corners(undefined);
     }
     ;
+    /** @hidden */
     get x() { return this._x; }
+    /** @hidden */
     set x(v) { this._x = Math.round(v); }
+    /** @hidden */
     get y() { return this._y; }
+    /** @hidden */
     set y(v) { this._y = Math.round(v); }
     /** @hidden */
     get z() { return this._z; }
     /** @hidden */
     set z(v) { this._z = v; }
+    /** @hidden */
     get w() { return this._w; }
+    /** @hidden */
     set w(v) { this._w = Math.round(v); }
+    /** @hidden */
     get h() { return this._h; }
+    /** @hidden */
     set h(v) { this._h = Math.round(v); }
     /** the unique identifier for this control   */
     get id() { return this._id; }
+    /**
+     * A control becomes active when the mouse button is pressed over it.
+     * This method has little practical use except when debugging.
+     * @hidden
+     * @returns true if this control is expecting more mouse events
+     */
+    get isActive() { return this._active; }
+    /** @hidden */
+    set isActive(b) { this._active = b; }
     /**
      * Move control to an absolute position
      * @param x horizontal position
@@ -123,7 +143,6 @@ class CvsBaseControl {
                     c.scheme(id, cascade);
             return this;
         }
-        // getter
         return this._scheme;
     }
     /**
@@ -316,7 +335,6 @@ class CvsBaseControl {
     }
     /**
      * @returns true if this control is visible
-     * @since 0.9.3
      */
     isVisible() {
         return this._visible;
@@ -338,90 +356,20 @@ class CvsBaseControl {
         this._opaque = false;
         return this;
     }
-    // /**
-    //  * <p>Shrink the control to fit contents.</p>
-    //  * <p>To shrink on one dimension only pass either 'w' (width) or 'h' 
-    //  * (height) to indicate which dimmension to shrink</p>
-    //  * @param dim the dimension to shrink 
-    //  * @returns this control
-    //  */
-    // shrink(dim?: string): CvsBaseControl {
-    //     let s = this._minControlSize();
-    //     switch (dim) {
-    //         case 'w':
-    //             this._w = s.w;
-    //             break;
-    //         case 'h':
-    //             this._h = s.h;
-    //             break;
-    //         default:
-    //             this._w = s.w;
-    //             this._h = s.h;
-    //     }
-    //     this.invalidateBuffer();
-    //     return this;
-    // }
-    /**
-     * If control has significant rounded corners then take them
-     * into consideration
-     * @since 0.9.4
-     * @hidden
-     */
-    _whereOver(px, py, tol = 0) {
-        const R = 5;
-        if (px > 0 && px < this._w && py > 0 && py < this._h) {
-            if (this._c[0] > R) { // top left
-                let dx = px - this._c[0];
-                let dy = py - this._c[0];
-                let off = dx < 0 && dy < 0 && dx * dx + dy * dy > this._c[0] * this._c[0];
-                if (off)
-                    return 0;
-            }
-            if (this._c[1] > R) { // top right
-                let dx = px - (this._w - this._c[1]);
-                let dy = py - this._c[1];
-                let off = dx > 0 && dy < 0 && dx * dx + dy * dy > this._c[1] * this._c[1];
-                if (off)
-                    return 0;
-            }
-            if (this._c[2] > R) { // bottom right
-                let dx = px - (this._w - this._c[2]);
-                let dy = py - (this._h - this._c[2]);
-                let off = dx > 0 && dy > 0 && dx * dx + dy * dy > this._c[2] * this._c[2];
-                if (off)
-                    return 0;
-            }
-            if (this._c[3] > R) { // bottom left
-                let dx = px - this._c[3];
-                let dy = py - (this._h - this._c[3]);
-                let off = dx < 0 && dy > 0 && dx * dx + dy * dy > this._c[3] * this._c[3];
-                if (off)
-                    return 0;
-            }
-            return 1;
-        }
-        return 0;
-    }
     /** @hidden */
     _minControlSize() { return null; }
     /** @hidden */
     _updateControlVisual() { }
     /** @hidden */
-    // _handleMouse(e: MouseEvent): boolean { return false };
+    _doEvent(e, x = 0, y = 0, picked) { return this; }
     /** @hidden */
-    _doEvent(e, x, y, picked) { return null; }
-    /** @hidden */
-    _handleKey(e) { return true; }
-    ;
-    /** @hidden */
-    _handleTouch(e) { }
-    /** @hidden */
-    _processEvent(e, ...info) { }
+    _doKeyEvent(e) { return this; }
     /**
      * @param uib ui overlay buffer
      * @param pkb picker buffer
+     * @hidden
      */
-    _draw(uib, pkb) { }
+    _draw(uib = null, pkb = null) { }
     /** @hidden */
     _eq(a, b) {
         return Math.abs(a - b) < 0.001;
@@ -451,42 +399,4 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
-/**
- * Mixin for initialising mouse event data
- * @hidden
- */
-const processMouse = {
-    /** @hidden */
-    _handleMouse(e) {
-        let pos = this.getAbsXY();
-        let [mx, my, w, h] = this._orientation.xy(this._p.mouseX - pos.x, this._p.mouseY - pos.y, this._w, this._h);
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my, w, h);
-        return false;
-    }
-};
-/**
- * Mixin for initialising touch event data
- * @hidden
- */
-const processTouch = {
-    /** @hidden */
-    _handleTouch(e) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let [mx, my, w, h] = this._orientation.xy(t.clientX - rect.left - pos.x, t.clientY - rect.top - pos.y, this._w, this._h);
-        this._pover = this._over; // Store previous mouse over state
-        this._over = this._whereOver(mx, my, 5); // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip)
-            this._tooltip._updateState(this, this._pover, this._over);
-        this._processEvent(e, mx, my, w, h);
-    }
-};
 //# sourceMappingURL=basecontrol.js.map

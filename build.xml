@@ -3,7 +3,7 @@
     Peter Lager 2024
     V0.1
 -->
-<project name="Canvas GUI" default="init" basedir="./" >
+<project name="Canvas GGUI" default="init" basedir="./" >
 
     <property file="build.properties" />
 

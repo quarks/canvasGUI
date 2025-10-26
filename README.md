@@ -1,5 +1,6 @@
-## canvasGUI
-On-canvas GUI library for p5.js
+# canvasGUI   2.0.0 
+### (c) Peter Lager  2025 
+On-canvas GUI library for p5js
 
 For more information about using canvasGUI please look at
 * [Github wiki](https://github.com/quarks/canvasGUI/wiki) to set up your first sketch using canvasGUI with the PDE

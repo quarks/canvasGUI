@@ -1,7 +1,7 @@
 const CANVAS_GUI_VERSION = '!!VERSION!!';
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const GUIS = new Map();
-const DELTA_Z = 64, PANE_Z = 2048;
+const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -21,24 +21,17 @@ class GUI {
      * @param p the sketch instance
      */
     constructor(p5c, p = p5.instance) {
-        /** @hidden */ this._touchEventsEnabled = false;
-        /** @hidden */ this._mouseEventsEnabled = false;
-        /** @hidden */ this._keyEventsEnabled = false;
-        /** @hidden */ this._eventsAllowed = true;
+        // Prevent duplicate event handlers
+        /** @hidden */ this._touchListenersCreated = false;
+        /** @hidden */ this._mouseListenersCreated = false;
+        /** @hidden */ this._keyListenersCreated = false;
+        // Hide / disable GUI
         /** @hidden */ this._visible = true;
         /** @hidden */ this._enabled = true;
-        // Temporary variables for event processing tests
-        this.mx = 0;
-        this.my = 0;
-        this.tx = 0;
-        this.ty = 0;
-        this.px = 0;
-        this.py = 0;
         this._renderer = p5c;
         this._canvas = p5c.canvas;
         this._target = document.getElementById(p5c.canvas.id); // for keyboard events
         this._p = p; // p5 instance
-        this._is3D = this._renderer.GL != undefined;
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
         this._corners = [4, 4, 4, 4];
@@ -67,7 +60,7 @@ class GUI {
         this._activeCtrl = null;
         this._activePart = 0;
         // Choose 2D / 3D rendering methods  
-        this._drawHud = this._is3D ? this._drawHudWEBGL : this._drawHudP2D;
+        this._drawHud = p5c.GL ? this._drawHudWEBGL : this._drawHudP2D;
         // Prepare buffers
         this._validateGuiBuffers();
         // Camera method depends on major version of p5js
@@ -99,143 +92,144 @@ class GUI {
     // ##################################################################
     // ######         Factory methods to create controls          #######
     /**
-    * Create a slider control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns slider control
-    */
+     * Create a slider control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns slider control
+     */
     slider(id, x, y, w, h) {
         return this.addControl(new CvsSlider(this, id, x, y, w, h), true);
     }
     /**
-    * Create a ranger control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns ranger control
-    */
+     * Create a ranger control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns ranger control
+     */
     ranger(id, x, y, w, h) {
         return this.addControl(new CvsRanger(this, id, x, y, w, h), true);
     }
     /**
-    * Create a button control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a button
-    */
+     * Create a button control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a button
+     */
     button(id, x, y, w, h) {
         return this.addControl(new CvsButton(this, id, x, y, w, h), true);
     }
     /**
-    * Create a single line text input control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a textfield
-    */
+     * Create a single line text input control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a textfield
+     */
     textfield(id, x, y, w, h) {
         this._addKeyEventHandlers();
         return this.addControl(new CvsTextField(this, id, x, y, w, h), true);
     }
     /**
-    * Create a checkbox control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a checkbox
-    */
+     * Create a checkbox control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a checkbox
+     */
     checkbox(id, x, y, w, h) {
         return this.addControl(new CvsCheckbox(this, id, x, y, w, h), true);
     }
     /**
-    * Create an option (radio button) control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns an option button
-    */
+     * Create an option (radio button) control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns an option button
+     */
     option(id, x, y, w, h) {
         return this.addControl(new CvsOption(this, id, x, y, w, h), true);
     }
     /**
-    * Create a label control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a label
-    */
+     * Create a label control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a label
+     */
     label(id, x, y, w, h) {
         return this.addControl(new CvsLabel(this, id, x, y, w, h), false);
     }
     /**
-    * Create a viewer
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns an image viewer
-    */
+     * Create a viewer control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns an image viewer
+     */
     viewer(id, x, y, w, h) {
         return this.addControl(new CvsViewer(this, id, x, y, w, h), true);
     }
     /**
-    * Create a joystick
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a joystick control
-    */
+     * Create a joystick control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a joystick control
+     */
     joystick(id, x, y, w, h) {
         return this.addControl(new CvsJoystick(this, id, x, y, w, h), true);
     }
     /**
-    * Create a joystick
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns a joystick control
-    */
+     * Create a knob control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a knob control
+     */
     knob(id, x, y, w, h) {
         return this.addControl(new CvsKnob(this, id, x, y, w, h), true);
     }
     /**
-    * Create a scroller control
-    * @param id unique id for this control
-    * @param x left-hand pixel position
-    * @param y top pixel position
-    * @param w width
-    * @param h height
-    * @returns scroller control
-    * @hidden
-    */
+     * Create a scroller control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns scroller control
+     * @hidden
+     */
     __scroller(id, x, y, w, h) {
         return this.addControl(new CvsScroller(this, id, x, y, w, h), true);
     }
     /**
+     * Description placeholder
+     * @param {string} id
+     * @returns {CvsTooltip}
      * @hidden
-     * @param id auto generated unique id from parent control
-     * @returns tooltip control
      */
     __tooltip(id) {
         return this.addControl(new CvsTooltip(this, id), false);
@@ -340,32 +334,17 @@ class GUI {
         return this._enabled;
     }
     /**
-    * Stop handling mouse and key events
-    * @since 0.9.4
-    */
-    stopEventHandling() {
-        this._eventsAllowed = false;
-    }
-    /**
-    * Start handling mouse and key events
-    * @since 0.9.4
-    */
-    startEventHandling() {
-        this._eventsAllowed = true;
-    }
-    /**
-    * Adds event listeners to the HTML canvas object. It also sets the draw method
-    * based on whether the render is WEBGL or P2D
-    * @hidden
-    */
+     * Adds event listeners to the HTML canvas object. It also sets the draw method
+     * based on whether the render is WEBGL or P2D
+     * @hidden
+     */
     _addFocusHandlers() {
         let canvas = this._canvas;
-        canvas.addEventListener('focusout', (e) => { this._handleFocusEvents(e); });
-        canvas.addEventListener('focusin', (e) => { this._handleFocusEvents(e); });
+        canvas.addEventListener('focusout', (e) => { this._processFocusEvent(e); });
     }
     /** @hidden */
     _addMouseEventHandlers() {
-        if (!this._mouseEventsEnabled) {
+        if (!this._mouseListenersCreated) {
             let canvas = this._canvas;
             // Add mouse events
             canvas.addEventListener('mousedown', (e) => { this._processMouseEvent(e); });
@@ -375,62 +354,69 @@ class GUI {
             // Leave and enter canvas
             canvas.addEventListener('mouseout', (e) => { this._processMouseEvent(e); });
             canvas.addEventListener('mouseenter', (e) => { this._processMouseEvent(e); });
-            this._mouseEventsEnabled = true;
+            this._mouseListenersCreated = true;
         }
     }
     /** @hidden */
     _addKeyEventHandlers() {
-        if (!this._keyEventsEnabled) {
+        if (!this._keyListenersCreated) {
             this._target.setAttribute('tabindex', '0');
             this._target.focus();
-            this._target.addEventListener('keydown', (e) => { this._handleKeyEvents(e); return false; });
-            this._target.addEventListener('keyup', (e) => { this._handleKeyEvents(e); return false; });
-            this._keyEventsEnabled = true;
+            this._target.addEventListener('keydown', (e) => { this._processKeyEvent(e); return false; });
+            this._target.addEventListener('keyup', (e) => { this._processKeyEvent(e); return false; });
+            this._keyListenersCreated = true;
         }
     }
     /** @hidden */
     _addTouchEventHandlers() {
-        if (!this._touchEventsEnabled) {
+        if (!this._touchListenersCreated) {
             let canvas = this._canvas;
             // Add touch events
             canvas.addEventListener('touchstart', (e) => { this._processTouchEvent(e); });
             canvas.addEventListener('touchend', (e) => { this._processTouchEvent(e); });
             canvas.addEventListener('touchmove', (e) => { this._processTouchEvent(e); });
             canvas.addEventListener('touchcancel', (e) => { this._processTouchEvent(e); });
-            this._touchEventsEnabled = true;
+            this._touchListenersCreated = true;
         }
     }
     // ===============================================================================
     //     V2 event handlers
+    /** @hidden */
     _processMouseEvent(e) {
-        const rect = this._canvas.getBoundingClientRect();
-        this.mx = e.clientX - rect.left;
-        this.my = e.clientY - rect.top;
-        this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
-        // e.preventDefault();
+        if (this._visible && this._enabled) {
+            const rect = this._canvas.getBoundingClientRect();
+            this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
+            // e.preventDefault();
+        }
     }
+    /** @hidden */
     _processTouchEvent(e) {
-        const rect = this._canvas.getBoundingClientRect();
-        const te = e.changedTouches[0];
-        this.tx = te.clientX - rect.left;
-        this.ty = te.clientY - rect.top;
-        this._processEvent(e, te.clientX - rect.left, te.clientY - rect.top);
-        // e.preventDefault();
+        if (this._visible && this._enabled) {
+            const rect = this._canvas.getBoundingClientRect();
+            const te = e.changedTouches[0];
+            this._processEvent(e, te.clientX - rect.left, te.clientY - rect.top);
+            // e.preventDefault();
+        }
     }
     /**
-     * Process mouse and text events after calculating [x, y] canvas position.
+     * Process mouse and touch events provided the active control is not
+     * a textfield.
      * @param e the mouse or touch event
      * @param x the x position in the canvas
      * @param y the y position in the canvas
      * @hidden
      */
     _processEvent(e, x, y) {
+        // Ignore mouse / touch events while we have an active textfield
+        if (this.activeCtrl instanceof CvsTextField)
+            return;
         const picked = this.getPicked(x, y);
         if (this.activeCtrl) {
             this.activeCtrl = this.activeCtrl._doEvent(e, x, y, picked);
         }
         else {
             // No active control so check for highlighting as pointer moves
+            // over a control
             const picked = this.getPicked(x, y);
             if (e.type == 'mousemove' || e.type == 'touchmove') {
                 this.overCtrl?._doEvent(e, x, y, picked);
@@ -444,41 +430,36 @@ class GUI {
             }
         }
     }
-    //     End of V2 event handlers
-    // ===============================================================================
+    /**
+     * Process the key event if the active control is a CvsTextField
+     * @hidden
+     * @param e keyboard event
+     */
+    _processKeyEvent(e) {
+        // Paas the event if the active control is a CvsTextField
+        if (this._visible && this._enabled && this._activeCtrl instanceof CvsTextField) {
+            this.activeCtrl = this.activeCtrl._doKeyEvent(e);
+        }
+    }
     /** @hidden */
-    _handleFocusEvents(e) {
+    _processFocusEvent(e) {
         switch (e.type) {
             case 'focusout':
-                // this._activeCtrl?._deactivate?.();
-                break;
-            case 'focusin':
+                if (this.activeCtrl instanceof CvsTextField) {
+                    this.activeCtrl.validate();
+                    this.activeCtrl._deactivate();
+                    this.activeCtrl = null;
+                }
                 break;
         }
     }
-    /**
-     * Called by the key event listeners
-     * @hidden
-     * @param e event
-     */
-    _handleKeyEvents(e) {
-        // Find the currently active control and pass the event to it
-        if (this._eventsAllowed && this._enabled && this.isVisible()) {
-            // for (let c of this._ctrls) {
-            //   if (c.isActive()) {
-            //     c._handleKey(e);
-            //     break;
-            //   }
-            // }
-        }
-        return false;
-    }
-    // -----------------------------------------------------------------------
+    //     End of V2 event handlers
+    // ===============================================================================
     /**
      * <p>Get the control given it's unique name.</p>
      * @param id unique ID for the control to find
      * @returns  get the associated control
-    */
+     */
     $(id) {
         return (typeof id === "string") ? this._controls.get(id) : id;
     }
@@ -495,7 +476,6 @@ class GUI {
         // Now find render order
         this._ctrls = [...this._controls.values()];
         this.setRenderOrder();
-        // this._ctrls.sort((a, b) => { return a.z - b.z });
         if (pickable)
             this.register(control);
         return control;
@@ -511,6 +491,7 @@ class GUI {
     /**
      * Add an object so it can be detected using this pick buffer.
      * @param control the object to add
+     * @hidden
      */
     register(control) {
         if (control && !this._ctrlKey.has(control)) {
@@ -521,7 +502,8 @@ class GUI {
     }
     /**
      * Remove this object so it can't be detected using this pick buffer.
-     * @param {*} control the object to remove
+     * @param control the object to remove
+     * @hidden
      */
     deregister(control) {
         if (control && this._ctrlKey.has(control)) {
@@ -531,7 +513,7 @@ class GUI {
         }
     }
     /**
-     *
+     * @hidden
      * @param control the control we need the pick color for
      * @returns the associated pick color numeric value (rgb)
      */
@@ -543,12 +525,12 @@ class GUI {
         return undefined;
     }
     /**
-    * Display the buffer in a canvas element with the given id.
-    * If there is no element with this id or if it is not a canvas element
-    * a canvas element will be created and appended to the body section.
-    *
-    * @param cvsID the id of a canvas element
-    */
+     * Display the buffer in a canvas element with the given id.
+     * If there is no element with this id or if it is not a canvas element
+     * a canvas element will be created and appended to the body section.
+     *
+     * @param cvsID the id of a canvas element
+     */
     showBuffer(cvsID, bfr = this._pickbuffer) {
         let ele = document.getElementById(cvsID);
         if (!ele) {
@@ -653,13 +635,6 @@ class GUI {
      */
     context() {
         return this._renderer;
-    }
-    /**
-     * <p>Is this a 3D renderer?</p>
-     * @returns true for WEBGL and false for P2D
-     */
-    is3D() {
-        return this._is3D;
     }
     /**
      * Close all side panes
@@ -781,6 +756,7 @@ class GUI {
             tab._y = y;
         }
     }
+    /** @hidden */
     _initColorSchemes() {
         this._schemes = [];
         this._schemes['blue'] = new BlueScheme();
@@ -866,35 +842,31 @@ class GUI {
      * @hidden
      */
     _drawHudP2D() {
-        if (this._visible) {
-            this._p.push();
-            this._p.image(this._hud, 0, 0); // Display GUI controls
-            this._p.pop();
-        }
+        this._p.push();
+        this._p.image(this._hud, 0, 0); // Display GUI controls
+        this._p.pop();
     }
     /**
      * The V1 WEBGL draw method
      * @hidden
      */
     _drawHudWEBGL() {
-        if (this._visible) {
-            this._p.push();
-            let renderer = this._renderer, gl = renderer.drawingContext;
-            let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
-            gl.flush();
-            let mvMatrix = renderer.uMVMatrix.copy();
-            let pMatrix = renderer.uPMatrix.copy();
-            // Now prepare renderer for standard 2D output to draw GUI
-            gl.disable(gl.DEPTH_TEST);
-            renderer.resetMatrix();
-            this._getCamera().ortho(0, w, -h, 0, -d, d);
-            this._p.image(this._hud, 0, 0); // Display GUI controls
-            gl.flush();
-            renderer.uMVMatrix.set(mvMatrix);
-            renderer.uPMatrix.set(pMatrix);
-            gl.enable(gl.DEPTH_TEST);
-            this._p.pop();
-        }
+        this._p.push();
+        let renderer = this._renderer, gl = renderer.drawingContext;
+        let w = renderer.width, h = renderer.height, d = Number.MAX_VALUE;
+        gl.flush();
+        let mvMatrix = renderer.uMVMatrix.copy();
+        let pMatrix = renderer.uPMatrix.copy();
+        // Now prepare renderer for standard 2D output to draw GUI
+        gl.disable(gl.DEPTH_TEST);
+        renderer.resetMatrix();
+        this._getCamera().ortho(0, w, -h, 0, -d, d);
+        this._p.image(this._hud, 0, 0); // Display GUI controls
+        gl.flush();
+        renderer.uMVMatrix.set(mvMatrix);
+        renderer.uPMatrix.set(pMatrix);
+        gl.enable(gl.DEPTH_TEST);
+        this._p.pop();
     }
     /**
      * <p>If the [x, y] display position is over a controls pick region then
@@ -917,9 +889,7 @@ class GUI {
         return result;
     }
 }
-/**
- * @hidden
- */
+/** @hidden */
 const ANNOUNCE_CANVAS_GUI = function () {
     if (GUIS.size == 0) {
         CLOG('================================================');

@@ -3,6 +3,7 @@
  * be selected at any time.</p>
  * <p>The user should <i>not</i> create instances of this class because the library 
  * will make them when needed.</p>
+ * @hidden
  */
 class CvsOptionGroup {
     /** @hidden */ protected _name: string;
@@ -136,7 +137,7 @@ class CvsOption extends CvsText {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this._active = true;
+                this.isActive = true;
                 this._clickAllowed = true; // false if mouse moves
                 this._part = picked.part;
                 this.isOver = true;
@@ -144,7 +145,7 @@ class CvsOption extends CvsText {
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
+                if (this.isActive) {
                     if (this._clickAllowed && !this._selected) {
                         if (this._optGroup) {
                             // If we have an opt group then use it to replace 
@@ -153,7 +154,7 @@ class CvsOption extends CvsText {
                             this.action({ source: this, p5Event: e, selected: true });
                         }
                     }
-                    this._active = false;
+                    this.isActive = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }
@@ -168,7 +169,7 @@ class CvsOption extends CvsText {
             case 'wheel':
                 break;
         }
-        return this._active ? this : null;
+        return this.isActive ? this : null;
     }
 
     /** @hidden */

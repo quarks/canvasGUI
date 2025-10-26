@@ -12,6 +12,7 @@ class CvsViewer extends CvsBufferedControl {
 
     /** @hidden */ protected _layers: Array<p5.Graphics> = [];
     /** @hidden */ protected _hidden: Set<number> = new Set();
+    // Layer width and height (pixels)
     /** @hidden */ protected _lw: number = 0;
     /** @hidden */ protected _lh: number = 0;
     /** @hidden */ protected _wcx: number = 0;
@@ -22,25 +23,31 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ protected _scrH: CvsScroller;
     /** @hidden */ protected _scrV: CvsScroller;
     /** @hidden */ protected _scaler: CvsSlider;
+    /** @hidden */ protected _scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
     /** @hidden */ protected _mx0: number;
     /** @hidden */ protected _my0: number;
     /** @hidden */ protected _dcx: number;
     /** @hidden */ protected _dcy: number;
     /** @hidden */ protected _pmx: number;
     /** @hidden */ protected _pmy: number;
+
+    /** @hidden */ protected _value: number;
+    /** @hidden */ protected _used: number;
+
+    // this._value, used: this._used,
     /** @hidden */ protected _frameWeight: number = 0;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x, y, w, h);
 
-        this._scrH = gui.__scroller(this._id + "-scrH", 0, h - 20, w, 20).hide()
+        this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
             .setAction((info) => {
                 this.view(info.value * this._lw, this._wcy);
                 this.invalidateBuffer();
             });
 
-        this._scrV = gui.__scroller(this._id + "-scrV", w - 20, 0, h, 20).orient('south').hide()
+        this._scrV = gui.__scroller(this._id + "-scrV", w - 24, 4, h - 28, 20).orient('south').hide()
             .setAction((info) => {
                 this.view(this._wcx, info.value * this._lh);
                 this.invalidateBuffer();
@@ -64,14 +71,21 @@ class CvsViewer extends CvsBufferedControl {
             let value = this._p.constrain(v, low, high);
             // If we don't have a scaler then create it
             if (!this._scaler) {
+                let [w, h] = [this._w, this._h];
+                let sclrX = 0.25 * w, sclrY = 0.5 * h - 10;
+                let sclrW = 0.5 * w, sclrH = 20;
                 this._scaler = this._gui.slider(this._id + "-scaler",
-                    0.25 * this._w, 0.5 * this._h - 10, 0.5 * this._w, 20)
+                    sclrX, sclrY, sclrW, sclrH)
                     .hide()
                     .setAction((info) => {
-                        this.scale(info.value);
+                        this._wscale = info.value;
                         this.invalidateBuffer();
                     });
                 this.addChild(this._scaler);
+                this._scalerZone = {
+                    x0: 0.15 * w, y0: 0.4 * h - 10,
+                    x1: 0.85 * w, y1: 0.6 * h + 10
+                };
             }
             // Now update the scroller
             this._scaler.limits(low, high);
@@ -200,10 +214,7 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     layers(img: p5.Graphics | Array<p5.Graphics>) {
-        if (Array.isArray(img))
-            this._layers = Array.from(img);
-        else
-            this._layers[0] = img;
+        this._layers = Array.isArray(img) ? Array.from(img) : [img];
         // Make all layers the same size as the first one
         let lw = this._lw = this._layers[0].width;
         let lh = this._lh = this._layers[0].height;
@@ -231,115 +242,73 @@ class CvsViewer extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _whereOver(px: number, py: number) {
-        if (px > this._w - 20 && px < this._w && py > 0 && py < this._h - 20)
-            return 3;   // over vertical scroller
-        if (px > 0 && px < this._w - 20 && py > this._h - 20 && py < this._h)
-            return 3;   // over horizontal scroller
-        let w = this._w, w0 = 0.2 * w, w1 = 0.8 * w;
-        let h = this._h, h0 = 0.35 * h, h1 = 0.65 * h;
-        if (this._scaler && px > w0 && px < w1 && py > h0 && py < h1)
-            return 2; //over slider make visible area
-        if (px > 0 && px < w && py > 0 && py < h)
-            return 1;
-        return 0;
+    shrink(dim?: string): CvsBaseControl {
+        console.warn("Cannot 'shrink' a viewer");
+        return this;
     }
 
     /** @hidden */
-    _handleMouse = function (e: MouseEvent) { // viewer
-        let pos = this.getAbsXY();
-        let mx = this._p.mouseX - pos.x;
-        let my = this._p.mouseY - pos.y;
-
-        this._pover = this._over;                 // Store previous mouse over state
-        this._over = this._whereOver(mx, my);     // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-
-        // Hide scaler unless mouse is close to centre
-        if (this._scaler) this._over == 2 ? this._scaler.show() : this._scaler.hide();
-        if (this._over >= 1) {
-            this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
-            this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
-        }
-        else {
-            this._scrH.hide();
-            this._scrV.hide();
-        }
-
-        this._processEvent(e, mx, my);
-        return false;
+    orient(dir: string) {
+        console.warn(`Changing orientation of a viewer is not allowed !!!`);
+        return this;
     }
 
     /** @hidden */
-    _handleTouch(e: TouchEvent) {
-        e.preventDefault();
-        let pos = this.getAbsXY();
-        const rect = this._gui._canvas.getBoundingClientRect();
-        const t = e.changedTouches[0];
-        let mx = t.clientX - rect.left - pos.x;
-        let my = t.clientY - rect.top - pos.y;
-
-        this._pover = this._over;                 // Store previous mouse over state
-        this._over = this._whereOver(mx, my);     // Store current mouse over state
-        this._bufferInvalid = this._bufferInvalid || (this._pover != this._over);
-        if (this._tooltip) this._tooltip._updateState(this, this._pover, this._over);
-
-        // Hide scaler unless mouse is close to centre
-        if (this._scaler) this._over == 2 ? this._scaler.show() : this._scaler.hide();
-        if (this._over >= 1) {
-            this._scrH.getUsed() < 1 ? this._scrH.show() : this._scrH.hide();
-            this._scrV.getUsed() < 1 ? this._scrV.show() : this._scrV.hide();
-        }
-        else {
-            this._scrH.hide();
-            this._scrV.hide();
-        }
-        this._processEvent(e, mx, my);
-    }
-
-    /** @hidden */
-    _processEvent(e: any, ...info) {
-        let mx = info[0], my = info[1];
+    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
+        let absPos = this.getAbsXY();
+        let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
+        this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (this._over == 1) {
-                    // Use these to see if there is movement between mouseDown and mouseUp
-                    this._clickAllowed = false;
-                    this._dragging = true;
-                    this._active = true;
-                    this.invalidateBuffer();
-                    // Remember starting values
-                    this._mx0 = this._pmx = mx;
-                    this._my0 = this._pmy = my;
-                    this._dcx = this._wcx;
-                    this._dcy = this._wcy;
-                }
+                this.isActive = true;
+                this.isOver = true;
+                this._dragging = true;
+                // Remember starting values
+                this._mx0 = this._pmx = mx;
+                this._my0 = this._pmy = my;
+                this._dcx = this._wcx;
+                this._dcy = this._wcy;
+                this._scrH.show();
+                this._scrV.show();
+                this.invalidateBuffer();
                 break;
             case 'mouseout':
                 this._scrH.hide();
                 this._scrV.hide();
-                if (this._active) {
-                    this._over = 0;
-                    this._clickAllowed = false;
-                }
             case 'mouseup':
             case 'touchend':
-                if (this._active) {
-                    this._dragging = false;
-                    this._active = false;
-                    this.invalidateBuffer();
-                }
+                this.action({ // Fire action to the user's sketch
+                    source: this, p5Event: undefined,
+                    cX: this._wcx, cY: this._wcy, scale: this._wscale
+                });
+                this.isActive = false;
+                this._dragging = false;
+                this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this._active && this._dragging) {
-                    if (this._scaler) this._scaler.hide();
-                    this._validateMouseDrag(
-                        this._dcx + (this._mx0 - mx) / this._wscale,
-                        this._dcy + (this._my0 - my) / this._wscale
-                    );
+                // this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
+                if (this.isOver) {
+                    if (this._dragging) {
+                        this._scaler?.hide();
+                        this._validateMouseDrag(
+                            this._dcx + (this._mx0 - mx) / this._wscale,
+                            this._dcy + (this._my0 - my) / this._wscale
+                        );
+                        this.invalidateBuffer();
+                    }
+                    else if (this._scaler) {
+                        let a = this._scalerZone;
+                        let v = mx >= a.x0 && mx <= a.x1 && my >= a.y0 && my <= a.y1;
+                        if (v) this._scaler.show(); else this._scaler.hide();
+                    }
+                    this._scrH.show();
+                    this._scrV.show();
+                }
+                else {
+                    this._scrH.hide();
+                    this._scrV.hide();
                 }
                 break;
             case 'mouseover':
@@ -347,6 +316,7 @@ class CvsViewer extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
+        return this.isOver ? this : null;
     }
 
     /** @hidden */
@@ -374,16 +344,11 @@ class CvsViewer extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _xor(a: boolean, b: boolean): boolean {
-        return (a || b) && !(a && b);
-    }
-
-    /** @hidden */
     _updateControlVisual() { // CvsViewer
         let cs = this._scheme || this._gui.scheme();
-        let ws = this._wscale;
-        let wcx = this._wcx;
-        let wcy = this._wcy;
+        let p = this._p;
+        let [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
+        let [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
 
         const OPAQUE = cs['C_2'];
         const FRAME = cs['C_7'];
@@ -395,19 +360,19 @@ class CvsViewer extends CvsBufferedControl {
         else
             uib.clear();
         // Get corners of requested view
-        let ww2 = Math.round(0.5 * this._w / ws);
-        let wh2 = Math.round(0.5 * this._h / ws);
-        let o = this._overlap(0, 0, this._lw, this._lh, // image corners
+        let ww2 = Math.round(0.5 * w / ws);
+        let wh2 = Math.round(0.5 * h / ws);
+        let o = this._overlap(0, 0, lw, lh, // image corners
             wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2);  // world corners
-        let [x, y] = [Math.round(o.offsetX * ws), Math.round(o.offsetY * ws)];
-        let [w, h] = [Math.round(o.width * ws), Math.round(o.height * ws)];
+        let [ox, oy] = [Math.round(o.offsetX * ws), Math.round(o.offsetY * ws)];
+        let [ow, oh] = [Math.round(o.width * ws), Math.round(o.height * ws)];
         // If we have an offset then calculate the view image 
         if (o.valid) { // Calculate display offset
             for (let i = 0, len = this._layers.length; i < len; i++) {
                 if (!this._hidden.has(i) && this._layers[i]) {
                     // Get view image and adjust for scale
                     let view = this._layers[i].get(o.left, o.top, o.width, o.height);
-                    if (Math.abs(ws - 1) > 0.01) view.resize(w, h);
+                    if (Math.abs(ws - 1) > 0.01) view.resize(ow, oh);
                     uib.image(view, o.offsetX * ws, o.offsetY * ws, view.width, view.height);
                 }
             }
@@ -418,7 +383,7 @@ class CvsViewer extends CvsBufferedControl {
             uib.strokeWeight(this._frameWeight);
             uib.rect(0, 0, uib.width, uib.height);
         }
-        this._updateViewerPickBuffer(x, y, w, h);
+        this._updateViewerPickBuffer(ox, oy, ow, oh);
         uib.pop();
     }
 
@@ -474,16 +439,8 @@ class CvsViewer extends CvsBufferedControl {
     }
 
     /** @hidden */
-    shrink(dim?: string): CvsBaseControl {
-        console.warn("Cannot change 'shrink' a viewer");
-        return this;
-    }
-
-
-    /** @hidden */
-    orient(dir: string) {
-        console.warn(`Cannot change orientation of a viewer to ${dir}`);
-        return this;
+    _xor(a: boolean, b: boolean): boolean {
+        return (a || b) && !(a && b);
     }
 
     /** @hidden */
