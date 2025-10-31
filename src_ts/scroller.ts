@@ -77,15 +77,14 @@ class CvsScroller extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
         let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
         let [tw, halfUsed] = [this._trackWidth, this._used / 2];
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (picked.part == 0) { // Thumb
+                if (over.part == 0) { // Thumb
                     this.isActive = true;
-                    this._part = picked.part;
                     this._s_value = this._value;
                     this._s_mx = mx;
                     this.isOver = true;
@@ -106,7 +105,7 @@ class CvsScroller extends CvsBufferedControl {
                         this.update(newValue);
                         this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
                     }
-                    this.isOver = (this == picked.control);
+                    this.isOver = (this == over.control);
                     this.invalidateBuffer();
                 }
                 break;
@@ -182,5 +181,7 @@ class CvsScroller extends CvsBufferedControl {
     _minControlSize() {
         return { w: this._w, h: 20 };
     }
-
 }
+
+
+Object.assign(CvsScroller.prototype, NoTooltip);

@@ -119,6 +119,9 @@ class CvsBaseControl {
     /** the unique identifier for this control   */
     get id() { return this._id; }
 
+    /** name of the control type. */
+    get type() { return this.constructor.name.substring(3); };
+
     /**
      * A control becomes active when the mouse button is pressed over it.
      * This method has little practical use except when debugging.
@@ -422,10 +425,10 @@ class CvsBaseControl {
     _updateControlVisual(): void { }
 
     /** @hidden */
-    _doEvent(e: UIEvent, x = 0, y = 0, picked: any): CvsBaseControl { return this; }
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl { return this; }
 
     /** @hidden */
-    _doKeyEvent(e: UIEvent) { return this; }
+    _doKeyEvent(e: KeyboardEvent) { return this; }
 
     /**
      * @param uib ui overlay buffer
@@ -461,3 +464,41 @@ class CvsBaseControl {
 
 }
 
+const NoOrient = {
+    /** This control does not support changing orientation */
+    orient(dir: string): CvsBaseControl {
+        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
+        return this;
+    }
+}
+
+const NoParent = {
+    /** This control does not support changing orientation */
+    parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
+        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+        return this;
+    }
+}
+
+/** @hidden */
+const NoTooltip = {
+    /** @hidden */
+    tooltip(dir: string): CvsBaseControl {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    },
+    /** @hidden */
+    tipTextSize(dir: string): CvsBaseControl {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    }
+}
+
+/** @hidden */
+const FixedBackground = {
+    /** @hidden */
+    orient(dir: string): CvsBaseControl {
+        CWARN(`Controls of type '${this.type}' do not support 'transparent' and 'opaque' methods.`);
+        return this;
+    }
+}

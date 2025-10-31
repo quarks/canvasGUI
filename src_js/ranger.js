@@ -58,15 +58,15 @@ class CvsRanger extends CvsSlider {
         return undefined;
     }
     /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         let absPos = this.getAbsXY();
         let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (picked.part == 0 || picked.part == 1) { // A thumb
+                if (over.part == 0 || over.part == 1) { // A thumb
                     this.isActive = true;
-                    this._tIdx = picked.part; // Which thumb is the mouse over
+                    this._tIdx = over.part; // Which thumb is the mouse over
                     this.isOver = true;
                 }
                 break;
@@ -100,8 +100,10 @@ class CvsRanger extends CvsSlider {
                             source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
                         });
                     }
-                    this.invalidateBuffer();
                 }
+                this.isOver = (this == over.control && (over.part == 0 || over.part == 1));
+                this._tooltip?._updateState(enter);
+                this.invalidateBuffer();
                 break;
             case 'mouseover':
                 break;
@@ -189,10 +191,10 @@ class CvsRanger extends CvsSlider {
         // Now translate to track left edge - track centre
         pkb.translate(10, ty);
         // Track
-        // pkb.fill(c.r, c.g, c.b + 5);
-        // pkb.rect(0, -tH / 2, tw, tH, ...this._c);
-        // pkb.fill(c.r, c.g, c.b + 6);
-        // pkb.rect(tx0, -tH / 2, tx1 - tx0, tH, ...this._c);
+        pkb.fill(c.r, c.g, c.b + 5);
+        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        pkb.fill(c.r, c.g, c.b + 6);
+        pkb.rect(tx0, -tH / 2, tx1 - tx0, tH, ...this._c);
         // Thumb
         pkb.fill(c.r, c.g, c.b);
         pkb.rect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);

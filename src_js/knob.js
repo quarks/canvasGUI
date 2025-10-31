@@ -160,7 +160,7 @@ class CvsKnob extends CvsSlider {
         return { t: t, under: under, over: over };
     }
     /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
         mx -= w / 2;
         my -= h / 2; // Make relative to knob centre
@@ -195,7 +195,8 @@ class CvsKnob extends CvsSlider {
                         this.action({ source: this, p5Event: e, value: this.value(), final: false });
                     }
                 }
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control);
+                this._tooltip?._updateState(enter);
                 this.invalidateBuffer();
                 break;
             case 'mouseover':

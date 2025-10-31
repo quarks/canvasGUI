@@ -22,7 +22,6 @@ class CvsBufferedControl extends CvsBaseControl {
     constructor(gui, id, x, y, w, h) {
         super(gui, id, x, y, w, h);
         /** @hidden */ this._tooltip = undefined;
-        /** @hidden */ this._part = 0;
         /** @hidden */ this._isOver = false;
         this._validateControlBuffers();
     }
@@ -85,6 +84,7 @@ class CvsBufferedControl extends CvsBaseControl {
      * @hidden
      */
     _draw(uib, pkb) {
+        // console.log(`Draw ${this.id}`)
         this._validateBuffer();
         uib.push();
         uib.translate(this._x, this._y);
@@ -93,6 +93,7 @@ class CvsBufferedControl extends CvsBaseControl {
             uib.translate(tr.tx, tr.ty);
             uib.rotate(tr.rot);
             uib.image(this._uiBfr, 0, 0);
+            // Draw pick buffer image if enabled
             if (this._enabled) {
                 pkb.drawingContext.setTransform(uib.drawingContext.getTransform());
                 pkb.image(this._pkBfr, 0, 0);
@@ -156,7 +157,6 @@ class CvsBufferedControl extends CvsBaseControl {
     tooltip(tiptext, duration = 1600) {
         let tt = this._gui.__tooltip(this._id + '.tooltip')
             .text(tiptext)
-            .showTime(duration)
             .shrink();
         this.addChild(tt);
         if (tt instanceof CvsTooltip) {

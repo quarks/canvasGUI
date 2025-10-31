@@ -79,6 +79,9 @@ class CvsBaseControl {
     set h(v) { this._h = Math.round(v); }
     /** the unique identifier for this control   */
     get id() { return this._id; }
+    /** name of the control type. */
+    get type() { return this.constructor.name.substring(3); }
+    ;
     /**
      * A control becomes active when the mouse button is pressed over it.
      * This method has little practical use except when debugging.
@@ -361,7 +364,7 @@ class CvsBaseControl {
     /** @hidden */
     _updateControlVisual() { }
     /** @hidden */
-    _doEvent(e, x = 0, y = 0, picked) { return this; }
+    _doEvent(e, x = 0, y = 0, over, enter) { return this; }
     /** @hidden */
     _doKeyEvent(e) { return this; }
     /**
@@ -399,4 +402,39 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
+const NoOrient = {
+    /** This control does not support changing orientation */
+    orient(dir) {
+        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
+        return this;
+    }
+};
+const NoParent = {
+    /** This control does not support changing orientation */
+    parent(parent, rx, ry) {
+        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+        return this;
+    }
+};
+/** @hidden */
+const NoTooltip = {
+    /** @hidden */
+    tooltip(dir) {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    },
+    /** @hidden */
+    tipTextSize(dir) {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    }
+};
+/** @hidden */
+const FixedBackground = {
+    /** @hidden */
+    orient(dir) {
+        CWARN(`Controls of type '${this.type}' do not support 'transparent' and 'opaque' methods.`);
+        return this;
+    }
+};
 //# sourceMappingURL=basecontrol.js.map

@@ -54,14 +54,13 @@ class CvsCheckbox extends CvsText {
         return this._selected;
     }
     /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 this.isActive = true;
                 // will be set to false if the mouse is dragged
                 this._clickAllowed = true;
-                this._part = picked.part;
                 this.isOver = true;
                 break;
             case 'mouseout':
@@ -72,15 +71,16 @@ class CvsCheckbox extends CvsText {
                         this._selected = !this._selected;
                         this.action({ source: this, p5Event: e, selected: this._selected });
                     }
-                    this.isActive = false;
-                    this._clickAllowed = false;
-                    this.isOver = false;
                 }
+                this.isActive = false;
+                this._clickAllowed = false;
+                this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control);
+                this._tooltip?._updateState(enter);
                 break;
             case 'mouseover':
                 break;

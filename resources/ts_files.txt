@@ -15,6 +15,6 @@ viewer.ts
 textfield.ts
 joystick.ts
 knob.ts
+panel.ts
 panes.ts
 grid.ts
-

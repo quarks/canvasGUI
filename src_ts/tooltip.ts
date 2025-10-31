@@ -8,22 +8,20 @@
 class CvsTooltip extends CvsText {
 
     /** @hidden */ protected _gap: number;
-    /** @hidden */ protected _showTime: number;
 
     /** @hidden */
     constructor(gui: GUI, name: string) {
         super(gui, name);
         this._gap = 1;
         this._visible = false;
-        this._showTime = 0;
     }
 
     /**
-       * <p>Sets the text to be displayed in the tooltip.</p>
-       * <p>Processing constants are used to define the alignment.</p>
-       * @param t the text to display
-       * @returns this control
-       */
+     * <p>Sets the text to be displayed in the tooltip.</p>
+     * <p>Processing constants are used to define the alignment.</p>
+     * @param t the text to display
+     * @returns this control
+     */
     text(t: string) {
         if (Array.isArray(t))
             this._lines = t;
@@ -46,32 +44,25 @@ class CvsTooltip extends CvsText {
      * @param duration display time in ms
      * @returns this control
      */
-    showTime(duration: number) {
-        this._showTime = duration;
-        return this;
-    }
+    // showTime(duration: number) {
+    //     this._showTime = duration;
+    //     return this;
+    // }
 
     /** @hidden */
-    _updateState(owner: CvsBufferedControl, prevOver: number, currOver: number) {
-        if (owner.isVisible() && prevOver != currOver)
-            if (currOver > 0) {
-                this.show();
-                setTimeout(() => { this.hide() }, this._showTime);
-            }
-    }
+    show(cascade?: boolean): CvsBaseControl { return this; }
+    /** @hidden */
+    hide(cascade?: boolean): CvsBaseControl { return this; }
 
-    // /** @hidden */
-    // _validatePosition() {
-    //     let p = this._parent;
-    //     let pp = p.getAbsXY(), px = pp.x, py = pp.y;
-    //     let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
-    //     // Start tip in default location
-    //     this._x = 0, this._y = -this._h;
-    //     if (py + this._y < 0)
-    //         this._y += this._h + ph;
-    //     if (px + this._x + this._w > this._gui.canvasWidth())
-    //         this._x -= this._w - pa.w;
-    // }
+    /** @hidden */
+    _updateState(enter: boolean) {
+        if (enter && !this.isActive) { // && !this._visible) {
+            this._active = true;
+            this._visible = true;
+            setTimeout(() => { this._visible = false; }, this._gui._show_time);
+            setTimeout(() => { this._active = false; }, this._gui._repeat_time);
+        }
+    }
 
     /** @hidden */
     _validatePosition() {

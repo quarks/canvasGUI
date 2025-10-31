@@ -38,6 +38,8 @@ class CvsViewer extends CvsBufferedControl {
         this.addChild(this._scrH);
         this.addChild(this._scrV);
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this; }
     /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
      * and limits. The initial value will be constrained to the limits.</p>
@@ -219,12 +221,7 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /** @hidden */
-    orient(dir) {
-        console.warn(`Changing orientation of a viewer is not allowed !!!`);
-        return this;
-    }
-    /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         let absPos = this.getAbsXY();
         let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
@@ -258,7 +255,6 @@ class CvsViewer extends CvsBufferedControl {
                 break;
             case 'mousemove':
             case 'touchmove':
-                // this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
                 if (this.isOver) {
                     if (this._dragging) {
                         this._scaler?.hide();
@@ -413,4 +409,6 @@ class CvsViewer extends CvsBufferedControl {
         return { w: this._w, h: this._h };
     }
 }
+Object.assign(CvsViewer.prototype, NoOrient);
+Object.assign(CvsViewer.prototype, NoTooltip);
 //# sourceMappingURL=viewer.js.map

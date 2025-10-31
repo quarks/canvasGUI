@@ -386,7 +386,7 @@ class CvsTextField extends CvsText {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -394,7 +394,9 @@ class CvsTextField extends CvsText {
                 break;
             case 'mousemove':
             case 'touchmove':
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control);
+                this._tooltip?._updateState(enter);
+                this.invalidateBuffer();
                 break;
         }
         return this._nextActive;

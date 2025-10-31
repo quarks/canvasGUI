@@ -69,13 +69,12 @@ class CvsButton extends CvsTextIcon {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 this.isActive = true;
                 this._clickAllowed = true; // false if mouse moves
-                this._part = picked.part;
                 this.isOver = true;
                 break;
             case 'mouseout':
@@ -92,7 +91,8 @@ class CvsButton extends CvsTextIcon {
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control);
+                this._tooltip?._updateState(enter);
                 break;
             case 'mouseover':
                 break;

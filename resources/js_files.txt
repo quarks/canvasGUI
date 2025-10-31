@@ -15,6 +15,6 @@ viewer.js
 textfield.js
 joystick.js
 knob.js
+panel.js
 panes.js
 grid.js
-

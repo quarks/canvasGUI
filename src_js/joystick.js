@@ -130,7 +130,7 @@ class CvsJoystick extends CvsBufferedControl {
         [this._mag, this._ang, this._dir, this._dead] = [mag, ang, dir, dead];
     }
     /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         /** @hidden */
         function getValue(source, event, fini) {
             let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
@@ -146,7 +146,6 @@ class CvsJoystick extends CvsBufferedControl {
             case 'mousedown':
             case 'touchstart':
                 this.isActive = true;
-                this._part = picked.part;
                 this.isOver = true;
                 break;
             case 'mouseout':
@@ -173,7 +172,8 @@ class CvsJoystick extends CvsBufferedControl {
                     this._validateThumbPosition(mx, my);
                     this.action(getValue(this, e, false));
                 }
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control);
+                this._tooltip?._updateState(enter);
                 this.invalidateBuffer();
                 break;
             case 'mouseover':
@@ -272,7 +272,7 @@ class CvsJoystick extends CvsBufferedControl {
         // Thumb
         uib.strokeWeight(2);
         uib.stroke(THUMB_STROKE);
-        if (this.isActive || this._over > 0)
+        if (this.isActive || this.isOver)
             uib.fill(THUMB_OVER);
         else
             uib.fill(THUMB_OFF);

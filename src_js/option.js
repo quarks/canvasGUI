@@ -113,13 +113,12 @@ class CvsOption extends CvsText {
         return this;
     }
     /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 this.isActive = true;
                 this._clickAllowed = true; // false if mouse moves
-                this._part = picked.part;
                 this.isOver = true;
                 break;
             case 'mouseout':
@@ -134,15 +133,16 @@ class CvsOption extends CvsText {
                             this.action({ source: this, p5Event: e, selected: true });
                         }
                     }
-                    this.isActive = false;
-                    this._clickAllowed = false;
-                    this.isOver = false;
                 }
+                this.isActive = false;
+                this._clickAllowed = false;
+                this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control);
+                this._tooltip?._updateState(enter);
                 break;
             case 'mouseover':
                 break;

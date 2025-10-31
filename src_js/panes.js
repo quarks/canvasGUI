@@ -18,11 +18,11 @@ class CvsPane extends CvsBaseControl {
         this._timer = 0;
         this._z = PANE_Z;
     }
-    /** @hidden */
-    parent(p, rx, ry) {
-        console.warn('Panes cannot have a parent');
-        return undefined;
-    }
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this; }
+    /** @hidden */ parent(parent, rx, ry) { return this; }
+    /** @hidden */ transparent() { return this; }
+    /** @hidden */ opaque() { return this; }
     /** @hidden */
     leaveParent() {
         console.warn('Panes cannot have a parent');
@@ -213,21 +213,6 @@ class CvsPane extends CvsBaseControl {
      */
     shrink(dim) {
         return this.tab().shrink();
-    }
-    /** @hidden */
-    opaque(dim) {
-        console.warn("This method is not applicable to a pane");
-        return this;
-    }
-    /** @hidden */
-    transparent(dim) {
-        console.warn("This methis is not applicable to a pane");
-        return this;
-    }
-    /** @hidden */
-    orient(dir) {
-        console.warn(`Changing orientation of a pane is not allowed !!!`);
-        return this;
     }
     /**
      * @returns the tab button
@@ -447,4 +432,8 @@ class CvsPaneWest extends CvsPane {
         return this;
     }
 }
+Object.assign(CvsPane.prototype, NoOrient);
+Object.assign(CvsPane.prototype, NoParent);
+Object.assign(CvsPane.prototype, FixedBackground);
+Object.assign(CvsPane.prototype, NoTooltip);
 //# sourceMappingURL=panes.js.map

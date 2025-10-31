@@ -1,7 +1,7 @@
 const CANVAS_GUI_VERSION = '!!VERSION!!';
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
-const GUIS = new Map();
 const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
+const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 5000;
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -28,8 +28,12 @@ class GUI {
         // Hide / disable GUI
         /** @hidden */ this._visible = true;
         /** @hidden */ this._enabled = true;
+        // Tooltip times
+        /** @hidden */ this._show_time = TT_SHOW_TIME;
+        /** @hidden */ this._repeat_time = TT_REPEAT_TIME;
         this._renderer = p5c;
         this._canvas = p5c.canvas;
+        // GUI creation
         this._target = document.getElementById(p5c.canvas.id); // for keyboard events
         this._p = p; // p5 instance
         this._controls = new Map(); // registered controls
@@ -56,7 +60,7 @@ class GUI {
         this._addFocusHandlers();
         this._addMouseEventHandlers();
         this._addTouchEventHandlers();
-        this._overCtrl = null;
+        this._currOver = null;
         this._activeCtrl = null;
         this._activePart = 0;
         // Choose 2D / 3D rendering methods  
@@ -68,12 +72,6 @@ class GUI {
             ? function () { return this._renderer._curCamera; } // V1
             : function () { return this._renderer.states.curCamera; }; // V2
     }
-    get overCtrl() { return this._overCtrl; }
-    set overCtrl(v) { this._overCtrl = v; }
-    get activeCtrl() { return this._activeCtrl; }
-    set activeCtrl(v) { this._activeCtrl = v; }
-    get activePart() { return this._activePart; }
-    set activePart(v) { this._activePart = v; }
     /**
      * Make sure we have an overlay buffer and a pick buffer of the correct size
      * @hidden
@@ -90,7 +88,10 @@ class GUI {
         }
     }
     // ##################################################################
+    // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ######         Factory methods to create controls          #######
+    // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
+    // ##################################################################
     /**
      * Create a slider control
      * @param id unique id for this control
@@ -175,6 +176,18 @@ class GUI {
      */
     label(id, x, y, w, h) {
         return this.addControl(new CvsLabel(this, id, x, y, w, h), false);
+    }
+    /**
+     * Create a label control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a label
+     */
+    panel(id, x, y, w, h) {
+        return this.addControl(new CvsPanel(this, id, x, y, w, h), true);
     }
     /**
      * Create a viewer control
@@ -264,7 +277,8 @@ class GUI {
         }
         return this.addControl(ctrl, false);
     }
-    // ###########        End of factory methods             ############
+    // ######           End of control factory methods             ######
+    // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /**
      * Get a grid layout for a given pixel position and size in the display area.
@@ -306,7 +320,6 @@ class GUI {
     }
     /**
      * @returns true if gui rendering is allowed
-     * @returns this gui
      */
     isVisible() {
         return this._visible;
@@ -332,6 +345,20 @@ class GUI {
      */
     isEnabled() {
         return this._enabled;
+    }
+    /**
+     * Controls how long a tooltip is shown and how long to wait before it can
+     * be shown again. This helps avoid the tip flicking on and off as the mouse
+     * moves over the control.
+     *
+     * @param show show duration (ms)
+     * @param repeat duration before the tip can be shown again
+     * @returns this gui
+     */
+    tooltipTimes(show = TT_SHOW_TIME, repeat = TT_REPEAT_TIME) {
+        this._show_time = show;
+        this._repeat_time = repeat;
+        return this;
     }
     /**
      * Adds event listeners to the HTML canvas object. It also sets the draw method
@@ -408,27 +435,27 @@ class GUI {
      */
     _processEvent(e, x, y) {
         // Ignore mouse / touch events while we have an active textfield
-        if (this.activeCtrl instanceof CvsTextField)
+        if (this._activeCtrl instanceof CvsTextField)
             return;
-        const picked = this.getPicked(x, y);
-        if (this.activeCtrl) {
-            this.activeCtrl = this.activeCtrl._doEvent(e, x, y, picked);
+        let over = this.getPicked(x, y);
+        this._currOver = over.control;
+        // Determine if we have entered current over control
+        let enter = this._currOver && this._currOver != this._prevOver;
+        if (this._activeCtrl) {
+            this._activeCtrl = this._activeCtrl._doEvent(e, x, y, over, enter);
         }
         else {
-            // No active control so check for highlighting as pointer moves
-            // over a control
-            const picked = this.getPicked(x, y);
+            // Check for highlighting as pointer moves over a control
             if (e.type == 'mousemove' || e.type == 'touchmove') {
-                this.overCtrl?._doEvent(e, x, y, picked);
-                if (picked.control) {
-                    picked.control?._doEvent(e, x, y, picked);
-                    this.overCtrl = picked.control;
-                }
+                this._prevOver?._doEvent(e, x, y, over, false);
+                this._currOver?._doEvent(e, x, y, over, enter);
             }
             else {
-                this.activeCtrl = picked.control?._doEvent(e, x, y, picked);
+                // If we are over a control then let it handle the event
+                this._activeCtrl = this._currOver?._doEvent(e, x, y, over, enter);
             }
         }
+        this._prevOver = this._currOver;
     }
     /**
      * Process the key event if the active control is a CvsTextField
@@ -438,17 +465,17 @@ class GUI {
     _processKeyEvent(e) {
         // Paas the event if the active control is a CvsTextField
         if (this._visible && this._enabled && this._activeCtrl instanceof CvsTextField) {
-            this.activeCtrl = this.activeCtrl._doKeyEvent(e);
+            this._activeCtrl = this._activeCtrl._doKeyEvent(e);
         }
     }
     /** @hidden */
     _processFocusEvent(e) {
         switch (e.type) {
             case 'focusout':
-                if (this.activeCtrl instanceof CvsTextField) {
-                    this.activeCtrl.validate();
-                    this.activeCtrl._deactivate();
-                    this.activeCtrl = null;
+                if (this._activeCtrl instanceof CvsTextField) {
+                    this._activeCtrl.validate();
+                    this._activeCtrl._deactivate();
+                    this._activeCtrl = null;
                 }
                 break;
         }
@@ -888,37 +915,67 @@ class GUI {
         }
         return result;
     }
-}
-/** @hidden */
-const ANNOUNCE_CANVAS_GUI = function () {
-    if (GUIS.size == 0) {
-        CLOG('================================================');
-        CLOG(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2025 Peter Lager`);
-        CLOG('================================================');
+    /** @hidden */
+    static ANNOUNCE_CANVAS_GUI() {
+        if (GUI._guis.size == 0) {
+            CLOG('================================================');
+            CLOG(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2025 Peter Lager`);
+            CLOG('================================================');
+        }
     }
-};
+    /**
+     * <p>Returns a named GUI controller.</p>
+     * <p>If an exisiting GUI has the same name it will be returned, otherwise
+     * a new GUI will be created and returned</p>
+     * <p>If the name parameter is not of type 'string' or an empty string then
+     * the returned value is undefined.</p>
+     *
+     *
+     * @param name unique name for the GUI
+     * @param p5c the renderer - the display canvas
+     * @param p the processing instance (required in Instance mode)
+     * @returns a GUI controller existing or new GUI with the given name.
+     */
+    static create(name, p5c, p = p5.instance) {
+        GUI.ANNOUNCE_CANVAS_GUI();
+        if (GUI._guis.has(name)) {
+            CWARN(`You already have a  GUI called '${name} it will not be replaced`);
+            return GUI._guis.get(name);
+        }
+        // Need to create a GUI for this canvas
+        let gui = new GUI(p5c, p);
+        GUI._guis.set(name, gui);
+        return gui;
+    }
+    /**
+   * <p>Get the GUI with the given name. If no such GUI exists then the
+   * function returns undefined. </p>
+   * <p>The global function getGUI(...) is an alternative method that
+   * accepts the same parameters performs exactly the same task.</p>
+   * @param name the name of the GUI to get
+   * @returns the matching GUI controller or undefined if not found.
+   */
+    static get(name) {
+        return GUI._guis.get(name);
+    }
+}
+// Every GUI must have a unique string identifier.
+/** @hidden */ GUI._guis = new Map();
 /**
  * <p>Returns a named GUI controller.</p>
  * <p>If an exisiting GUI has the same name it will be returned, otherwise
  * a new GUI will be created and returned</p>
  * <p>If the name parameter is not of type 'string' or an empty string then
  * the returned value is undefined.</p>
- *
+ * <p>The global function createGUI(...) is an alternative method that
+ * accepts the same parameters performs exactly the same task.</p>
  * @param name unique name for the GUI
  * @param p5c the renderer - the display canvas
  * @param p the processing instance (required in Instance mode)
  * @returns a GUI controller existing or new GUI with the given name.
  */
 const createGUI = function (name, p5c, p = p5.instance) {
-    ANNOUNCE_CANVAS_GUI();
-    if (GUIS.has(name)) {
-        CWARN(`You already have a  GUI called '${name} it will not be replaced`);
-        return GUIS.get(name);
-    }
-    // Need to create a GUI for this canvas
-    let gui = new GUI(p5c, p);
-    GUIS.set(name, gui);
-    return gui;
+    return GUI.create(name, p5c, p);
 };
 /**
  * <p>Get the GUI with the given name. If no such GUI exists then the
@@ -927,6 +984,6 @@ const createGUI = function (name, p5c, p = p5.instance) {
  * @returns the matching GUI controller or undefined if not found.
  */
 const getGUI = function (name) {
-    return GUIS.get(name);
+    return GUI.get(name);
 };
 //# sourceMappingURL=canvas_gui.js.map

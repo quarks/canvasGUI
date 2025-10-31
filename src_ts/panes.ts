@@ -36,11 +36,16 @@ abstract class CvsPane extends CvsBaseControl {
         this._z = PANE_Z;
     }
 
-    /** @hidden */
-    parent(p: string | CvsBaseControl, rx?: number, ry?: number): CvsBaseControl {
-        console.warn('Panes cannot have a parent');
-        return undefined;
-    }
+    // Hide these methods from typeDoc
+    /** @hidden */  orient(dir) { return this; }
+    /** @hidden */  parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl { return this; }
+    /** @hidden */  transparent(): CvsBaseControl { return this; }
+    /** @hidden */  opaque(): CvsBaseControl { return this; }
+
+
+    /** @hidden */ abstract _opening(): void;
+    /** @hidden */ abstract _closing(): void;
+    /** @hidden */ abstract validateTabs(): void;
 
     /** @hidden */
     leaveParent(): CvsBaseControl {
@@ -146,9 +151,6 @@ abstract class CvsPane extends CvsBaseControl {
         return this._status == 'opening';
     }
 
-    /** @hidden */ abstract _opening(): void;
-    /** @hidden */ abstract _closing(): void;
-    /** @hidden */ abstract validateTabs(): void;
 
     /** @hidden */
     protected _tabAction(ta) {
@@ -254,30 +256,13 @@ abstract class CvsPane extends CvsBaseControl {
         return this.tab().shrink();
     }
 
-    /** @hidden */
-    opaque(dim?: string): CvsBaseControl {
-        console.warn("This method is not applicable to a pane");
-        return this;
-    }
-
-    /** @hidden */
-    transparent(dim?: string): CvsBaseControl {
-        console.warn("This methis is not applicable to a pane");
-        return this;
-    }
-
-    /** @hidden */
-    orient(dir: string) {
-        console.warn(`Changing orientation of a pane is not allowed !!!`);
-        return this;
-    }
-
     /**
      * @returns the tab button
      */
     tab() {
         return this._children[0];
     }
+
 
     /**
      * <p>Enables tab opening / closure</p>
@@ -322,7 +307,6 @@ abstract class CvsPane extends CvsBaseControl {
         return { w: this._w, h: this._h };
     }
 }
-
 
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
@@ -513,3 +497,9 @@ class CvsPaneWest extends CvsPane {
         return this;
     }
 }
+
+
+Object.assign(CvsPane.prototype, NoOrient);
+Object.assign(CvsPane.prototype, NoParent);
+Object.assign(CvsPane.prototype, FixedBackground);
+Object.assign(CvsPane.prototype, NoTooltip);

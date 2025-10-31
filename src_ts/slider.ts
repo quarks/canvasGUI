@@ -127,33 +127,15 @@ class CvsSlider extends CvsBufferedControl {
         return this._p.map(v, l0, l1, 0, 1, true);
     }
 
-    /**
-     * <p>See if the position [px, py] is over the control.</p> 
-     * @hidden
-     * @param px horizontal position
-     * @param py vertical position
-     * @param tol tolerance in pixels
-     * @returns 0 if not over the control of &ge;1
-     */
-    _whereOver(px: number, py: number, tol = 8): number {
-        px -= 10; // Adjust mouse to start of track
-        let ty = this._uiBfr.height / 2;
-        let tx = this._t01 * (this._uiBfr.width - 20);
-        return (Math.abs(tx - px) <= tol && Math.abs(ty - py) <= tol)
-            ? 1 : 0;
-    }
-
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x: number, y: number, picked: any): CvsBufferedControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
         let absPos = this.getAbsXY();
         let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (picked.part == 0) { // Thumb
+                if (over.part == 0) { // Thumb
                     this.isActive = true;
-                    // this._clickAllowed = true; // false if mouse moves
-                    this._part = picked.part;
                     this.isOver = true;
                 }
                 break;
@@ -175,7 +157,8 @@ class CvsSlider extends CvsBufferedControl {
                         this.action({ source: this, p5Event: e, value: this.value(), final: false });
                     }
                 }
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control && over.part == 0);
+                this._tooltip?._updateState(enter);
                 this.invalidateBuffer();
                 break;
             case 'mouseover':
@@ -271,11 +254,12 @@ class CvsSlider extends CvsBufferedControl {
         pkb.noStroke();
         // Now translate to track left edge - track centre
         pkb.translate(10, ty);
+        // pkb.rect(-10, pkb.width, -ty, pkb.height); //, ...this._c);
         // Track
-        // pkb.fill(c.r, c.g, c.b + 5);
-        // pkb.rect(0, -tH / 2, tw, tH, ...this._c);
-        // pkb.fill(c.r, c.g, c.b + 6);
-        // pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
+        pkb.fill(c.r, c.g, c.b + 5);
+        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        pkb.fill(c.r, c.g, c.b + 6);
+        pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
         // Thumb
         pkb.fill(c.r, c.g, c.b);
         pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
