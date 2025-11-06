@@ -1,7 +1,13 @@
 const CANVAS_GUI_VERSION = '!!VERSION!!';
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
-const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 5000;
+const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
+const FONTS = new Set(['arial', 'verdana', 'tahoma', 'trebuchet ms',
+    'times new roman', 'georgia', 'courier new', 'brush script mt',
+    'impact', 'serif', 'sans-serif', 'monospace']);
+const IS_VALID_FONT = function (fontname) {
+    return FONTS.has(fontname);
+};
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -9,7 +15,6 @@ const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 5000;
  * <li>Create the UI controls e.g. buttons, sliders</li>
  * <li>Provides 9 color schemes for the controls</li>
  * </ul>
- *
  */
 class GUI {
     /**
@@ -40,7 +45,10 @@ class GUI {
         this._ctrls = []; // controls in render order
         this._corners = [4, 4, 4, 4];
         this._optionGroups = new Map();
+        // Text attributes
         this._textSize = 12;
+        this._textFont = 'sans-serif';
+        this._textStyle = 'normal';
         this._tipTextSize = 10;
         // Pick buffer
         this._COLOR_STEP = 8;
@@ -281,6 +289,14 @@ class GUI {
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /**
+     * @returns true if this gui can respond to mouse/key events
+     */
+    get isEnabled() { return this._enabled; }
+    /**
+     * @returns true if gui rendering is allowed
+     */
+    get isVisible() { return this._visible; }
+    /**
      * Get a grid layout for a given pixel position and size in the display area.
      * Initially the grid repreents a single cell but the number and size of
      * horizontal and vertical cells should be set before creating the controls.
@@ -319,12 +335,6 @@ class GUI {
         return this;
     }
     /**
-     * @returns true if gui rendering is allowed
-     */
-    isVisible() {
-        return this._visible;
-    }
-    /**
      * Enable mouse/key event handling for this gui
      * @returns this gui
      */
@@ -339,12 +349,6 @@ class GUI {
     disable() {
         this._enabled = false;
         return this;
-    }
-    /**
-     * @returns true if this gui can respond to mouse/key events
-     */
-    isEnabled() {
-        return this._enabled;
     }
     /**
      * Controls how long a tooltip is shown and how long to wait before it can
@@ -368,6 +372,7 @@ class GUI {
     _addFocusHandlers() {
         let canvas = this._canvas;
         canvas.addEventListener('focusout', (e) => { this._processFocusEvent(e); });
+        canvas.addEventListener('focusin', (e) => { this._processFocusEvent(e); });
     }
     /** @hidden */
     _addMouseEventHandlers() {
@@ -472,11 +477,14 @@ class GUI {
     _processFocusEvent(e) {
         switch (e.type) {
             case 'focusout':
+                console.log(`Focus out ${this._activeCtrl?.id}`);
                 if (this._activeCtrl instanceof CvsTextField) {
-                    this._activeCtrl.validate();
                     this._activeCtrl._deactivate();
                     this._activeCtrl = null;
                 }
+                break;
+            case 'focusin':
+                console.log(`Focus in ${this._activeCtrl?.id}`);
                 break;
         }
     }
@@ -605,9 +613,9 @@ class GUI {
     /**
      * <p>Sets or gets the global text size.</p>
      * <p>If no parameter is passed then the global text size is returned
-     * otherwise it returns this control.</p>
+     * otherwise it returns this gui.</p>
      * @param gts new global text size
-     * @returns the global text size or this control
+     * @returns the global text size or this gui
      */
     textSize(gts) {
         if (!Number.isFinite(gts))
@@ -615,6 +623,60 @@ class GUI {
         this._textSize = gts;
         // Update visual for all controls
         this._controls.forEach((c) => { c.invalidateBuffer(); });
+        return this;
+    }
+    /**
+     * <p>Sets or gets the global text font.</p>
+     * <p>If the parameter is true-type-font <em>or</em> the name of a system
+     * font it will be used as the global font and this gui will be returned.</p>
+     * <p>Recognised font names are :-</p>
+     * <pre>
+     * 'arial'             'verdana'   'tahoma'        'trebuchet ms'
+     * 'times new roman'   'georgia'   'courier new'   'brush script mt'
+     * 'impact'            'serif'     'sans-serif'    'monospace'
+     * </pre>
+     * <p>Invalid fonts are ignored and the global font is unchanged.</p>
+     * <p>If no parameter is passed then the current font is returned.</p>
+     * @param gtf A true-type-font or the name (case-insensitive) of a
+     * valid system font.
+     * @returns this gui
+     */
+    textFont(gtf) {
+        if (!gtf)
+            return this._textFont; // getter
+        if (gtf instanceof p5.Font)
+            this._textFont = gtf;
+        else if (IS_VALID_FONT(gtf.toLowerCase()))
+            this._textFont = gtf;
+        else
+            CWARN(`The font '${gtf}' was not recognized so will be ignored!`);
+        return this;
+    }
+    /**
+     * <p>Sets or gets the global text style.</p>
+     * <p>The 4 recognised font styles are :-</p>
+     * <pre>
+     * NORMAL    BOLD   ITALIC   BOLDITALIC
+     * </pre>
+     * <p>Unrecognized styles are ignored and the global style is unchanged.</p>
+     * <p>If no parameter is passed then the current style is returned.</p>
+     * @param gty the font style to use.
+     * @returns this gui
+     */
+    textStyle(gty) {
+        if (!gty)
+            return this._textStyle; // getter
+        gty = gty.toLowerCase();
+        switch (gty) {
+            case 'normal':
+            case 'bold':
+            case 'italic':
+            case 'bold italic':
+                this._textStyle = gty;
+                break;
+            default:
+                CWARN(`The text style '${gty}' was not recognized so will be ignored!`);
+        }
         return this;
     }
     /**
@@ -955,10 +1017,12 @@ class GUI {
    * @param name the name of the GUI to get
    * @returns the matching GUI controller or undefined if not found.
    */
-    static get(name) {
+    static $$(name) {
         return GUI._guis.get(name);
     }
 }
+/** canvasGUI version */
+GUI.VERSION = '!!VERSION!!';
 // Every GUI must have a unique string identifier.
 /** @hidden */ GUI._guis = new Map();
 /**
@@ -984,6 +1048,6 @@ const createGUI = function (name, p5c, p = p5.instance) {
  * @returns the matching GUI controller or undefined if not found.
  */
 const getGUI = function (name) {
-    return GUI.get(name);
+    return GUI.$$(name);
 };
 //# sourceMappingURL=canvas_gui.js.map

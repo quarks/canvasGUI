@@ -36,22 +36,9 @@ abstract class CvsPane extends CvsBaseControl {
         this._z = PANE_Z;
     }
 
-    // Hide these methods from typeDoc
-    /** @hidden */  orient(dir) { return this; }
-    /** @hidden */  parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl { return this; }
-    /** @hidden */  transparent(): CvsBaseControl { return this; }
-    /** @hidden */  opaque(): CvsBaseControl { return this; }
-
-
     /** @hidden */ abstract _opening(): void;
     /** @hidden */ abstract _closing(): void;
     /** @hidden */ abstract validateTabs(): void;
-
-    /** @hidden */
-    leaveParent(): CvsBaseControl {
-        console.warn('Panes cannot have a parent');
-        return undefined;
-    }
 
     /**
      * <p>Get the 'depth' the pane will intrude into the canvas when open.</p>
@@ -104,21 +91,11 @@ abstract class CvsPane extends CvsBaseControl {
         return this;
     }
 
-    /**
-     * 
-     * @returns true if the pane is closed else false
-     */
-    isClosed(): boolean {
-        return this._status == 'closed';
-    }
+    /** true if the pane is closed else false.*/
+    get isClosed(): boolean { return this._status == 'closed'; }
 
-    /**
-     * 
-     * @returns true if the pane is closinging else false
-     */
-    isClosing(): boolean {
-        return this._status == 'closing';
-    }
+    /** true if the pane is closing else false.*/
+    get isClosing(): boolean { return this._status == 'closing'; }
 
     /**
      * <p>Close this pane</p>
@@ -137,19 +114,11 @@ abstract class CvsPane extends CvsBaseControl {
         }
     }
 
-    /**
-     * @returns true if the pane is open else false
-     */
-    isOpen(): boolean {
-        return this._status == 'open';
-    }
+    /** true if the pane is open else false.*/
+    get isOpen(): boolean { return this._status == 'open'; }
 
-    /**
-     * @returns true if the pane is opening else false
-     */
-    isOpening(): boolean {
-        return this._status == 'opening';
-    }
+    /** true if the pane is opening else false.*/
+    get isOpening(): boolean { return this._status == 'opening'; }
 
 
     /** @hidden */
@@ -174,6 +143,7 @@ abstract class CvsPane extends CvsBaseControl {
 
     }
 
+    /** @hidden */
     _draw(uib, pkb) {
         uib.push();
         uib.translate(this._x, this._y);
@@ -306,7 +276,25 @@ abstract class CvsPane extends CvsBaseControl {
     _minControlSize(): __Box {
         return { w: this._w, h: this._h };
     }
+
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this }
+    /** @hidden */ parent(parent, rx, ry) { return this }
+    /** @hidden */ leaveParent() { return this }
+    /** @hidden */ transparent() { return this }
+    /** @hidden */ opaque() { return this }
+    /** @hidden */ tooltip(tiptext) { return this }
+    /** @hidden */ tipTextSize(gtts) { return this }
+
 }
+
+
+// Object.assign(CvsPane.prototype, NoOrient);
+// Object.assign(CvsPane.prototype, NoParent);
+// Object.assign(CvsPane.prototype, FixedBackground);
+// Object.assign(CvsPane.prototype, NoTooltip);
+
+
 
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
@@ -499,7 +487,4 @@ class CvsPaneWest extends CvsPane {
 }
 
 
-Object.assign(CvsPane.prototype, NoOrient);
-Object.assign(CvsPane.prototype, NoParent);
-Object.assign(CvsPane.prototype, FixedBackground);
-Object.assign(CvsPane.prototype, NoTooltip);
+

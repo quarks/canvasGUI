@@ -6,7 +6,13 @@
 const CANVAS_GUI_VERSION = '2.0.0';
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
-const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 5000;
+const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
+const FONTS = new Set(['arial', 'verdana', 'tahoma', 'trebuchet ms',
+    'times new roman', 'georgia', 'courier new', 'brush script mt',
+    'impact', 'serif', 'sans-serif', 'monospace']);
+const IS_VALID_FONT = function (fontname) {
+    return FONTS.has(fontname);
+};
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -14,7 +20,6 @@ const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 5000;
  * <li>Create the UI controls e.g. buttons, sliders</li>
  * <li>Provides 9 color schemes for the controls</li>
  * </ul>
- *
  */
 class GUI {
     /**
@@ -45,7 +50,10 @@ class GUI {
         this._ctrls = []; // controls in render order
         this._corners = [4, 4, 4, 4];
         this._optionGroups = new Map();
+        // Text attributes
         this._textSize = 12;
+        this._textFont = 'sans-serif';
+        this._textStyle = 'normal';
         this._tipTextSize = 10;
         // Pick buffer
         this._COLOR_STEP = 8;
@@ -286,6 +294,14 @@ class GUI {
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /**
+     * @returns true if this gui can respond to mouse/key events
+     */
+    get isEnabled() { return this._enabled; }
+    /**
+     * @returns true if gui rendering is allowed
+     */
+    get isVisible() { return this._visible; }
+    /**
      * Get a grid layout for a given pixel position and size in the display area.
      * Initially the grid repreents a single cell but the number and size of
      * horizontal and vertical cells should be set before creating the controls.
@@ -324,12 +340,6 @@ class GUI {
         return this;
     }
     /**
-     * @returns true if gui rendering is allowed
-     */
-    isVisible() {
-        return this._visible;
-    }
-    /**
      * Enable mouse/key event handling for this gui
      * @returns this gui
      */
@@ -344,12 +354,6 @@ class GUI {
     disable() {
         this._enabled = false;
         return this;
-    }
-    /**
-     * @returns true if this gui can respond to mouse/key events
-     */
-    isEnabled() {
-        return this._enabled;
     }
     /**
      * Controls how long a tooltip is shown and how long to wait before it can
@@ -373,6 +377,7 @@ class GUI {
     _addFocusHandlers() {
         let canvas = this._canvas;
         canvas.addEventListener('focusout', (e) => { this._processFocusEvent(e); });
+        canvas.addEventListener('focusin', (e) => { this._processFocusEvent(e); });
     }
     /** @hidden */
     _addMouseEventHandlers() {
@@ -477,11 +482,14 @@ class GUI {
     _processFocusEvent(e) {
         switch (e.type) {
             case 'focusout':
+                console.log(`Focus out ${this._activeCtrl?.id}`);
                 if (this._activeCtrl instanceof CvsTextField) {
-                    this._activeCtrl.validate();
                     this._activeCtrl._deactivate();
                     this._activeCtrl = null;
                 }
+                break;
+            case 'focusin':
+                console.log(`Focus in ${this._activeCtrl?.id}`);
                 break;
         }
     }
@@ -610,9 +618,9 @@ class GUI {
     /**
      * <p>Sets or gets the global text size.</p>
      * <p>If no parameter is passed then the global text size is returned
-     * otherwise it returns this control.</p>
+     * otherwise it returns this gui.</p>
      * @param gts new global text size
-     * @returns the global text size or this control
+     * @returns the global text size or this gui
      */
     textSize(gts) {
         if (!Number.isFinite(gts))
@@ -620,6 +628,60 @@ class GUI {
         this._textSize = gts;
         // Update visual for all controls
         this._controls.forEach((c) => { c.invalidateBuffer(); });
+        return this;
+    }
+    /**
+     * <p>Sets or gets the global text font.</p>
+     * <p>If the parameter is true-type-font <em>or</em> the name of a system
+     * font it will be used as the global font and this gui will be returned.</p>
+     * <p>Recognised font names are :-</p>
+     * <pre>
+     * 'arial'             'verdana'   'tahoma'        'trebuchet ms'
+     * 'times new roman'   'georgia'   'courier new'   'brush script mt'
+     * 'impact'            'serif'     'sans-serif'    'monospace'
+     * </pre>
+     * <p>Invalid fonts are ignored and the global font is unchanged.</p>
+     * <p>If no parameter is passed then the current font is returned.</p>
+     * @param gtf A true-type-font or the name (case-insensitive) of a
+     * valid system font.
+     * @returns this gui
+     */
+    textFont(gtf) {
+        if (!gtf)
+            return this._textFont; // getter
+        if (gtf instanceof p5.Font)
+            this._textFont = gtf;
+        else if (IS_VALID_FONT(gtf.toLowerCase()))
+            this._textFont = gtf;
+        else
+            CWARN(`The font '${gtf}' was not recognized so will be ignored!`);
+        return this;
+    }
+    /**
+     * <p>Sets or gets the global text style.</p>
+     * <p>The 4 recognised font styles are :-</p>
+     * <pre>
+     * NORMAL    BOLD   ITALIC   BOLDITALIC
+     * </pre>
+     * <p>Unrecognized styles are ignored and the global style is unchanged.</p>
+     * <p>If no parameter is passed then the current style is returned.</p>
+     * @param gty the font style to use.
+     * @returns this gui
+     */
+    textStyle(gty) {
+        if (!gty)
+            return this._textStyle; // getter
+        gty = gty.toLowerCase();
+        switch (gty) {
+            case 'normal':
+            case 'bold':
+            case 'italic':
+            case 'bold italic':
+                this._textStyle = gty;
+                break;
+            default:
+                CWARN(`The text style '${gty}' was not recognized so will be ignored!`);
+        }
         return this;
     }
     /**
@@ -960,10 +1022,12 @@ class GUI {
    * @param name the name of the GUI to get
    * @returns the matching GUI controller or undefined if not found.
    */
-    static get(name) {
+    static $$(name) {
         return GUI._guis.get(name);
     }
 }
+/** canvasGUI version */
+GUI.VERSION = '2.0.0';
 // Every GUI must have a unique string identifier.
 /** @hidden */ GUI._guis = new Map();
 /**
@@ -989,7 +1053,7 @@ const createGUI = function (name, p5c, p = p5.instance) {
  * @returns the matching GUI controller or undefined if not found.
  */
 const getGUI = function (name) {
-    return GUI.get(name);
+    return GUI.$$(name);
 };
 //# sourceMappingURL=canvas_gui.js.map
 class BaseScheme {
@@ -1239,14 +1303,21 @@ class CvsBaseControl {
     get type() { return this.constructor.name.substring(3); }
     ;
     /**
+     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
+     * @returns true if the control is enabled else false
+     */
+    get isEnabled() { return this._enabled; }
+    /**
+     * @returns true if this control is visible
+     */
+    get isVisible() { return this._visible; }
+    /**
      * A control becomes active when the mouse button is pressed over it.
      * This method has little practical use except when debugging.
-     * @hidden
      * @returns true if this control is expecting more mouse events
+     * @hidden
      */
     get isActive() { return this._active; }
-    /** @hidden */
-    set isActive(b) { this._active = b; }
     /**
      * Move control to an absolute position
      * @param x horizontal position
@@ -1305,9 +1376,11 @@ class CvsBaseControl {
         return this._scheme;
     }
     /**
-     * <p>Invalidates the control's buffer forcing it to validate it on the
-     * next frame</p>
+     * <p>This method will force the control to update its visual appearance
+     * when the next frame is rendered.</p>
+     * <p><em>It is included in the most unlikely event it is needed.</em></p>
      * @returns this control
+     * @hidden
      */
     invalidateBuffer() {
         this._bufferInvalid = true;
@@ -1396,7 +1469,7 @@ class CvsBaseControl {
      * <li>Named function declaration</li>
      * </ol>
      *
-     * @param event_handler  the function to handle this controls event
+     * @param event_handler  the function to handle this conytrol's events.
      * @returns this control
      */
     setAction(event_handler) {
@@ -1430,13 +1503,6 @@ class CvsBaseControl {
                 this._orientation = CvsBaseControl.EAST;
         }
         return this;
-    }
-    /**
-     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
-     * @returns true if the control is enabled else false
-     */
-    isEnabled() {
-        return this._enabled;
     }
     /**
      * <p>Enables this control</p>
@@ -1493,12 +1559,6 @@ class CvsBaseControl {
         return this;
     }
     /**
-     * @returns true if this control is visible
-     */
-    isVisible() {
-        return this._visible;
-    }
-    /**
      * <p>Makes the controls background opaque. The actual color depends
      * on the controls color scheme</p>
      * @returns this control
@@ -1514,6 +1574,10 @@ class CvsBaseControl {
     transparent() {
         this._opaque = false;
         return this;
+    }
+    /** @hidden */
+    orientation() {
+        return this._orientation;
     }
     /** @hidden */
     _minControlSize() { return null; }
@@ -1537,18 +1601,6 @@ class CvsBaseControl {
     _neq(a, b) {
         return Math.abs(a - b) >= 0.001;
     }
-    /** @hidden */
-    over() {
-        return this._over;
-    }
-    /** @hidden */
-    pover() {
-        return this._pover;
-    }
-    /** @hidden */
-    orientation() {
-        return this._orientation;
-    }
 }
 /** @hidden */
 CvsBaseControl.NORTH = new OrientNorth();
@@ -1558,41 +1610,60 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
-const NoOrient = {
-    /** This control does not support changing orientation */
-    orient(dir) {
-        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
-        return this;
-    }
-};
-const NoParent = {
-    /** This control does not support changing orientation */
-    parent(parent, rx, ry) {
-        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-        return this;
-    }
-};
-/** @hidden */
-const NoTooltip = {
-    /** @hidden */
-    tooltip(dir) {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    },
-    /** @hidden */
-    tipTextSize(dir) {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    }
-};
-/** @hidden */
-const FixedBackground = {
-    /** @hidden */
-    orient(dir) {
-        CWARN(`Controls of type '${this.type}' do not support 'transparent' and 'opaque' methods.`);
-        return this;
-    }
-};
+// const NoOrient = {
+//     /** This control does not support changing orientation */
+//     orient(dir: string): CvsBaseControl {
+//         CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
+//         return this;
+//         // // Hide these methods from typeDoc
+//         // /** @hidden */ orient(dir) { return this }
+//     }
+// }
+// const NoParent = {
+//     /** This control does not support changing orientation */
+//     parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+//         return this;
+//     },
+//     leaveParent(): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+//         return this;
+//     }
+//     // // Hide these methods from typeDoc
+//     // /** @hidden */ parent(parent, rx, ry){ return this }
+//     // /** @hidden */ leaveParent(){ return this }
+// }
+// /** @hidden */
+// const NoTooltip = {
+//     /** @hidden */
+//     tooltip(tiptext: string): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+//         return this;
+//     },
+//     /** @hidden */
+//     tipTextSize(gtts: number): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+//         return this;
+//     }
+//     // // Hide these methods from typeDoc
+//     // /** @hidden */ tooltip(tiptext){ return this }
+//     // /** @hidden */ tipTextSize(gtts) { return this }
+// }
+// /** @hidden */
+// const FixedBackground = {
+//     /** @hidden */
+//     transparent(): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
+//         return this;
+//     },
+//     opaque(): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
+//         return this;
+//     }
+//     // // Hide these methods from typeDoc
+//     // /** @hidden */ transparent(){ return this }
+//     // /** @hidden */ opaque() { return this }
+// }
 //# sourceMappingURL=basecontrol.js.map
 /*
 ##############################################################################
@@ -1680,7 +1751,6 @@ class CvsBufferedControl extends CvsBaseControl {
      * @hidden
      */
     _draw(uib, pkb) {
-        // console.log(`Draw ${this.id}`)
         this._validateBuffer();
         uib.push();
         uib.translate(this._x, this._y);
@@ -1750,7 +1820,7 @@ class CvsBufferedControl extends CvsBaseControl {
      * @param duration how long the tip remains visible (milliseconds)
      * @returns this control
      */
-    tooltip(tiptext, duration = 1600) {
+    tooltip(tiptext) {
         let tt = this._gui.__tooltip(this._id + '.tooltip')
             .text(tiptext)
             .shrink();
@@ -1813,11 +1883,13 @@ class CvsSlider extends CvsBufferedControl {
         return this;
     }
     /**
-     *
-     * @param value scale value to test
-     * @returns true if the value lies within the slider's limits else false
+     * Checks whether a value is between the lower and upper limits for this
+     * control. It allows the user to prevalidate a value before attempting
+     * to change the control's value.
+     * @param value value to test
+     * @returns true if the value lies within the control's limits else false
      */
-    isValid(value) {
+    isInsideLimits(value) {
         return (Number.isFinite(value)
             && (value - this._limit0) * (value - this._limit1) <= 0);
     }
@@ -1894,7 +1966,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mousedown':
             case 'touchstart':
                 if (over.part == 0) { // Thumb
-                    this.isActive = true;
+                    this._active = true;
                     this.isOver = true;
                 }
                 break;
@@ -1902,7 +1974,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this.isActive = false;
+                this._active = false;
                 this.isOver = false;
                 break;
             case 'mousemove':
@@ -2045,10 +2117,10 @@ class CvsRanger extends CvsSlider {
         this._opaque = false;
     }
     /**
-     * <p>Sets or gets the low and high values for this control. If both parameters
-     * and within the rangers limits then they are used to set the low and high
-     * values of the ranger and move the thumbs to the correct postion.</p>
-     * <p>If one or both parameters are invalid then they are ignored and the method
+     * <p>Sets or gets the low and high thumb values for this control. If both parameters
+     * are within limits of the ranger then they are accepted and the thumbs are moved to
+     * the correct position.</p>
+     * <p>If either of the parameters are invalid then they are ignored and the method
      * returns the current range low and high values.</p>
      * @param v0 low value
      * @param v1 high value
@@ -2081,10 +2153,7 @@ class CvsRanger extends CvsSlider {
         return this._t2v(this._t[1]);
     }
     /** @hidden */
-    value(v) {
-        console.warn('Ranger controls require 2 values - use range(v0, v1) instead');
-        return undefined;
-    }
+    value(v) { return this; }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
         let absPos = this.getAbsXY();
@@ -2093,7 +2162,7 @@ class CvsRanger extends CvsSlider {
             case 'mousedown':
             case 'touchstart':
                 if (over.part == 0 || over.part == 1) { // A thumb
-                    this.isActive = true;
+                    this._active = true;
                     this._tIdx = over.part; // Which thumb is the mouse over
                     this.isOver = true;
                 }
@@ -2110,7 +2179,7 @@ class CvsRanger extends CvsSlider {
                     this.action({
                         source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
                     });
-                    this.isActive = false;
+                    this._active = false;
                     this.invalidateBuffer();
                 }
                 break;
@@ -2235,7 +2304,7 @@ class CvsRanger extends CvsSlider {
 /**
  * </p>The base class for any control that displays text as part of its
  * visual interface</p>
- *
+ * @hidden
  */
 class CvsText extends CvsBufferedControl {
     /** @hidden */
@@ -2275,6 +2344,62 @@ class CvsText extends CvsBufferedControl {
         return this;
     }
     /**
+     * <p>Sets or gets the text font for this control.</p>
+     * <p>If the parameter is true-type-font <em>or</em> the name of a system
+     * font it will be used as the local font and this control will be
+     * returned.</p>
+     * <p>Recognised font names are :-</p>
+     * <pre>
+     * 'arial'             'verdana'   'tahoma'        'trebuchet ms'
+     * 'times new roman'   'georgia'   'courier new'   'brush script mt'
+     * 'impact'            'serif'     'sans-serif'    'monospace'
+     * </pre>
+     * <p>Invalid fonts are ignored and the local font is unchanged.</p>
+     * <p>If no parameter is passed then the current local font is
+     * returned.</p>
+     * @param ltf A true-type-font or the name (case-insensitive) of a
+     * valid system font.
+     * @returns this control
+     */
+    textFont(ltf) {
+        if (!ltf)
+            return this._gui.textFont(); // getter
+        if (ltf instanceof p5.Font)
+            this._textFont = ltf;
+        else if (IS_VALID_FONT(ltf.toLowerCase()))
+            this._textFont = ltf;
+        else
+            CWARN(`The font '${ltf}' is not a recognized so will be ignored!`);
+        return this;
+    }
+    /**
+     * <p>Sets or gets the local text style.</p>
+     * <p>The 4 recognised font styles are :-</p>
+     * <pre>
+     * NORMAL    BOLD   ITALIC   BOLDITALIC
+     * </pre>
+     * <p>Unrecognized styles are ignored and the local style is unchanged.</p>
+     * <p>If no parameter is passed then the current style is returned.</p>
+     * @param gty the font style to use.
+     * @returns this control
+     */
+    textStyle(gty) {
+        if (!gty)
+            return this._textStyle; // getter
+        gty = gty.toLowerCase();
+        switch (gty) {
+            case 'normal':
+            case 'bold':
+            case 'italic':
+            case 'bold italic':
+                this._textStyle = gty;
+                break;
+            default:
+                CWARN(`The text style '${gty}' was not recognized so will be ignored!`);
+        }
+        return this;
+    }
+    /**
      * <p>Sets the text alignment.</p>
      * <p>Processing constants are used to define the text alignment.</p>
      * @param align LEFT, CENTER or RIGHT
@@ -2288,8 +2413,7 @@ class CvsText extends CvsBufferedControl {
         return this;
     }
     /**
-     * <p>Renoves any text that the control might use ti  display itself.</p>
-     *
+     * <p>Renoves any text that the control might use to display itself.</p>
      * @returns this control
      */
     noText() {
@@ -2345,7 +2469,7 @@ class CvsText extends CvsBufferedControl {
 }
 /**
  * <p>This class enables icons to be added to any text control.</p>
- *
+ * @hidden
  */
 class CvsTextIcon extends CvsText {
     /** @hidden */
@@ -2357,16 +2481,16 @@ class CvsTextIcon extends CvsText {
     /**
      * <p>Gets or sets the icon and its alignment relative to any text in the control.</p>
      * <p>Processing constants are used to define the icon alignment.</p>
-     * @param i the icon to use for this control
+     * @param icon the icon to use for this control
      * @param align LEFT or RIGHT
      * @returns this control or the current icon
      */
-    icon(i, align) {
+    icon(icon, align) {
         // getter
-        if (!i)
+        if (!icon)
             return this._icon;
         //setter    
-        this._icon = i;
+        this._icon = icon;
         if (align && (align == this._p.LEFT || align == this._p.RIGHT))
             this._iconAlign = align;
         // If necessary expand the control to surrond text and icon 
@@ -2442,22 +2566,29 @@ class CvsLabel extends CvsTextIcon {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 60, h || 16);
     }
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(gtts) { return this; }
+    /** @hidden */ setAction(event_handler) { return this; }
     /** @hidden */
     _updateControlVisual() {
         let ts = this._textSize || this._gui.textSize();
+        let tf = this._textFont || this._gui.textFont();
+        let ty = this._textStyle || this._gui.textStyle();
         let cs = this._scheme || this._gui.scheme();
         let p = this._p;
         let icon = this._icon, iA = this._iconAlign, tA = this._textAlign;
         let lines = this._lines, gap = this._gap;
         const OPAQUE = cs['C_3'], FORE = cs['C_8'];
-        let b = this._uiBfr;
-        b.push();
-        b.clear();
+        let uib = this._uiBfr;
+        uib.push();
+        uib.clear();
+        uib.textFont(tf);
+        uib.textStyle(ty);
         // Background
         if (this._opaque) {
-            b.noStroke();
-            b.fill(OPAQUE);
-            b.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.noStroke();
+            uib.fill(OPAQUE);
+            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         if (icon) {
             let px = 0, py;
@@ -2472,10 +2603,10 @@ class CvsLabel extends CvsTextIcon {
             if (lines.length == 0) // no text so center icon
                 px = (this._w - icon.width) / 2;
             py = (this._h - icon.height + gap) / 2;
-            b.image(this._icon, px, py);
+            uib.image(this._icon, px, py);
         }
         if (lines.length > 0) {
-            b.textSize(ts);
+            uib.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
             // Determine extent of text area
             if (icon && iA == p.LEFT)
@@ -2484,25 +2615,25 @@ class CvsLabel extends CvsTextIcon {
                 x1 -= icon.width;
             let tw = x1 - x0;
             let th = this._tbox.h;
-            let py = b.textAscent() + (this._h - th) / 2;
-            b.fill(FORE);
+            let py = uib.textAscent() + (this._h - th) / 2;
+            uib.fill(FORE);
             for (let line of lines) {
                 switch (tA) {
                     case p.LEFT:
                         sx = x0;
                         break;
                     case p.CENTER:
-                        sx = x0 + (tw - b.textWidth(line)) / 2;
+                        sx = x0 + (tw - uib.textWidth(line)) / 2;
                         break;
                     case p.RIGHT:
-                        sx = x1 - b.textWidth(line) - gap;
+                        sx = x1 - uib.textWidth(line) - gap;
                         break;
                 }
-                b.text(line, sx, py);
-                py += b.textLeading();
+                uib.text(line, sx, py);
+                py += uib.textLeading();
             }
         }
-        b.pop();
+        uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }
@@ -2597,7 +2728,7 @@ class CvsButton extends CvsTextIcon {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this._clickAllowed = true; // false if mouse moves
                 this.isOver = true;
                 break;
@@ -2607,7 +2738,7 @@ class CvsButton extends CvsTextIcon {
                 if (this.isActive) {
                     if (this._clickAllowed)
                         this.action({ source: this, p5Event: e });
-                    this.isActive = false;
+                    this._active = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }
@@ -2640,14 +2771,13 @@ class CvsTooltip extends CvsText {
         super(gui, name);
         this._gap = 1;
         this._visible = false;
-        this._showTime = 0;
     }
     /**
-       * <p>Sets the text to be displayed in the tooltip.</p>
-       * <p>Processing constants are used to define the alignment.</p>
-       * @param t the text to display
-       * @returns this control
-       */
+     * <p>Sets the text to be displayed in the tooltip.</p>
+     * <p>Processing constants are used to define the alignment.</p>
+     * @param t the text to display
+     * @returns this control
+     */
     text(t) {
         if (Array.isArray(t))
             this._lines = t;
@@ -2664,35 +2794,19 @@ class CvsTooltip extends CvsText {
         this.invalidateBuffer();
         return this;
     }
-    /**
-     * <p>Set the time to display the tooltip
-     * @param duration display time in ms
-     * @returns this control
-     */
-    showTime(duration) {
-        this._showTime = duration;
-        return this;
-    }
     /** @hidden */
-    _updateState(owner, prevOver, currOver) {
-        if (owner.isVisible() && prevOver != currOver)
-            if (currOver > 0) {
-                this.show();
-                setTimeout(() => { this.hide(); }, this._showTime);
-            }
+    show(cascade) { return this; }
+    /** @hidden */
+    hide(cascade) { return this; }
+    /** @hidden */
+    _updateState(enter) {
+        if (enter && !this._active) {
+            this._active = true;
+            this._visible = true;
+            setTimeout(() => { this._visible = false; }, this._gui._show_time);
+            setTimeout(() => { this._active = false; }, this._gui._repeat_time);
+        }
     }
-    // /** @hidden */
-    // _validatePosition() {
-    //     let p = this._parent;
-    //     let pp = p.getAbsXY(), px = pp.x, py = pp.y;
-    //     let pa = p.orientation().wh(p.w(), p.h()), ph = pa.h;
-    //     // Start tip in default location
-    //     this._x = 0, this._y = -this._h;
-    //     if (py + this._y < 0)
-    //         this._y += this._h + ph;
-    //     if (px + this._x + this._w > this._gui.canvasWidth())
-    //         this._x -= this._w - pa.w;
-    // }
     /** @hidden */
     _validatePosition() {
         let p = this._parent;
@@ -2834,7 +2948,7 @@ class CvsScroller extends CvsBufferedControl {
             case 'mousedown':
             case 'touchstart':
                 if (over.part == 0) { // Thumb
-                    this.isActive = true;
+                    this._active = true;
                     this._s_value = this._value;
                     this._s_mx = mx;
                     this.isOver = true;
@@ -2844,7 +2958,7 @@ class CvsScroller extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
-                this.isActive = false;
+                this._active = false;
                 this.isOver = false;
                 break;
             case 'mousemove':
@@ -2928,7 +3042,7 @@ class CvsScroller extends CvsBufferedControl {
         return { w: this._w, h: 20 };
     }
 }
-Object.assign(CvsScroller.prototype, NoTooltip);
+// Object.assign(CvsScroller.prototype, NoTooltip);
 //# sourceMappingURL=scroller.js.map
 /**
  * <p>The option group manages a group of option buttons where only one can
@@ -2944,16 +3058,14 @@ class CvsOptionGroup {
         this._group = new Set();
     }
     /**
-     * Add an option to this group
+     * Add an option to this group.
      * @hidden
      */
     add(option) {
-        // If this option is selected then deselect all the existing options  in group
-        if (option.isSelected()) {
-            for (let opt of this._group) {
+        // If this option is selected then deselect all the existing options in group
+        if (option.isSelected())
+            for (let opt of this._group)
                 opt._deselect();
-            }
-        }
         this._group.add(option);
     }
     /**
@@ -2980,9 +3092,11 @@ class CvsOptionGroup {
 /*
  ##############################################################################
  CvsOption
- This class represents an option button (aka radio button). These are usually
- grouped together so that only one can be selected at a time.
  ##############################################################################
+ */
+/**
+ * This class represents an option button (aka radio button). These are usually
+ * grouped together so that only one can be selected at a time.
  */
 class CvsOption extends CvsText {
     /** @hidden */
@@ -3009,8 +3123,8 @@ class CvsOption extends CvsText {
         return this;
     }
     /**
-     * <p>Make this option true (selected) replacing the previos selection.</p>
-     *
+     * <p>Select this option, replacing the previos selection.</p>
+     * @returns this control
      */
     select() {
         let curr = this._optGroup?._prev();
@@ -3049,7 +3163,7 @@ class CvsOption extends CvsText {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this._clickAllowed = true; // false if mouse moves
                 this.isOver = true;
                 break;
@@ -3066,7 +3180,7 @@ class CvsOption extends CvsText {
                         }
                     }
                 }
-                this.isActive = false;
+                this._active = false;
                 this._clickAllowed = false;
                 this.isOver = false;
                 break;
@@ -3242,7 +3356,7 @@ class CvsCheckbox extends CvsText {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 // will be set to false if the mouse is dragged
                 this._clickAllowed = true;
                 this.isOver = true;
@@ -3256,7 +3370,7 @@ class CvsCheckbox extends CvsText {
                         this.action({ source: this, p5Event: e, selected: this._selected });
                     }
                 }
-                this.isActive = false;
+                this._active = false;
                 this._clickAllowed = false;
                 this.isOver = false;
                 break;
@@ -3400,6 +3514,7 @@ class CvsViewer extends CvsBufferedControl {
         /** @hidden */ this._scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
         // this._value, used: this._used,
         /** @hidden */ this._frameWeight = 0;
+        this._c = [0, 0, 0, 0];
         this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
             .setAction((info) => {
             this.view(info.value * this._lw, this._wcy);
@@ -3593,19 +3708,14 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /** @hidden */
-    orient(dir) {
-        console.warn(`Changing orientation of a viewer is not allowed !!!`);
-        return this;
-    }
-    /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         let absPos = this.getAbsXY();
         let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this.isOver = true;
                 this._dragging = true;
                 // Remember starting values
@@ -3626,13 +3736,12 @@ class CvsViewer extends CvsBufferedControl {
                     source: this, p5Event: undefined,
                     cX: this._wcx, cY: this._wcy, scale: this._wscale
                 });
-                this.isActive = false;
+                this._active = false;
                 this._dragging = false;
                 this.isOver = false;
                 break;
             case 'mousemove':
             case 'touchmove':
-                // this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
                 if (this.isOver) {
                     if (this._dragging) {
                         this._scaler?.hide();
@@ -3786,7 +3895,13 @@ class CvsViewer extends CvsBufferedControl {
     _minControlSize() {
         return { w: this._w, h: this._h };
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this; }
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(tsize) { return this; }
 }
+// Object.assign(CvsViewer.prototype, NoOrient);
+// Object.assign(CvsViewer.prototype, NoTooltip);
 //# sourceMappingURL=viewer.js.map
 /**
  * This class supports a single line text entry field.
@@ -3815,7 +3930,7 @@ class CvsViewer extends CvsBufferedControl {
  *
  * No other controls can be used while a textfield control is active. Pressing
  * 'Enter' or attempting to move to a non-existant textfield deactivates the
- * current text field.
+ * current textfield.
  *
  * The user can provide their own validation function which is checked when
  * the control is deativated.
@@ -3855,7 +3970,7 @@ class CvsTextField extends CvsText {
     /**
      * Gets or sets the current text.
      * Any EOL characters are stripped out of the string. If necessary the
-     * string length will be reduced until will fit inside the textfiel.
+     * string length will be reduced until it will fit inside the textfield.
      * If a validation function has been set then the string will be
      * validated.
      *
@@ -3866,6 +3981,7 @@ class CvsTextField extends CvsText {
         // getter
         if (t == null || t == undefined)
             return this._getLine();
+        // if (!t) return this._getLine();
         //setter
         this._textInvalid = false;
         t = t.toString().replaceAll('\n', ' ');
@@ -3873,7 +3989,7 @@ class CvsTextField extends CvsText {
             t = t.substring(0, t.length - 1);
         }
         this._lines = [t];
-        this.validate();
+        this._validate();
         this.invalidateBuffer();
         return this;
     }
@@ -3895,8 +4011,13 @@ class CvsTextField extends CvsText {
         }
         return this;
     }
+    /** @hidden */
+    textAlign(align) { return this; }
+    /** @hidden */
+    noText() { return this; }
     /**
-     * Deletes the index number.
+     * Removes the link index from this textfield. After this it will not be possible
+     * to move focus to this textfield using the keyboard arrows.
      * @returns this control
      */
     noIndex() {
@@ -3914,7 +4035,8 @@ class CvsTextField extends CvsText {
     }
     /**
      * If there is no text then this method will always return false. If there
-     * is some text then this method returns the same as the isValid() method.
+     * is some text then this method returns the same as the
+     * <code>isValid()</code> method.
      *
      * @returns true if there is some text and it passed any validation function
      */
@@ -3922,8 +4044,8 @@ class CvsTextField extends CvsText {
         return !this._textInvalid && this._lines.length > 0 && this._lines[0].length > 0;
     }
     /**
-     * Clears the validity flag irrespective of whether the text is
-     * valid or not.
+     * If the text is invalid this method it clears the validity effectively making
+     * the text valid.
      * @returns this control
      */
     clearValid() {
@@ -3934,20 +4056,23 @@ class CvsTextField extends CvsText {
         return this;
     }
     /**
-     * Uesr provide a validation function for this textfield
+     * Set the validation function to be used for this control.
+     *
+     * The function is created by the user and should return an array of
+     * two elements e.g.
+     * [ valid, valid-text ]
+     * Valid is a boolean indicating if the text is valid and
+     * valid-text can be the original text or amended in some way.
+     *
+     * For instance a textfield used for getting a persons name will be valid
+     * if there are 2 or more words and the valid-text will be the name
+     * but with the first letter of each word being capatilised.
+     *
      * @param vfunc the validation function
      * @returns this control
      */
     validation(vfunc) {
         this._validation = vfunc;
-        return this;
-    }
-    /**
-     * Force the control to validate
-     * @returns this control
-     */
-    validate() {
-        this._validate();
         return this;
     }
     /**
@@ -3969,15 +4094,29 @@ class CvsTextField extends CvsText {
                         this._textInvalid = true;
             }
         }
+        else {
+            this._textInvalid = false;
+        }
     }
     /**
      * Deactivate this control
      * @hidden
      */
     _deactivate() {
-        this.isActive = false;
+        this._active = false;
+        this.isOver = false;
         this._cursorOn = false;
-        clearInterval(this._clock);
+        this._validate();
+        this._prevCsrIdx = this._currCsrIdx = this._getLine().length;
+        if (this._textInvalid)
+            this._prevCsrIdx = 0;
+        // if (this._textInvalid) {
+        //     this._prevCsrIdx = 0;
+        //     this._currCsrIdx = this._getLine().length;
+        // } else {
+        //     this._prevCsrIdx = this._getLine().length;
+        //     this._currCsrIdx = this._getLine().length;
+        // }
         this.invalidateBuffer();
         this._nextActive = null;
     }
@@ -3987,45 +4126,47 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _activate(selectAll = false) {
-        this.isActive = true;
-        let line = this._getLine();
-        this._currCsrIdx = line.length;
-        this._prevCsrIdx = selectAll || this._textInvalid ? 0 : line.length;
+        this._active = true;
         this._cursorOn = true;
-        // Clear any existing interval before creating a new one
-        clearInterval(this._clock);
-        this._clock = setInterval(() => {
-            this._cursorOn = !this._cursorOn;
-            this.invalidateBuffer();
-        }, 550);
+        // Set cursor flashing while active
+        setTimeout(() => this._flashCursor(), 550);
         this.invalidateBuffer();
         this._nextActive = this;
+    }
+    /** @hidden */
+    _flashCursor() {
+        if (this._active) {
+            this._cursorOn = !this._cursorOn;
+            setTimeout(() => this._flashCursor(), 550);
+        }
+        else
+            this._cursorOn = false;
+        this.invalidateBuffer();
     }
     /**
      * Called when this control passes focus to a new control.
      * @param idx the index for the control to be activated
+     * @hidden
      */
     _activateNext(offset) {
-        this._deactivate();
-        this._validate();
         let links = this._gui._links, ctrl = null;
         if (links) {
             let idx = this._linkIndex;
             do {
                 idx += offset;
                 ctrl = links.get(idx);
-            } while (ctrl && (!ctrl.isEnabled() || !ctrl.isVisible()));
+            } while (ctrl && (!ctrl.isEnabled || !ctrl.isVisible));
             ctrl?._activate();
+            this._nextActive = ctrl;
             this.invalidateBuffer();
         }
-        this._nextActive = ctrl;
     }
     /**
      * We are only interested in the first line of text
      * @hidden
      */
     _getLine() {
-        return this._lines.length > 0 ? this._lines[0] : '';
+        return (this._lines.length > 0 ? this._lines[0].toString() : '');
     }
     /**
      * Calculates and returns the pixel length for a given
@@ -4033,7 +4174,7 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _cursorX(buff, line, idx) {
-        return idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
+        return !idx || idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
     }
     /** @hidden */
     _doKeyEvent(e) {
@@ -4049,7 +4190,7 @@ class CvsTextField extends CvsText {
                 if (this._prevCsrIdx != this._currCsrIdx) {
                     line = this._removeSelectedText(line);
                 }
-                // Add new character provided it is hort enough to dosplay safely
+                // Add new character provided it is short enough to display safely
                 line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
                 if (this._uiBfr.textWidth(line) < mtw) {
                     this._currCsrIdx++;
@@ -4061,9 +4202,9 @@ class CvsTextField extends CvsText {
             switch (e.key) {
                 case 'ArrowLeft':
                     if (tabLeft) {
+                        this._deactivate();
                         this._activateNext(-1);
-                        this._validate();
-                        this.action({ source: this, p5Event: e, value: this._getLine() });
+                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
                     }
                     else {
                         if (this._currCsrIdx > 0) {
@@ -4078,9 +4219,9 @@ class CvsTextField extends CvsText {
                     break;
                 case 'ArrowRight':
                     if (tabRight) {
+                        this._deactivate();
                         this._activateNext(1);
-                        this._validate();
-                        this.action({ source: this, p5Event: e, value: this._getLine() });
+                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
                     }
                     else {
                         if (this._currCsrIdx <= line.length) {
@@ -4095,24 +4236,25 @@ class CvsTextField extends CvsText {
                     break;
                 case 'ArrowUp':
                     if (!hasSelection) {
-                        if (this._linkOffset !== 0)
+                        if (this._linkOffset !== 0) {
+                            this._deactivate();
                             this._activateNext(-this._linkOffset);
-                        this._validate();
-                        this.action({ source: this, p5Event: e, value: this._getLine() });
+                        }
+                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
                     }
                     break;
                 case 'ArrowDown':
                     if (!hasSelection) {
-                        if (this._linkOffset !== 0)
+                        if (this._linkOffset !== 0) {
+                            this._deactivate();
                             this._activateNext(this._linkOffset);
-                        this._validate();
-                        this.action({ source: this, p5Event: e, value: this._getLine() });
+                        }
+                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
                     }
                     break;
                 case 'Enter':
                     this._deactivate();
-                    this._validate();
-                    this.action({ source: this, p5Event: e, value: this._getLine() });
+                    this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
                     break;
                 case 'Backspace':
                     if (this._prevCsrIdx != this._currCsrIdx) {
@@ -4145,7 +4287,7 @@ class CvsTextField extends CvsText {
         return this._nextActive;
     }
     /** @hidden */
-    _doEvent(e, x, y, picked) {
+    _doEvent(e, x = 0, y = 0, over, enter) {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -4153,7 +4295,9 @@ class CvsTextField extends CvsText {
                 break;
             case 'mousemove':
             case 'touchmove':
-                this.isOver = (this == picked.control);
+                this.isOver = (this == over.control);
+                this._tooltip?._updateState(enter);
+                this.invalidateBuffer();
                 break;
         }
         return this._nextActive;
@@ -4176,13 +4320,17 @@ class CvsTextField extends CvsText {
     /** @hidden */
     _updateControlVisual() {
         let ts = Number(this._textSize || this._gui.textSize());
+        let tf = this._textFont || this._gui.textFont();
+        let ty = this._textStyle || this._gui.textStyle();
         let cs = this._scheme || this._gui.scheme();
-        let line = this._lines.length > 0 ? this._lines[0] : '';
+        let line = this._getLine();
         let tiv = this._textInvalid, sx = 2 * this._gap;
         const CURSOR = cs['G_9'], HIGHLIGHT = cs['C_9'], SELECT = cs['C_3'];
         let BACK = cs['C_1'], FORE = cs['C_9'];
         let uib = this._uiBfr;
         uib.push();
+        uib.textFont(tf);
+        uib.textStyle(ty);
         uib.textSize(ts);
         uib.background(cs['G_0']); // white background
         uib.noStroke();
@@ -4212,7 +4360,7 @@ class CvsTextField extends CvsText {
         uib.fill(FORE);
         uib.text(line, sx, (this._h - ts) / 2);
         // Draw cursor
-        if (this._activate && this._cursorOn) {
+        if (this._active && this._cursorOn) {
             let cx = this._cursorX(uib, line, this._currCsrIdx);
             uib.stroke(CURSOR);
             uib.strokeWeight(1.5);
@@ -4239,7 +4387,7 @@ class CvsTextField extends CvsText {
  * <p>This class simulates a multi-mode joystick. Each of the three possible
  * modes apply different constraints to the range of movement allowed they
  * are -.</p>
- * <p><code>'X0'</code> : can move in any direction (360&deg;).<br>
+ * <p><code>'X0'</code> : can move in any direction (360&deg;). This is the default value.<br>
  * <code>'X4'</code> : constrained to the 4 main compass directions
  * (N, E, S, W).<br>
  * <code>'X8'</code> : constrained to the 8 main compass directions
@@ -4248,7 +4396,7 @@ class CvsTextField extends CvsText {
  * <p>To handle events use the <code>setAction</code> method to specify
  * the action-method that will be used to process action-info objects
  * created when the joystick is moved.</p>
- * <p>The action-info object has several very useful fields dthat describes
+ * <p>The action-info object has several very useful fields that describes
  * the state of the joystick, they include -</p>
  * <p>
  * <ul>
@@ -4273,20 +4421,22 @@ class CvsTextField extends CvsText {
  * <p>If the stick is in the dead zone which surrounds the stick's
  * rest state then this value will be <code>true</code>.</p>
  *
- * <li><code>mag</code> : has a value in range &ge; 0 and &le; 1 representing
- * the distance the stick has been pushed.</li>
+ * <li><code>mag</code></li>
+ * <p>The magnitude is in range &ge; 0 and &le; 1 representing
+ * the distance the stick has been pushed.</p>
  *
- * <li><code>angle</code> : has a value in range &ge; 0 and &lt; 2&pi;
+ * <li><code>angle</code>
+ * <p>The angle is in range &ge; 0 and &lt; 2&pi;
  * representing the angle the stick makes to the poistive x axis in the
  * clockwise direction. In modes X4 and X8 the angles will be constrained to
- * the permitted directions.</li>
+ * the permitted directions.</p>
  *
- * <li><code>final</code> : has the value <code>false</code> if the stick is
- * still being moved and <code>false</code> if the stick has been released.</li>
+ * <li><code>final</code></li>
+ * <p>This is <code>false</code> if the stick is still being moved and
+ * <code>true</code> if the stick has been released.</p>
  * </ul>
  * <p>When the joystick is released it will return back to its rest state
  * i.e. centered.</p>
- * @since 1.1.0
  */
 class CvsJoystick extends CvsBufferedControl {
     /**
@@ -4310,6 +4460,18 @@ class CvsJoystick extends CvsBufferedControl {
         this._opaque = false;
         this._tmrID = undefined;
     }
+    /**
+     * The mode defines the constraints applied to movement of the joystick. There are three
+     * permitted modes -<p>
+     * <ul>
+     * <li>'X0' : can move in any direction (360&deg;). This is the default value.</li>
+     * <li>'X4' : constrained to the 4 main compass directions (N, E, S, W).</li>
+     * <li>'X8' : constrained to the 8 main compass directions (N, NE, E, SE, S, SW, W, NW).</li>
+     * </ul>
+     * <p>Any other value will be silently ignored.</p>
+     * @param m either 'X0', 'X4' or 'X8'
+     * @returns this control
+     */
     mode(m) {
         if (!m)
             return this._mode;
@@ -4382,7 +4544,7 @@ class CvsJoystick extends CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this.isOver = true;
                 break;
             case 'mouseout':
@@ -4390,7 +4552,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'touchend':
                 this._validateThumbPosition(mx, my);
                 this.action(getValue(this, e, true));
-                this.isActive = false;
+                this._active = false;
                 this.invalidateBuffer();
                 if (!this._tmrID)
                     this._tmrID = setInterval(() => {
@@ -4705,7 +4867,7 @@ class CvsKnob extends CvsSlider {
             case 'touchstart':
                 this._prevX = mx;
                 this._prevY = my;
-                this.isActive = true;
+                this._active = true;
                 this.isOver = true;
                 this.invalidateBuffer();
                 break;
@@ -4715,7 +4877,7 @@ class CvsKnob extends CvsSlider {
                 next = this._tFromXY(mx, my);
                 this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this.isActive = false;
+                this._active = false;
                 this.invalidateBuffer();
                 break;
             case 'mousemove':
@@ -4864,6 +5026,17 @@ class CvsKnob extends CvsSlider {
 /**
  * <p>This class represents a draggable panel that can be used to hold other
  * controls.</p>
+ * <p>On creation the panel -</p>
+ * <ol>
+ * <li>has an opaque background (this is required for dragging).</li>
+ * <li>can be dragged in both X and Y directions.</li>
+ * <li>is constrained so the entire panel stays within the display area.</li>
+ * </ol>
+ * <p>If the background is transparent then the panel cannot be dragged.
+ * Panel movement can limited using the <code>draggable()</code> and
+ * <code>constrain()</code> methods.</p>
+ * <p>It is recommended that the panel width and height should not exceed
+ * that of the display area (i.e. canvas).</p>
  */
 class CvsPanel extends CvsBufferedControl {
     /**
@@ -4879,10 +5052,42 @@ class CvsPanel extends CvsBufferedControl {
         super(gui, name, x || 0, y || 0, w || 100, h || 100);
         /** @hidden */ this._canDragX = true;
         /** @hidden */ this._canDragY = true;
+        /** @hidden */ this._constrainX = true;
+        /** @hidden */ this._constrainY = true;
+        this._c = [0, 0, 0, 0];
         this._opaque = true;
+        this._z = PANEL_Z;
     }
+    /**
+     * Horizontal and vertical movement can be restricted based on the
+     * actual parameters.
+     * @param allowX allow horizontal movement if true
+     * @param allowY allow vertical movement if true
+     * @returns this control
+     */
+    draggable(allowX = true, allowY = true) {
+        this._canDragX = allowX;
+        this._canDragY = allowY;
+        return this;
+    }
+    /**
+     * Panel position can be constrained horizontally and vertically so that
+     * it fits within the outside the display area.
+     * @param limitX
+     * @param limitY
+     * @returns this control
+     */
+    constrain(limitX = true, limitY = true) {
+        this._constrainX = limitX;
+        this._constrainY = limitY;
+        return this;
+    }
+    /** true if the panel can be dragged else false. */
+    get isDraggable() { return this._opaque && (this._canDragX || this._canDragY); }
     /** @hidden */
-    get _canDrag() { return (this._canDragX || this._canDragY); }
+    get canDragX() { return this._canDragX; }
+    /** @hidden */
+    get canDragY() { return this._canDragY; }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
         let absPos = this.getAbsXY();
@@ -4890,25 +5095,44 @@ class CvsPanel extends CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                if (over.part == 0) { // Thumb
-                    this.isActive = true;
-                    // this._clickAllowed = true; // false if mouse moves
+                if (over.part == 0 && (this._canDragX || this._canDragY)) {
+                    this._active = true;
                     this.isOver = true;
+                    this._dragData = [mx, my];
                 }
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                this.isActive = false;
-                this.isOver = false;
+                if (this.isActive) {
+                    this._active = false;
+                    this.isOver = false;
+                    this.invalidateBuffer();
+                }
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this.isActive) {
-                    CLOG('stuff to do');
+                if (this.isActive && (this._canDragX || this._canDragY)) {
+                    let [msx, msy] = this._dragData;
+                    let nx = this._x + (this._canDragX ? mx - msx : 0);
+                    let ny = this._y + (this._canDragY ? my - msy : 0);
+                    let [pw, ph] = [this._p.width, this._p.height];
+                    let [cw, ch] = [this._w, this._h];
+                    if (this._constrainX && cw <= pw) {
+                        if (nx < 0)
+                            nx = 0;
+                        else if (nx > pw - cw)
+                            nx = pw - cw;
+                    }
+                    if (this._constrainY && ch <= ph) {
+                        if (ny < 0)
+                            ny = 0;
+                        else if (ny > ph - ch)
+                            ny = ph - ch;
+                    }
+                    this.moveTo(nx, ny);
                 }
                 this.isOver = (this == over.control);
-                this.invalidateBuffer();
                 break;
             case 'mouseover':
                 break;
@@ -4920,51 +5144,52 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */
     _updateControlVisual() {
         let cs = this._scheme || this._gui.scheme();
-        const OPAQUE = cs['C_1'];
-        const HIGHLIGHT = cs['C_6'];
+        const OPAQUE = cs['C_0'];
+        const HIGHLIGHT = cs['C_3'];
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
-        if (this._opaque) {
-            uib.noStroke();
-            uib.fill(OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...this._c);
-        }
+        uib.strokeWeight(3);
         uib.noStroke();
-        if (this._isOver) {
-            uib.strokeWeight(2);
+        uib.noFill();
+        if (this._opaque)
+            uib.fill(OPAQUE);
+        if (this.isOver)
             uib.stroke(HIGHLIGHT);
-        }
+        uib.rect(0, 0, this._w, this._h);
         // Update pick buffer before restoring
-        this._updateRectControlPB();
+        this._updatePanelControlPB();
         // last line in this method should be
         this._bufferInvalid = false;
     }
-    /** @hidden */
-    _updateSliderPickBuffer(ty, tw, tH, tbX, tbSize) {
-        tbX = Math.round(tbX);
-        let c = this._gui.pickColor(this);
+    /**
+     * Update rectangular controls using full buffer i.e.
+     * Button, Option, Checkbox, Textfield
+     * @hidden
+     */
+    _updatePanelControlPB() {
         let pkb = this._pkBfr;
-        pkb.push();
         pkb.clear();
         pkb.noStroke();
-        // Now translate to track left edge - track centre
-        pkb.translate(10, ty);
-        // Track
-        // pkb.fill(c.r, c.g, c.b + 5);
-        // pkb.rect(0, -tH / 2, tw, tH, ...this._c);
-        // pkb.fill(c.r, c.g, c.b + 6);
-        // pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
-        // Thumb
-        pkb.fill(c.r, c.g, c.b);
-        pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
-        pkb.pop();
+        pkb.noFill();
+        let c = this._gui.pickColor(this);
+        if (this._opaque)
+            pkb.fill(c.r, c.g, c.b);
+        pkb.rect(1, 1, this._w - 1, this._h - 1);
     }
     /** @hidden */
     _minControlSize() {
-        return { w: this._w, h: 20 };
+        return { w: this._w, h: this._h };
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ parent(parent, rx, ry) { return this; }
+    /** @hidden */ leaveParent() { return this; }
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(gtts) { return this; }
+    /** @hidden */ transparent() { return this; }
+    /** @hidden */ opaque() { return this; }
 }
+// Object.assign(CvsPanel.prototype, NoParent);
 // Object.assign(CvsPanel.prototype, NoTooltip);
 //# sourceMappingURL=panel.js.map
 /*
@@ -4986,16 +5211,6 @@ class CvsPane extends CvsBaseControl {
         this._status = 'closed';
         this._timer = 0;
         this._z = PANE_Z;
-    }
-    // Hide these methods from typeDoc
-    /** @hidden */ orient(dir) { return this; }
-    /** @hidden */ parent(parent, rx, ry) { return this; }
-    /** @hidden */ transparent() { return this; }
-    /** @hidden */ opaque() { return this; }
-    /** @hidden */
-    leaveParent() {
-        console.warn('Panes cannot have a parent');
-        return undefined;
     }
     /**
      * <p>Get the 'depth' the pane will intrude into the canvas when open.</p>
@@ -5045,20 +5260,10 @@ class CvsPane extends CvsBaseControl {
         }
         return this;
     }
-    /**
-     *
-     * @returns true if the pane is closed else false
-     */
-    isClosed() {
-        return this._status == 'closed';
-    }
-    /**
-     *
-     * @returns true if the pane is closinging else false
-     */
-    isClosing() {
-        return this._status == 'closing';
-    }
+    /** true if the pane is closed else false.*/
+    get isClosed() { return this._status == 'closed'; }
+    /** true if the pane is closing else false.*/
+    get isClosing() { return this._status == 'closing'; }
     /**
      * <p>Close this pane</p>
      * @returns this control
@@ -5075,18 +5280,10 @@ class CvsPane extends CvsBaseControl {
                 break;
         }
     }
-    /**
-     * @returns true if the pane is open else false
-     */
-    isOpen() {
-        return this._status == 'open';
-    }
-    /**
-     * @returns true if the pane is opening else false
-     */
-    isOpening() {
-        return this._status == 'opening';
-    }
+    /** true if the pane is open else false.*/
+    get isOpen() { return this._status == 'open'; }
+    /** true if the pane is opening else false.*/
+    get isOpening() { return this._status == 'opening'; }
     /** @hidden */
     _tabAction(ta) {
         /*
@@ -5107,6 +5304,7 @@ class CvsPane extends CvsBaseControl {
                 break;
         }
     }
+    /** @hidden */
     _draw(uib, pkb) {
         uib.push();
         uib.translate(this._x, this._y);
@@ -5227,6 +5425,14 @@ class CvsPane extends CvsBaseControl {
     _minControlSize() {
         return { w: this._w, h: this._h };
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this; }
+    /** @hidden */ parent(parent, rx, ry) { return this; }
+    /** @hidden */ leaveParent() { return this; }
+    /** @hidden */ transparent() { return this; }
+    /** @hidden */ opaque() { return this; }
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(gtts) { return this; }
 }
 // Deltas used in controlling opening and closing speeds
 /** @hidden */ CvsPane._dI = 50; // Interval time (20)
@@ -5234,6 +5440,10 @@ class CvsPane extends CvsBaseControl {
 /** @hidden */ CvsPane._dO = 40; // Open speed px/sec :: was (20)
 /** @hidden */ CvsPane._wExtra = 20;
 /** @hidden */ CvsPane._tabID = 1;
+// Object.assign(CvsPane.prototype, NoOrient);
+// Object.assign(CvsPane.prototype, NoParent);
+// Object.assign(CvsPane.prototype, FixedBackground);
+// Object.assign(CvsPane.prototype, NoTooltip);
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
     constructor(gui, id, depth) {
@@ -5401,10 +5611,6 @@ class CvsPaneWest extends CvsPane {
         return this;
     }
 }
-Object.assign(CvsPane.prototype, NoOrient);
-Object.assign(CvsPane.prototype, NoParent);
-Object.assign(CvsPane.prototype, FixedBackground);
-Object.assign(CvsPane.prototype, NoTooltip);
 //# sourceMappingURL=panes.js.map
 /**
  * <p>This class represents a rectangular grid layout of cells that can be

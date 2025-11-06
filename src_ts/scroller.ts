@@ -84,7 +84,7 @@ class CvsScroller extends CvsBufferedControl {
             case 'mousedown':
             case 'touchstart':
                 if (over.part == 0) { // Thumb
-                    this.isActive = true;
+                    this._active = true;
                     this._s_value = this._value;
                     this._s_mx = mx;
                     this.isOver = true;
@@ -94,7 +94,7 @@ class CvsScroller extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
-                this.isActive = false;
+                this._active = false;
                 this.isOver = false;
                 break;
             case 'mousemove':
@@ -184,4 +184,4 @@ class CvsScroller extends CvsBufferedControl {
 }
 
 
-Object.assign(CvsScroller.prototype, NoTooltip);
+// Object.assign(CvsScroller.prototype, NoTooltip);

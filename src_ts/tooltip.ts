@@ -39,16 +39,6 @@ class CvsTooltip extends CvsText {
         return this;
     }
 
-    /**
-     * <p>Set the time to display the tooltip
-     * @param duration display time in ms
-     * @returns this control
-     */
-    // showTime(duration: number) {
-    //     this._showTime = duration;
-    //     return this;
-    // }
-
     /** @hidden */
     show(cascade?: boolean): CvsBaseControl { return this; }
     /** @hidden */
@@ -56,7 +46,7 @@ class CvsTooltip extends CvsText {
 
     /** @hidden */
     _updateState(enter: boolean) {
-        if (enter && !this.isActive) { // && !this._visible) {
+        if (enter && !this._active) {
             this._active = true;
             this._visible = true;
             setTimeout(() => { this._visible = false; }, this._gui._show_time);

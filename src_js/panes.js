@@ -18,16 +18,6 @@ class CvsPane extends CvsBaseControl {
         this._timer = 0;
         this._z = PANE_Z;
     }
-    // Hide these methods from typeDoc
-    /** @hidden */ orient(dir) { return this; }
-    /** @hidden */ parent(parent, rx, ry) { return this; }
-    /** @hidden */ transparent() { return this; }
-    /** @hidden */ opaque() { return this; }
-    /** @hidden */
-    leaveParent() {
-        console.warn('Panes cannot have a parent');
-        return undefined;
-    }
     /**
      * <p>Get the 'depth' the pane will intrude into the canvas when open.</p>
      * @returns the depth
@@ -76,20 +66,10 @@ class CvsPane extends CvsBaseControl {
         }
         return this;
     }
-    /**
-     *
-     * @returns true if the pane is closed else false
-     */
-    isClosed() {
-        return this._status == 'closed';
-    }
-    /**
-     *
-     * @returns true if the pane is closinging else false
-     */
-    isClosing() {
-        return this._status == 'closing';
-    }
+    /** true if the pane is closed else false.*/
+    get isClosed() { return this._status == 'closed'; }
+    /** true if the pane is closing else false.*/
+    get isClosing() { return this._status == 'closing'; }
     /**
      * <p>Close this pane</p>
      * @returns this control
@@ -106,18 +86,10 @@ class CvsPane extends CvsBaseControl {
                 break;
         }
     }
-    /**
-     * @returns true if the pane is open else false
-     */
-    isOpen() {
-        return this._status == 'open';
-    }
-    /**
-     * @returns true if the pane is opening else false
-     */
-    isOpening() {
-        return this._status == 'opening';
-    }
+    /** true if the pane is open else false.*/
+    get isOpen() { return this._status == 'open'; }
+    /** true if the pane is opening else false.*/
+    get isOpening() { return this._status == 'opening'; }
     /** @hidden */
     _tabAction(ta) {
         /*
@@ -138,6 +110,7 @@ class CvsPane extends CvsBaseControl {
                 break;
         }
     }
+    /** @hidden */
     _draw(uib, pkb) {
         uib.push();
         uib.translate(this._x, this._y);
@@ -258,6 +231,14 @@ class CvsPane extends CvsBaseControl {
     _minControlSize() {
         return { w: this._w, h: this._h };
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this; }
+    /** @hidden */ parent(parent, rx, ry) { return this; }
+    /** @hidden */ leaveParent() { return this; }
+    /** @hidden */ transparent() { return this; }
+    /** @hidden */ opaque() { return this; }
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(gtts) { return this; }
 }
 // Deltas used in controlling opening and closing speeds
 /** @hidden */ CvsPane._dI = 50; // Interval time (20)
@@ -265,6 +246,10 @@ class CvsPane extends CvsBaseControl {
 /** @hidden */ CvsPane._dO = 40; // Open speed px/sec :: was (20)
 /** @hidden */ CvsPane._wExtra = 20;
 /** @hidden */ CvsPane._tabID = 1;
+// Object.assign(CvsPane.prototype, NoOrient);
+// Object.assign(CvsPane.prototype, NoParent);
+// Object.assign(CvsPane.prototype, FixedBackground);
+// Object.assign(CvsPane.prototype, NoTooltip);
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
     constructor(gui, id, depth) {
@@ -432,8 +417,4 @@ class CvsPaneWest extends CvsPane {
         return this;
     }
 }
-Object.assign(CvsPane.prototype, NoOrient);
-Object.assign(CvsPane.prototype, NoParent);
-Object.assign(CvsPane.prototype, FixedBackground);
-Object.assign(CvsPane.prototype, NoTooltip);
 //# sourceMappingURL=panes.js.map

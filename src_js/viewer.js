@@ -25,6 +25,7 @@ class CvsViewer extends CvsBufferedControl {
         /** @hidden */ this._scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
         // this._value, used: this._used,
         /** @hidden */ this._frameWeight = 0;
+        this._c = [0, 0, 0, 0];
         this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
             .setAction((info) => {
             this.view(info.value * this._lw, this._wcy);
@@ -38,8 +39,6 @@ class CvsViewer extends CvsBufferedControl {
         this.addChild(this._scrH);
         this.addChild(this._scrV);
     }
-    // Hide these methods from typeDoc
-    /** @hidden */ orient(dir) { return this; }
     /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
      * and limits. The initial value will be constrained to the limits.</p>
@@ -228,7 +227,7 @@ class CvsViewer extends CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this.isOver = true;
                 this._dragging = true;
                 // Remember starting values
@@ -249,7 +248,7 @@ class CvsViewer extends CvsBufferedControl {
                     source: this, p5Event: undefined,
                     cX: this._wcx, cY: this._wcy, scale: this._wscale
                 });
-                this.isActive = false;
+                this._active = false;
                 this._dragging = false;
                 this.isOver = false;
                 break;
@@ -408,7 +407,11 @@ class CvsViewer extends CvsBufferedControl {
     _minControlSize() {
         return { w: this._w, h: this._h };
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this; }
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(tsize) { return this; }
 }
-Object.assign(CvsViewer.prototype, NoOrient);
-Object.assign(CvsViewer.prototype, NoTooltip);
+// Object.assign(CvsViewer.prototype, NoOrient);
+// Object.assign(CvsViewer.prototype, NoTooltip);
 //# sourceMappingURL=viewer.js.map

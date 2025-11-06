@@ -58,7 +58,7 @@ class CvsCheckbox extends CvsText {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 // will be set to false if the mouse is dragged
                 this._clickAllowed = true;
                 this.isOver = true;
@@ -72,7 +72,7 @@ class CvsCheckbox extends CvsText {
                         this.action({ source: this, p5Event: e, selected: this._selected });
                     }
                 }
-                this.isActive = false;
+                this._active = false;
                 this._clickAllowed = false;
                 this.isOver = false;
                 break;

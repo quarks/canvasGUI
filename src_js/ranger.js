@@ -17,10 +17,10 @@ class CvsRanger extends CvsSlider {
         this._opaque = false;
     }
     /**
-     * <p>Sets or gets the low and high values for this control. If both parameters
-     * and within the rangers limits then they are used to set the low and high
-     * values of the ranger and move the thumbs to the correct postion.</p>
-     * <p>If one or both parameters are invalid then they are ignored and the method
+     * <p>Sets or gets the low and high thumb values for this control. If both parameters
+     * are within limits of the ranger then they are accepted and the thumbs are moved to
+     * the correct position.</p>
+     * <p>If either of the parameters are invalid then they are ignored and the method
      * returns the current range low and high values.</p>
      * @param v0 low value
      * @param v1 high value
@@ -53,10 +53,7 @@ class CvsRanger extends CvsSlider {
         return this._t2v(this._t[1]);
     }
     /** @hidden */
-    value(v) {
-        console.warn('Ranger controls require 2 values - use range(v0, v1) instead');
-        return undefined;
-    }
+    value(v) { return this; }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
         let absPos = this.getAbsXY();
@@ -65,7 +62,7 @@ class CvsRanger extends CvsSlider {
             case 'mousedown':
             case 'touchstart':
                 if (over.part == 0 || over.part == 1) { // A thumb
-                    this.isActive = true;
+                    this._active = true;
                     this._tIdx = over.part; // Which thumb is the mouse over
                     this.isOver = true;
                 }
@@ -82,7 +79,7 @@ class CvsRanger extends CvsSlider {
                     this.action({
                         source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
                     });
-                    this.isActive = false;
+                    this._active = false;
                     this.invalidateBuffer();
                 }
                 break;

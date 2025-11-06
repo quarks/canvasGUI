@@ -93,7 +93,6 @@ abstract class CvsBufferedControl extends CvsBaseControl {
      * @hidden
      */
     _draw(uib, pkb) {
-        // console.log(`Draw ${this.id}`)
         this._validateBuffer();
         uib.push();
         uib.translate(this._x, this._y);
@@ -166,7 +165,7 @@ abstract class CvsBufferedControl extends CvsBaseControl {
      * @param duration how long the tip remains visible (milliseconds)
      * @returns this control
      */
-    tooltip(tiptext: string, duration = 1600) {
+    tooltip(tiptext: string) {
         let tt = this._gui.__tooltip(this._id + '.tooltip')
             .text(tiptext)
             .shrink();

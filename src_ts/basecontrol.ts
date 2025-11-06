@@ -123,14 +123,23 @@ class CvsBaseControl {
     get type() { return this.constructor.name.substring(3); };
 
     /**
+     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
+     * @returns true if the control is enabled else false
+     */
+    get isEnabled() { return this._enabled; }
+
+    /**
+     * @returns true if this control is visible
+     */
+    get isVisible() { return this._visible; }
+
+    /**
      * A control becomes active when the mouse button is pressed over it.
      * This method has little practical use except when debugging.
-     * @hidden
      * @returns true if this control is expecting more mouse events
+     * @hidden
      */
     get isActive() { return this._active }
-    /** @hidden */
-    set isActive(b) { this._active = b }
 
     /**
      * Move control to an absolute position
@@ -192,9 +201,11 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Invalidates the control's buffer forcing it to validate it on the 
-     * next frame</p>
+     * <p>This method will force the control to update its visual appearance 
+     * when the next frame is rendered.</p>
+     * <p><em>It is included in the most unlikely event it is needed.</em></p>
      * @returns this control
+     * @hidden
      */
     invalidateBuffer() {
         this._bufferInvalid = true;
@@ -288,7 +299,7 @@ class CvsBaseControl {
      * <li>Named function declaration</li>
      * </ol>
      * 
-     * @param event_handler  the function to handle this controls event
+     * @param event_handler  the function to handle this conytrol's events.
      * @returns this control
      */
     setAction(event_handler: Function) {
@@ -326,13 +337,7 @@ class CvsBaseControl {
         return this;
     }
 
-    /**
-     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
-     * @returns true if the control is enabled else false
-     */
-    isEnabled() {
-        return this._enabled;
-    }
+
 
     /**
      * <p>Enables this control</p>
@@ -393,13 +398,6 @@ class CvsBaseControl {
     }
 
     /**
-     * @returns true if this control is visible
-     */
-    isVisible() {
-        return this._visible;
-    }
-
-    /**
      * <p>Makes the controls background opaque. The actual color depends
      * on the controls color scheme</p>
      * @returns this control
@@ -416,6 +414,11 @@ class CvsBaseControl {
     transparent(): CvsBaseControl {
         this._opaque = false;
         return this;
+    }
+
+    /** @hidden */
+    orientation(): OrientNorth | OrientSouth | OrientEast | OrientWest {
+        return this._orientation;
     }
 
     /** @hidden */
@@ -446,59 +449,64 @@ class CvsBaseControl {
     _neq(a: number, b: number): boolean {
         return Math.abs(a - b) >= 0.001;
     }
-
-    /** @hidden */
-    over(): number {
-        return this._over;
-    }
-
-    /** @hidden */
-    pover(): number {
-        return this._pover;
-    }
-
-    /** @hidden */
-    orientation(): OrientNorth | OrientSouth | OrientEast | OrientWest {
-        return this._orientation;
-    }
-
 }
 
-const NoOrient = {
-    /** This control does not support changing orientation */
-    orient(dir: string): CvsBaseControl {
-        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
-        return this;
-    }
-}
+// const NoOrient = {
+//     /** This control does not support changing orientation */
+//     orient(dir: string): CvsBaseControl {
+//         CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
+//         return this;
+//         // // Hide these methods from typeDoc
+//         // /** @hidden */ orient(dir) { return this }
+//     }
+// }
 
-const NoParent = {
-    /** This control does not support changing orientation */
-    parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-        return this;
-    }
-}
 
-/** @hidden */
-const NoTooltip = {
-    /** @hidden */
-    tooltip(dir: string): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    },
-    /** @hidden */
-    tipTextSize(dir: string): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    }
-}
 
-/** @hidden */
-const FixedBackground = {
-    /** @hidden */
-    orient(dir: string): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' do not support 'transparent' and 'opaque' methods.`);
-        return this;
-    }
-}
+// const NoParent = {
+//     /** This control does not support changing orientation */
+//     parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+//         return this;
+//     },
+//     leaveParent(): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+//         return this;
+//     }
+//     // // Hide these methods from typeDoc
+//     // /** @hidden */ parent(parent, rx, ry){ return this }
+//     // /** @hidden */ leaveParent(){ return this }
+// }
+
+// /** @hidden */
+// const NoTooltip = {
+//     /** @hidden */
+//     tooltip(tiptext: string): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+//         return this;
+//     },
+//     /** @hidden */
+//     tipTextSize(gtts: number): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+//         return this;
+//     }
+//     // // Hide these methods from typeDoc
+//     // /** @hidden */ tooltip(tiptext){ return this }
+//     // /** @hidden */ tipTextSize(gtts) { return this }
+// }
+
+// /** @hidden */
+// const FixedBackground = {
+//     /** @hidden */
+//     transparent(): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
+//         return this;
+//     },
+//     opaque(): CvsBaseControl {
+//         CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
+//         return this;
+//     }
+//     // // Hide these methods from typeDoc
+//     // /** @hidden */ transparent(){ return this }
+//     // /** @hidden */ opaque() { return this }
+// }

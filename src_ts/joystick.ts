@@ -2,7 +2,7 @@
  * <p>This class simulates a multi-mode joystick. Each of the three possible
  * modes apply different constraints to the range of movement allowed they 
  * are -.</p>
- * <p><code>'X0'</code> : can move in any direction (360&deg;).<br>
+ * <p><code>'X0'</code> : can move in any direction (360&deg;). This is the default value.<br>
  * <code>'X4'</code> : constrained to the 4 main compass directions 
  * (N, E, S, W).<br>
  * <code>'X8'</code> : constrained to the 8 main compass directions 
@@ -11,7 +11,7 @@
  * <p>To handle events use the <code>setAction</code> method to specify 
  * the action-method that will be used to process action-info objects 
  * created when the joystick is moved.</p>
- * <p>The action-info object has several very useful fields dthat describes 
+ * <p>The action-info object has several very useful fields that describes 
  * the state of the joystick, they include -</p>
  * <p>
  * <ul>
@@ -36,20 +36,22 @@
  * <p>If the stick is in the dead zone which surrounds the stick's
  * rest state then this value will be <code>true</code>.</p>
  * 
- * <li><code>mag</code> : has a value in range &ge; 0 and &le; 1 representing
- * the distance the stick has been pushed.</li> 
+ * <li><code>mag</code></li>
+ * <p>The magnitude is in range &ge; 0 and &le; 1 representing
+ * the distance the stick has been pushed.</p> 
  * 
- * <li><code>angle</code> : has a value in range &ge; 0 and &lt; 2&pi; 
+ * <li><code>angle</code>
+ * <p>The angle is in range &ge; 0 and &lt; 2&pi; 
  * representing the angle the stick makes to the poistive x axis in the 
  * clockwise direction. In modes X4 and X8 the angles will be constrained to 
- * the permitted directions.</li>
+ * the permitted directions.</p>
  * 
- * <li><code>final</code> : has the value <code>false</code> if the stick is
- * still being moved and <code>false</code> if the stick has been released.</li>
+ * <li><code>final</code></li>
+ * <p>This is <code>false</code> if the stick is still being moved and 
+ * <code>true</code> if the stick has been released.</p>
  * </ul>
  * <p>When the joystick is released it will return back to its rest state 
  * i.e. centered.</p>
- * @since 1.1.0
  */
 class CvsJoystick extends CvsBufferedControl {
 
@@ -90,6 +92,18 @@ class CvsJoystick extends CvsBufferedControl {
         this._tmrID = undefined;
     }
 
+    /**
+     * The mode defines the constraints applied to movement of the joystick. There are three
+     * permitted modes -<p>
+     * <ul>
+     * <li>'X0' : can move in any direction (360&deg;). This is the default value.</li>
+     * <li>'X4' : constrained to the 4 main compass directions (N, E, S, W).</li>
+     * <li>'X8' : constrained to the 8 main compass directions (N, NE, E, SE, S, SW, W, NW).</li>
+     * </ul>
+     * <p>Any other value will be silently ignored.</p>
+     * @param m either 'X0', 'X4' or 'X8'
+     * @returns this control
+     */
     mode(m: string): CvsBaseControl | string {
         if (!m) return this._mode;
         m = m.toUpperCase();
@@ -161,7 +175,7 @@ class CvsJoystick extends CvsBufferedControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this.isOver = true;
                 break;
             case 'mouseout':
@@ -169,7 +183,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'touchend':
                 this._validateThumbPosition(mx, my);
                 this.action(getValue(this, e, true));
-                this.isActive = false;
+                this._active = false;
                 this.invalidateBuffer();
                 if (!this._tmrID)
                     this._tmrID = setInterval(() => {

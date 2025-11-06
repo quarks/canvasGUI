@@ -16,16 +16,13 @@ class CvsOptionGroup {
     }
 
     /** 
-     * Add an option to this group
+     * Add an option to this group.
      * @hidden 
      */
     add(option: CvsOption) {
-        // If this option is selected then deselect all the existing options  in group
-        if (option.isSelected()) {
-            for (let opt of this._group) {
-                opt._deselect();
-            }
-        }
+        // If this option is selected then deselect all the existing options in group
+        if (option.isSelected())
+            for (let opt of this._group) opt._deselect();
         this._group.add(option);
     }
 
@@ -55,9 +52,12 @@ class CvsOptionGroup {
 /*
  ##############################################################################
  CvsOption
- This class represents an option button (aka radio button). These are usually
- grouped together so that only one can be selected at a time.
  ##############################################################################
+ */
+
+/**
+ * This class represents an option button (aka radio button). These are usually
+ * grouped together so that only one can be selected at a time.
  */
 class CvsOption extends CvsText {
 
@@ -92,8 +92,8 @@ class CvsOption extends CvsText {
     }
 
     /**
-     * <p>Make this option true (selected) replacing the previos selection.</p>
-     * 
+     * <p>Select this option, replacing the previos selection.</p>
+     * @returns this control
      */
     select() {
         let curr = this._optGroup?._prev();
@@ -137,7 +137,7 @@ class CvsOption extends CvsText {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this._clickAllowed = true; // false if mouse moves
                 this.isOver = true;
                 break;
@@ -154,7 +154,7 @@ class CvsOption extends CvsText {
                         }
                     }
                 }
-                this.isActive = false;
+                this._active = false;
                 this._clickAllowed = false;
                 this.isOver = false;
                 break;

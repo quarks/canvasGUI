@@ -87,7 +87,7 @@ class CvsButton extends CvsTextIcon {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
-                this.isActive = true;
+                this._active = true;
                 this._clickAllowed = true; // false if mouse moves
                 this.isOver = true;
                 break;
@@ -97,7 +97,7 @@ class CvsButton extends CvsTextIcon {
                 if (this.isActive) {
                     if (this._clickAllowed)
                         this.action({ source: this, p5Event: e });
-                    this.isActive = false;
+                    this._active = false;
                     this._clickAllowed = false;
                     this.isOver = false;
                 }

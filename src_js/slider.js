@@ -39,11 +39,13 @@ class CvsSlider extends CvsBufferedControl {
         return this;
     }
     /**
-     *
-     * @param value scale value to test
-     * @returns true if the value lies within the slider's limits else false
+     * Checks whether a value is between the lower and upper limits for this
+     * control. It allows the user to prevalidate a value before attempting
+     * to change the control's value.
+     * @param value value to test
+     * @returns true if the value lies within the control's limits else false
      */
-    isValid(value) {
+    isInsideLimits(value) {
         return (Number.isFinite(value)
             && (value - this._limit0) * (value - this._limit1) <= 0);
     }
@@ -120,7 +122,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mousedown':
             case 'touchstart':
                 if (over.part == 0) { // Thumb
-                    this.isActive = true;
+                    this._active = true;
                     this.isOver = true;
                 }
                 break;
@@ -128,7 +130,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this.isActive = false;
+                this._active = false;
                 this.isOver = false;
                 break;
             case 'mousemove':

@@ -170,7 +170,7 @@ class CvsKnob extends CvsSlider {
             case 'touchstart':
                 this._prevX = mx;
                 this._prevY = my;
-                this.isActive = true;
+                this._active = true;
                 this.isOver = true;
                 this.invalidateBuffer();
                 break;
@@ -180,7 +180,7 @@ class CvsKnob extends CvsSlider {
                 next = this._tFromXY(mx, my);
                 this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
                 this.action({ source: this, p5Event: e, value: this.value(), final: true });
-                this.isActive = false;
+                this._active = false;
                 this.invalidateBuffer();
                 break;
             case 'mousemove':
