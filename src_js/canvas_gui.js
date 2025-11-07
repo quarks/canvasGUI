@@ -8,6 +8,23 @@ const FONTS = new Set(['arial', 'verdana', 'tahoma', 'trebuchet ms',
 const IS_VALID_FONT = function (fontname) {
     return FONTS.has(fontname);
 };
+const MEASURE_TEXT = function (text, cvs, font, style, size) {
+    cvs.push();
+    cvs.textAlign('left');
+    cvs.textFont(font);
+    cvs.textStyle(style);
+    cvs.textSize(size);
+    let m = cvs.drawingContext.measureText(text);
+    cvs.pop();
+    return {
+        left: m.actualBoundingBoxLeft,
+        right: m.actualBoundingBoxRight,
+        tw: m.actualBoundingBoxLeft + m.actualBoundingBoxRight,
+        fw: m.width,
+        ascent: m.actualBoundingBoxAscent,
+        descent: m.actualBoundingBoxDescent
+    };
+};
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -627,7 +644,7 @@ class GUI {
     }
     /**
      * <p>Sets or gets the global text font.</p>
-     * <p>If the parameter is true-type-font <em>or</em> the name of a system
+     * <p>If the parameter is a true-type-font <em>or</em> the name of a system
      * font it will be used as the global font and this gui will be returned.</p>
      * <p>Recognised font names are :-</p>
      * <pre>

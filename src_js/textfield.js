@@ -1,17 +1,13 @@
 /**
  * This class supports a single line text entry field.
  *
- * The user must ensure that the field is wide enough for the maximum
- * length of text expected. This control stops accepting input if it is
- * likely to exceed the control width.
- *
  * The left/right arrow keys move the text insertion point within the
- * text. Used in combination with the shift key enables part or all of
- * the text to be selected.
+ * text. Used in combination with the shift key it enables part or all
+ * of the text to be selected.
  *
  * If no text is selected then the arrows keys can move off the current
  * control to another. This only works if each textfield has a unique
- * index number.
+ * index number (&gt0;).
  *
  * If the control has the index value 'idx' then the next control depends
  * on the arrow key pressed - <br>
@@ -21,7 +17,7 @@
  * down : idx + offset <br>
  *
  * The offset value is set when initialising the idx value with the
- * <code>index(idx, deltaIndex</code> method.)
+ * <code>index(idx, deltaIndex)</code> method.
  *
  * No other controls can be used while a textfield control is active. Pressing
  * 'Enter' or attempting to move to a non-existant textfield deactivates the
@@ -74,16 +70,12 @@ class CvsTextField extends CvsText {
      */
     text(t) {
         // getter
-        if (t == null || t == undefined)
+        // if (t == null || t == undefined) return this._getLine();
+        if (!t)
             return this._getLine();
-        // if (!t) return this._getLine();
         //setter
         this._textInvalid = false;
-        t = t.toString().replaceAll('\n', ' ');
-        while (t.length > 0 && this._uiBfr.textWidth(t) >= this._maxTextWidthPixels()) {
-            t = t.substring(0, t.length - 1);
-        }
-        this._lines = [t];
+        this._lines = [t.toString().replaceAll('\n', ' ')];
         this._validate();
         this.invalidateBuffer();
         return this;
@@ -154,10 +146,10 @@ class CvsTextField extends CvsText {
      * Set the validation function to be used for this control.
      *
      * The function is created by the user and should return an array of
-     * two elements e.g.
-     * [ valid, valid-text ]
-     * Valid is a boolean indicating if the text is valid and
-     * valid-text can be the original text or amended in some way.
+     * two elements e.g. <code>[valid, valid-text]</code>
+     *
+     * <code>valid</code> is a boolean indicating if the text is valid and<br>
+     * <code>valid-text</code> can be the original text or amended in some way.
      *
      * For instance a textfield used for getting a persons name will be valid
      * if there are 2 or more words and the valid-text will be the name
@@ -180,13 +172,9 @@ class CvsTextField extends CvsText {
             let r = this._validation(line);
             if (Array.isArray(r) && r.length > 0) {
                 this._textInvalid = !Boolean(r[0]);
-                // If formatted text is provided and it fits the textfield accept it
-                if (r[1]) // Validator has returned formatted text
-                    // See if it fits textfield
-                    if (this._uiBfr.textWidth(r[1]) < this._maxTextWidthPixels())
-                        this._lines[0] = r[1];
-                    else
-                        this._textInvalid = true;
+                // Validator has returned formatted text?
+                if (r[1])
+                    this._lines[0] = r[1];
             }
         }
         else {
@@ -205,13 +193,6 @@ class CvsTextField extends CvsText {
         this._prevCsrIdx = this._currCsrIdx = this._getLine().length;
         if (this._textInvalid)
             this._prevCsrIdx = 0;
-        // if (this._textInvalid) {
-        //     this._prevCsrIdx = 0;
-        //     this._currCsrIdx = this._getLine().length;
-        // } else {
-        //     this._prevCsrIdx = this._getLine().length;
-        //     this._currCsrIdx = this._getLine().length;
-        // }
         this.invalidateBuffer();
         this._nextActive = null;
     }
@@ -274,7 +255,6 @@ class CvsTextField extends CvsText {
     /** @hidden */
     _doKeyEvent(e) {
         this._nextActive = this;
-        let mtw = this._maxTextWidthPixels(); // maximum text width in pixels
         let line = this._getLine(); // get text
         let hasSelection = this._prevCsrIdx != this._currCsrIdx;
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
@@ -287,11 +267,11 @@ class CvsTextField extends CvsText {
                 }
                 // Add new character provided it is short enough to display safely
                 line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
-                if (this._uiBfr.textWidth(line) < mtw) {
-                    this._currCsrIdx++;
-                    this._prevCsrIdx++;
-                    this._lines[0] = line;
-                }
+                // if (this._uiBfr.textWidth(line) < mtw) {
+                this._currCsrIdx++;
+                this._prevCsrIdx++;
+                this._lines[0] = line;
+                // }
                 this.invalidateBuffer();
             }
             switch (e.key) {
@@ -397,11 +377,6 @@ class CvsTextField extends CvsText {
         }
         return this._nextActive;
     }
-    /** @hidden */
-    _maxTextWidthPixels() {
-        let ts = Number(this._textSize || this._gui.textSize());
-        return this._w - (2 * this._gap) - ts / 2; // maximun text width in pixels
-    }
     /**
      * Remove any user selected text
      * @hidden
@@ -414,41 +389,63 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */
     _updateControlVisual() {
+        function csrX(idx) {
+            if (!idx || idx == 0)
+                return 0;
+            else
+                return MEASURE_TEXT(line.substring(0, idx), uib, tf, ty, ts).fw;
+        }
         let ts = Number(this._textSize || this._gui.textSize());
         let tf = this._textFont || this._gui.textFont();
         let ty = this._textStyle || this._gui.textStyle();
         let cs = this._scheme || this._gui.scheme();
         let line = this._getLine();
-        let tiv = this._textInvalid, sx = 2 * this._gap;
+        let tiv = this._textInvalid;
+        let sx = 4 + Math.max(this._c[0], this._c[3]);
+        let ex = this._w - (4 + Math.max(this._c[1], this._c[2]));
         const CURSOR = cs['G_9'], HIGHLIGHT = cs['C_9'], SELECT = cs['C_3'];
-        let BACK = cs['C_1'], FORE = cs['C_9'];
+        // Prepare buffer
         let uib = this._uiBfr;
+        uib.clear();
         uib.push();
         uib.textFont(tf);
         uib.textStyle(ty);
         uib.textSize(ts);
-        uib.background(cs['G_0']); // white background
-        uib.noStroke();
+        // Draw background based on whether active or not
+        let BACK = cs['C_1'], FORE = cs['C_9'];
         if (!this.isActive) { // Colors depend on whether text is valid
             BACK = tiv ? cs['C_9'] : cs['C_1'];
             FORE = tiv ? cs['C_3'] : cs['C_9'];
-            uib.stroke(FORE);
-            uib.strokeWeight(1.5);
             uib.fill(BACK);
-            uib.rect(0, 0, this._w, this._h);
         }
-        else { // Active so display any selection
+        else
+            uib.fill(cs['G_0']);
+        uib.stroke(FORE);
+        uib.strokeWeight(2);
+        uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
+        // Draw text and cursor
+        uib.push();
+        uib.beginClip();
+        uib.rect(sx, 1.5, ex - sx, this._h - 3);
+        uib.endClip();
+        uib.fill(BACK);
+        let cx = csrX(this._currCsrIdx); // cursor pixel position
+        // If active display any selection
+        if (this.isActive) {
+            // If tx > 0 then the cursor is outside visible area
+            // so move it
+            let tx = cx - (ex - sx);
+            if (tx > 0)
+                uib.translate(-tx, 0);
+            // Show any selected text
             if (this._currCsrIdx != this._prevCsrIdx) {
-                let px = this._cursorX(uib, line, this._prevCsrIdx);
-                let cx = this._cursorX(uib, line, this._currCsrIdx);
+                let px = csrX(this._prevCsrIdx);
+                let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
                 uib.noStroke();
                 uib.fill(SELECT);
-                let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
-                uib.rect(cx0, 1, cx1, this._h - 2);
+                uib.rect(cx0, 1.5, cx1, this._h - 3, ...this._c);
             }
         }
-        uib.fill(BACK);
-        // Draw text
         uib.textSize(ts);
         uib.textAlign(this._p.LEFT, this._p.TOP);
         uib.noStroke();
@@ -456,17 +453,17 @@ class CvsTextField extends CvsText {
         uib.text(line, sx, (this._h - ts) / 2);
         // Draw cursor
         if (this._active && this._cursorOn) {
-            let cx = this._cursorX(uib, line, this._currCsrIdx);
             uib.stroke(CURSOR);
-            uib.strokeWeight(1.5);
+            uib.strokeWeight(1.75);
             uib.line(sx + cx, 4, sx + cx, this._h - 5);
         }
-        // Mouse over highlight
+        uib.pop();
+        // Mouse over control highlight
         if (this.isOver) {
             uib.stroke(HIGHLIGHT);
-            uib.strokeWeight(2);
+            uib.strokeWeight(2.5);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
         }
         // Control disabled highlight
         if (!this._enabled)
