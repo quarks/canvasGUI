@@ -78,7 +78,7 @@ class CvsTextField extends CvsText {
         // getter
         // if (t == null || t == undefined) return this._getLine();
         if (!t) return this._getLine();
-        //setter
+        // setter
         this._textInvalid = false;
         this._lines = [t.toString().replaceAll('\n', ' ')];
         this._validate();
@@ -280,17 +280,12 @@ class CvsTextField extends CvsText {
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
         let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= line.length);
         if (e.type == 'keydown') {
-            // Visible character
-            if (e.key.length == 1) {
-                if (this._prevCsrIdx != this._currCsrIdx) {
+            if (e.key.length == 1) {    // Visible character
+                if (this._prevCsrIdx != this._currCsrIdx)
                     line = this._removeSelectedText(line);
-                }
-                // Add new character provided it is short enough to display safely
                 line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx)
-                // if (this._uiBfr.textWidth(line) < mtw) {
                 this._currCsrIdx++; this._prevCsrIdx++;
                 this._lines[0] = line;
-                // }
                 this.invalidateBuffer();
             }
             switch (e.key) {
@@ -423,7 +418,9 @@ class CvsTextField extends CvsText {
         let tiv = this._textInvalid;
         let sx = 4 + Math.max(this._c[0], this._c[3]);
         let ex = this._w - (4 + Math.max(this._c[1], this._c[2]));
-        const CURSOR = cs['G_9'], HIGHLIGHT = cs['C_9'], SELECT = cs['C_3'];
+        const CURSOR = cs.G(9);
+        const HIGHLIGHT = cs.C(9);
+        const SELECT = cs.C(3);
 
         // Prepare buffer
         let uib = this._uiBfr;
@@ -433,15 +430,15 @@ class CvsTextField extends CvsText {
         uib.textStyle(ty);
         uib.textSize(ts);
         // Draw background based on whether active or not
-        let BACK = cs['C_1'], FORE = cs['C_9'];
+        let BACK = cs.C(1), FORE = cs.C(9);
         if (!this.isActive) { // Colors depend on whether text is valid
-            BACK = tiv ? cs['C_9'] : cs['C_1'];
-            FORE = tiv ? cs['C_3'] : cs['C_9'];
-            uib.fill(BACK);
+            BACK = tiv ? cs.C(9) : cs.C(1);
+            FORE = tiv ? cs.C(3) : cs.C(9);
+            uib.fill(...BACK);
         }
         else
-            uib.fill(cs['G_0']);
-        uib.stroke(FORE); uib.strokeWeight(2);
+            uib.fill(...cs.G(0));
+        uib.stroke(...FORE); uib.strokeWeight(2);
         uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
 
         // Draw text and cursor
@@ -449,35 +446,34 @@ class CvsTextField extends CvsText {
         uib.beginClip();
         uib.rect(sx, 1.5, ex - sx, this._h - 3);
         uib.endClip();
-        uib.fill(BACK);
+        uib.fill(...BACK);
         let cx = csrX(this._currCsrIdx); // cursor pixel position
         // If active display any selection
         if (this.isActive) {
-            // If tx > 0 then the cursor is outside visible area
-            // so move it
+            // If tx > 0 then the cursor is outside visible area so move it
             let tx = cx - (ex - sx);
             if (tx > 0) uib.translate(-tx, 0);
             // Show any selected text
             if (this._currCsrIdx != this._prevCsrIdx) {
                 let px = csrX(this._prevCsrIdx);
                 let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
-                uib.noStroke(); uib.fill(SELECT);
+                uib.noStroke(); uib.fill(...SELECT);
                 uib.rect(cx0, 1.5, cx1, this._h - 3, ...this._c);
             }
         }
         uib.textSize(ts);
         uib.textAlign(this._p.LEFT, this._p.TOP);
-        uib.noStroke(); uib.fill(FORE);
+        uib.noStroke(); uib.fill(...FORE);
         uib.text(line, sx, (this._h - ts) / 2);
         // Draw cursor
         if (this._active && this._cursorOn) {
-            uib.stroke(CURSOR); uib.strokeWeight(1.75);
+            uib.stroke(...CURSOR); uib.strokeWeight(1.75);
             uib.line(sx + cx, 4, sx + cx, this._h - 5);
         }
         uib.pop();
         // Mouse over control highlight
         if (this.isOver) {
-            uib.stroke(HIGHLIGHT);
+            uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2.5);
             uib.noFill();
             uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);

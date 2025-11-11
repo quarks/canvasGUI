@@ -288,11 +288,10 @@ abstract class CvsPane extends CvsBaseControl {
 
 }
 
-
-// Object.assign(CvsPane.prototype, NoOrient);
-// Object.assign(CvsPane.prototype, NoParent);
-// Object.assign(CvsPane.prototype, FixedBackground);
-// Object.assign(CvsPane.prototype, NoTooltip);
+Object.assign(CvsPane.prototype, NoOrient);
+Object.assign(CvsPane.prototype, NoParent);
+Object.assign(CvsPane.prototype, FixedBackground);
+Object.assign(CvsPane.prototype, NoTooltip);
 
 
 

@@ -159,27 +159,31 @@ class CvsOption extends CvsText {
         let isize = p.constrain(Number(ts) * 0.7, 12, 16);
         let iA = this._iconAlign, tA = this._textAlign;
         let lines = this._lines, gap = this._gap;
-        const BACK = cs['C_3'], FORE = cs['C_8'], ICON_BG = cs['G_0'];
-        const ICON_FG = cs['G_9'], HIGHLIGHT = cs['C_9'];
+        const BACK = cs.C(3);
+        const FORE = cs.C(8);
+        const ICON_BG = cs.G(0);
+        const ICON_FG = cs.G(9);
+        const HIGHLIGHT = cs.C(9);
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
         // If opaque
         if (this._opaque) {
             uib.noStroke();
-            uib.fill(BACK);
-            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.fill(...BACK);
+            uib.rect(0, 0, this._w, this._h, ...this._c);
+            // this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         // Start with circle
         uib.push();
         let px = (iA == p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
         uib.translate(px, uib.height / 2);
-        uib.stroke(ICON_FG);
-        uib.fill(ICON_BG);
+        uib.stroke(...ICON_FG);
+        uib.fill(...ICON_BG);
         uib.strokeWeight(1.5);
         uib.ellipse(0, 0, isize, isize);
         if (this._selected) {
-            uib.fill(ICON_FG);
+            uib.fill(...ICON_FG);
             uib.noStroke();
             uib.ellipse(0, 0, isize / 2, isize / 2);
         }
@@ -195,7 +199,7 @@ class CvsOption extends CvsText {
             let tw = x1 - x0;
             let th = this._tbox.h;
             let py = uib.textAscent() + (this._h - th) / 2;
-            uib.fill(FORE);
+            uib.fill(...FORE);
             for (let line of lines) {
                 switch (tA) {
                     case p.LEFT:
@@ -214,7 +218,7 @@ class CvsOption extends CvsText {
         }
         // Mouse over control
         if (this.isOver) {
-            uib.stroke(HIGHLIGHT);
+            uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
             uib.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);

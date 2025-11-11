@@ -24,6 +24,7 @@ class CvsBufferedControl extends CvsBaseControl {
         /** @hidden */ this._tooltip = undefined;
         /** @hidden */ this._isOver = false;
         this._validateControlBuffers();
+        this._c = this._gui.corners();
     }
     /** @hidden */
     get isOver() { return this._isOver; }
@@ -106,7 +107,7 @@ class CvsBufferedControl extends CvsBaseControl {
     }
     /** @hidden */
     _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs['T_5']);
+        b.fill(cs.T(5));
         b.noStroke();
         b.rect(x, y, w, h, ...this._c);
     }

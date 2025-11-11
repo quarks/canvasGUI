@@ -72,16 +72,17 @@ class CvsTooltip extends CvsText {
         let ts = this._textSize || this._gui.tipTextSize();
         let cs = this._parent.scheme() || this._gui.scheme();
         let lines = this._lines, gap = this._gap;
-        const BACK = cs['C_3'], FORE = cs['C_9'];
+        const BACK = cs.C(3);
+        const FORE = cs.C(9);
 
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
         // Backkground
-        uib.stroke(FORE); uib.fill(BACK);
+        uib.stroke(...FORE); uib.fill(...BACK);
         uib.rect(0, 0, this._w - 1, this._h - 1);
 
-        uib.fill(FORE).noStroke();
+        uib.fill(...FORE).noStroke();
         if (lines.length > 0) {
             uib.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;

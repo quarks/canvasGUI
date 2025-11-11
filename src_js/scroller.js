@@ -29,7 +29,6 @@ class CvsScroller extends CvsBufferedControl {
         /** @hidden */ this._thumbHeight = 12;
         /** @hidden */ this._minThumbWidth = 10;
         this._trackWidth = w - 2 * this._inset;
-        this._c = gui.corners();
         this._opaque = false;
     }
     /**
@@ -60,9 +59,11 @@ class CvsScroller extends CvsBufferedControl {
             }
         }
     }
+    /** @hidden */
     getValue() {
         return this._value;
     }
+    /** @hidden */
     getUsed() {
         return this._used;
     }
@@ -95,9 +96,9 @@ class CvsScroller extends CvsBufferedControl {
                         this.update(newValue);
                         this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
                     }
-                    this.isOver = (this == over.control);
-                    this.invalidateBuffer();
                 }
+                this.isOver = (this == over.control);
+                this.invalidateBuffer();
                 break;
             case 'mouseover':
                 break;
@@ -109,11 +110,11 @@ class CvsScroller extends CvsBufferedControl {
     /** @hidden */
     _updateControlVisual() {
         let cs = this._scheme || this._gui.scheme();
-        const OPAQUE = cs['C_3'];
-        const BORDER = cs['G_8'];
-        const UNUSED_TRACK = cs['G_3'];
-        const HIGHLIGHT = cs['C_9'];
-        const THUMB = cs['C_5'];
+        const OPAQUE = cs.C(3);
+        const BORDER = cs.G(8);
+        const UNUSED_TRACK = cs.G(3);
+        const HIGHLIGHT = cs.C(9);
+        const THUMB = cs.C(5);
         let [w, h, inset, used] = [this._w, this._h, this._inset, this._used];
         let [tx0, tx1] = [inset, w - inset];
         let [tw, th] = [this._trackWidth, this._trackHeight];
@@ -125,22 +126,22 @@ class CvsScroller extends CvsBufferedControl {
         uib.clear();
         if (this._opaque) {
             uib.noStroke();
-            uib.fill(OPAQUE);
+            uib.fill(...OPAQUE);
             uib.rect(0, 0, w, h, ...this._c);
         }
         // Now translate to track left edge - track centre
         uib.translate(inset, this._uiBfr.height / 2);
         // draw track
-        uib.fill(UNUSED_TRACK);
-        uib.stroke(BORDER);
+        uib.fill(...UNUSED_TRACK);
+        uib.stroke(...BORDER);
         uib.strokeWeight(1);
         uib.rect(0, -th / 2, tw, th);
         // Draw thumb
-        uib.fill(THUMB);
+        uib.fill(...THUMB);
         uib.noStroke();
         if (this.isActive || this.isOver) {
             uib.strokeWeight(2);
-            uib.stroke(HIGHLIGHT);
+            uib.stroke(...HIGHLIGHT);
         }
         uib.rect(tx - tbW / 2, -tbH / 2, tbW, tbH, ...this._c);
         if (!this._enabled)
@@ -167,6 +168,9 @@ class CvsScroller extends CvsBufferedControl {
     _minControlSize() {
         return { w: this._w, h: 20 };
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(gtts) { return this; }
 }
-// Object.assign(CvsScroller.prototype, NoTooltip);
+Object.assign(CvsScroller.prototype, NoTooltip);
 //# sourceMappingURL=scroller.js.map

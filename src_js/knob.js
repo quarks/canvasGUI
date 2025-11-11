@@ -209,18 +209,21 @@ class CvsKnob extends CvsSlider {
     /** @hidden */
     _updateControlVisual() {
         let cs = this._scheme || this._gui.scheme();
-        const OPAQUE = cs['C_3'];
-        const GRIP_OFF = cs['C_7'], GRIP_STROKE = cs['C_8'];
-        const MARKER = cs['C_3'];
-        const HIGHLIGHT = cs['C_9'];
-        const TRACK_BACK = cs['C_3'], TRACK_ARC = cs['C_1'];
-        const TICKS = cs['G_8'];
-        const USED_TRACK = cs['G_2'], UNUSED_TRACK = cs['T_1'];
+        const OPAQUE = cs.C(3);
+        const GRIP_OFF = cs.C(7);
+        const GRIP_STROKE = cs.C(8);
+        const MARKER = cs.C(3);
+        const HIGHLIGHT = cs.C(9);
+        const TRACK_BACK = cs.C(3);
+        const TRACK_ARC = cs.C(1);
+        const TICKS = cs.G(8);
+        const USED_TRACK = cs.G(2);
+        const UNUSED_TRACK = cs.T(1);
         let uib = this._uiBfr;
         uib.clear();
         if (this._opaque) {
             uib.noStroke();
-            uib.fill(OPAQUE);
+            uib.fill(...OPAQUE);
             uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         let arc = this._turnArc, gap = 2 * Math.PI - arc, lowA = gap / 2;
@@ -231,15 +234,15 @@ class CvsKnob extends CvsSlider {
         uib.rotate(this._gapPos + lowA);
         // Draw full background and track arc
         uib.noStroke();
-        uib.fill(TRACK_BACK);
+        uib.fill(...TRACK_BACK);
         uib.ellipse(0, 0, dOut, dOut);
-        uib.fill(TRACK_ARC);
+        uib.fill(...TRACK_ARC);
         uib.arc(0, 0, dOut, dOut, 0, this._turnArc);
         // Draw ticks? 
         let n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             let b0 = this._tw, b1 = 0.65 * b0;
-            uib.stroke(TICKS);
+            uib.stroke(...TICKS);
             let da = arc / n;
             uib.push();
             {
@@ -267,23 +270,23 @@ class CvsKnob extends CvsSlider {
             }
             // Unused track
             uib.noStroke();
-            uib.fill(UNUSED_TRACK);
+            uib.fill(...UNUSED_TRACK);
             uib.arc(0, 0, dIn + b0, dIn + b0, 0, arc);
             // Unused track
-            uib.fill(USED_TRACK);
+            uib.fill(...USED_TRACK);
             uib.arc(0, 0, dIn + b0, dIn + b0, 0, this._t01 * arc);
         }
         // Grip section
-        uib.stroke(GRIP_STROKE);
+        uib.stroke(...GRIP_STROKE);
         uib.strokeWeight(1.5);
-        uib.fill(GRIP_OFF);
+        uib.fill(...GRIP_OFF);
         uib.ellipse(0, 0, dIn, dIn);
         // Grip arrow marker
         uib.push();
         {
             uib.rotate(this._t01 * arc);
             let ms = 0.2 * rIn;
-            uib.fill(MARKER);
+            uib.fill(...MARKER);
             uib.noStroke();
             uib.beginShape();
             uib.vertex(-ms, 0);
@@ -296,7 +299,7 @@ class CvsKnob extends CvsSlider {
         // Is over highlight?
         if (this.isOver) {
             uib.noFill();
-            uib.stroke(HIGHLIGHT);
+            uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(3);
             uib.arc(0, 0, 2 * this._kRad, 2 * this._kRad, 0, arc);
         }

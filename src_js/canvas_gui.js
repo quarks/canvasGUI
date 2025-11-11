@@ -2,6 +2,7 @@ const CANVAS_GUI_VERSION = '!!VERSION!!';
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
 const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
+const CTL_CNRS = [4, 4, 4, 4];
 const FONTS = new Set(['arial', 'verdana', 'tahoma', 'trebuchet ms',
     'times new roman', 'georgia', 'courier new', 'brush script mt',
     'impact', 'serif', 'sans-serif', 'monospace']);
@@ -42,7 +43,7 @@ class GUI {
      * @param p5c the renderer
      * @param p the sketch instance
      */
-    constructor(p5c, p = p5.instance) {
+    constructor(name, p5c, p = p5.instance) {
         // Prevent duplicate event handlers
         /** @hidden */ this._touchListenersCreated = false;
         /** @hidden */ this._mouseListenersCreated = false;
@@ -53,6 +54,7 @@ class GUI {
         // Tooltip times
         /** @hidden */ this._show_time = TT_SHOW_TIME;
         /** @hidden */ this._repeat_time = TT_REPEAT_TIME;
+        this._uid = name;
         this._renderer = p5c;
         this._canvas = p5c.canvas;
         // GUI creation
@@ -60,7 +62,7 @@ class GUI {
         this._p = p; // p5 instance
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
-        this._corners = [4, 4, 4, 4];
+        this._corners = CTL_CNRS;
         this._optionGroups = new Map();
         // Text attributes
         this._textSize = 12;
@@ -485,23 +487,22 @@ class GUI {
      * @param e keyboard event
      */
     _processKeyEvent(e) {
-        // Paas the event if the active control is a CvsTextField
-        if (this._visible && this._enabled && this._activeCtrl instanceof CvsTextField) {
+        // Pass the event if the active control is a CvsTextField
+        if (this._visible && this._enabled && this._activeCtrl instanceof CvsTextField)
             this._activeCtrl = this._activeCtrl._doKeyEvent(e);
-        }
     }
     /** @hidden */
     _processFocusEvent(e) {
         switch (e.type) {
             case 'focusout':
-                console.log(`Focus out ${this._activeCtrl?.id}`);
+                // console.log(`Focus out ${this._activeCtrl?.id}`);
                 if (this._activeCtrl instanceof CvsTextField) {
                     this._activeCtrl._deactivate();
                     this._activeCtrl = null;
                 }
                 break;
             case 'focusin':
-                console.log(`Focus in ${this._activeCtrl?.id}`);
+                // console.log(`Focus in ${this._activeCtrl?.id}`);
                 break;
         }
     }
@@ -618,7 +619,7 @@ class GUI {
     }
     /**
      * <p>Gets the option group associated with a given name.</p>
-     * @param name the name of the oprion group
+     * @param name the name of the option group
      * @returns the option group
      * @hidden
      */
@@ -877,8 +878,8 @@ class GUI {
         this._scheme = this._schemes['blue'];
     }
     /**
-     * <p>Set or get an existing global color scheme.</p>
-     * @param schemename color scheme to set
+     * <p>Set or get the existing global color scheme.</p>
+     * @param schemename name of the color scheme to set
      * @returns this gui instance
      */
     scheme(schemename) {
@@ -896,18 +897,19 @@ class GUI {
             });
         }
         else
-            CERROR(`'${schemename}' is not a valid color scheme`);
+            CWARN(`'${schemename}' is not a valid color scheme`);
         return this;
     }
     /**
-     * <p>Get a copy of the named color scheme.</p>
+     * <p>Get the named color scheme.</p>
      * @param schemename the name of the color scheme
      * @returns the color scheme or undefined if it doesn't exist
      * @hidden
      */
     _getScheme(schemename) {
-        if (schemename && this._schemes[schemename])
-            return Object.assign({}, this._schemes[schemename]);
+        if (schemename && this._schemes[schemename]) {
+            return this._schemes[schemename];
+        }
         CWARN(`Unable to retrieve color scheme '${schemename}'`);
         return undefined;
     }
@@ -1003,12 +1005,42 @@ class GUI {
         }
     }
     /**
-     * <p>Returns a named GUI controller.</p>
-     * <p>If an exisiting GUI has the same name it will be returned, otherwise
-     * a new GUI will be created and returned</p>
-     * <p>If the name parameter is not of type 'string' or an empty string then
-     * the returned value is undefined.</p>
+     * <p>Get the GUI with the given name. If no such GUI exists then the
+     * function returns undefined. </p>
+     * <p>The global function getGUI(...) is an alternative method that
+     * accepts the same parameters performs exactly the same task.</p>
+     * @param name the name of the GUI to get
+     * @returns the matching GUI controller or undefined if not found.
+     */
+    static $$(name) {
+        return GUI._guis.get(name);
+    }
+    /**
+     * <p>Creates and returns a named GUI controller.</p>
+     * <p>This method is icluded for compatibility with canvasGUI V1 and has
+     * beed deprecated. The <code>createGUI(...)</code> method should be used
+     * instead as it fits the p5.js scheme of using <code>create???(...)</code>
+     * methods when an object instance is being initiated.</p>
+     * <p>To remain compatible with canvasGUI V2 where every GUI requires a
+     * unique name, a randomly generated name will be used.</p>
      *
+     * @deprecated
+     * @param p5c the renderer - the display canvas
+     * @param p the processing instance (required in Instance mode)
+     * @returns a GUI controller existing or new GUI with the given name.
+     */
+    static get(p5c, p = p5.instance) {
+        let name = `#${p.floor(p.random(111111, 999999))}`;
+        return GUI.create(name, p5c, p);
+    }
+    /**
+     * <p>Creates and returns a named GUI controller.</p>
+     * <p>If a GUI with this name already exists it will be returned, otherwise
+     * a new GUI will be created and returned.</p>
+     * <p>If the name parameter is not of type 'string' or an empty string then
+     * a randomly generated name will be used instead.</p>
+     * <p>The global function <code>createGUI(...)</code> accepts the same
+     * parameters is the preferred method to create a GUI.</p>
      *
      * @param name unique name for the GUI
      * @param p5c the renderer - the display canvas
@@ -1017,25 +1049,18 @@ class GUI {
      */
     static create(name, p5c, p = p5.instance) {
         GUI.ANNOUNCE_CANVAS_GUI();
+        if (!(name instanceof String) || name.length === 0) {
+            name = `#${p.floor(p.random(111111, 999999))}`;
+            CWARN(`Invalid name provided so this GUI will be called '${name}' intead.`);
+        }
         if (GUI._guis.has(name)) {
-            CWARN(`You already have a  GUI called '${name} it will not be replaced`);
+            CWARN(`You already have a  GUI called '${name} it will not be replaced.`);
             return GUI._guis.get(name);
         }
         // Need to create a GUI for this canvas
-        let gui = new GUI(p5c, p);
+        let gui = new GUI(name, p5c, p);
         GUI._guis.set(name, gui);
         return gui;
-    }
-    /**
-   * <p>Get the GUI with the given name. If no such GUI exists then the
-   * function returns undefined. </p>
-   * <p>The global function getGUI(...) is an alternative method that
-   * accepts the same parameters performs exactly the same task.</p>
-   * @param name the name of the GUI to get
-   * @returns the matching GUI controller or undefined if not found.
-   */
-    static $$(name) {
-        return GUI._guis.get(name);
     }
 }
 /** canvasGUI version */
@@ -1043,13 +1068,13 @@ GUI.VERSION = '!!VERSION!!';
 // Every GUI must have a unique string identifier.
 /** @hidden */ GUI._guis = new Map();
 /**
- * <p>Returns a named GUI controller.</p>
- * <p>If an exisiting GUI has the same name it will be returned, otherwise
- * a new GUI will be created and returned</p>
+ * <p>Creates and returns a named GUI controller.</p>
+ * <p><em>This is the preferred function when creating a GUI.</em></p>
+ * <p>If a GUI with this name already exists it will be returned, otherwise
+ * a new GUI will be created and returned.</p>
  * <p>If the name parameter is not of type 'string' or an empty string then
- * the returned value is undefined.</p>
- * <p>The global function createGUI(...) is an alternative method that
- * accepts the same parameters performs exactly the same task.</p>
+ * a randomly generated name will be used instead.</p>
+ *
  * @param name unique name for the GUI
  * @param p5c the renderer - the display canvas
  * @param p the processing instance (required in Instance mode)

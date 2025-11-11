@@ -218,36 +218,36 @@ class CvsJoystick extends CvsBufferedControl {
         let cs = this._scheme || this._gui.scheme();
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
 
-        const OPAQUE = cs['C_3'];
-        const DIAL_FACE = cs['C_1'];
-        const DIAL_TINT = cs['T_0'];
-        const DIAL_BORDER = cs['C_9'];
-        const THUMB_STROKE = cs['C_9'];
-        const THUMB_OFF = cs['C_4'];
-        const THUMB_OVER = cs['C_6'];
-        const ROD = cs['C_7'];
-        const MARKERS = cs['C_8'];
-        const DEAD_ZONE = cs['T_5'];
+        const OPAQUE = cs.C(3);
+        const DIAL_FACE = cs.C(1);
+        const DIAL_TINT = cs.T(0);
+        const DIAL_BORDER = cs.C(9);
+        const THUMB_STROKE = cs.C(9);
+        const THUMB_OFF = cs.C(4);
+        const THUMB_OVER = cs.C(6);
+        const ROD = cs.C(7);
+        const MARKERS = cs.C(8);
+        const DEAD_ZONE = cs.T(5);
 
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
         if (this._opaque) {
-            uib.noStroke(); uib.fill(OPAQUE);
+            uib.noStroke(); uib.fill(...OPAQUE);
             uib.rect(0, 0, this._w, this._h,
                 this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         uib.translate(uib.width / 2, uib.height / 2);
         // dial face background
-        uib.noStroke(); uib.fill(DIAL_FACE);
+        uib.noStroke(); uib.fill(...DIAL_FACE);
         uib.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // dial face highlight
         let s = 0, e = 0.26 * this._size, da = 0;
-        uib.fill(DIAL_TINT); uib.noStroke() //b.stroke(DIAL_TINT); b.strokeWeight(2);
+        uib.fill(...DIAL_TINT); uib.noStroke() //b.stroke(...DIAL_TINT); b.strokeWeight(2);
         uib.ellipse(0, 0, e * 2, e * 2);
         uib.ellipse(0, 0, e * 1.25, e * 1.25);
         // Dial face markers
-        uib.stroke(MARKERS);
+        uib.stroke(...MARKERS);
         switch (this._mode) {
             case 'X0':
                 s = this._pr1; e = 0.33 * this._size; da = Math.PI / 8;
@@ -278,20 +278,20 @@ class CvsJoystick extends CvsBufferedControl {
                 break;
         }
         // Dial border
-        uib.stroke(DIAL_BORDER); uib.strokeWeight(Math.max(3, 0.025 * this._size)); uib.noFill();
+        uib.stroke(...DIAL_BORDER); uib.strokeWeight(Math.max(3, 0.025 * this._size)); uib.noFill();
         uib.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
         // Dead zone
-        uib.fill(DEAD_ZONE); uib.noStroke();
+        uib.fill(...DEAD_ZONE); uib.noStroke();
         uib.ellipse(0, 0, this._pr0 * 2, this._pr0 * 2);
         // Stick                                                                                    
-        uib.stroke(ROD); uib.strokeWeight(this._size * 0.05);
+        uib.stroke(...ROD); uib.strokeWeight(this._size * 0.05);
         uib.line(0, 0, tx, ty);
         // Thumb
-        uib.strokeWeight(2); uib.stroke(THUMB_STROKE);
+        uib.strokeWeight(2); uib.stroke(...THUMB_STROKE);
         if (this.isActive || this.isOver)
-            uib.fill(THUMB_OVER);
+            uib.fill(...THUMB_OVER);
         else
-            uib.fill(THUMB_OFF);
+            uib.fill(...THUMB_OFF);
         uib.ellipse(tx, ty, this._tSize * 2, this._tSize * 2);
 
         this._updateJoystickPickBuffer(tx, ty, this._tSize);

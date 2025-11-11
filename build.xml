@@ -1,9 +1,9 @@
 <!--    
     Build file for JS project
     Peter Lager 2024
-    V0.1
+    V0.2
 -->
-<project name="Canvas GGUI" default="init" basedir="./" >
+<project name="Canvas GUI" default="init" basedir="./" >
 
     <property file="build.properties" />
 
@@ -15,6 +15,16 @@
 	<tstamp> 
 		<format property="date" pattern="d-MMMM-yyyy  hh:mm aa" />
 	</tstamp>
+
+    <!-- Compress reference pages -->
+    <target name="api" depends="document">
+        <property name="zip.file" location="${library.dist.ref.dir}/api.zip" />
+        <echo message="Zip reference web pages" />
+        <delete file="${zip.file}"></delete>
+        <zip destfile="${zip.file}"
+            basedir="${library.dist.ref.dir}"
+            includes="**/*.html, **/*.css, **/*.js, **/*.png" />
+    </target>
 
     <!-- Create the library min.js file    -->
     <target name="compile" depends="concat.js.files">        
@@ -133,6 +143,7 @@
         <echo message="Build started ${date}" />
         <delete dir="${temp}" />        
         <mkdir dir="${temp}" />
+        <delete file="${library.dist.dir}/index.ts" />
     </target>
 
 </project>

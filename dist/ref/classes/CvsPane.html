@@ -14,8 +14,8 @@
 <li><a href="CvsPane.html">CvsPane</a></li></ul>
 <h1>Class CvsPane<code class="tsd-tag ts-flagAbstract">Abstract</code> </h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Base class for all controls</p>
-<p>It provides most of the functionality for the controls.</p></div></section>
+<div class="tsd-comment tsd-typography"><p>This class provides most of the core functionality for the canvasGUI 
+controls.</p></div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
@@ -23,7 +23,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">CvsPane</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5558</li></ul></aside>
+<li>Defined in index.ts:5630</li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -71,12 +71,13 @@
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited">
 <li class="tsd-signature" id="id.id-1"><span class="tsd-signature-symbol">get</span> id<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>the unique identifier for this control</p>
+<div class="tsd-comment tsd-typography">
+<h3>Returns</h3><p>the unique identifier for this control</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
 <p>Inherited from CvsBaseControl.id</p>
 <ul>
-<li>Defined in index.ts:1493</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1541</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="isClosed" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Closed</span><a href="#isClosed" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
@@ -86,7 +87,7 @@
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5645</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5717</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="isClosing" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Closing</span><a href="#isClosing" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
@@ -96,7 +97,7 @@
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5648</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5720</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><a id="isEnabled" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Enabled</span><a href="#isEnabled" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited">
@@ -108,7 +109,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <p>Inherited from CvsBaseControl.isEnabled</p>
 <ul>
-<li>Defined in index.ts:1502</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1550</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="isOpen" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Open</span><a href="#isOpen" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
@@ -118,7 +119,7 @@
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5668</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5740</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="isOpening" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Opening</span><a href="#isOpening" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
@@ -128,30 +129,31 @@
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5671</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5743</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><a id="isVisible" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Visible</span><a href="#isVisible" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited">
 <li class="tsd-signature" id="isVisible.isVisible-1"><span class="tsd-signature-symbol">get</span> isVisible<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography">
+<div class="tsd-comment tsd-typography"><p>Use <code>hide()</code> and <code>show()</code> to control visibility.</p>
 <h3>Returns</h3><p>true if this control is visible</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <p>Inherited from CvsBaseControl.isVisible</p>
 <ul>
-<li>Defined in index.ts:1507</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1556</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><a id="type" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>type</span><a href="#type" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited">
 <li class="tsd-signature" id="type.type-1"><span class="tsd-signature-symbol">get</span> type<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>name of the control type.</p>
+<div class="tsd-comment tsd-typography">
+<h3>Returns</h3><p>the classname for this control type.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
 <p>Inherited from CvsBaseControl.type</p>
 <ul>
-<li>Defined in index.ts:1496</li></ul></aside></li></ul></section></section>
+<li>Defined in index.ts:1544</li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="addChild" class="tsd-anchor"></a>
@@ -177,7 +179,7 @@ If rx and ry are not provided then it uses the values set in the child.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <p>Inherited from <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#addChild">addChild</a></p>
 <ul>
-<li>Defined in index.ts:1609</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1660</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="background" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>background</span><a href="#background" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -201,7 +203,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5613</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5685</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="close" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>close</span><a href="#close" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -212,7 +214,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 </div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5631</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5703</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="depth" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>depth</span><a href="#depth" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -223,7 +225,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5597</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5669</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="disable" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>disable</span><a href="#disable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -235,7 +237,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#disable">disable</a></p>
 <ul>
-<li>Defined in index.ts:5800</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5872</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="enable" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>enable</span><a href="#enable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -247,7 +249,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#enable">enable</a></p>
 <ul>
-<li>Defined in index.ts:5791</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5863</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="hide" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>hide</span><a href="#hide" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -259,7 +261,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#hide">hide</a></p>
 <ul>
-<li>Defined in index.ts:5810</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5882</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="icon" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>icon</span><a href="#icon" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -282,7 +284,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5744</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5816</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="moveBy" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>move<wbr/>By</span><a href="#moveBy" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -306,7 +308,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#moveBy">moveBy</a></p>
 <ul>
-<li>Defined in index.ts:1535</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1584</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="moveTo" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>move<wbr/>To</span><a href="#moveTo" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -330,7 +332,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#moveTo">moveTo</a></p>
 <ul>
-<li>Defined in index.ts:1523</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1572</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="noIcon" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>no<wbr/>Icon</span><a href="#noIcon" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -341,7 +343,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 </div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5753</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5825</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="noText" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>no<wbr/>Text</span><a href="#noText" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -352,7 +354,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 </div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5732</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5804</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="open" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>open</span><a href="#open" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -363,7 +365,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5654</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5726</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="removeChild" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>remove<wbr/>Child</span><a href="#removeChild" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -382,11 +384,11 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#removeChild">removeChild</a></p>
 <ul>
-<li>Defined in index.ts:1630</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1681</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="scheme" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>scheme</span><a href="#scheme" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="scheme.scheme-1">scheme<span class="tsd-signature-symbol">(</span>id<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span>, cascade<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><a href="#scheme.scheme-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="scheme.scheme-1">scheme<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span>, cascade<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><a href="#scheme.scheme-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Sets or gets the color scheme used by this control.</p>
 <h3>Returns</h3><p>this control or the control&#39;s color scheme</p>
@@ -395,8 +397,8 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5><code class="tsd-tag ts-flagOptional">Optional</code> id: <span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>the color scheme id e.g. &#39;blue&#39;</p>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> name: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>the color scheme name e.g. &#39;blue&#39;</p>
 </div></li>
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> cascade: <span class="tsd-signature-type">boolean</span></h5>
@@ -405,7 +407,7 @@ invalid the results are unpredicatable and likely to cause the sketch to fail.</
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <p>Inherited from <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#scheme">scheme</a></p>
 <ul>
-<li>Defined in index.ts:1563</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1612</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="setAction" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>set<wbr/>Action</span><a href="#setAction" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -430,7 +432,7 @@ an event. The parameter can take three forms:</p>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#setAction">setAction</a></p>
 <ul>
-<li>Defined in index.ts:1678</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:1729</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="show" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>show</span><a href="#show" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -442,7 +444,7 @@ an event. The parameter can take three forms:</p>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="CvsBaseControl.html">CvsBaseControl</a>.<a href="CvsBaseControl.html#show">show</a></p>
 <ul>
-<li>Defined in index.ts:5820</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5892</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="shrink" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>shrink</span><a href="#shrink" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -462,7 +464,7 @@ an event. The parameter can take three forms:</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5775</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5847</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="tab" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tab</span><a href="#tab" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -473,7 +475,7 @@ an event. The parameter can take three forms:</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5782</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5854</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="text" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>text</span><a href="#text" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -496,7 +498,7 @@ an event. The parameter can take three forms:</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5723</li></ul></aside></li></ul></section>
+<li>Defined in index.ts:5795</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="textSize" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>text<wbr/>Size</span><a href="#textSize" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -514,7 +516,7 @@ an event. The parameter can take three forms:</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="CvsPane.html" class="tsd-signature-type" data-tsd-kind="Class">CvsPane</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in index.ts:5763</li></ul></aside></li></ul></section></section></div>
+<li>Defined in index.ts:5835</li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">

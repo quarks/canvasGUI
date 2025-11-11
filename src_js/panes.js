@@ -246,10 +246,10 @@ class CvsPane extends CvsBaseControl {
 /** @hidden */ CvsPane._dO = 40; // Open speed px/sec :: was (20)
 /** @hidden */ CvsPane._wExtra = 20;
 /** @hidden */ CvsPane._tabID = 1;
-// Object.assign(CvsPane.prototype, NoOrient);
-// Object.assign(CvsPane.prototype, NoParent);
-// Object.assign(CvsPane.prototype, FixedBackground);
-// Object.assign(CvsPane.prototype, NoTooltip);
+Object.assign(CvsPane.prototype, NoOrient);
+Object.assign(CvsPane.prototype, NoParent);
+Object.assign(CvsPane.prototype, FixedBackground);
+Object.assign(CvsPane.prototype, NoTooltip);
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
     constructor(gui, id, depth) {

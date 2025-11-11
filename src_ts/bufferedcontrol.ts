@@ -16,6 +16,8 @@ abstract class CvsBufferedControl extends CvsBaseControl {
     /** @hidden */ protected _uiBfr: p5.Renderer;
     /** @hidden */ protected _pkBfr: p5.Renderer;
 
+    /** @hidden */ protected _c: Array<number>;
+
     /**
      * CvsBufferedControl class 
      * @hidden
@@ -29,6 +31,7 @@ abstract class CvsBufferedControl extends CvsBaseControl {
     constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number) {
         super(gui, id, x, y, w, h);
         this._validateControlBuffers();
+        this._c = this._gui.corners();
     }
 
     /** @hidden */
@@ -115,7 +118,7 @@ abstract class CvsBufferedControl extends CvsBaseControl {
 
     /** @hidden */
     protected _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs['T_5']);
+        b.fill(cs.T(5));
         b.noStroke();
         b.rect(x, y, w, h, ...this._c);
     }

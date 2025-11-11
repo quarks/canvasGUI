@@ -5,8 +5,9 @@
  ##############################################################################
  */
 /**
- * <p>Base class for all controls</p>
- * <p>It provides most of the functionality for the controls.</p>
+ * <p>This class provides most of the core functionality for the canvasGUI
+ * controls.</p>
+ *
  */
 class CvsBaseControl {
     /**
@@ -54,7 +55,6 @@ class CvsBaseControl {
         this._scheme = undefined;
         this._orientation = CvsBaseControl.EAST;
         this._dragging = false; // is mouse being dragged on active control
-        this._c = gui.corners(undefined);
     }
     ;
     /** @hidden */
@@ -77,9 +77,9 @@ class CvsBaseControl {
     get h() { return this._h; }
     /** @hidden */
     set h(v) { this._h = Math.round(v); }
-    /** the unique identifier for this control   */
+    /** @returns the unique identifier for this control   */
     get id() { return this._id; }
-    /** name of the control type. */
+    /** @returns the classname for this control type. */
     get type() { return this.constructor.name.substring(3); }
     ;
     /**
@@ -88,6 +88,7 @@ class CvsBaseControl {
      */
     get isEnabled() { return this._enabled; }
     /**
+     * <p>Use <code>hide()</code> and <code>show()</code> to control visibility.</p>
      * @returns true if this control is visible
      */
     get isVisible() { return this._visible; }
@@ -139,18 +140,20 @@ class CvsBaseControl {
     }
     /**
      * <p>Sets or gets the color scheme used by this control.</p>
-     * @param id the color scheme id e.g. 'blue'
+     * @param name the color scheme name e.g. 'blue'
      * @param cascade if true propogate scheme to all child controls.
      * @returns this control or the control's color scheme
      */
-    scheme(id, cascade) {
-        // setter
-        if (id) {
-            this._scheme = this._gui._getScheme(id);
-            this.invalidateBuffer();
-            if (cascade)
-                for (let c of this._children)
-                    c.scheme(id, cascade);
+    scheme(name, cascade) {
+        if (name) { // setter
+            let next_scheme = this._gui._getScheme(name);
+            if (next_scheme && this._scheme != next_scheme) {
+                this._scheme = next_scheme;
+                this.invalidateBuffer();
+                if (cascade)
+                    for (let c of this._children)
+                        c.scheme(name, cascade);
+            }
             return this;
         }
         return this._scheme;
@@ -253,12 +256,10 @@ class CvsBaseControl {
      * @returns this control
      */
     setAction(event_handler) {
-        if (typeof event_handler === 'function') {
+        if (typeof event_handler === 'function')
             this.action = event_handler;
-        }
-        else {
+        else
             console.error(`The action for '$(this._id)' must be a function definition`);
-        }
         return this;
     }
     /**
@@ -390,58 +391,60 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
-// const NoOrient = {
-//     /** This control does not support changing orientation */
-//     orient(dir: string): CvsBaseControl {
-//         CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
-//         return this;
-//         // // Hide these methods from typeDoc
-//         // /** @hidden */ orient(dir) { return this }
-//     }
-// }
-// const NoParent = {
-//     /** This control does not support changing orientation */
-//     parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
-//         CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-//         return this;
-//     },
-//     leaveParent(): CvsBaseControl {
-//         CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-//         return this;
-//     }
-//     // // Hide these methods from typeDoc
-//     // /** @hidden */ parent(parent, rx, ry){ return this }
-//     // /** @hidden */ leaveParent(){ return this }
-// }
-// /** @hidden */
-// const NoTooltip = {
-//     /** @hidden */
-//     tooltip(tiptext: string): CvsBaseControl {
-//         CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-//         return this;
-//     },
-//     /** @hidden */
-//     tipTextSize(gtts: number): CvsBaseControl {
-//         CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-//         return this;
-//     }
-//     // // Hide these methods from typeDoc
-//     // /** @hidden */ tooltip(tiptext){ return this }
-//     // /** @hidden */ tipTextSize(gtts) { return this }
-// }
-// /** @hidden */
-// const FixedBackground = {
-//     /** @hidden */
-//     transparent(): CvsBaseControl {
-//         CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
-//         return this;
-//     },
-//     opaque(): CvsBaseControl {
-//         CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
-//         return this;
-//     }
-//     // // Hide these methods from typeDoc
-//     // /** @hidden */ transparent(){ return this }
-//     // /** @hidden */ opaque() { return this }
-// }
+/** @hidden */
+const NoOrient = {
+    /** This control does not support changing orientation */
+    orient(dir) {
+        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
+        return this;
+        // // Hide these methods from typeDoc
+        // /** @hidden */ orient(dir) { return this }
+    }
+};
+/** @hidden */
+const NoParent = {
+    /** This control does not support changing orientation */
+    parent(parent, rx, ry) {
+        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+        return this;
+    },
+    leaveParent() {
+        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+        return this;
+    }
+    // // Hide these methods from typeDoc
+    // /** @hidden */ parent(parent, rx, ry){ return this }
+    // /** @hidden */ leaveParent(){ return this }
+};
+/** @hidden */
+const NoTooltip = {
+    /** @hidden */
+    tooltip(tiptext) {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    },
+    /** @hidden */
+    tipTextSize(gtts) {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    }
+    // // Hide these methods from typeDoc
+    // /** @hidden */ tooltip(tiptext){ return this }
+    // /** @hidden */ tipTextSize(gtts) { return this }
+};
+/** @hidden */
+const FixedBackground = {
+    /** @hidden */
+    transparent() {
+        CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
+        return this;
+    },
+    opaque() {
+        CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
+        return this;
+    }
+    // // Hide these methods from typeDoc
+    // /** @hidden */ transparent(){ return this }
+    // /** @hidden */ opaque() { return this }
+};
 //# sourceMappingURL=basecontrol.js.map

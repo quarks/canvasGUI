@@ -1,5 +1,6 @@
 /**
- * <p>This class is to create simple buttons with text and / or icons on its face.</p>
+ * <p>This class is to create simple clickable buttons with text and/or icons
+ * on its face.</p>
  */
 class CvsButton extends CvsTextIcon {
     /** @hidden */
@@ -12,13 +13,15 @@ class CvsButton extends CvsTextIcon {
         let cs = this._scheme || this._gui.scheme();
         let iA = this._iconAlign, tA = this._textAlign;
         let icon = this._icon, lines = this._lines, gap = this._gap;
-        const BACK = cs['C_3'], FORE = cs['C_8'], HIGHLIGHT = cs['C_9'];
+        const BACK = cs.C(3);
+        const FORE = cs.C(8);
+        const HIGHLIGHT = cs.C(9);
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
         if (this._opaque) {
             uib.noStroke();
-            uib.fill(BACK);
+            uib.fill(...BACK);
             uib.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
         }
         if (icon) {
@@ -46,7 +49,7 @@ class CvsButton extends CvsTextIcon {
                 x1 -= icon.width;
             let tw = x1 - x0, th = this._tbox.h;
             let py = uib.textAscent() + (this._h - th) / 2;
-            uib.fill(FORE);
+            uib.fill(...FORE);
             for (let line of lines) {
                 switch (tA) {
                     case this._p.LEFT:
@@ -65,7 +68,7 @@ class CvsButton extends CvsTextIcon {
         }
         // Mouse over add border highlight
         if (this._isOver) {
-            uib.stroke(HIGHLIGHT);
+            uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
             uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);

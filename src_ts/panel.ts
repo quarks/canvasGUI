@@ -18,7 +18,6 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */ protected _canDragX: boolean = true;
     /** @hidden */ protected _canDragY: boolean = true;
     /** @hidden */ protected _dragData: Array<number>;
-
     /** @hidden */ protected _constrainX: boolean = true;
     /** @hidden */ protected _constrainY: boolean = true;
 
@@ -129,15 +128,16 @@ class CvsPanel extends CvsBufferedControl {
     _updateControlVisual(): void { // CvsPanel
         let cs = this._scheme || this._gui.scheme();
 
-        const OPAQUE = cs['C_0'];
-        const HIGHLIGHT = cs['C_3'];
 
+        const OPAQUE = cs.C(0);
+        const HIGHLIGHT = cs.C(3);
+        CLOG(OPAQUE)
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
         uib.strokeWeight(3); uib.noStroke(); uib.noFill();
-        if (this._opaque) uib.fill(OPAQUE);
-        if (this.isOver) uib.stroke(HIGHLIGHT);
+        if (this._opaque) uib.fill(...OPAQUE);
+        if (this.isOver) uib.stroke(...HIGHLIGHT);
         uib.rect(0, 0, this._w, this._h);
         // Update pick buffer before restoring
         this._updatePanelControlPB();
@@ -171,8 +171,10 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */ tipTextSize(gtts) { return this }
     /** @hidden */ transparent() { return this }
     /** @hidden */ opaque() { return this }
+    /** @hidden */ orient(dir) { return this }
 }
 
-// Object.assign(CvsPanel.prototype, NoParent);
-// Object.assign(CvsPanel.prototype, NoTooltip);
+Object.assign(CvsPanel.prototype, NoParent);
+Object.assign(CvsPanel.prototype, NoTooltip);
+Object.assign(CvsPanel.prototype, NoOrient);
 

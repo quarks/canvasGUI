@@ -118,12 +118,12 @@ class CvsRanger extends CvsSlider {
     _updateControlVisual() { // CvsRanger
         let cs = this._scheme || this._gui.scheme();
 
-        const OPAQUE = cs['C_3'];
-        const TICKS = cs['G_7'];
-        const UNUSED_TRACK = cs['G_3'];
-        const USED_TRACK = cs['G_1'];
-        const HIGHLIGHT = cs['C_9'];
-        const THUMB = cs['C_6'];
+        const OPAQUE = cs.C(3);
+        const TICKS = cs.G(7);
+        const UNUSED_TRACK = cs.G(3);
+        const USED_TRACK = cs.G(1);
+        const HIGHLIGHT = cs.C(9);
+        const THUMB = cs.C(6);
 
         let uib = this._uiBfr;
         let tw = uib.width - 20, tH = 8, tbSize = 12;
@@ -133,13 +133,13 @@ class CvsRanger extends CvsSlider {
         uib.clear();
         // Background
         if (this._opaque) {
-            uib.noStroke(); uib.fill(OPAQUE);
+            uib.noStroke(); uib.fill(...OPAQUE);
             uib.rect(0, 0, this._w, this._h, ...this._c);
         }
         // Now translate to track left edge - track centre
         uib.translate(10, ty);
         // Now draw ticks
-        uib.stroke(TICKS);
+        uib.stroke(...TICKS);
         uib.strokeWeight(1);
         let dT: number, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
@@ -158,20 +158,20 @@ class CvsRanger extends CvsSlider {
             }
         }
         // draw unused track
-        uib.fill(UNUSED_TRACK);
+        uib.fill(...UNUSED_TRACK);
         uib.rect(0, -tH / 2, tw, tH);
         // draw used track
         let tx0 = tw * Math.min(this._t[0], this._t[1]);
         let tx1 = tw * Math.max(this._t[0], this._t[1]);
-        uib.fill(USED_TRACK);
+        uib.fill(...USED_TRACK);
         uib.rect(tx0, -tH / 2, tx1 - tx0, tH, ...this._c);
         // Draw thumbs
         for (let tnbr = 0; tnbr < 2; tnbr++) {
-            uib.fill(THUMB);
+            uib.fill(...THUMB);
             uib.noStroke();
             if ((this.isActive || this.isOver) && tnbr == this._tIdx) {
                 uib.strokeWeight(2);
-                uib.stroke(HIGHLIGHT);
+                uib.stroke(...HIGHLIGHT);
             }
             uib.rect(this._t[tnbr] * tw - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._c);
         }

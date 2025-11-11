@@ -344,14 +344,13 @@ class CvsViewer extends CvsBufferedControl {
         let p = this._p;
         let [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
         let [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
-
-        const OPAQUE = cs['C_2'];
-        const FRAME = cs['C_7'];
+        const OPAQUE = cs.C(2);
+        const FRAME = cs.C(7);
 
         let uib = this._uiBfr;
         uib.push();
         if (this._opaque)
-            uib.background(OPAQUE);
+            uib.background(...OPAQUE);
         else
             uib.clear();
         // Get corners of requested view
@@ -374,7 +373,7 @@ class CvsViewer extends CvsBufferedControl {
         }
         if (this._frameWeight > 0) {
             uib.noFill();
-            uib.stroke(FRAME);
+            uib.stroke(...FRAME);
             uib.strokeWeight(this._frameWeight);
             uib.rect(0, 0, uib.width, uib.height);
         }
@@ -449,5 +448,5 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ tipTextSize(tsize) { return this }
 }
 
-// Object.assign(CvsViewer.prototype, NoOrient);
-// Object.assign(CvsViewer.prototype, NoTooltip);
+Object.assign(CvsViewer.prototype, NoOrient);
+Object.assign(CvsViewer.prototype, NoTooltip);

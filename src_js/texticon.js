@@ -263,19 +263,18 @@ class CvsLabel extends CvsTextIcon {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 60, h || 16);
     }
-    /** @hidden */ tooltip(tiptext) { return this; }
-    /** @hidden */ tipTextSize(gtts) { return this; }
     /** @hidden */ setAction(event_handler) { return this; }
     /** @hidden */
     _updateControlVisual() {
         let ts = this._textSize || this._gui.textSize();
         let tf = this._textFont || this._gui.textFont();
         let ty = this._textStyle || this._gui.textStyle();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this._scheme ?? this._gui.scheme();
         let p = this._p;
         let icon = this._icon, iA = this._iconAlign, tA = this._textAlign;
         let lines = this._lines, gap = this._gap;
-        const OPAQUE = cs['C_3'], FORE = cs['C_8'];
+        const OPAQUE = cs.C(3);
+        const FORE = cs.C(8);
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
@@ -284,7 +283,7 @@ class CvsLabel extends CvsTextIcon {
         // Background
         if (this._opaque) {
             uib.noStroke();
-            uib.fill(OPAQUE);
+            uib.fill(...OPAQUE);
             uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         if (icon) {
@@ -313,7 +312,7 @@ class CvsLabel extends CvsTextIcon {
             let tw = x1 - x0;
             let th = this._tbox.h;
             let py = uib.textAscent() + (this._h - th) / 2;
-            uib.fill(FORE);
+            uib.fill(...FORE);
             for (let line of lines) {
                 switch (tA) {
                     case p.LEFT:
@@ -334,5 +333,9 @@ class CvsLabel extends CvsTextIcon {
         // last line in this method should be
         this._bufferInvalid = false;
     }
+    // Hide these methods from typeDoc
+    /** @hidden */ tooltip(tiptext) { return this; }
+    /** @hidden */ tipTextSize(gtts) { return this; }
 }
+Object.assign(CvsLabel.prototype, NoTooltip);
 //# sourceMappingURL=texticon.js.map
