@@ -10,14 +10,19 @@ class CvsButton extends CvsTextIcon {
     /** @hidden */
     _updateControlVisual() {
         let ts = this._textSize || this._gui.textSize();
+        let ty = this._textStyle || this._gui.textStyle();
+        let tf = this._textFont || this._gui.textFont();
         let cs = this._scheme || this._gui.scheme();
         let iA = this._iconAlign, tA = this._textAlign;
         let icon = this._icon, lines = this._lines, gap = this._gap;
-        const BACK = cs.C(3);
+        const BACK = cs.C(3, this._alpha);
         const FORE = cs.C(8);
         const HIGHLIGHT = cs.C(9);
         let uib = this._uiBfr;
         uib.push();
+        uib.textFont(tf);
+        uib.textSize(ts);
+        uib.textStyle(ty);
         uib.clear();
         if (this._opaque) {
             uib.noStroke();
@@ -40,7 +45,6 @@ class CvsButton extends CvsTextIcon {
             uib.image(this._icon, px, py);
         }
         if (lines.length > 0) {
-            uib.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
             // Determine extent of text area
             if (icon && iA == this._p.LEFT)

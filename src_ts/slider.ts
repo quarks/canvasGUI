@@ -86,9 +86,8 @@ class CvsSlider extends CvsBufferedControl {
     value(value?: number): CvsBaseControl | number {
         if (Number.isFinite(value)) {
             if ((value - this._limit0) * (value - this._limit1) <= 0) {
-                this.invalidateBuffer();
                 this._t01 = this._norm01(value);
-                // CLOG(`Slider setting value to ${value} _norm01 ${this._t01}  v2t ${this._v2t(value)}`)
+                this.invalidateBuffer();
                 return this;
             }
         }
@@ -185,7 +184,7 @@ class CvsSlider extends CvsBufferedControl {
     _updateControlVisual(): void { // CvsSlider
         let cs = this._scheme || this._gui.scheme();
 
-        const OPAQUE = cs.C(3);
+        const OPAQUE = cs.C(3, this._alpha);
         const TICKS = cs.G(7);
         const UNUSED_TRACK = cs.G(3);
         const USED_TRACK = cs.G(1);

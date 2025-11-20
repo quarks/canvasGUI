@@ -38,8 +38,9 @@ class CvsPanel extends CvsBufferedControl {
     }
 
     /**
-     * Horizontal and vertical movement can be restricted based on the 
-     * actual parameters.
+     * Horizontal and vertical movement can be restricted based on the actual 
+     * parameters. If either parameter is true then then the panel is 
+     * considered 'draggable'.
      * @param allowX allow horizontal movement if true
      * @param allowY allow vertical movement if true
      * @returns this control
@@ -63,7 +64,7 @@ class CvsPanel extends CvsBufferedControl {
         return this;
     }
 
-    /** true if the panel can be dragged else false. */
+    /** True if the panel can be dragged else false. */
     get isDraggable() { return this._opaque && (this._canDragX || this._canDragY) }
     /** @hidden */
     get canDragX() { return this._canDragX }
@@ -127,9 +128,7 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */
     _updateControlVisual(): void { // CvsPanel
         let cs = this._scheme || this._gui.scheme();
-
-
-        const OPAQUE = cs.C(0);
+        const OPAQUE = cs.C(0, this._alpha);
         const HIGHLIGHT = cs.C(3);
         CLOG(OPAQUE)
         let uib = this._uiBfr;

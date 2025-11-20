@@ -24,10 +24,9 @@
  * width columns and 4 equal height rows. The row height in pixels will be
  * the 0.25 x the grid area height.</p>
  * <p>To caluclate the column widths divide each array element by the sum of
- * all the array values. Calculating and dividing by the sum (50) creates. If
- * we do that the array elements becomes <code>[0.2, 0.48, 0.32]</code> and
- * to find the column pixel widths, simply multiply these values by grid area
- * width.</p>
+ * all the array values. If we do that the array elements becomes
+ * <code>[0.2, 0.48, 0.32]</code> and  to find the column pixel widths,
+ * simply multiply these values by grid area width.</p>
  */
 class GridLayout {
     /**

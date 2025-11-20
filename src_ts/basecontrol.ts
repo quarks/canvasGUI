@@ -21,9 +21,8 @@ interface __Overlap {
 /**
  * <p>This class provides most of the core functionality for the canvasGUI 
  * controls.</p>
- * 
  */
-class CvsBaseControl {
+abstract class CvsBaseControl {
 
     /** @hidden */
     static NORTH = new OrientNorth();
@@ -47,18 +46,21 @@ class CvsBaseControl {
     /** @hidden */ protected _w: number = 0;
     /** @hidden */ protected _h: number = 0;
     /** @hidden */ protected _orientation: OrientNorth | OrientSouth | OrientEast | OrientWest;
+    /** @hidden */ protected _c: Array<number>;
     /** @hidden */ protected _dragging: boolean;
-    /** @hidden */ protected _over: number = 0;
-    /** @hidden */ protected _pover: number = 0;
+    /** @hidden */ protected _isOver: boolean = false;
     /** @hidden */ protected _active: boolean = false;
+    /** @hidden */ protected _alpha: number = 255;
     /** @hidden */ protected _clickAllowed: boolean = false;
-    /** @hidden */ protected _opaque: boolean = true;;
-    /** @hidden */ protected _scheme: BaseScheme;
+    /** @hidden */ protected _opaque: boolean = true;
+    /** @hidden */ protected _scheme: ColorScheme;
     /** @hidden */ protected _bufferInvalid: boolean = true;
+    /** @hidden */ protected _tooltip: CvsTooltip = undefined;
+
 
     /** 
-     * <p>The event handler for this control. Although it is permitted to set 
-     * this property directly it is recommended that the <code>setAction(...)</code>
+     * <p>The event handler for this control. Although it is permitted to set this
+     * property directly it is recommended that the <code>setAction(...)</code>
      * method is used to define the event handler actions.</p> 
      * @hidden
      */
@@ -115,21 +117,24 @@ class CvsBaseControl {
     /** @hidden */
     set h(v) { this._h = Math.round(v); }
 
-    /** @returns the unique identifier for this control   */
+    /** The unique identifier for this control.   */
     get id() { return this._id; }
 
-    /** @returns the classname for this control type. */
+    /** 
+     * The type name for this control.<br>
+     * (type name = class name without the <code>Cvs</code> prefix)
+     */
     get type() { return this.constructor.name.substring(3); };
 
     /**
+     * <p>This is true if the control can respond to UI events else false.</p>
      * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
-     * @returns true if the control is enabled else false
      */
     get isEnabled() { return this._enabled; }
 
     /** 
+     * <p>This is true if the control is visible else false.</p>
      * <p>Use <code>hide()</code> and <code>show()</code> to control visibility.</p>
-     * @returns true if this control is visible  
      */
     get isVisible() { return this._visible; }
 
@@ -141,8 +146,18 @@ class CvsBaseControl {
      */
     get isActive() { return this._active }
 
+    /** @hidden */
+    get isOver() { return this._isOver }
+    /** @hidden */
+    set isOver(b) {
+        if (b != this._isOver) {
+            this._isOver = b;
+            this.invalidateBuffer();
+        }
+    }
+
     /**
-     * Move control to an absolute position
+     * Move this control to an absolute position.
      * @param x horizontal position
      * @param y vertical position
      * @returns this control
@@ -154,7 +169,7 @@ class CvsBaseControl {
     }
 
     /**
-     * Move control relative to current position
+     * Move this control relative to current position.
      * @param x horizontal distance
      * @param y vertical distance
      * @returns this control
@@ -167,7 +182,7 @@ class CvsBaseControl {
 
     /**
      * <p>Calculates the absolute position on the canvas taking into account
-     * any ancestors</p>
+     * any ancestors.</p>
      * @returns the actual position in the canvas
      * @hidden
      */
@@ -182,12 +197,16 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Sets or gets the color scheme used by this control.</p>
+     * <p>If the name of a valid color scheme is provided then it will use it
+     * to display the control, non-existant scheme names will be ignored. In 
+     * both cases this control is returned.</p>
+     * <p>If there is no parameter it returns the name of the current color 
+     * scheme used by this control.</p>
      * @param name the color scheme name e.g. 'blue'
      * @param cascade if true propogate scheme to all child controls.
      * @returns this control or the control's color scheme
      */
-    scheme(name?: string, cascade?: boolean): any {
+    scheme(name?: string, cascade?: boolean): ColorScheme | CvsBaseControl {
         if (name) {  // setter
             let next_scheme = this._gui._getScheme(name);
             if (next_scheme && this._scheme != next_scheme) {
@@ -203,6 +222,19 @@ class CvsBaseControl {
     }
 
     /**
+     * <p>Set or get the corner radii used for this control.</p>
+     * @param c an array of 4 corner radii
+     * @returns an array with the 4 corner radii
+     */
+    corners(c: Array<number>): Array<number> | CvsBaseControl {
+        if (Array.isArray(c) && c.length == 4) {
+            this._c = [...c];
+            return this;
+        }
+        return [...this._c];
+    }
+
+    /**
      * <p>This method will force the control to update its visual appearance 
      * when the next frame is rendered.</p>
      * <p><em>It is included in the most unlikely event it is needed.</em></p>
@@ -215,7 +247,7 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Adds this control to another control which becomes its parent</p>
+     * <p>Adds this control to another control which becomes its parent.</p>
      * @param parent is the parental control or its id
      * @param rx x position relative to parent
      * @param ry  y position relative to parent
@@ -252,7 +284,7 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Remove a child control from this one so that it stays in same screen position</p>
+     * <p>Remove a child control from this one so that it stays in same screen position.</p>
      * @param c the control to remove or its id
      * @returns this control
      */
@@ -294,14 +326,14 @@ class CvsBaseControl {
 
     /**
      * <p>This sets the event handler to be used when this control fires
-     * an event. The parameter can take three forms:</p>
+     * an event. The parameter can take one of three forms:</p>
      * <ol>
      * <li>Arrow function definition</li>
      * <li>Anonymous function definition</li>
      * <li>Named function declaration</li>
      * </ol>
      * 
-     * @param event_handler  the function to handle this conytrol's events.
+     * @param event_handler  the function to handle this control's events.
      * @returns this control
      */
     setAction(event_handler: Function) {
@@ -313,11 +345,13 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Specify the orientation to show this control</p>
+     * <p>Sets this controls display orientation to one of the four cardinal 
+     * compass points. An invalid parameter will set the orientation to 'east'
+     * which is the default value.</p>
      * @param dir 'north', 'south', 'east' or 'west'
      * @returns this control
      */
-    orient(dir: string): CvsBaseControl {
+    orient(dir: string = 'east'): CvsBaseControl {
         dir = dir.toString().toLowerCase();
         switch (dir) {
             case 'north':
@@ -337,7 +371,36 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Enables this control</p>
+     * Create a tooltip for this control.
+     * 
+     * @param tiptext the text to appear in the tooltip
+     * @param duration how long the tip remains visible (milliseconds)
+     * @returns this control
+     */
+    tooltip(tiptext: string) {
+        let tt = this._gui.__tooltip(this._id + '.tooltip')
+            .text(tiptext)
+            .shrink();
+        this.addChild(tt);
+        if (tt instanceof CvsTooltip) {
+            tt._validatePosition();
+            this._tooltip = tt;
+        }
+        return this;
+    }
+
+    /**
+     * Sets the size of the text to use in the tooltip.
+     * @param {number} tsize text size for this tooltip
+     */
+    tipTextSize(tsize?: number) {
+        if (this._tooltip && tsize && tsize > 0)
+            this._tooltip.textSize(tsize);
+        return this;
+    }
+
+    /**
+     * <p>Enables this control.</p>
      * @param cascade if true enable child controls
      * @returns this control
      */
@@ -353,7 +416,7 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Disables this control</p>
+     * <p>Disables this control.</p>
      * @param cascade if true disable child controls
      * @returns this control
      */
@@ -369,7 +432,7 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Make this control visible</p>
+     * <p>Make this control visible.</p>
      * @param cascade if true show children
      * @returns this control
      */
@@ -382,7 +445,7 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Make this control invisible</p>
+     * <p>Make this control invisible.</p>
      * @param cascade if true hide children
      * @returns this control
      */
@@ -395,11 +458,17 @@ class CvsBaseControl {
     }
 
     /**
-     * <p>Makes the controls background opaque. The actual color depends
-     * on the controls color scheme</p>
+     * <p>Makes the controls background opaque. The actual color depends 
+     * on the controls color scheme.</p>
+     * <p>The second parameter, alpha, is optional and controls the level 
+     * of opaqueness from 0 - transparent to 255 - fully opaque 
+     * (efault value).</p>
+     * 
+     * @param alpha alpha value for controls background color.
      * @returns this control
      */
-    opaque(): CvsBaseControl {
+    opaque(alpha: number = 255): CvsBaseControl {
+        this._alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
         this._opaque = true;
         return this;
     }
@@ -448,6 +517,7 @@ class CvsBaseControl {
     }
 }
 
+// Mixins
 /** @hidden */
 const NoOrient = {
     /** This control does not support changing orientation */
@@ -499,7 +569,7 @@ const FixedBackground = {
         CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
         return this;
     },
-    opaque(): CvsBaseControl {
+    opaque(alpha = 255): CvsBaseControl {
         CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
         return this;
     }

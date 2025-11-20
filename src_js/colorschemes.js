@@ -1,40 +1,66 @@
-class BaseScheme {
+/**
+ * The parent class for all color schemes.
+ */
+class ColorScheme {
+    /** @hidden */
     constructor(name = 'color scheme name') {
+        /** @hidden */
         this._colors = [];
+        /** @hidden */
         this._greys = [];
+        /** @hidden */
         this._tints = [];
+        /** @hidden */
         this._name = 'color scheme name';
         this._name = name;
-        this._tints = [
-            [0, 0, 0, 13], [0, 0, 0, 19], [0, 0, 0, 26], [0, 0, 0, 64],
-            [0, 0, 0, 77], [0, 0, 0, 102], [0, 0, 0, 128], [0, 0, 0, 153],
-            [0, 0, 0, 179]
-        ];
-        this._greys = [
-            [255, 255, 255], [204, 204, 204], [179, 179, 179], [153, 153, 153],
-            [128, 128, 128], [102, 102, 102], [77, 77, 77], [51, 51, 51],
-            [26, 26, 26], [0, 0, 0]
-        ];
+        this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
+        this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
     }
-    get name() { return this._name; }
     /**
-     * Creates a duplicate objcet from this color scheme;
-     * @returns a copy of this scheme
+     * <p>Get the name of this color scheme e.g. 'green', 'blue' ... </p>
      */
-    copy() {
-        return Object.assign(new BaseScheme(), this);
+    get name() { return this._name; }
+    /** @hidden */
+    set name(v) { CWARN(`Changing the name of a color scheme is not permitted`); }
+    /**
+     * Returns true if this scheme has been created by the user and false if
+     * is one of the canvasGUI library color schemes.
+     */
+    get isCopy() { return Boolean(this['setColors']); }
+    /** @hidden */
+    _deepCopyArray2D(a) {
+        let b = [];
+        a.forEach(v => b.push([...v]));
+        return b;
     }
+    /**
+     * Creates a new color scheme which is a deep copy of this one. The new scheme
+     * name will be the same as this one with '-copy' appended
+     * @returns a copy copy of this color scheme
+     * @hidden
+     */
+    _copy() {
+        let cpy = new ColorScheme(`${this._name}-copy`);
+        cpy._tints = this._deepCopyArray2D(this._tints);
+        cpy._greys = this._deepCopyArray2D(this._greys);
+        cpy._colors = this._deepCopyArray2D(this._colors);
+        Object.assign(cpy, COLOR_SCHEME_EDIT);
+        return cpy;
+    }
+    /** @hidden */
     C(n, alpha = 255) {
         alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
         return [...this._colors[n], alpha];
     }
+    /** @hidden */
     G(n, alpha = 255) {
         alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
         return [...this._greys[n], alpha];
     }
+    /** @hidden */
     T(n) { return this._tints[n]; }
 }
-class BlueScheme extends BaseScheme {
+class BlueScheme extends ColorScheme {
     constructor() {
         super('blue');
         this._colors = [
@@ -44,17 +70,17 @@ class BlueScheme extends BaseScheme {
         ];
     }
 }
-class GreenScheme extends BaseScheme {
+class GreenScheme extends ColorScheme {
     constructor() {
         super('green');
         this._colors = [
             [230, 255, 230], [204, 255, 204], [179, 255, 179], [153, 255, 153],
             [102, 255, 102], [69, 230, 69], [41, 204, 41], [19, 191, 19],
-            [15, 153, 15], [10, 102, 10]
+            [12, 80, 12], [8, 64, 8]
         ];
     }
 }
-class RedScheme extends BaseScheme {
+class RedScheme extends ColorScheme {
     constructor() {
         super('red');
         this._colors = [
@@ -64,27 +90,27 @@ class RedScheme extends BaseScheme {
         ];
     }
 }
-class CyanScheme extends BaseScheme {
+class CyanScheme extends ColorScheme {
     constructor() {
         super('cyan');
         this._colors = [
             [230, 255, 255], [204, 255, 255], [179, 255, 255], [153, 255, 255],
             [102, 255, 255], [69, 230, 230], [41, 204, 204], [19, 191, 191],
-            [15, 153, 153], [10, 102, 102]
+            [15, 96, 96], [10, 80, 80]
         ];
     }
 }
-class YellowScheme extends BaseScheme {
+class YellowScheme extends ColorScheme {
     constructor() {
         super('yellow');
         this._colors = [
             [255, 255, 230], [255, 255, 204], [255, 255, 179], [255, 255, 153],
             [255, 255, 102], [230, 230, 69], [204, 204, 41], [191, 191, 19],
-            [153, 153, 15], [102, 102, 10]
+            [96, 96, 15], [80, 80, 10]
         ];
     }
 }
-class PurpleScheme extends BaseScheme {
+class PurpleScheme extends ColorScheme {
     constructor() {
         super('purple');
         this._colors = [
@@ -94,40 +120,83 @@ class PurpleScheme extends BaseScheme {
         ];
     }
 }
-class OrangeScheme extends BaseScheme {
+class OrangeScheme extends ColorScheme {
     constructor() {
         super('orange');
         this._colors = [
             [255, 242, 230], [255, 230, 204], [255, 217, 179], [255, 204, 153],
             [255, 179, 102], [230, 149, 69], [204, 122, 41], [191, 105, 19],
-            [153, 84, 15], [102, 56, 10]
+            [140, 77, 13], [102, 56, 10]
         ];
     }
 }
-class LightScheme extends BaseScheme {
+class LightScheme extends ColorScheme {
     constructor() {
         super('light');
-        this._colors = [
-            [254, 254, 254], [228, 228, 228], [203, 203, 203], [177, 177, 177],
-            [152, 152, 152], [127, 127, 127], [101, 101, 101], [76, 76, 76],
-            [50, 50, 50], [25, 25, 25]
-        ];
+        this._colors = [[254], [228], [203], [177], [152], [127], [101], [76], [50], [25]];
     }
 }
-class DarkScheme extends BaseScheme {
+class DarkScheme extends ColorScheme {
     constructor() {
         super('dark');
-        this._colors = [
-            [0, 0, 0], [25, 25, 25], [50, 50, 50], [76, 76, 76],
-            [101, 101, 101], [127, 127, 127], [152, 152, 152], [177, 177, 177],
-            [203, 203, 203], [228, 228, 228]
-        ];
-        this._tints = [
-            [102, 102, 102, 160], [131, 131, 131, 172], [145, 145, 145, 179],
-            [158, 158, 158, 185], [170, 170, 170, 192], [191, 191, 191, 204],
-            [210, 210, 210, 217], [226, 226, 226, 230], [241, 241, 241, 243]
-        ];
+        this._colors = [[0], [25], [50], [76], [101], [127], [152], [177], [203], [228]];
+        this._tints = [[102, 160], [131, 172], [191, 204], [226, 230]];
         this._greys = this._greys.reverse();
     }
 }
+// This mixin is added to any copy of a library color scheme so it can be edited
+// to create a user-defined color scheme.
+let COLOR_SCHEME_EDIT = {
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getTints() {
+        return this._deepCopyArray2D(this._tints);
+    },
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getGreys() {
+        return this._deepCopyArray2D(this._greys);
+    },
+    /**
+     * Get a deep copy of the colors array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getColors() {
+        return this._deepCopyArray2D(this._colors);
+    },
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param tints
+     */
+    setTints(tints) {
+        this._tints = tints;
+    },
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param greys
+     */
+    setGreys(greys) {
+        this._greys = greys;
+    },
+    /**
+     * <p>Replaces the scheme's colors array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param colors
+     */
+    setColors(colors) {
+        this._colors = colors;
+    }
+};
 //# sourceMappingURL=colorschemes.js.map

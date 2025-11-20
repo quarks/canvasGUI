@@ -67,6 +67,7 @@ class CvsText extends CvsBufferedControl {
             this._textFont = ltf;
         else
             CWARN(`The font '${ltf}' is not a recognized so will be ignored!`);
+        this.invalidateBuffer();
         return this;
     }
     /**
@@ -94,6 +95,7 @@ class CvsText extends CvsBufferedControl {
             default:
                 CWARN(`The text style '${gty}' was not recognized so will be ignored!`);
         }
+        this.invalidateBuffer();
         return this;
     }
     /**
@@ -120,7 +122,8 @@ class CvsText extends CvsBufferedControl {
         return this;
     }
     /**
-     * <p>Sets or gets the text size.</p>
+     * <p>Sets or gets the text size. If neccessary the control will expand
+     * to surround the text.</p>
      * @param lts the text size to use
      * @returns this control or the current text size
      */
@@ -133,7 +136,6 @@ class CvsText extends CvsBufferedControl {
         lts = Number(lts);
         if (lts != ts) {
             this._textSize = lts;
-            // If necessary expand the control to surrond text
             let s = this._minControlSize();
             this._w = Math.max(this._w, s.w);
             this._h = Math.max(this._h, s.h);
@@ -273,7 +275,7 @@ class CvsLabel extends CvsTextIcon {
         let p = this._p;
         let icon = this._icon, iA = this._iconAlign, tA = this._textAlign;
         let lines = this._lines, gap = this._gap;
-        const OPAQUE = cs.C(3);
+        const OPAQUE = cs.C(3, this._alpha);
         const FORE = cs.C(8);
         let uib = this._uiBfr;
         uib.push();

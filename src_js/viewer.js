@@ -154,11 +154,11 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /**
-    Sets the view of the image to be displayed. If you enter values outside the
-    image or ar scale value outside scaler limts they will be constrained to legal
-    values. If it is important that you know the correct view details then add an
-    action on the viewer to report back changes to the view centre and/or scale
-    attributes.
+     * Sets the view of the image to be displayed. If you enter values outside the
+     * image or ar scale value outside scaler limts they will be constrained to legal
+     * values. If it is important that you know the correct view details then add an
+     * action on the viewer to report back changes to the view centre and/or scale
+     * attributes.
     */
     view(wcx, wcy, wscale) {
         if (Number.isFinite(wcx) && Number.isFinite(wcy)) {
@@ -189,7 +189,7 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     layers(img) {
-        this._layers = Array.isArray(img) ? Array.from(img) : [img];
+        this._layers = (Array.isArray(img) ? Array.from(img) : [img]);
         // Make all layers the same size as the first one
         let lw = this._lw = this._layers[0].width;
         let lh = this._lh = this._layers[0].height;
@@ -318,7 +318,7 @@ class CvsViewer extends CvsBufferedControl {
         let p = this._p;
         let [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
         let [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
-        const OPAQUE = cs.C(2);
+        const OPAQUE = cs.C(2, this._alpha);
         const FRAME = cs.C(7);
         let uib = this._uiBfr;
         uib.push();

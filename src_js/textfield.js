@@ -37,6 +37,7 @@ class CvsTextField extends CvsText {
         /** @hidden */ this._currCsrIdx = 0;
         /** @hidden */ this._textInvalid = false;
         /** @hidden */ this._cursorOn = false;
+        /** @hidden */ this._line = '';
         this.textAlign(this._p.LEFT);
         this._c = [0, 0, 0, 0];
     }
@@ -70,18 +71,19 @@ class CvsTextField extends CvsText {
      */
     text(t) {
         // getter
-        // if (t == null || t == undefined) return this._getLine();
         if (!t)
-            return this._getLine();
+            return this._line;
         // setter
         this._textInvalid = false;
-        this._lines = [t.toString().replaceAll('\n', ' ')];
+        // this._lines = [t.toString().replaceAll('\n', ' ')];
+        this._line = t.toString().replaceAll('\n', ' ');
         this._validate();
         this.invalidateBuffer();
         return this;
     }
     /**
-     * <p>Sets or gets the text size.</p>
+     * <p>If there are no paremeters return the currently used text size for
+     * this control, otherwise set the text size to use.</p>
      * @param lts the text size to use
      * @returns this control or the current text size
      */
@@ -114,28 +116,24 @@ class CvsTextField extends CvsText {
         return this;
     }
     /**
-     * If there is no validation function then this will always return true.
-     * @returns true if the text has passed validation
+     * True if the text has passed validation. If there is no validation
+     * function this is always true.
      */
-    isValid() {
-        return !this._textInvalid;
-    }
+    get isValid() { return !this._textInvalid; }
     /**
-     * If there is no text then this method will always return false. If there
-     * is some text then this method returns the same as the
-     * <code>isValid()</code> method.
-     *
-     * @returns true if there is some text and it passed any validation function
+     * True if there is some text and it passed any validation function. If
+     * there is no text then this will be false.</p>
      */
-    hasValidText() {
+    get hasValidText() {
         return !this._textInvalid && this._lines.length > 0 && this._lines[0].length > 0;
     }
     /**
-     * If the text is invalid this method it clears the validity effectively making
-     * the text valid.
+     * <p>If the text is invalid this method sets the text as being valid and
+     * change the visual appearance accordingly. This will remain in effect
+     * until the next time the text is validated.</p>
      * @returns this control
      */
-    clearValid() {
+    setTextValid() {
         if (this._textInvalid) {
             this._textInvalid = false;
             this.invalidateBuffer();
@@ -168,13 +166,12 @@ class CvsTextField extends CvsText {
      */
     _validate() {
         if (this._validation) {
-            let line = this._getLine();
-            let r = this._validation(line);
+            let r = this._validation(this._line);
             if (Array.isArray(r) && r.length > 0) {
                 this._textInvalid = !Boolean(r[0]);
                 // Validator has returned formatted text?
                 if (r[1])
-                    this._lines[0] = r[1];
+                    this._line = this._delEOL(r[1]);
             }
         }
         else {
@@ -182,7 +179,7 @@ class CvsTextField extends CvsText {
         }
     }
     /**
-     * Deactivate this control
+     * Deactivate this control.
      * @hidden
      */
     _deactivate() {
@@ -190,7 +187,7 @@ class CvsTextField extends CvsText {
         this.isOver = false;
         this._cursorOn = false;
         this._validate();
-        this._prevCsrIdx = this._currCsrIdx = this._getLine().length;
+        this._prevCsrIdx = this._currCsrIdx = this._line.length;
         if (this._textInvalid)
             this._prevCsrIdx = 0;
         this.invalidateBuffer();
@@ -237,124 +234,19 @@ class CvsTextField extends CvsText {
             this.invalidateBuffer();
         }
     }
+    // /**
+    //  * We are only interested in the first line of text
+    //  * @hidden
+    //  */
+    // _getLine(): string {
+    //     return (this._lines.length > 0 ? this._lines[0].toString() : '');
+    // }
     /**
-     * We are only interested in the first line of text
-     * @hidden
-     */
-    _getLine() {
-        return (this._lines.length > 0 ? this._lines[0].toString() : '');
-    }
-    /**
-     * Calculates and returns the pixel length for a given
-     * character position.
+     * Calculates the pixel length for a given character position.
      * @hidden
      */
     _cursorX(buff, line, idx) {
         return !idx || idx == 0 ? 0 : buff.textWidth(line.substring(0, idx));
-    }
-    /** @hidden */
-    _doKeyEvent(e) {
-        this._nextActive = this;
-        let line = this._getLine(); // get text
-        let hasSelection = this._prevCsrIdx != this._currCsrIdx;
-        let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
-        let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= line.length);
-        if (e.type == 'keydown') {
-            if (e.key.length == 1) { // Visible character
-                if (this._prevCsrIdx != this._currCsrIdx)
-                    line = this._removeSelectedText(line);
-                line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
-                this._currCsrIdx++;
-                this._prevCsrIdx++;
-                this._lines[0] = line;
-                this.invalidateBuffer();
-            }
-            switch (e.key) {
-                case 'ArrowLeft':
-                    if (tabLeft) {
-                        this._deactivate();
-                        this._activateNext(-1);
-                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
-                    }
-                    else {
-                        if (this._currCsrIdx > 0) {
-                            if (!e.shiftKey && hasSelection)
-                                this._currCsrIdx = Math.min(this._currCsrIdx, this._prevCsrIdx);
-                            else
-                                this._currCsrIdx--;
-                            if (!e.shiftKey)
-                                this._prevCsrIdx = this._currCsrIdx;
-                        }
-                    }
-                    break;
-                case 'ArrowRight':
-                    if (tabRight) {
-                        this._deactivate();
-                        this._activateNext(1);
-                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
-                    }
-                    else {
-                        if (this._currCsrIdx <= line.length) {
-                            if (!e.shiftKey && hasSelection)
-                                this._currCsrIdx = Math.max(this._currCsrIdx, this._prevCsrIdx);
-                            else
-                                this._currCsrIdx++;
-                            if (!e.shiftKey)
-                                this._prevCsrIdx = this._currCsrIdx;
-                        }
-                    }
-                    break;
-                case 'ArrowUp':
-                    if (!hasSelection) {
-                        if (this._linkOffset !== 0) {
-                            this._deactivate();
-                            this._activateNext(-this._linkOffset);
-                        }
-                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
-                    }
-                    break;
-                case 'ArrowDown':
-                    if (!hasSelection) {
-                        if (this._linkOffset !== 0) {
-                            this._deactivate();
-                            this._activateNext(this._linkOffset);
-                        }
-                        this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
-                    }
-                    break;
-                case 'Enter':
-                    this._deactivate();
-                    this.action({ source: this, p5Event: e, value: this._getLine(), valid: !this._textInvalid });
-                    break;
-                case 'Backspace':
-                    if (this._prevCsrIdx != this._currCsrIdx) {
-                        line = this._removeSelectedText(line);
-                    }
-                    else { // Delete character to left
-                        if (this._currCsrIdx > 0) {
-                            line = line.substring(0, this._currCsrIdx - 1) + line.substring(this._currCsrIdx);
-                            this._currCsrIdx--;
-                            this._prevCsrIdx = this._currCsrIdx;
-                        }
-                    }
-                    this._lines[0] = line;
-                    break;
-                case 'Delete':
-                    if (this._prevCsrIdx != this._currCsrIdx) {
-                        line = this._removeSelectedText(line);
-                    }
-                    else { // Delete character to right
-                        if (this._currCsrIdx < line.length) {
-                            line = line.substring(0, this._currCsrIdx) + line.substring(this._currCsrIdx + 1);
-                        }
-                    }
-                    this._lines[0] = line;
-                    break;
-                default:
-            }
-            this.invalidateBuffer();
-        } // End of key down
-        return this._nextActive;
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
@@ -372,11 +264,155 @@ class CvsTextField extends CvsText {
         }
         return this._nextActive;
     }
+    /** @hidden */
+    _doKeyEvent(e) {
+        this._nextActive = this;
+        let hasSelection = this._prevCsrIdx != this._currCsrIdx;
+        let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
+        let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= this._line.length);
+        if (e.type == 'keydown') {
+            if (e.key.length == 1) {
+                // Ignore modifeier keys e.g. "Shift" only inetrsest in single visible character keys.
+                // can check boolean properties - e.shiftKey, e.metaKey, e.ctrlKey
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key) {
+                        case 'a':
+                            this._prevCsrIdx = 0;
+                            this._currCsrIdx = this._line.length;
+                            break;
+                        case 'c':
+                            if (hasSelection) {
+                                CvsTextField.CLIP = this._line.substring(this._prevCsrIdx, this._currCsrIdx);
+                            }
+                            break;
+                        case 'v':
+                            if (hasSelection)
+                                this._line = this._delSeleted(this._line);
+                            if (CvsTextField.CLIP.length > 0)
+                                this._line = this._insChar(CvsTextField.CLIP, this._line, this._currCsrIdx);
+                            this._currCsrIdx += CvsTextField.CLIP.length;
+                            this._prevCsrIdx = this._currCsrIdx;
+                            break;
+                    }
+                }
+                else {
+                    if (hasSelection)
+                        this._line = this._delSeleted(this._line);
+                    // line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
+                    this._line = this._insChar(e.key, this._line, this._currCsrIdx);
+                    this._currCsrIdx++;
+                    this._prevCsrIdx++;
+                    this.invalidateBuffer();
+                }
+            }
+            // this._lines[0] = line;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    if (tabLeft) {
+                        this._deactivate();
+                        this._activateNext(-1);
+                        this.action({ source: this, p5Event: e, value: this._line, valid: !this._textInvalid });
+                    }
+                    else {
+                        if (this._currCsrIdx > 0) {
+                            if (!e.shiftKey && hasSelection)
+                                this._currCsrIdx = Math.min(this._currCsrIdx, this._prevCsrIdx);
+                            else
+                                this._currCsrIdx--;
+                            if (!e.shiftKey)
+                                this._prevCsrIdx = this._currCsrIdx;
+                        }
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (tabRight) {
+                        this._deactivate();
+                        this._activateNext(1);
+                        this.action({ source: this, p5Event: e, value: this._line, valid: !this._textInvalid });
+                    }
+                    else {
+                        if (this._currCsrIdx <= this._line.length) {
+                            if (!e.shiftKey && hasSelection)
+                                this._currCsrIdx = Math.max(this._currCsrIdx, this._prevCsrIdx);
+                            else
+                                this._currCsrIdx++;
+                            if (!e.shiftKey)
+                                this._prevCsrIdx = this._currCsrIdx;
+                        }
+                    }
+                    break;
+                case 'ArrowUp':
+                    if (!hasSelection) {
+                        if (this._linkOffset !== 0) {
+                            this._deactivate();
+                            this._activateNext(-this._linkOffset);
+                        }
+                        this.action({ source: this, p5Event: e, value: this._line, valid: !this._textInvalid });
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (!hasSelection) {
+                        if (this._linkOffset !== 0) {
+                            this._deactivate();
+                            this._activateNext(this._linkOffset);
+                        }
+                        this.action({ source: this, p5Event: e, value: this._line, valid: !this._textInvalid });
+                    }
+                    break;
+                case 'Enter':
+                    this._deactivate();
+                    this.action({ source: this, p5Event: e, value: this._line, valid: !this._textInvalid });
+                    break;
+                case 'Backspace':
+                    if (this._prevCsrIdx != this._currCsrIdx) {
+                        this._line = this._delSeleted(this._line);
+                    }
+                    else { // Delete character to left
+                        if (this._currCsrIdx > 0) {
+                            this._line = this._delChar(this._line, this._currCsrIdx - 1);
+                            // line = line.substring(0, this._currCsrIdx - 1) + line.substring(this._currCsrIdx);
+                            this._currCsrIdx--;
+                            this._prevCsrIdx = this._currCsrIdx;
+                        }
+                    }
+                    // this._lines[0] = line;
+                    break;
+                case 'Delete':
+                    if (this._prevCsrIdx != this._currCsrIdx) {
+                        this._line = this._delSeleted(this._line);
+                    }
+                    else { // Delete character to right
+                        if (this._currCsrIdx < this._line.length) {
+                            this._line = this._delChar(this._line, this._currCsrIdx);
+                            // line = line.substring(0, this._currCsrIdx) + line.substring(this._currCsrIdx + 1);
+                        }
+                    }
+                    // this._lines[0] = line;
+                    break;
+                default:
+            }
+            this.invalidateBuffer();
+        } // End of key down
+        // Save any changes
+        return this._nextActive;
+    }
+    /** @hidden */
+    _delEOL(line) {
+        return line.toString().replaceAll('\n', ' ');
+    }
+    /** @hidden */
+    _delChar(line, pos) {
+        return line.substring(0, pos) + line.substring(pos + 1);
+    }
+    /** @hidden */
+    _insChar(chars, line, pos) {
+        return line.substring(0, pos) + chars + line.substring(pos);
+    }
     /**
      * Remove any user selected text
      * @hidden
      */
-    _removeSelectedText(line) {
+    _delSeleted(line) {
         let p0 = Math.min(this._prevCsrIdx, this._currCsrIdx);
         let p1 = Math.max(this._prevCsrIdx, this._currCsrIdx);
         this._prevCsrIdx = this._currCsrIdx = p0;
@@ -394,7 +430,7 @@ class CvsTextField extends CvsText {
         let tf = this._textFont || this._gui.textFont();
         let ty = this._textStyle || this._gui.textStyle();
         let cs = this._scheme || this._gui.scheme();
-        let line = this._getLine();
+        let line = this._line;
         let tiv = this._textInvalid;
         let sx = 4 + Math.max(this._c[0], this._c[3]);
         let ex = this._w - (4 + Math.max(this._c[1], this._c[2]));
@@ -470,4 +506,5 @@ class CvsTextField extends CvsText {
         this._bufferInvalid = false;
     }
 }
+/** @hidden */ CvsTextField.CLIP = '';
 //# sourceMappingURL=textfield.js.map

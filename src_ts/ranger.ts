@@ -20,11 +20,11 @@ class CvsRanger extends CvsSlider {
     }
 
     /**
-     * <p>Sets or gets the low and high thumb values for this control. If both parameters
-     * are within limits of the ranger then they are accepted and the thumbs are moved to
-     * the correct position.</p>
-     * <p>If either of the parameters are invalid then they are ignored and the method 
-     * returns the current range low and high values.</p>
+     * <p>Sets or gets the low and high thumb values for this control. If both 
+     * parameters are within the ranger limits then they are accepted and the 
+     * thumbs are moved to the correct position.</p>
+     * <p>If either of the parameters are invalid then they are ignored and 
+     * the method returns the current range low and high values.</p>
      * @param v0 low value
      * @param v1 high value
      * @returns this control or the low/high values
@@ -57,8 +57,32 @@ class CvsRanger extends CvsSlider {
         return this._t2v(this._t[1]);
     }
 
-    /** @hidden */
-    value(v) { return this; }
+    /**
+     * If both parameter values are within the ranger's limits it will move
+     * the thumbs to the appropriate positions. If no parameters are passed 
+     * or if either is outside the ranger's limits this methods returns the
+     * an array containing the current ranger values.
+     * @param v0 value to set the first thumbs.
+     * @param v1 value to set the second thumbs.
+     * @returns an array of the current values or this ranger object.
+     */
+    values(v0?: number, v1?: number): CvsBaseControl | Array<number> {
+        function inLimits(v: number) {
+            return ((v - l0) * (v - l1) <= 0);
+        }
+        let [l0, l1] = [this._limit0, this._limit1]
+        if (Number.isFinite(v0) && Number.isFinite(v1)) {
+            if (inLimits(v0) && inLimits(v1)) {
+                this._t[0] = this._norm01(Math.min(v0, v1));
+                this._t[1] = this._norm01(Math.max(v0, v1));
+                // CLOG(`Ranger setting values to ${v0}  and  ${v1}`);
+                // CLOG(`    normalised values to ${this._t[0]}  and  ${this._t[1]}`);
+                this.invalidateBuffer();
+                return this;
+            }
+        }
+        return [this._t2v(this._t[0]), this._t2v(this._t[1])];
+    }
 
     /** @hidden */
     _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
@@ -118,7 +142,7 @@ class CvsRanger extends CvsSlider {
     _updateControlVisual() { // CvsRanger
         let cs = this._scheme || this._gui.scheme();
 
-        const OPAQUE = cs.C(3);
+        const OPAQUE = cs.C(3, this._alpha);
         const TICKS = cs.G(7);
         const UNUSED_TRACK = cs.G(3);
         const USED_TRACK = cs.G(1);
@@ -169,7 +193,7 @@ class CvsRanger extends CvsSlider {
         for (let tnbr = 0; tnbr < 2; tnbr++) {
             uib.fill(...THUMB);
             uib.noStroke();
-            if ((this.isActive || this.isOver) && tnbr == this._tIdx) {
+            if ((this.isActive || this.isOver)) {
                 uib.strokeWeight(2);
                 uib.stroke(...HIGHLIGHT);
             }

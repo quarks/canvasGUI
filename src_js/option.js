@@ -154,25 +154,29 @@ class CvsOption extends CvsText {
     /** @hidden */
     _updateControlVisual() {
         let ts = this._textSize || this._gui.textSize();
+        let ty = this._textStyle || this._gui.textStyle();
+        let tf = this._textFont || this._gui.textFont();
         let cs = this._scheme || this._gui.scheme();
         let p = this._p;
         let isize = p.constrain(Number(ts) * 0.7, 12, 16);
         let iA = this._iconAlign, tA = this._textAlign;
         let lines = this._lines, gap = this._gap;
-        const BACK = cs.C(3);
+        const BACK = cs.C(3, this._alpha);
         const FORE = cs.C(8);
         const ICON_BG = cs.G(0);
         const ICON_FG = cs.G(9);
         const HIGHLIGHT = cs.C(9);
         let uib = this._uiBfr;
         uib.push();
+        uib.textFont(tf);
+        uib.textSize(ts);
+        uib.textStyle(ty);
         uib.clear();
         // If opaque
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...BACK);
             uib.rect(0, 0, this._w, this._h, ...this._c);
-            // this._c[0], this._c[1], this._c[2], this._c[3]);
         }
         // Start with circle
         uib.push();
@@ -189,7 +193,6 @@ class CvsOption extends CvsText {
         }
         uib.pop();
         if (lines.length > 0) {
-            uib.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
             // Determine extent of text area
             if (iA == p.LEFT)

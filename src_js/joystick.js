@@ -201,7 +201,7 @@ class CvsJoystick extends CvsBufferedControl {
     _updateControlVisual() {
         let cs = this._scheme || this._gui.scheme();
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
-        const OPAQUE = cs.C(3);
+        const OPAQUE = cs.C(3, this._alpha);
         const DIAL_FACE = cs.C(1);
         const DIAL_TINT = cs.T(0);
         const DIAL_BORDER = cs.C(9);
@@ -210,7 +210,7 @@ class CvsJoystick extends CvsBufferedControl {
         const THUMB_OVER = cs.C(6);
         const ROD = cs.C(7);
         const MARKERS = cs.C(8);
-        const DEAD_ZONE = cs.T(5);
+        const DEAD_ZONE = cs.T(2);
         let uib = this._uiBfr;
         uib.push();
         uib.clear();

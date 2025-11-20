@@ -3,7 +3,6 @@
  * (optional). Three modes are available to rotate the knob.</p>
  * <p>Major and minor tick marks can be added to the status track and
  * supports stick-to-ticks if wanted. </p>
- * @since 1.1.0
  */
 class CvsKnob extends CvsSlider {
     /**
@@ -209,7 +208,7 @@ class CvsKnob extends CvsSlider {
     /** @hidden */
     _updateControlVisual() {
         let cs = this._scheme || this._gui.scheme();
-        const OPAQUE = cs.C(3);
+        const OPAQUE = cs.C(3, this._alpha);
         const GRIP_OFF = cs.C(7);
         const GRIP_STROKE = cs.C(8);
         const MARKER = cs.C(3);

@@ -13,7 +13,6 @@ abstract class CvsPane extends CvsBaseControl {
     /** @hidden */ protected _tab: CvsButton;
     /** @hidden */ protected _tabstate: string;
     /** @hidden */ protected _depth: number;
-    /** @hidden */ protected _background = 'rgba(0,0,0,0.6)';
 
     // Deltas used in controlling opening and closing speeds
     /** @hidden */ static _dI = 50;  // Interval time (20)
@@ -49,33 +48,7 @@ abstract class CvsPane extends CvsBaseControl {
     }
 
     /**
-     * <p>Sets the pane background color to use when open. There are 2 predined option ...</p>
-     * <ol>
-     * <li>'dark' semi transparent black background  : 'rgba(0,0,0,0.6)'</li>
-     * <li>'light' semi transparent white background  : 'rgba(255,255,255,0.6)'</li>
-     * </ol>
-     * <p>Alternatively the user can provide any valid CSS color specification but if
-     * invalid the results are unpredicatable and likely to cause the sketch to fail.</p>
-     * 
-     * @param rgba 'light', 'dark' or valid CSS color specification
-     * @returns this control
-     */
-    background(rgba: string) {
-        switch (rgba) {
-            case 'dark':
-                this._background = 'rgba(0,0,0,0.6)';
-                break;
-            case 'light':
-                this._background = 'rgba(255,255,255,0.6)';
-                break;
-            default:
-                this._background = rgba;
-        }
-        return this;
-    }
-
-    /**
-     * <p>Close this pane</p>
+     * <p>Close this pane.</p>
      * @returns this control
      */
     close() {
@@ -91,14 +64,14 @@ abstract class CvsPane extends CvsBaseControl {
         return this;
     }
 
-    /** true if the pane is closed else false.*/
+    /** True if the pane is closed else false.*/
     get isClosed(): boolean { return this._status == 'closed'; }
 
-    /** true if the pane is closing else false.*/
+    /** True if the pane is closing else false.*/
     get isClosing(): boolean { return this._status == 'closing'; }
 
     /**
-     * <p>Close this pane</p>
+     * <p>Open this pane.</p>
      * @returns this control
      */
     open() {
@@ -114,7 +87,7 @@ abstract class CvsPane extends CvsBaseControl {
         }
     }
 
-    /** true if the pane is open else false.*/
+    /** True if the pane is open else false.*/
     get isOpen(): boolean { return this._status == 'open'; }
 
     /** true if the pane is opening else false.*/
@@ -145,13 +118,15 @@ abstract class CvsPane extends CvsBaseControl {
 
     /** @hidden */
     _draw(uib, pkb) {
+        let cs = (this.tab.scheme() || this._gui.scheme());
+        const BACKGROUND = cs.C(9, 176);
         uib.push();
         uib.translate(this._x, this._y);
         pkb.push();
         pkb.drawingContext.setTransform(uib.drawingContext.getTransform());
         if (this._visible && this._tabstate != 'closed') {
             uib.noStroke();
-            uib.fill(this._background);
+            uib.fill(...BACKGROUND);
             uib.rect(0, 0, this._w, this._h);
             pkb.noStroke();
             pkb.fill('white');
@@ -164,6 +139,17 @@ abstract class CvsPane extends CvsBaseControl {
     }
 
     /**
+     * <p>Sets or gets the color scheme used by the pane's tab and the 
+     * translucent background. Controls on the pane are not affected.</p>
+     * @param name the color scheme name e.g. 'blue'
+     * @returns this pane or its color scheme
+     */
+    scheme(name?: string): ColorScheme | CvsBaseControl {
+        let result = this.tab.scheme(name, false);
+        return (result instanceof ColorScheme) ? result : this;
+    }
+
+    /**
      * <p>Sets the current text.</p>
      * <p>Processing constants are used to define the alignment.</p>
      * @param t the text toset
@@ -171,7 +157,7 @@ abstract class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     text(t: string, align?: number) {
-        this.tab().text(t, align);
+        this.tab.text(t, align);
         return this;
     }
 
@@ -180,7 +166,7 @@ abstract class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     noText() {
-        this.tab().noText();
+        this.tab.noText();
         return this;
     }
 
@@ -192,7 +178,7 @@ abstract class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     icon(i: p5.PGraphics, align?: number) {
-        this.tab().icon(i, align);
+        this.tab.icon(i, align);
         return this;
     }
 
@@ -201,7 +187,7 @@ abstract class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     noIcon() {
-        this.tab().noIcon();
+        this.tab.noIcon();
         return this;
     }
 
@@ -211,27 +197,46 @@ abstract class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     textSize(ts?: number) {
-        this.tab().textSize(ts);
+        this.tab.textSize(ts);
+        return this;
+    }
+
+
+    /**
+     * <p>Sets the text style for the pane tab.</p>
+     * @param ty the text style to use
+     * @returns this control
+     */
+    textStyle(ty?: number) {
+        this.tab.textStyle(ty);
         return this;
     }
 
     /**
-     * <p>Shrink the pane tab to fit contents.</p>
+     * <p>Sets the text font for the pane tab.</p>
+     * @param tf the text font to use
+     * @returns this control
+     */
+    textFont(tf?: string | p5.Font) {
+        this.tab.textFont(tf);
+        return this;
+    }
+
+    /**
+     * <p>Shrink the pane tab to fit its contents.</p>
      * <p>To shrink on one dimension only pass either 'w' (width) or 'h' 
      * (height) to indicate which dimmension to shrink</p>
      * @param dim the dimension to shrink 
      * @returns this control
      */
     shrink(dim?: string) {
-        return this.tab().shrink();
+        return this.tab.shrink();
     }
 
     /**
-     * @returns the tab button
+     * Get the tab button.
      */
-    tab() {
-        return this._children[0];
-    }
+    get tab() { return this._children[0]; }
 
 
     /**
@@ -239,7 +244,7 @@ abstract class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     enable() {
-        this.tab().enable();
+        this.tab.enable();
         return this;
     }
 
@@ -249,7 +254,7 @@ abstract class CvsPane extends CvsBaseControl {
      */
     disable() {
         this.close();
-        this.tab().disable();
+        this.tab.disable();
         return this;
     }
 
@@ -259,7 +264,7 @@ abstract class CvsPane extends CvsBaseControl {
      */
     hide() {
         this.close();
-        this.tab().hide();
+        this.tab.hide();
         return this;
     }
 
@@ -268,7 +273,7 @@ abstract class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     show() {
-        this.tab().show();
+        this.tab.show();
         return this;
     }
 

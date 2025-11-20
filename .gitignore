@@ -1,7 +1,9 @@
 /node_modules
-/_v1_tests
 /tests
 /fonts
 /notes
 /sketches
 /libraries
+/V1_tests
+/V2_tests
+/V2_Reference_examples

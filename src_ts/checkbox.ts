@@ -32,7 +32,7 @@ class CvsCheckbox extends CvsText {
     }
 
     /**
-     * <p>Select this checkbox making it 'true'</p>
+     * <p>Select this checkbox.</p>
      * @returns this control
      */
     select() {
@@ -44,7 +44,7 @@ class CvsCheckbox extends CvsText {
     }
 
     /**
-     * <p>Deelect this checkbox making it 'false'</p>
+     * <p>Deselect this checkbox.</p>
      * @returns this control
      */
     deselect() {
@@ -56,8 +56,8 @@ class CvsCheckbox extends CvsText {
     }
 
     /**
-     * Get the state of the checkbox.
-     * @returns true if this checkbox is selecd
+     * Get the state of this checkbox.
+     * @returns true if this checkbox is selected
      */
     isSelected() {
         return this._selected;
@@ -103,12 +103,14 @@ class CvsCheckbox extends CvsText {
     /** @hidden */
     _updateControlVisual() { //  CvsCheckbox
         let ts = this._textSize || this._gui.textSize();
+        let ty = this._textStyle || this._gui.textStyle();
+        let tf = this._textFont || this._gui.textFont();
         let cs = this._scheme || this._gui.scheme();
         let p = this._p;
         let isize = p.constrain(Number(ts) * 0.7, 12, 16);
         let iA = this._iconAlign, tA = this._textAlign;
         let lines = this._lines, gap = this._gap;
-        const BACK = cs.C(3);
+        const BACK = cs.C(3, this._alpha);
         const FORE = cs.C(8);
         const ICON_BG = cs.G(0);
         const ICON_FG = cs.G(9);
@@ -116,6 +118,9 @@ class CvsCheckbox extends CvsText {
 
         let uib = this._uiBfr;
         uib.push();
+        uib.textFont(tf);
+        uib.textSize(ts);
+        uib.textStyle(ty);
         uib.clear();
         if (this._opaque) {
             uib.noStroke(); uib.fill(...BACK);
@@ -135,7 +140,6 @@ class CvsCheckbox extends CvsText {
         }
         uib.pop();
         if (lines.length > 0) {
-            uib.textSize(ts);
             let x0 = gap, x1 = this._w - gap, sx = 0;
             // Determine extent of text area
             if (iA == p.LEFT) x0 += isize + gap;

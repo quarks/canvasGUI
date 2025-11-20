@@ -2,7 +2,6 @@ const CANVAS_GUI_VERSION = '!!VERSION!!';
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
 const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
-const CTL_CNRS = [4, 4, 4, 4];
 const FONTS = new Set(['arial', 'verdana', 'tahoma', 'trebuchet ms',
     'times new roman', 'georgia', 'courier new', 'brush script mt',
     'impact', 'serif', 'sans-serif', 'monospace']);
@@ -62,7 +61,7 @@ class GUI {
         this._p = p; // p5 instance
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
-        this._corners = CTL_CNRS;
+        this._corners = [4, 4, 4, 4];
         this._optionGroups = new Map();
         // Text attributes
         this._textSize = 12;
@@ -116,7 +115,7 @@ class GUI {
     }
     // ##################################################################
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
-    // ######         Factory methods to create controls          #######
+    // ######         Factory methods to create controls           ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /**
@@ -535,7 +534,7 @@ class GUI {
     }
     /**
      * Sorts the controls so that they are rendered in order of their z
-     * value (low z --> high z)
+     * value (low z --> high z).
      * @hidden
      */
     setRenderOrder() {
@@ -578,9 +577,13 @@ class GUI {
         return undefined;
     }
     /**
-     * Display the buffer in a canvas element with the given id.
-     * If there is no element with this id or if it is not a canvas element
-     * a canvas element will be created and appended to the body section.
+     * <p>Display the control pick buffer in a canvas element with the given id.
+     * If there is no HTML element with this id or if it is not a canvas element
+     * a new canvas element will be created and appended to the body section.</p>
+     * <p>Every control that can respond to mouse, touch or pointer events is
+     * given a unique pick color when it is created. The control is drawn on
+     * the pick buffer using the pick color and the color under the event's XY
+     * position identifies the control to handle it.</p>
      *
      * @param cvsID the id of a canvas element
      */
@@ -793,11 +796,11 @@ class GUI {
         let panes = this._panesEast, n = panes.length;
         // Find length of tabs
         let sum = 2 * (n - 1);
-        panes.forEach(p => (sum += p.tab()._w));
+        panes.forEach(p => (sum += p.tab._w));
         // Now find start position for the first tab
         let pos = (this.canvasHeight() - sum) / 2;
         for (let i = 0; i < n; i++) {
-            let pane = panes[i], tab = pane.tab();
+            let pane = panes[i], tab = pane.tab;
             let x = -tab._h, y = pos;
             pos += tab._w + 2;
             tab._x = x;
@@ -813,11 +816,11 @@ class GUI {
         let n = panes.length;
         // Find length of tabs
         let sum = 2 * (n - 1);
-        panes.forEach(p => (sum += p.tab()._w));
+        panes.forEach(p => (sum += p.tab._w));
         // Now find start position for the first tab
         let pos = (this.canvasHeight() - sum) / 2;
         for (let i = 0; i < n; i++) {
-            let pane = panes[i], tab = pane.tab();
+            let pane = panes[i], tab = pane.tab;
             let x = pane.depth(), y = pos;
             pos += tab._w + 2;
             tab._x = x;
@@ -833,11 +836,11 @@ class GUI {
         let n = panes.length;
         // Find length of tabs
         let sum = 2 * (n - 1);
-        panes.forEach(p => (sum += p.tab()._w));
+        panes.forEach(p => (sum += p.tab._w));
         // Now find start position for the first tab
         let pos = (this.canvasWidth() - sum) / 2;
         for (let i = 0; i < n; i++) {
-            let pane = panes[i], tab = pane.tab();
+            let pane = panes[i], tab = pane.tab;
             let x = pos, y = -tab._h;
             pos += tab._w + 2;
             tab._x = x;
@@ -852,11 +855,11 @@ class GUI {
         let panes = this._panesNorth, n = panes.length;
         // Find length of tabs
         let sum = 2 * (n - 1);
-        panes.forEach(p => (sum += p.tab()._w));
+        panes.forEach(p => (sum += p.tab._w));
         // Now find start position for the first tab
         let pos = (this.canvasWidth() - sum) / 2;
         for (let i = 0; i < n; i++) {
-            let pane = panes[i], tab = pane.tab();
+            let pane = panes[i], tab = pane.tab;
             let x = pos, y = pane.depth();
             pos += tab._w + 2;
             tab._x = x;
@@ -879,17 +882,17 @@ class GUI {
     }
     /**
      * <p>Set or get the existing global color scheme.</p>
-     * @param schemename name of the color scheme to set
+     * @param csName name of the color scheme to set
      * @returns this gui instance
      */
-    scheme(schemename) {
+    scheme(csName) {
         // get global scheme
-        if (!schemename) {
+        if (!csName) {
             return this._scheme;
         }
         // set global scheme and invalidate any controls using the global scheme
-        if (this._schemes[schemename]) {
-            this._scheme = this._schemes[schemename];
+        if (this._schemes[csName]) {
+            this._scheme = this._schemes[csName];
             // Update visual for all these using the global color scheme
             this._controls.forEach((c) => {
                 if (!c.scheme())
@@ -897,21 +900,53 @@ class GUI {
             });
         }
         else
-            CWARN(`'${schemename}' is not a valid color scheme`);
+            CWARN(`'${csName}' is not a valid color scheme`);
         return this;
     }
     /**
      * <p>Get the named color scheme.</p>
-     * @param schemename the name of the color scheme
+     * @param csName the name of the color scheme
      * @returns the color scheme or undefined if it doesn't exist
      * @hidden
      */
-    _getScheme(schemename) {
-        if (schemename && this._schemes[schemename]) {
-            return this._schemes[schemename];
+    _getScheme(csName) {
+        if (csName && this._schemes[csName]) {
+            return this._schemes[csName];
         }
-        CWARN(`Unable to retrieve color scheme '${schemename}'`);
-        return undefined;
+        CWARN(`Unable to retrieve color scheme '${csName}'`);
+        return null;
+    }
+    /**
+     * <p>This will create a new color scheme from an existing one. The returned
+     * scheme is a deep-copy of the source scheme and should be edited before
+     * adding it to the GUI with  the addScheme(...) method. The name of the
+     * new scheme is specified in the first parameter and cannot be changed later.</p>
+     * <p>The method will fail if -</p>
+     * <ul>
+     * <li>either parameter is not a string of length &gt;0, or</li>
+     * <li>destination and source names are equal (case insensitve comparison), or</li>
+     * <li>the source scheme does not exist.</li>
+     * </ul>
+     *
+     * @param destName a unique name for the new color scheme.
+     * @param srcName the name of the source scheme.
+     * @returns the new color scheme or null if unable to create it.
+     */
+    createScheme(destName, srcName) {
+        if (!(typeof destName === "string") || destName.length === 0
+            || !(typeof srcName === "string") || srcName.length === 0
+            || destName.toLowerCase() == srcName.toLowerCase()) {
+            CWARN(`Unable to create color scheme, '${destName}' and '${srcName}' are invalid names.`);
+            return null;
+        }
+        let srcScheme = this._getScheme(srcName);
+        if (!srcScheme) {
+            CWARN(`Unable to create color scheme because the source scheme, '${srcName}', does not exist.`);
+            return null;
+        }
+        let destScheme = srcScheme._copy();
+        destScheme._name = destName;
+        return destScheme;
     }
     /**
      * <p>Adds a new color scheme to those already available. It does not replace an
@@ -920,13 +955,13 @@ class GUI {
      * @param scheme  the color scheme
      * @returns this gui instance
      */
-    addScheme(schemename, scheme) {
-        if (typeof schemename === 'string' && !scheme) {
-            if (!this._schemes[schemename])
-                this._schemes[schemename] = scheme;
-            else
-                CERROR(`Cannot add scheme '${schemename}' because it already exists.'`);
-        }
+    addScheme(scheme) {
+        if (!(scheme instanceof ColorScheme))
+            CWARN(`The parameter is not a valid color scheme so can't be used.`);
+        else if (this._schemes[scheme.name])
+            CERROR(`Cannot add scheme '${scheme.name}' because it already exists.'`);
+        else
+            this._schemes[scheme.name] = scheme;
         return this;
     }
     /**
@@ -1017,7 +1052,7 @@ class GUI {
     }
     /**
      * <p>Creates and returns a named GUI controller.</p>
-     * <p>This method is icluded for compatibility with canvasGUI V1 and has
+     * <p>This method is included for compatibility with canvasGUI V1 and has
      * beed deprecated. The <code>createGUI(...)</code> method should be used
      * instead as it fits the p5.js scheme of using <code>create???(...)</code>
      * methods when an object instance is being initiated.</p>
@@ -1031,6 +1066,7 @@ class GUI {
      */
     static get(p5c, p = p5.instance) {
         let name = `#${p.floor(p.random(111111, 999999))}`;
+        CWARN(`'GUI.get(...)' has been deprcated in canvasGUI V2 use the global method 'createGUI(...)' instaed.`);
         return GUI.create(name, p5c, p);
     }
     /**
@@ -1049,7 +1085,7 @@ class GUI {
      */
     static create(name, p5c, p = p5.instance) {
         GUI.ANNOUNCE_CANVAS_GUI();
-        if (!(name instanceof String) || name.length === 0) {
+        if (typeof name !== 'string' || name.length === 0) {
             name = `#${p.floor(p.random(111111, 999999))}`;
             CWARN(`Invalid name provided so this GUI will be called '${name}' intead.`);
         }

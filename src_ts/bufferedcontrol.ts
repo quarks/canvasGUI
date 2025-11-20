@@ -11,12 +11,8 @@
  */
 abstract class CvsBufferedControl extends CvsBaseControl {
 
-    /** @hidden */ protected _tooltip: CvsTooltip = undefined;
-    /** @hidden */ protected _isOver: boolean = false;
     /** @hidden */ protected _uiBfr: p5.Renderer;
     /** @hidden */ protected _pkBfr: p5.Renderer;
-
-    /** @hidden */ protected _c: Array<number>;
 
     /**
      * CvsBufferedControl class 
@@ -32,16 +28,6 @@ abstract class CvsBufferedControl extends CvsBaseControl {
         super(gui, id, x, y, w, h);
         this._validateControlBuffers();
         this._c = this._gui.corners();
-    }
-
-    /** @hidden */
-    get isOver() { return this._isOver }
-    /** @hidden */
-    set isOver(b) {
-        if (b != this._isOver) {
-            this._isOver = b;
-            this.invalidateBuffer();
-        }
     }
 
     /**
@@ -118,7 +104,7 @@ abstract class CvsBufferedControl extends CvsBaseControl {
 
     /** @hidden */
     protected _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs.T(5));
+        b.fill(cs.T(2));
         b.noStroke();
         b.rect(x, y, w, h, ...this._c);
     }
@@ -148,45 +134,4 @@ abstract class CvsBufferedControl extends CvsBaseControl {
         return this;
     }
 
-    /**
-     * <p>Set or get the corner radii used for this control</p>
-     * @param c an array of 4 corner radii
-     * @returns an array with the 4 corner radii
-     */
-    corners(c: Array<number>): Array<number> | CvsBaseControl {
-        if (Array.isArray(c) && c.length == 4) {
-            this._c = [...c];
-            return this;
-        }
-        return [...this._c];
-    }
-
-    /**
-     * Create a tooltip for this control
-     * 
-     * @param tiptext the text to appear in the tooltip
-     * @param duration how long the tip remains visible (milliseconds)
-     * @returns this control
-     */
-    tooltip(tiptext: string) {
-        let tt = this._gui.__tooltip(this._id + '.tooltip')
-            .text(tiptext)
-            .shrink();
-        this.addChild(tt);
-        if (tt instanceof CvsTooltip) {
-            tt._validatePosition();
-            this._tooltip = tt;
-        }
-        return this;
-    }
-
-    /**
-     * Sets the size of the text to use in the tooltip
-     * @param {number} tsize text size for this tooltip
-     */
-    tipTextSize(tsize?: number) {
-        if (this._tooltip && tsize && tsize > 0)
-            this._tooltip.textSize(tsize);
-        return this;
-    }
 }

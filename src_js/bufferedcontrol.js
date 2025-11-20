@@ -21,19 +21,8 @@ class CvsBufferedControl extends CvsBaseControl {
      */
     constructor(gui, id, x, y, w, h) {
         super(gui, id, x, y, w, h);
-        /** @hidden */ this._tooltip = undefined;
-        /** @hidden */ this._isOver = false;
         this._validateControlBuffers();
         this._c = this._gui.corners();
-    }
-    /** @hidden */
-    get isOver() { return this._isOver; }
-    /** @hidden */
-    set isOver(b) {
-        if (b != this._isOver) {
-            this._isOver = b;
-            this.invalidateBuffer();
-        }
     }
     /**
      * Make sure we have a ui buffer and a pick buffer of the correct size
@@ -107,7 +96,7 @@ class CvsBufferedControl extends CvsBaseControl {
     }
     /** @hidden */
     _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs.T(5));
+        b.fill(cs.T(2));
         b.noStroke();
         b.rect(x, y, w, h, ...this._c);
     }
@@ -133,45 +122,6 @@ class CvsBufferedControl extends CvsBaseControl {
         }
         this._validateControlBuffers();
         this.invalidateBuffer();
-        return this;
-    }
-    /**
-     * <p>Set or get the corner radii used for this control</p>
-     * @param c an array of 4 corner radii
-     * @returns an array with the 4 corner radii
-     */
-    corners(c) {
-        if (Array.isArray(c) && c.length == 4) {
-            this._c = [...c];
-            return this;
-        }
-        return [...this._c];
-    }
-    /**
-     * Create a tooltip for this control
-     *
-     * @param tiptext the text to appear in the tooltip
-     * @param duration how long the tip remains visible (milliseconds)
-     * @returns this control
-     */
-    tooltip(tiptext) {
-        let tt = this._gui.__tooltip(this._id + '.tooltip')
-            .text(tiptext)
-            .shrink();
-        this.addChild(tt);
-        if (tt instanceof CvsTooltip) {
-            tt._validatePosition();
-            this._tooltip = tt;
-        }
-        return this;
-    }
-    /**
-     * Sets the size of the text to use in the tooltip
-     * @param {number} tsize text size for this tooltip
-     */
-    tipTextSize(tsize) {
-        if (this._tooltip && tsize && tsize > 0)
-            this._tooltip.textSize(tsize);
         return this;
     }
 }
