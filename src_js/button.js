@@ -9,10 +9,11 @@ class CvsButton extends CvsTextIcon {
     }
     /** @hidden */
     _updateControlVisual() {
-        let ts = this._textSize || this._gui.textSize();
-        let ty = this._textStyle || this._gui.textStyle();
-        let tf = this._textFont || this._gui.textFont();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
         let iA = this._iconAlign, tA = this._textAlign;
         let icon = this._icon, lines = this._lines, gap = this._gap;
         const BACK = cs.C(3, this._alpha);
@@ -27,7 +28,7 @@ class CvsButton extends CvsTextIcon {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...BACK);
-            uib.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
+            uib.rect(1, 1, this._w - 1, this._h - 1, ...cnrs);
         }
         if (icon) {
             let px = 0, py;
@@ -75,7 +76,7 @@ class CvsButton extends CvsTextIcon {
             uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         }
         // Control disabled highlight
         if (!this._enabled)

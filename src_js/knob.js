@@ -30,11 +30,15 @@ class CvsKnob extends CvsSlider {
     /**
      * <p>Sets the interaction mode for rotating the knob.</p>
      * <ul>
-     * <li><code>'x'</code> : dragging left and right turns the knob anticlockwise and clockwise respectively.</li>
-     * <li><code>'y'</code> : dragging down and up turns the knob anticlockwise and clockwise respectively.</li>
-     * <li><code>'a'</code> : dragging in a circular motion round the knob center turns the knob to face the drag point.</li>
+     * <li><code>'x'</code> : dragging left and right turns the knob
+     * anticlockwise and clockwise respectively.</li>
+     * <li><code>'y'</code> : dragging down and up turns the knob
+     * anticlockwise and clockwise respectively.</li>
+     * <li><code>'a'</code> : dragging in a circular motion round the
+     * knob center turns the knob to face the drag point.</li>
      * </ul>
-     * <p>Rotation is constrained within the maximum turn angle for this knob.</p>
+     * <p>Rotation is constrained within the maximum turn angle for this
+     * knob.</p>
      * <p>Any other parameter value is ignored and the mode is unchanged.</p>
      *
      * @param mode 'x', 'y' or 'a'
@@ -59,8 +63,8 @@ class CvsKnob extends CvsSlider {
      * rotates for a given drag distance.</p>
      * <p>The drag distance needed to rotate the knob by the maximum turn
      * angle is the reciprocal of the parameter value i.e. <code>1.0 / sens</code>.</p>
-     * <p>The default value is 0.005 which equates to a drag distance of 200 pixels
-     * and the minimum permitted value is 0.0025 (400 pixels).</p>
+     * <p>The default value is 0.005 which equates to a drag distance of 200
+     * pixels and the minimum permitted value is 0.0025 (400 pixels).</p>
      *
      * @param svty &ge;0.0025
      * @returns this control
@@ -129,9 +133,6 @@ class CvsKnob extends CvsSlider {
      * @hidden
      */
     _tFromXY(x, y) {
-        function fixAngle(a) {
-            return a < 0 ? a + 2 * Math.PI : a;
-        }
         let t = this._t01, under = false, over = false;
         switch (this._mode) {
             case CvsKnob.X_MODE:
@@ -149,14 +150,18 @@ class CvsKnob extends CvsSlider {
             case CvsKnob.A_MODE:
                 let low = Math.PI - this._turnArc / 2;
                 let high = 2 * Math.PI - low;
-                let ang = fixAngle(Math.atan2(y, x));
-                ang = fixAngle(ang - this._gapPos);
+                let ang = fixAngle2Pi(Math.atan2(y, x) - this._gapPos - this._deltaA);
                 under = ang < low;
                 over = ang > high;
                 t = this._p.map(ang, low, high, 0, 1, true);
                 break;
         }
         return { t: t, under: under, over: over };
+    }
+    _angFromT(t) {
+        let low = Math.PI - this._turnArc / 2;
+        let high = 2 * Math.PI - low;
+        return this._p.map(t, 0, 1, low, high);
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
@@ -169,6 +174,7 @@ class CvsKnob extends CvsSlider {
             case 'touchstart':
                 this._prevX = mx;
                 this._prevY = my;
+                this._deltaA = fixAngle2Pi(Math.atan2(my, mx) - this._gapPos - this._angFromT(this._t01));
                 this._active = true;
                 this.isOver = true;
                 this.invalidateBuffer();
@@ -207,7 +213,8 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
         const OPAQUE = cs.C(3, this._alpha);
         const GRIP_OFF = cs.C(7);
         const GRIP_STROKE = cs.C(8);
@@ -223,7 +230,7 @@ class CvsKnob extends CvsSlider {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         let arc = this._turnArc, gap = 2 * Math.PI - arc, lowA = gap / 2;
         let rOut = this._kRad, rIn = this._gRad;
@@ -315,6 +322,7 @@ class CvsKnob extends CvsSlider {
         pkb.clear();
         pkb.translate(pkb.width / 2, pkb.height / 2);
         pkb.noStroke();
+        // Background
         pkb.fill(c.r, c.g, c.b);
         pkb.ellipse(0, 0, dOut, dOut);
         pkb.pop();

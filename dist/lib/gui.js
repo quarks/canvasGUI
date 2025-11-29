@@ -3,16 +3,23 @@
  * @license MIT
  * @version 2.0.0
  */
-const CANVAS_GUI_VERSION = '2.0.0';
+/**
+ * canvasGUI library constants and utiliy functions.
+ */
+/** @hidden */
 const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
 const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
+/** @hidden */
 const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
+/** @hidden */
 const FONTS = new Set(['arial', 'verdana', 'tahoma', 'trebuchet ms',
     'times new roman', 'georgia', 'courier new', 'brush script mt',
     'impact', 'serif', 'sans-serif', 'monospace']);
+/** @hidden */
 const IS_VALID_FONT = function (fontname) {
     return FONTS.has(fontname);
 };
+/** @hidden */
 const MEASURE_TEXT = function (text, cvs, font, style, size) {
     cvs.push();
     cvs.textAlign('left');
@@ -30,6 +37,88 @@ const MEASURE_TEXT = function (text, cvs, font, style, size) {
         descent: m.actualBoundingBoxDescent
     };
 };
+/** @hidden */
+const fixAngle2Pi = function (a) {
+    const TAU = 2 * Math.PI;
+    while (a < 0)
+        a += TAU;
+    return a % TAU;
+};
+/** @hidden */
+const fixAngle360 = function (a) {
+    while (a < 0)
+        a += 360;
+    return a % 360;
+};
+// Mixins
+/** @hidden */
+const NoOrient = {
+    /** This control does not support changing orientation */
+    orient(dir) {
+        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
+        return this;
+        // // Hide these methods from typeDoc
+        // /** @hidden */ orient(dir) { return this }
+    }
+};
+/** @hidden */
+const NoParent = {
+    /** This control does not support changing orientation */
+    parent(parent, rx, ry) {
+        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+        return this;
+    },
+    leaveParent() {
+        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
+        return this;
+    }
+    // // Hide these methods from typeDoc
+    // /** @hidden */ parent(parent, rx, ry){ return this }
+    // /** @hidden */ leaveParent(){ return this }
+};
+/** @hidden */
+const NoTooltip = {
+    /** @hidden */
+    tooltip(tiptext) {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    },
+    /** @hidden */
+    tipTextSize(gtts) {
+        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
+        return this;
+    }
+    // // Hide these methods from typeDoc
+    // /** @hidden */ tooltip(tiptext){ return this }
+    // /** @hidden */ tipTextSize(gtts) { return this }
+};
+/** @hidden */
+const FixedBackground = {
+    /** @hidden */
+    transparent() {
+        CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
+        return this;
+    },
+    opaque(alpha = 255) {
+        CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
+        return this;
+    }
+    // // Hide these methods from typeDoc
+    // /** @hidden */ transparent(){ return this }
+    // /** @hidden */ opaque() { return this }
+};
+/** @hidden */
+const NoCorners = {
+    /** @hidden */
+    corners(...c) {
+        CWARN(`Controls of type '${this.type}' have fixed corners.`);
+        return this;
+    },
+    // // Hide these methods from typeDoc
+    // /** @hidden */ corners(c){ return this }
+};
+//# sourceMappingURL=constants.js.map
+const CANVAS_GUI_VERSION = '2.0.0';
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -55,6 +144,8 @@ class GUI {
         // Hide / disable GUI
         /** @hidden */ this._visible = true;
         /** @hidden */ this._enabled = true;
+        /** @hidden */ this._corners = [4, 4, 4, 4];
+        /** @hidden */ this._clip = '';
         // Tooltip times
         /** @hidden */ this._show_time = TT_SHOW_TIME;
         /** @hidden */ this._repeat_time = TT_REPEAT_TIME;
@@ -66,7 +157,7 @@ class GUI {
         this._p = p; // p5 instance
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
-        this._corners = [4, 4, 4, 4];
+        // this._corners = [4, 4, 4, 4];
         this._optionGroups = new Map();
         // Text attributes
         this._textSize = 12;
@@ -734,15 +825,39 @@ class GUI {
         return this._renderer.height;
     }
     /**
-     * <p>Set or get the corner radii used for the controls</p>
-     * @param c an array of 4 corner radii
-     * @returns an array with the 4 corner radii
+     * <p>Get or set the default corner radii used in this GUI.</p>
+     * <p>To set the radii the parameters must be one of the following</p>
+     * <ul>
+     * <li>an array of 4 numbers.</li>
+     * <li>a comma seperated list of 4 numbers.</li>
+     * <li>a single number to be used for all 4 radii.</li>
+     * </ul>
+     * <p>If no parameter is passed or does not match one of the above then an
+     * array of the currently used radii values.</p>
+     *
+     * @param c valid radii combination
+     * @returns an array of the currently used radii values
      */
-    corners(c) {
-        if (Array.isArray(c) && c.length == 4)
-            this._corners = [...c];
-        return [...this._corners];
+    corners(...c) {
+        switch (c.length) {
+            case 0: // Getter
+                return [...this._corners];
+            case 4:
+                this._corners = [...c];
+                break;
+            case 1:
+                if (Array.isArray(c[0]) && c[0].length == 4)
+                    this._corners = [...c[0]];
+                else
+                    this._corners = [c[0], c[0], c[0], c[0]];
+                break;
+        }
+        return this;
     }
+    // corners(c?: Array<number>): Array<number> {
+    //   if (Array.isArray(c) && c.length == 4) this._corners = [...c];
+    //   return [...this._corners];
+    // }
     /**
      * <p>Get the associated HTML canvas tag</p>
      * @hidden
@@ -1484,8 +1599,13 @@ class CvsBaseControl {
      */
     get isEnabled() { return this._enabled; }
     /**
+     * <p>This is true if the control background is opaque else false.</p>
+     * <p>Use <code>opaque()</code> and <code>transparent()</code> display / hide the background.</p>
+     */
+    get isOpaque() { return this._opaque; }
+    /**
      * <p>This is true if the control is visible else false.</p>
-     * <p>Use <code>hide()</code> and <code>show()</code> to control visibility.</p>
+     * <p>Use <code>hide()</code> and <code>show()</code> to set visibility.</p>
      */
     get isVisible() { return this._visible; }
     /**
@@ -1504,6 +1624,10 @@ class CvsBaseControl {
             this.invalidateBuffer();
         }
     }
+    /** @hidden */
+    get CNRS() { return this._corners || this._gui._corners; }
+    /** @hidden */
+    get SCHEME() { return this._scheme || this._gui._scheme; }
     /**
      * Move this control to an absolute position.
      * @param x horizontal position
@@ -1568,16 +1692,34 @@ class CvsBaseControl {
         return this._scheme;
     }
     /**
-     * <p>Set or get the corner radii used for this control.</p>
-     * @param c an array of 4 corner radii
-     * @returns an array with the 4 corner radii
+     * <p>Get or set the corner radii used for this control.</p>
+     * <p>To set the radii the parameters must be one of the following</p>
+     * <ul>
+     * <li>an array of 4 numbers.</li>
+     * <li>a comma seperated list of 4 numbers.</li>
+     * <li>a single number to be used for all 4 radii.</li>
+     * </ul>
+     * <p>If no parameter is passed or does not match one of the above then an
+     * array of the currently used radii values.</p>
+     *
+     * @param c valid radii combination
+     * @returns an array of the currently used radii values
      */
-    corners(c) {
-        if (Array.isArray(c) && c.length == 4) {
-            this._c = [...c];
-            return this;
+    corners(...c) {
+        switch (c.length) {
+            case 0: // Getter
+                return [...this.CNRS];
+            case 4:
+                this._corners = [...c];
+                break;
+            case 1:
+                if (Array.isArray(c[0]) && c[0].length == 4)
+                    this._corners = [...c[0]];
+                else
+                    this._corners = [c[0], c[0], c[0], c[0]];
+                break;
         }
-        return [...this._c];
+        return this;
     }
     /**
      * <p>This method will force the control to update its visual appearance
@@ -1802,6 +1944,7 @@ class CvsBaseControl {
     opaque(alpha = 255) {
         this._alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
         this._opaque = true;
+        this.invalidateBuffer();
         return this;
     }
     /**
@@ -1810,6 +1953,7 @@ class CvsBaseControl {
      */
     transparent() {
         this._opaque = false;
+        this.invalidateBuffer();
         return this;
     }
     /** @hidden */
@@ -1830,14 +1974,6 @@ class CvsBaseControl {
      * @hidden
      */
     _draw(uib = null, pkb = null) { }
-    /** @hidden */
-    _eq(a, b) {
-        return Math.abs(a - b) < 0.001;
-    }
-    /** @hidden */
-    _neq(a, b) {
-        return Math.abs(a - b) >= 0.001;
-    }
 }
 /** @hidden */
 CvsBaseControl.NORTH = new OrientNorth();
@@ -1847,63 +1983,6 @@ CvsBaseControl.SOUTH = new OrientSouth();
 CvsBaseControl.EAST = new OrientEast();
 /** @hidden */
 CvsBaseControl.WEST = new OrientWest();
-// Mixins
-/** @hidden */
-const NoOrient = {
-    /** This control does not support changing orientation */
-    orient(dir) {
-        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
-        return this;
-        // // Hide these methods from typeDoc
-        // /** @hidden */ orient(dir) { return this }
-    }
-};
-/** @hidden */
-const NoParent = {
-    /** This control does not support changing orientation */
-    parent(parent, rx, ry) {
-        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-        return this;
-    },
-    leaveParent() {
-        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-        return this;
-    }
-    // // Hide these methods from typeDoc
-    // /** @hidden */ parent(parent, rx, ry){ return this }
-    // /** @hidden */ leaveParent(){ return this }
-};
-/** @hidden */
-const NoTooltip = {
-    /** @hidden */
-    tooltip(tiptext) {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    },
-    /** @hidden */
-    tipTextSize(gtts) {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    }
-    // // Hide these methods from typeDoc
-    // /** @hidden */ tooltip(tiptext){ return this }
-    // /** @hidden */ tipTextSize(gtts) { return this }
-};
-/** @hidden */
-const FixedBackground = {
-    /** @hidden */
-    transparent() {
-        CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
-        return this;
-    },
-    opaque(alpha = 255) {
-        CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
-        return this;
-    }
-    // // Hide these methods from typeDoc
-    // /** @hidden */ transparent(){ return this }
-    // /** @hidden */ opaque() { return this }
-};
 //# sourceMappingURL=basecontrol.js.map
 /*
 ##############################################################################
@@ -1929,7 +2008,6 @@ class CvsBufferedControl extends CvsBaseControl {
     constructor(gui, id, x, y, w, h) {
         super(gui, id, x, y, w, h);
         this._validateControlBuffers();
-        this._c = this._gui.corners();
     }
     /**
      * Make sure we have a ui buffer and a pick buffer of the correct size
@@ -1972,7 +2050,7 @@ class CvsBufferedControl extends CvsBaseControl {
         let c = this._gui.pickColor(this);
         pkb.noStroke();
         pkb.fill(c.r, c.g, c.b);
-        pkb.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
+        pkb.rect(1, 1, this._w - 1, this._h - 1, ...this.CNRS);
     }
     /**
      *
@@ -2005,7 +2083,7 @@ class CvsBufferedControl extends CvsBaseControl {
     _disable_hightlight(b, cs, x, y, w, h) {
         b.fill(cs.T(2));
         b.noStroke();
-        b.rect(x, y, w, h, ...this._c);
+        b.rect(x, y, w, h, ...this.CNRS);
     }
     /**
      * <p>Shrink the control to fit contents.</p>
@@ -2058,6 +2136,8 @@ class CvsSlider extends CvsBufferedControl {
         this._minorTicks = 0;
         this._s2ticks = false;
         this._opaque = false;
+        // Set track weight (thickness) and calculate related fields
+        this.weight(8);
     }
     /**
      * Set the lower and upper limits for the slider
@@ -2098,6 +2178,28 @@ class CvsSlider extends CvsBufferedControl {
         this._majorTicks = major;
         this._minorTicks = minor;
         this._s2ticks = Boolean(stick2ticks);
+        return this;
+    }
+    /**
+     * <p>Gets or sets the thickness of the track.</p>
+     * <p>If there is no parameter the currect track thickness is returned.
+     * Any other value is constrained to the range &ge;&nbsp;4 and
+     * &le;&nbsp;0.1 * control width.</p>
+     * @param tWgt the required track thickness)
+     * @returns the curent track thickness or this control
+     */
+    weight(tWgt) {
+        if (!tWgt) // getter
+            return this._trackWeight;
+        // Setter
+        let maxWgt = Math.round(Math.max(8, this.w / 10));
+        tWgt = this._p.constrain(tWgt, 4, maxWgt);
+        this._trackWeight = tWgt;
+        this._thumbSize = Math.max(14, tWgt * 1.5);
+        this._thumbCnrs = [tWgt / 3, tWgt / 3, tWgt / 3, tWgt / 3];
+        this._majorTickSize = Math.max(10, 1.25 * tWgt);
+        this._minorTickSize = Math.max(7, 0.90 * tWgt);
+        this._inset = Math.round(this._thumbSize / 2 + 4);
         return this;
     }
     /**
@@ -2170,7 +2272,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mousemove':
             case 'touchmove':
                 if (this.isActive) {
-                    let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
+                    let t01 = this._norm01(mx - this._inset, 0, this._uiBfr.width - 2 * this._inset);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
                     if (this._t01 != t01) {
@@ -2200,32 +2302,32 @@ class CvsSlider extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let uib = this._uiBfr;
+        let [tLen, tWgt, tbSize] = [uib.width - 2 * this._inset, this._trackWeight, this._thumbSize];
+        let [majT, minT] = [this._majorTickSize, this._minorTickSize];
         const OPAQUE = cs.C(3, this._alpha);
         const TICKS = cs.G(7);
         const UNUSED_TRACK = cs.G(3);
         const USED_TRACK = cs.G(1);
         const HIGHLIGHT = cs.C(9);
         const THUMB = cs.C(6);
-        let uib = this._uiBfr;
-        let tw = uib.width - 20, tH = 8, tbSize = 12;
-        let ty = Math.round(uib.height / 2);
-        let majT = 10, minT = 7;
         uib.push();
         uib.clear();
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...this._c);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         // Now translate to track left edge - track centre
-        uib.translate(10, ty);
+        uib.translate(this._inset, Math.round(uib.height / 2));
         // Now draw ticks
         uib.stroke(...TICKS);
         uib.strokeWeight(1);
         let dT, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
-            dT = tw / n;
+            dT = tLen / n;
             for (let i = 0; i <= n; i++) { // minor ticks
                 let tickX = i * dT;
                 uib.line(tickX, -minT, tickX, minT);
@@ -2233,7 +2335,7 @@ class CvsSlider extends CvsBufferedControl {
         }
         n = this._majorTicks;
         if (n >= 2) {
-            dT = tw / n;
+            dT = tLen / n;
             for (let i = 0; i <= n; i++) { // major ticks
                 let tickX = i * dT;
                 uib.line(tickX, -majT, tickX, majT);
@@ -2241,11 +2343,11 @@ class CvsSlider extends CvsBufferedControl {
         }
         // draw unused track
         uib.fill(...UNUSED_TRACK);
-        uib.rect(0, -tH / 2, tw, tH);
+        uib.rect(0, -tWgt / 2, tLen, tWgt);
         // draw used track
-        let tbX = tw * this._t01;
+        let tbX = tLen * this._t01;
         uib.fill(...USED_TRACK);
-        uib.rect(0, -tH / 2, tbX, tH, ...this._c);
+        uib.rect(0, -tWgt / 2, tbX, tWgt);
         // Draw thumb
         uib.fill(...THUMB);
         uib.noStroke();
@@ -2253,33 +2355,33 @@ class CvsSlider extends CvsBufferedControl {
             uib.strokeWeight(2);
             uib.stroke(...HIGHLIGHT);
         }
-        uib.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._c);
+        uib.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._thumbCnrs);
         if (!this._enabled)
             this._disable_hightlight(uib, cs, -10, -this._h / 2, this._w, this._h);
-        this._updateSliderPickBuffer(ty, tw, tH, tbX, tbSize);
+        this._updateSliderPickBuffer();
         uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }
     /** @hidden */
-    _updateSliderPickBuffer(ty, tw, tH, tbX, tbSize) {
-        tbX = Math.round(tbX);
+    _updateSliderPickBuffer() {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
+        let [tLen, tWgt, tbSize] = [pkb.width - 2 * this._inset, this._trackWeight, this._thumbSize];
+        let tbX = Math.round(tLen * this._t01);
         pkb.push();
         pkb.clear();
         pkb.noStroke();
         // Now translate to track left edge - track centre
-        pkb.translate(10, ty);
-        // pkb.rect(-10, pkb.width, -ty, pkb.height); //, ...this._c);
+        pkb.translate(this._inset, Math.round(pkb.height / 2));
         // Track
         pkb.fill(c.r, c.g, c.b + 5);
-        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        pkb.rect(0, -tWgt / 2, tLen, tWgt);
         pkb.fill(c.r, c.g, c.b + 6);
-        pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
+        pkb.rect(0, -tWgt / 2, tbX, tWgt);
         // Thumb
         pkb.fill(c.r, c.g, c.b);
-        pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
+        pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize);
         pkb.pop();
     }
     /** @hidden */
@@ -2400,7 +2502,7 @@ class CvsRanger extends CvsSlider {
             case 'mousemove':
             case 'touchmove':
                 if (this.isActive) {
-                    let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
+                    let t01 = this._norm01(mx - this._inset, 0, this._uiBfr.width - 2 * this._inset);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
                     if (this._t[this._tIdx] != t01) {
@@ -2425,33 +2527,33 @@ class CvsRanger extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let uib = this._uiBfr;
+        let [tLen, tWgt, tbSize] = [uib.width - 2 * this._inset, this._trackWeight, this._thumbSize];
+        let [majT, minT] = [this._majorTickSize, this._minorTickSize];
         const OPAQUE = cs.C(3, this._alpha);
         const TICKS = cs.G(7);
         const UNUSED_TRACK = cs.G(3);
         const USED_TRACK = cs.G(1);
         const HIGHLIGHT = cs.C(9);
         const THUMB = cs.C(6);
-        let uib = this._uiBfr;
-        let tw = uib.width - 20, tH = 8, tbSize = 12;
-        let ty = Math.round(uib.height / 2);
-        let majT = 10, minT = 7;
         uib.push();
         uib.clear();
         // Background
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...this._c);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         // Now translate to track left edge - track centre
-        uib.translate(10, ty);
+        uib.translate(this._inset, Math.round(uib.height / 2));
         // Now draw ticks
         uib.stroke(...TICKS);
         uib.strokeWeight(1);
         let dT, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
-            dT = tw / n;
+            dT = tLen / n;
             for (let i = 0; i <= n; i++) { // minor ticks
                 let tickX = i * dT;
                 uib.line(tickX, -minT, tickX, minT);
@@ -2459,7 +2561,7 @@ class CvsRanger extends CvsSlider {
         }
         n = this._majorTicks;
         if (n >= 2) {
-            dT = tw / this._majorTicks;
+            dT = tLen / this._majorTicks;
             for (let i = 0; i <= n; i++) { // major ticks
                 let tickX = i * dT;
                 uib.line(tickX, -majT, tickX, majT);
@@ -2467,12 +2569,12 @@ class CvsRanger extends CvsSlider {
         }
         // draw unused track
         uib.fill(...UNUSED_TRACK);
-        uib.rect(0, -tH / 2, tw, tH);
+        uib.rect(0, -tWgt / 2, tLen, tWgt);
         // draw used track
-        let tx0 = tw * Math.min(this._t[0], this._t[1]);
-        let tx1 = tw * Math.max(this._t[0], this._t[1]);
+        let tx0 = tLen * Math.min(this._t[0], this._t[1]);
+        let tx1 = tLen * Math.max(this._t[0], this._t[1]);
         uib.fill(...USED_TRACK);
-        uib.rect(tx0, -tH / 2, tx1 - tx0, tH, ...this._c);
+        uib.rect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
         // Draw thumbs
         for (let tnbr = 0; tnbr < 2; tnbr++) {
             uib.fill(...THUMB);
@@ -2481,36 +2583,37 @@ class CvsRanger extends CvsSlider {
                 uib.strokeWeight(2);
                 uib.stroke(...HIGHLIGHT);
             }
-            uib.rect(this._t[tnbr] * tw - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._c);
+            uib.rect(this._t[tnbr] * tLen - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._thumbCnrs);
         }
         if (!this._enabled)
             this._disable_hightlight(uib, cs, -10, -this._h / 2, this._w, this._h);
-        this._updateRangerPickBuffer(ty, tw, tH, tx0, tx1, tbSize);
+        this._updateRangerPickBuffer(tx0, tx1);
         uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }
     /** @hidden */
-    _updateRangerPickBuffer(ty, tw, tH, tx0, tx1, tbSize) {
-        tx0 = Math.round(tx0);
-        tx1 = Math.round(tx1);
+    _updateRangerPickBuffer(tx0, tx1) {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
+        let [tLen, tWgt, tbSize] = [pkb.width - 2 * this._inset, this._trackWeight, this._thumbSize];
+        tx0 = Math.round(tx0);
+        tx1 = Math.round(tx1);
         pkb.push();
         pkb.clear();
         pkb.noStroke();
         // Now translate to track left edge - track centre
-        pkb.translate(10, ty);
+        pkb.translate(this._inset, Math.round(pkb.height / 2));
         // Track
         pkb.fill(c.r, c.g, c.b + 5);
-        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        pkb.rect(0, -tWgt / 2, tLen, tWgt);
         pkb.fill(c.r, c.g, c.b + 6);
-        pkb.rect(tx0, -tH / 2, tx1 - tx0, tH, ...this._c);
+        pkb.rect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
         // Thumb
         pkb.fill(c.r, c.g, c.b);
-        pkb.rect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
+        pkb.rect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
         pkb.fill(c.r, c.g, c.b + 1);
-        pkb.rect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
+        pkb.rect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
         pkb.pop();
     }
 }
@@ -2530,6 +2633,12 @@ class CvsText extends CvsBufferedControl {
         /** @hidden */ this._tbox = { w: 0, h: 0 };
         /** @hidden */ this._gap = 2;
     }
+    /** @hidden */
+    get T_SIZE() { return this._textSize || this._gui._textSize; }
+    /** @hidden */
+    get T_FONT() { return this._textFont || this._gui._textFont; }
+    /** @hidden */
+    get T_STYLE() { return this._textStyle || this._gui._textStyle; }
     /**
      * <p>Gets or sets the current text.</p>
      * <p>Processing constants are used to define the alignment.</p>
@@ -2782,13 +2891,14 @@ class CvsLabel extends CvsTextIcon {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 60, h || 16);
     }
-    /** @hidden */ setAction(event_handler) { return this; }
+    /** @hidden */ setAction() { return this; }
     /** @hidden */
     _updateControlVisual() {
-        let ts = this._textSize || this._gui.textSize();
-        let tf = this._textFont || this._gui.textFont();
-        let ty = this._textStyle || this._gui.textStyle();
-        let cs = this._scheme ?? this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
         let p = this._p;
         let icon = this._icon, iA = this._iconAlign, tA = this._textAlign;
         let lines = this._lines, gap = this._gap;
@@ -2803,7 +2913,7 @@ class CvsLabel extends CvsTextIcon {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         if (icon) {
             let px = 0, py;
@@ -2869,10 +2979,11 @@ class CvsButton extends CvsTextIcon {
     }
     /** @hidden */
     _updateControlVisual() {
-        let ts = this._textSize || this._gui.textSize();
-        let ty = this._textStyle || this._gui.textStyle();
-        let tf = this._textFont || this._gui.textFont();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
         let iA = this._iconAlign, tA = this._textAlign;
         let icon = this._icon, lines = this._lines, gap = this._gap;
         const BACK = cs.C(3, this._alpha);
@@ -2887,7 +2998,7 @@ class CvsButton extends CvsTextIcon {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...BACK);
-            uib.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
+            uib.rect(1, 1, this._w - 1, this._h - 1, ...cnrs);
         }
         if (icon) {
             let px = 0, py;
@@ -2935,7 +3046,7 @@ class CvsButton extends CvsTextIcon {
             uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         }
         // Control disabled highlight
         if (!this._enabled)
@@ -3108,7 +3219,7 @@ class CvsTooltip extends CvsText {
  ##############################################################################
  */
 /**
- * <p>The scroller is used to scroll thorugh an object larger than the
+ * <p>The scroller is used to scroll thorough an object larger than the
  * display area.</p>
  * @hidden
  */
@@ -3131,6 +3242,7 @@ class CvsScroller extends CvsBufferedControl {
         /** @hidden */ this._minThumbWidth = 10;
         this._trackWidth = w - 2 * this._inset;
         this._opaque = false;
+        this._corners = [4, 4, 4, 4];
     }
     /**
      * Update the scroller from an external source.
@@ -3210,7 +3322,7 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
         const OPAQUE = cs.C(3);
         const BORDER = cs.G(8);
         const UNUSED_TRACK = cs.G(3);
@@ -3228,7 +3340,7 @@ class CvsScroller extends CvsBufferedControl {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, w, h, ...this._c);
+            uib.rect(0, 0, w, h, ...this._corners);
         }
         // Now translate to track left edge - track centre
         uib.translate(inset, this._uiBfr.height / 2);
@@ -3244,7 +3356,7 @@ class CvsScroller extends CvsBufferedControl {
             uib.strokeWeight(2);
             uib.stroke(...HIGHLIGHT);
         }
-        uib.rect(tx - tbW / 2, -tbH / 2, tbW, tbH, ...this._c);
+        uib.rect(tx - tbW / 2, -tbH / 2, tbW, tbH, ...this._corners);
         if (!this._enabled)
             this._disable_hightlight(uib, cs, 0, -h / 2, w - 20, h);
         this._updateScrollerPickBuffer(tx - tbW / 2, -tbH / 2, tbW, tbH);
@@ -3272,8 +3384,10 @@ class CvsScroller extends CvsBufferedControl {
     // Hide these methods from typeDoc
     /** @hidden */ tooltip(tiptext) { return this; }
     /** @hidden */ tipTextSize(gtts) { return this; }
+    /** @hidden */ corners(c) { return this; }
 }
 Object.assign(CvsScroller.prototype, NoTooltip);
+Object.assign(CvsScroller.prototype, NoCorners);
 //# sourceMappingURL=scroller.js.map
 /**
  * <p>The option group manages a group of option buttons where only one can
@@ -3430,10 +3544,11 @@ class CvsOption extends CvsText {
     }
     /** @hidden */
     _updateControlVisual() {
-        let ts = this._textSize || this._gui.textSize();
-        let ty = this._textStyle || this._gui.textStyle();
-        let tf = this._textFont || this._gui.textFont();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
         let p = this._p;
         let isize = p.constrain(Number(ts) * 0.7, 12, 16);
         let iA = this._iconAlign, tA = this._textAlign;
@@ -3453,7 +3568,7 @@ class CvsOption extends CvsText {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...BACK);
-            uib.rect(0, 0, this._w, this._h, ...this._c);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         // Start with circle
         uib.push();
@@ -3501,7 +3616,7 @@ class CvsOption extends CvsText {
             uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         }
         if (!this._enabled)
             this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
@@ -3627,10 +3742,11 @@ class CvsCheckbox extends CvsText {
     }
     /** @hidden */
     _updateControlVisual() {
-        let ts = this._textSize || this._gui.textSize();
-        let ty = this._textStyle || this._gui.textStyle();
-        let tf = this._textFont || this._gui.textFont();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
         let p = this._p;
         let isize = p.constrain(Number(ts) * 0.7, 12, 16);
         let iA = this._iconAlign, tA = this._textAlign;
@@ -3649,7 +3765,7 @@ class CvsCheckbox extends CvsText {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...BACK);
-            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         // Start with box and tick
         uib.push();
@@ -3697,7 +3813,7 @@ class CvsCheckbox extends CvsText {
             uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         }
         if (!this._enabled)
             this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
@@ -3756,9 +3872,8 @@ class CvsViewer extends CvsBufferedControl {
         /** @hidden */ this._usedX = 0;
         /** @hidden */ this._usedY = 0;
         /** @hidden */ this._scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
-        // this._value, used: this._used,
         /** @hidden */ this._frameWeight = 0;
-        this._c = [0, 0, 0, 0];
+        this._corners = [0, 0, 0, 0];
         this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
             .setAction((info) => {
             this.view(info.value * this._lw, this._wcy);
@@ -3893,15 +4008,19 @@ class CvsViewer extends CvsBufferedControl {
      * attributes.
     */
     view(wcx, wcy, wscale) {
+        // /** @hidden */
+        function different(a, b) {
+            return Math.abs(a - b) >= 0.001;
+        }
         if (Number.isFinite(wcx) && Number.isFinite(wcy)) {
-            if (this._neq(this._wcx, wcx) || this._neq(this._wcy, wcy)) {
+            if (different(this._wcx, wcx) || different(this._wcy, wcy)) {
                 this._wcx = this._p.constrain(wcx, 0, this._lw);
                 this._wcy = this._p.constrain(wcy, 0, this._lh);
                 this._scrH.update(wcx / this._lw);
                 this._scrV.update(wcy / this._lh);
                 this.invalidateBuffer();
             }
-            if (this._neq(this._wscale, wscale)) {
+            if (different(this._wscale, wscale)) {
                 this._wscale = wscale;
                 if (this._scaler)
                     this._scaler.value(wscale);
@@ -3915,9 +4034,11 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /**
-     * <p>Sets the image(s) to be displayed in this viewer</p>
+     * <p>Sets the image(s) to be displayed in this viewer. Any pre-existing
+     * layers will be deleted.</p>
+     * <p>All images will be resized to match the first (bottom) layer.</p>
      *
-     * @param img an image or array of images
+     * @param img an image or an array of images
      * @returns this control
      */
     layers(img) {
@@ -3925,7 +4046,7 @@ class CvsViewer extends CvsBufferedControl {
         // Make all layers the same size as the first one
         let lw = this._lw = this._layers[0].width;
         let lh = this._lh = this._layers[0].height;
-        for (let idx = 1; idx < this._layers[idx]; idx++) {
+        for (let idx = 1; idx < this._layers.length; idx++) {
             let l = this._layers[idx];
             if (l.width != lw || l.height != lh)
                 l.resize(lw, lh);
@@ -3934,6 +4055,73 @@ class CvsViewer extends CvsBufferedControl {
         this._wcx = this._scrH.getValue() * this._lw;
         this._wcy = this._scrV.getValue() * this._lh;
         this.invalidateBuffer();
+        return this;
+    }
+    /**
+     * <p>Appends additional image(s) to those already in this viewer. These
+     * images will appear above any pre-existing layers.</p>
+     *
+     * <p>The additional images will be resized to match the first (bottom)
+     * layer.</p>
+     *
+     * @param img an image or an array of images
+     * @returns this control
+     */
+    appendLayers(img) {
+        if (this._layers.length === 0)
+            return this.layers(img);
+        let imgs = (Array.isArray(img) ? Array.from(img) : [img]);
+        let [lw, lh] = [this._lw, this._lh];
+        imgs.forEach(i => {
+            if (i.width !== lw || i.height !== lh)
+                i.resize(lw, lh);
+            this._layers.push(i);
+        });
+        this.invalidateBuffer();
+        return this;
+    }
+    /**
+     * <p>Adds additional images the image(s) to those already displayed in
+     * this viewer. They will be inserted at the position by the first
+     * parameter.</p>
+     *
+     * <p>All additional images will be resized to match the first (bottom)
+     * layer.</p>
+     *
+     * @param img an image or an array of images
+     * @returns this control
+     */
+    addLayers(idx, img) {
+        idx = Number.isFinite(idx) && idx >= 0 && idx < this._layers.length
+            ? idx : this._layers.length;
+        if (this._layers.length === 0)
+            return this.layers(img);
+        if (idx === this._layers.length)
+            return this.appendLayers(img);
+        let imgs = (Array.isArray(img) ? Array.from(img) : [img]);
+        let more = [];
+        let [lw, lh] = [this._lw, this._lh];
+        imgs.forEach(i => {
+            if (i.width !== lw || i.height !== lh)
+                i.resize(lw, lh);
+            more.push(i);
+        });
+        this._layers.splice(idx, 0, ...more);
+        this.invalidateBuffer();
+        return this;
+    }
+    /**
+     * Deletes 1 or more layers from this viewer.
+     *
+     * @param idx the starting layer to delete
+     * @param nbr the number of layers to delete
+     * @returns this control
+     */
+    deleteLayers(idx, nbr) {
+        if (Number.isFinite(idx) && Number.isFinite(nbr)) {
+            if (idx >= 0 && idx < this._layers.length)
+                this._layers.splice(idx, nbr);
+        }
         return this;
     }
     /**
@@ -4046,7 +4234,7 @@ class CvsViewer extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
         let p = this._p;
         let [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
         let [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
@@ -4143,16 +4331,23 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ orient(dir) { return this; }
     /** @hidden */ tooltip(tiptext) { return this; }
     /** @hidden */ tipTextSize(tsize) { return this; }
+    /** @hidden */ corners(c) { return this; }
 }
 Object.assign(CvsViewer.prototype, NoOrient);
 Object.assign(CvsViewer.prototype, NoTooltip);
+Object.assign(CvsViewer.prototype, NoCorners);
 //# sourceMappingURL=viewer.js.map
 /**
  * This class supports a single line text entry field.
  *
- * The left/right arrow keys move the text insertion point within the
+ * The left/right arrow keys move the text-insertion-point within the
  * text. Used in combination with the shift key it enables part or all
- * of the text to be selected.
+ * of the text to be selected. The entire text can be selected with the
+ * Ctrl+A or Cmd+A keys.
+ *
+ * Selected text can be copied with the Ctrl+C or Cmd+C keys and pasted at
+ * the current text-insertion-point with the Ctrl+V or Cmd+V keys. The
+ * Ctrl+X or Cmd+X keys will cut (and copy) the selected text.
  *
  * If no text is selected then the arrows keys can move off the current
  * control to another. This only works if each textfield has a unique
@@ -4181,14 +4376,14 @@ class CvsTextField extends CvsText {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
         /** @hidden */ this._nextActive = null;
+        /** @hidden */ this._linkIndex = undefined;
         /** @hidden */ this._linkOffset = 0;
         /** @hidden */ this._prevCsrIdx = 0;
         /** @hidden */ this._currCsrIdx = 0;
+        /** @hidden */ this._line = '';
         /** @hidden */ this._textInvalid = false;
         /** @hidden */ this._cursorOn = false;
-        /** @hidden */ this._line = '';
         this.textAlign(this._p.LEFT);
-        this._c = [0, 0, 0, 0];
     }
     /**
      * Set a unique index number for this text field.
@@ -4209,6 +4404,17 @@ class CvsTextField extends CvsText {
         return this;
     }
     /**
+     * Removes the link index from this textfield. After this it will not be possible
+     * to move focus to this textfield using the keyboard arrows.
+     * @returns this control
+     */
+    noIndex() {
+        if (Number.isFinite(this._linkIndex))
+            this._gui._links?.delete(this._linkIndex);
+        this._linkIndex = undefined;
+        return this;
+    }
+    /**
      * Gets or sets the current text.
      * Any EOL characters are stripped out of the string. If necessary the
      * string length will be reduced until it will fit inside the textfield.
@@ -4224,8 +4430,7 @@ class CvsTextField extends CvsText {
             return this._line;
         // setter
         this._textInvalid = false;
-        // this._lines = [t.toString().replaceAll('\n', ' ')];
-        this._line = t.toString().replaceAll('\n', ' ');
+        this._line = this._delEOL(t);
         this._validate();
         this.invalidateBuffer();
         return this;
@@ -4253,17 +4458,6 @@ class CvsTextField extends CvsText {
     textAlign(align) { return this; }
     /** @hidden */
     noText() { return this; }
-    /**
-     * Removes the link index from this textfield. After this it will not be possible
-     * to move focus to this textfield using the keyboard arrows.
-     * @returns this control
-     */
-    noIndex() {
-        if (Number.isFinite(this._linkIndex) && !this._gui._links)
-            this._gui._links.delete(this._linkIndex);
-        this._linkIndex = undefined;
-        return this;
-    }
     /**
      * True if the text has passed validation. If there is no validation
      * function this is always true.
@@ -4383,13 +4577,6 @@ class CvsTextField extends CvsText {
             this.invalidateBuffer();
         }
     }
-    // /**
-    //  * We are only interested in the first line of text
-    //  * @hidden
-    //  */
-    // _getLine(): string {
-    //     return (this._lines.length > 0 ? this._lines[0].toString() : '');
-    // }
     /**
      * Calculates the pixel length for a given character position.
      * @hidden
@@ -4420,41 +4607,44 @@ class CvsTextField extends CvsText {
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
         let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= this._line.length);
         if (e.type == 'keydown') {
-            if (e.key.length == 1) {
-                // Ignore modifeier keys e.g. "Shift" only inetrsest in single visible character keys.
-                // can check boolean properties - e.shiftKey, e.metaKey, e.ctrlKey
+            if (e.key.length == 1) { // single character key
+                // If the control or meta key has been pressed then perform 
+                // appropraite selected text action'
                 if (e.ctrlKey || e.metaKey) {
                     switch (e.key) {
-                        case 'a':
+                        case 'a': // select all
                             this._prevCsrIdx = 0;
                             this._currCsrIdx = this._line.length;
                             break;
-                        case 'c':
-                            if (hasSelection) {
-                                CvsTextField.CLIP = this._line.substring(this._prevCsrIdx, this._currCsrIdx);
-                            }
+                        case 'c': // copy selected text
+                            if (hasSelection)
+                                this._gui._clip = this._line.substring(this._prevCsrIdx, this._currCsrIdx);
                             break;
-                        case 'v':
+                        case 'v': //paste copied text
                             if (hasSelection)
                                 this._line = this._delSeleted(this._line);
-                            if (CvsTextField.CLIP.length > 0)
-                                this._line = this._insChar(CvsTextField.CLIP, this._line, this._currCsrIdx);
-                            this._currCsrIdx += CvsTextField.CLIP.length;
+                            if (this._gui._clip.length > 0)
+                                this._line = this._insChar(this._gui._clip, this._line, this._currCsrIdx);
+                            this._currCsrIdx += this._gui._clip.length;
                             this._prevCsrIdx = this._currCsrIdx;
                             break;
+                        case 'x': // delete selected text
+                            if (hasSelection) {
+                                this._gui._clip = this._line.substring(this._prevCsrIdx, this._currCsrIdx);
+                                this._line = this._delSeleted(this._line);
+                                this._prevCsrIdx = this._currCsrIdx = Math.min(this._currCsrIdx, this._prevCsrIdx);
+                            }
                     }
                 }
                 else {
                     if (hasSelection)
                         this._line = this._delSeleted(this._line);
-                    // line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
                     this._line = this._insChar(e.key, this._line, this._currCsrIdx);
                     this._currCsrIdx++;
                     this._prevCsrIdx++;
                     this.invalidateBuffer();
                 }
             }
-            // this._lines[0] = line;
             switch (e.key) {
                 case 'ArrowLeft':
                     if (tabLeft) {
@@ -4492,7 +4682,7 @@ class CvsTextField extends CvsText {
                     break;
                 case 'ArrowUp':
                     if (!hasSelection) {
-                        if (this._linkOffset !== 0) {
+                        if (this._linkOffset) {
                             this._deactivate();
                             this._activateNext(-this._linkOffset);
                         }
@@ -4501,7 +4691,7 @@ class CvsTextField extends CvsText {
                     break;
                 case 'ArrowDown':
                     if (!hasSelection) {
-                        if (this._linkOffset !== 0) {
+                        if (this._linkOffset) {
                             this._deactivate();
                             this._activateNext(this._linkOffset);
                         }
@@ -4519,30 +4709,24 @@ class CvsTextField extends CvsText {
                     else { // Delete character to left
                         if (this._currCsrIdx > 0) {
                             this._line = this._delChar(this._line, this._currCsrIdx - 1);
-                            // line = line.substring(0, this._currCsrIdx - 1) + line.substring(this._currCsrIdx);
                             this._currCsrIdx--;
                             this._prevCsrIdx = this._currCsrIdx;
                         }
                     }
-                    // this._lines[0] = line;
                     break;
                 case 'Delete':
                     if (this._prevCsrIdx != this._currCsrIdx) {
                         this._line = this._delSeleted(this._line);
                     }
                     else { // Delete character to right
-                        if (this._currCsrIdx < this._line.length) {
+                        if (this._currCsrIdx < this._line.length)
                             this._line = this._delChar(this._line, this._currCsrIdx);
-                            // line = line.substring(0, this._currCsrIdx) + line.substring(this._currCsrIdx + 1);
-                        }
                     }
-                    // this._lines[0] = line;
                     break;
                 default:
             }
             this.invalidateBuffer();
         } // End of key down
-        // Save any changes
         return this._nextActive;
     }
     /** @hidden */
@@ -4575,14 +4759,15 @@ class CvsTextField extends CvsText {
             else
                 return MEASURE_TEXT(line.substring(0, idx), uib, tf, ty, ts).fw;
         }
-        let ts = Number(this._textSize || this._gui.textSize());
-        let tf = this._textFont || this._gui.textFont();
-        let ty = this._textStyle || this._gui.textStyle();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
         let line = this._line;
         let tiv = this._textInvalid;
-        let sx = 4 + Math.max(this._c[0], this._c[3]);
-        let ex = this._w - (4 + Math.max(this._c[1], this._c[2]));
+        let sx = 4 + Math.max(cnrs[0], cnrs[3]);
+        let ex = this._w - (4 + Math.max(cnrs[1], cnrs[2]));
         const CURSOR = cs.G(9);
         const HIGHLIGHT = cs.C(9);
         const SELECT = cs.C(3);
@@ -4604,7 +4789,7 @@ class CvsTextField extends CvsText {
             uib.fill(...cs.G(0));
         uib.stroke(...FORE);
         uib.strokeWeight(2);
-        uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
+        uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         // Draw text and cursor
         uib.push();
         uib.beginClip();
@@ -4624,7 +4809,7 @@ class CvsTextField extends CvsText {
                 let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
                 uib.noStroke();
                 uib.fill(...SELECT);
-                uib.rect(cx0, 1.5, cx1, this._h - 3, ...this._c);
+                uib.rect(cx0, 1.5, cx1, this._h - 3, ...cnrs);
             }
         }
         uib.textSize(ts);
@@ -4644,7 +4829,7 @@ class CvsTextField extends CvsText {
             uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2.5);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         }
         // Control disabled highlight
         if (!this._enabled)
@@ -4655,7 +4840,6 @@ class CvsTextField extends CvsText {
         this._bufferInvalid = false;
     }
 }
-/** @hidden */ CvsTextField.CLIP = '';
 //# sourceMappingURL=textfield.js.map
 /**
  * <p>This class simulates a multi-mode joystick. Each of the three possible
@@ -4685,7 +4869,7 @@ class CvsTextField extends CvsText {
  *    4 --- <b>Z</b> --- 0       <b>Z</b> is the dead zone.
  *        / | \
  *       /  |  \          If control is in mode 'X0' or the joystick
- *      3   2   1         position is in the dead zone the the value is -1
+ *      3   2   1         position is in the dead zone then the value is -1
  * </pre>
  * <p><code>'X0'</code> : always -1<br>
  * <code>'X4'</code> : 0, 2, 4 or 6<br>
@@ -4858,7 +5042,8 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
         const OPAQUE = cs.C(3, this._alpha);
         const DIAL_FACE = cs.C(1);
@@ -4876,7 +5061,7 @@ class CvsJoystick extends CvsBufferedControl {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         uib.translate(uib.width / 2, uib.height / 2);
         // dial face background
@@ -4886,7 +5071,7 @@ class CvsJoystick extends CvsBufferedControl {
         // dial face highlight
         let s = 0, e = 0.26 * this._size, da = 0;
         uib.fill(...DIAL_TINT);
-        uib.noStroke(); //b.stroke(...DIAL_TINT); b.strokeWeight(2);
+        uib.noStroke();
         uib.ellipse(0, 0, e * 2, e * 2);
         uib.ellipse(0, 0, e * 1.25, e * 1.25);
         // Dial face markers
@@ -4894,20 +5079,20 @@ class CvsJoystick extends CvsBufferedControl {
         switch (this._mode) {
             case 'X0':
                 s = this._pr1;
-                e = 0.33 * this._size;
                 da = Math.PI / 8;
+                let r = [0.6, 0.22, 0.35, 0.22];
                 uib.push();
                 uib.strokeWeight(0.75);
-                e = 0.3 * this._size;
                 for (let i = 0; i < 16; i++) {
-                    uib.line(s, 0, e, 0);
+                    e = s * r[i % 4];
+                    uib.line(s, 0, s - e, 0);
                     uib.rotate(da);
                 }
                 uib.pop();
                 break;
             case 'X8':
                 s = this._pr0;
-                e = 0.33 * this._size;
+                e = 0.625 * this._pr1;
                 da = Math.PI / 4;
                 uib.push();
                 uib.strokeWeight(1);
@@ -4918,10 +5103,10 @@ class CvsJoystick extends CvsBufferedControl {
                 uib.pop();
             case 'X4':
                 s = this._pr0;
-                e = this._pr1;
+                e = 0.85 * this._pr1;
                 da = Math.PI / 2;
                 uib.push();
-                uib.strokeWeight(1.5);
+                uib.strokeWeight(1.25);
                 for (let i = 0; i < 4; i++) {
                     uib.line(s, 0, e, 0);
                     uib.rotate(da);
@@ -5001,11 +5186,15 @@ class CvsKnob extends CvsSlider {
     /**
      * <p>Sets the interaction mode for rotating the knob.</p>
      * <ul>
-     * <li><code>'x'</code> : dragging left and right turns the knob anticlockwise and clockwise respectively.</li>
-     * <li><code>'y'</code> : dragging down and up turns the knob anticlockwise and clockwise respectively.</li>
-     * <li><code>'a'</code> : dragging in a circular motion round the knob center turns the knob to face the drag point.</li>
+     * <li><code>'x'</code> : dragging left and right turns the knob
+     * anticlockwise and clockwise respectively.</li>
+     * <li><code>'y'</code> : dragging down and up turns the knob
+     * anticlockwise and clockwise respectively.</li>
+     * <li><code>'a'</code> : dragging in a circular motion round the
+     * knob center turns the knob to face the drag point.</li>
      * </ul>
-     * <p>Rotation is constrained within the maximum turn angle for this knob.</p>
+     * <p>Rotation is constrained within the maximum turn angle for this
+     * knob.</p>
      * <p>Any other parameter value is ignored and the mode is unchanged.</p>
      *
      * @param mode 'x', 'y' or 'a'
@@ -5030,8 +5219,8 @@ class CvsKnob extends CvsSlider {
      * rotates for a given drag distance.</p>
      * <p>The drag distance needed to rotate the knob by the maximum turn
      * angle is the reciprocal of the parameter value i.e. <code>1.0 / sens</code>.</p>
-     * <p>The default value is 0.005 which equates to a drag distance of 200 pixels
-     * and the minimum permitted value is 0.0025 (400 pixels).</p>
+     * <p>The default value is 0.005 which equates to a drag distance of 200
+     * pixels and the minimum permitted value is 0.0025 (400 pixels).</p>
      *
      * @param svty &ge;0.0025
      * @returns this control
@@ -5100,9 +5289,6 @@ class CvsKnob extends CvsSlider {
      * @hidden
      */
     _tFromXY(x, y) {
-        function fixAngle(a) {
-            return a < 0 ? a + 2 * Math.PI : a;
-        }
         let t = this._t01, under = false, over = false;
         switch (this._mode) {
             case CvsKnob.X_MODE:
@@ -5120,14 +5306,18 @@ class CvsKnob extends CvsSlider {
             case CvsKnob.A_MODE:
                 let low = Math.PI - this._turnArc / 2;
                 let high = 2 * Math.PI - low;
-                let ang = fixAngle(Math.atan2(y, x));
-                ang = fixAngle(ang - this._gapPos);
+                let ang = fixAngle2Pi(Math.atan2(y, x) - this._gapPos - this._deltaA);
                 under = ang < low;
                 over = ang > high;
                 t = this._p.map(ang, low, high, 0, 1, true);
                 break;
         }
         return { t: t, under: under, over: over };
+    }
+    _angFromT(t) {
+        let low = Math.PI - this._turnArc / 2;
+        let high = 2 * Math.PI - low;
+        return this._p.map(t, 0, 1, low, high);
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
@@ -5140,6 +5330,7 @@ class CvsKnob extends CvsSlider {
             case 'touchstart':
                 this._prevX = mx;
                 this._prevY = my;
+                this._deltaA = fixAngle2Pi(Math.atan2(my, mx) - this._gapPos - this._angFromT(this._t01));
                 this._active = true;
                 this.isOver = true;
                 this.invalidateBuffer();
@@ -5178,7 +5369,8 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
         const OPAQUE = cs.C(3, this._alpha);
         const GRIP_OFF = cs.C(7);
         const GRIP_STROKE = cs.C(8);
@@ -5194,7 +5386,7 @@ class CvsKnob extends CvsSlider {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         let arc = this._turnArc, gap = 2 * Math.PI - arc, lowA = gap / 2;
         let rOut = this._kRad, rIn = this._gRad;
@@ -5286,6 +5478,7 @@ class CvsKnob extends CvsSlider {
         pkb.clear();
         pkb.translate(pkb.width / 2, pkb.height / 2);
         pkb.noStroke();
+        // Background
         pkb.fill(c.r, c.g, c.b);
         pkb.ellipse(0, 0, dOut, dOut);
         pkb.pop();
@@ -5330,7 +5523,6 @@ class CvsPanel extends CvsBufferedControl {
         /** @hidden */ this._canDragY = true;
         /** @hidden */ this._constrainX = true;
         /** @hidden */ this._constrainY = true;
-        this._c = [0, 0, 0, 0];
         this._opaque = true;
         this._z = PANEL_Z;
     }
@@ -5420,10 +5612,10 @@ class CvsPanel extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
-        const OPAQUE = cs.C(0, this._alpha);
-        const HIGHLIGHT = cs.C(3);
-        CLOG(OPAQUE);
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        const OPAQUE = cs.C(6, this._alpha);
+        const HIGHLIGHT = cs.C(9);
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
@@ -5434,7 +5626,7 @@ class CvsPanel extends CvsBufferedControl {
             uib.fill(...OPAQUE);
         if (this.isOver)
             uib.stroke(...HIGHLIGHT);
-        uib.rect(0, 0, this._w, this._h);
+        uib.rect(0, 0, this._w, this._h, ...cnrs);
         // Update pick buffer before restoring
         this._updatePanelControlPB();
         // last line in this method should be
@@ -5446,6 +5638,7 @@ class CvsPanel extends CvsBufferedControl {
      * @hidden
      */
     _updatePanelControlPB() {
+        let cnrs = this.CNRS;
         let pkb = this._pkBfr;
         pkb.clear();
         pkb.noStroke();
@@ -5453,7 +5646,7 @@ class CvsPanel extends CvsBufferedControl {
         let c = this._gui.pickColor(this);
         if (this._opaque)
             pkb.fill(c.r, c.g, c.b);
-        pkb.rect(1, 1, this._w - 1, this._h - 1);
+        pkb.rect(0, 0, this._w, this._h, ...cnrs);
     }
     /** @hidden */
     _minControlSize() {
@@ -5464,8 +5657,6 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */ leaveParent() { return this; }
     /** @hidden */ tooltip(tiptext) { return this; }
     /** @hidden */ tipTextSize(gtts) { return this; }
-    /** @hidden */ transparent() { return this; }
-    /** @hidden */ opaque() { return this; }
     /** @hidden */ orient(dir) { return this; }
 }
 Object.assign(CvsPanel.prototype, NoParent);
@@ -5715,6 +5906,7 @@ class CvsPane extends CvsBaseControl {
     /** @hidden */ opaque() { return this; }
     /** @hidden */ tooltip(tiptext) { return this; }
     /** @hidden */ tipTextSize(gtts) { return this; }
+    /** @hidden */ corners(c) { return this; }
 }
 // Deltas used in controlling opening and closing speeds
 /** @hidden */ CvsPane._dI = 50; // Interval time (20)
@@ -5726,6 +5918,7 @@ Object.assign(CvsPane.prototype, NoOrient);
 Object.assign(CvsPane.prototype, NoParent);
 Object.assign(CvsPane.prototype, FixedBackground);
 Object.assign(CvsPane.prototype, NoTooltip);
+Object.assign(CvsPane.prototype, NoCorners);
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
     constructor(gui, id, depth) {
@@ -5737,7 +5930,7 @@ class CvsPaneNorth extends CvsPane {
         tab.text(tab.id).setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [0, 0, this._cornerRadius, this._cornerRadius];
+        tab.corners(0, 0, this._cornerRadius, this._cornerRadius);
         this.addChild(tab);
         gui._panesNorth.push(this);
         this._gui.validateTabsNorth();
@@ -5777,7 +5970,7 @@ class CvsPaneSouth extends CvsPane {
         tab.text(tab.id).setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
+        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
         this.addChild(tab);
         // Add this pane control to those on East side
         this._gui._panesSouth.push(this);
@@ -5815,12 +6008,10 @@ class CvsPaneEast extends CvsPane {
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id)
-            .orient('north')
-            .setAction(this._tabAction);
+        tab.text(tab.id).orient('north').setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
+        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
         this.addChild(tab);
         // Add this pane control to those on East side
         this._gui._panesEast.push(this);
@@ -5858,12 +6049,10 @@ class CvsPaneWest extends CvsPane {
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id)
-            .orient('south')
-            .setAction(this._tabAction);
+        tab.text(tab.id).orient('south').setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
+        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
         this.addChild(tab);
         // Add this pane control to those on East side
         this._gui._panesWest.push(this);

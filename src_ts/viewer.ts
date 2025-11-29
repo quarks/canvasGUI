@@ -34,13 +34,12 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ protected _value: number;
     /** @hidden */ protected _used: number;
 
-    // this._value, used: this._used,
     /** @hidden */ protected _frameWeight: number = 0;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x, y, w, h);
-        this._c = [0, 0, 0, 0];
+        this._corners = [0, 0, 0, 0];
         this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
             .setAction((info) => {
                 this.view(info.value * this._lw, this._wcy);
@@ -55,8 +54,6 @@ class CvsViewer extends CvsBufferedControl {
         this.addChild(this._scrH);
         this.addChild(this._scrV);
     }
-
-
 
     /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
@@ -188,15 +185,19 @@ class CvsViewer extends CvsBufferedControl {
      * attributes.
     */
     view(wcx: number, wcy: number, wscale?: number) {
+        // /** @hidden */
+        function different(a: number, b: number): boolean {
+            return Math.abs(a - b) >= 0.001;
+        }
         if (Number.isFinite(wcx) && Number.isFinite(wcy)) {
-            if (this._neq(this._wcx, wcx) || this._neq(this._wcy, wcy)) {
+            if (different(this._wcx, wcx) || different(this._wcy, wcy)) {
                 this._wcx = this._p.constrain(wcx, 0, this._lw);
                 this._wcy = this._p.constrain(wcy, 0, this._lh);
                 this._scrH.update(wcx / this._lw);
                 this._scrV.update(wcy / this._lh);
                 this.invalidateBuffer();
             }
-            if (this._neq(this._wscale, wscale)) {
+            if (different(this._wscale, wscale)) {
                 this._wscale = wscale;
                 if (this._scaler) this._scaler.value(wscale);
                 this.invalidateBuffer();
@@ -210,17 +211,19 @@ class CvsViewer extends CvsBufferedControl {
     }
 
     /**
-     * <p>Sets the image(s) to be displayed in this viewer</p>
+     * <p>Sets the image(s) to be displayed in this viewer. Any pre-existing
+     * layers will be deleted.</p>
+     * <p>All images will be resized to match the first (bottom) layer.</p>
      * 
-     * @param img an image or array of images
+     * @param img an image or an array of images
      * @returns this control
      */
-    layers(img: p5.Graphics | Array<p5.Graphics>) {
+    layers(img: p5.Image | Array<p5.Imag>): CvsViewer {
         this._layers = (Array.isArray(img) ? Array.from(img) : [img]);
         // Make all layers the same size as the first one
         let lw = this._lw = this._layers[0].width;
         let lh = this._lh = this._layers[0].height;
-        for (let idx = 1; idx < this._layers[idx]; idx++) {
+        for (let idx = 1; idx < this._layers.length; idx++) {
             let l = this._layers[idx];
             if (l.width != lw || l.height != lh)
                 l.resize(lw, lh);
@@ -229,6 +232,76 @@ class CvsViewer extends CvsBufferedControl {
         this._wcx = this._scrH.getValue() * this._lw;
         this._wcy = this._scrV.getValue() * this._lh;
         this.invalidateBuffer();
+        return this;
+    }
+
+    /**
+     * <p>Appends additional image(s) to those already in this viewer. These 
+     * images will appear above any pre-existing layers.</p>
+     * 
+     * <p>The additional images will be resized to match the first (bottom) 
+     * layer.</p>
+     * 
+     * @param img an image or an array of images
+     * @returns this control
+     */
+    appendLayers(img: p5.Image | Array<p5.Image>): CvsViewer {
+        if (this._layers.length === 0)
+            return this.layers(img);
+        let imgs = (Array.isArray(img) ? Array.from(img) : [img]);
+        let [lw, lh] = [this._lw, this._lh];
+        imgs.forEach(i => {
+            if (i.width !== lw || i.height !== lh)
+                i.resize(lw, lh);
+            this._layers.push(i);
+        });
+        this.invalidateBuffer();
+        return this;
+    }
+
+    /**
+     * <p>Adds additional images the image(s) to those already displayed in 
+     * this viewer. They will be inserted at the position by the first 
+     * parameter.</p>
+     * 
+     * <p>All additional images will be resized to match the first (bottom) 
+     * layer.</p>
+     * 
+     * @param img an image or an array of images
+     * @returns this control
+     */
+    addLayers(idx: number, img: p5.Image | Array<p5.Image>): CvsViewer {
+        idx = Number.isFinite(idx) && idx >= 0 && idx < this._layers.length
+            ? idx : this._layers.length;
+        if (this._layers.length === 0)
+            return this.layers(img);
+        if (idx === this._layers.length)
+            return this.appendLayers(img);
+        let imgs = (Array.isArray(img) ? Array.from(img) : [img]);
+        let more = [];
+        let [lw, lh] = [this._lw, this._lh];
+        imgs.forEach(i => {
+            if (i.width !== lw || i.height !== lh)
+                i.resize(lw, lh);
+            more.push(i);
+        });
+        this._layers.splice(idx, 0, ...more);
+        this.invalidateBuffer();
+        return this;
+    }
+
+    /**
+     * Deletes 1 or more layers from this viewer.
+     * 
+     * @param idx the starting layer to delete
+     * @param nbr the number of layers to delete
+     * @returns this control
+     */
+    deleteLayers(idx: number, nbr: number): CvsViewer {
+        if (Number.isFinite(idx) && Number.isFinite(nbr)) {
+            if (idx >= 0 && idx < this._layers.length)
+                this._layers.splice(idx, nbr);
+        }
         return this;
     }
 
@@ -340,7 +413,7 @@ class CvsViewer extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual() { // CvsViewer
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
         let p = this._p;
         let [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
         let [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
@@ -445,7 +518,9 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ orient(dir) { return this; }
     /** @hidden */ tooltip(tiptext) { return this }
     /** @hidden */ tipTextSize(tsize) { return this }
+    /** @hidden */ corners(c) { return this }
 }
 
 Object.assign(CvsViewer.prototype, NoOrient);
 Object.assign(CvsViewer.prototype, NoTooltip);
+Object.assign(CvsViewer.prototype, NoCorners);

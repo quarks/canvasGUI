@@ -23,6 +23,8 @@ class CvsSlider extends CvsBufferedControl {
         this._minorTicks = 0;
         this._s2ticks = false;
         this._opaque = false;
+        // Set track weight (thickness) and calculate related fields
+        this.weight(8);
     }
     /**
      * Set the lower and upper limits for the slider
@@ -63,6 +65,28 @@ class CvsSlider extends CvsBufferedControl {
         this._majorTicks = major;
         this._minorTicks = minor;
         this._s2ticks = Boolean(stick2ticks);
+        return this;
+    }
+    /**
+     * <p>Gets or sets the thickness of the track.</p>
+     * <p>If there is no parameter the currect track thickness is returned.
+     * Any other value is constrained to the range &ge;&nbsp;4 and
+     * &le;&nbsp;0.1 * control width.</p>
+     * @param tWgt the required track thickness)
+     * @returns the curent track thickness or this control
+     */
+    weight(tWgt) {
+        if (!tWgt) // getter
+            return this._trackWeight;
+        // Setter
+        let maxWgt = Math.round(Math.max(8, this.w / 10));
+        tWgt = this._p.constrain(tWgt, 4, maxWgt);
+        this._trackWeight = tWgt;
+        this._thumbSize = Math.max(14, tWgt * 1.5);
+        this._thumbCnrs = [tWgt / 3, tWgt / 3, tWgt / 3, tWgt / 3];
+        this._majorTickSize = Math.max(10, 1.25 * tWgt);
+        this._minorTickSize = Math.max(7, 0.90 * tWgt);
+        this._inset = Math.round(this._thumbSize / 2 + 4);
         return this;
     }
     /**
@@ -135,7 +159,7 @@ class CvsSlider extends CvsBufferedControl {
             case 'mousemove':
             case 'touchmove':
                 if (this.isActive) {
-                    let t01 = this._norm01(mx - 10, 0, this._uiBfr.width - 20);
+                    let t01 = this._norm01(mx - this._inset, 0, this._uiBfr.width - 2 * this._inset);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
                     if (this._t01 != t01) {
@@ -165,32 +189,32 @@ class CvsSlider extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let uib = this._uiBfr;
+        let [tLen, tWgt, tbSize] = [uib.width - 2 * this._inset, this._trackWeight, this._thumbSize];
+        let [majT, minT] = [this._majorTickSize, this._minorTickSize];
         const OPAQUE = cs.C(3, this._alpha);
         const TICKS = cs.G(7);
         const UNUSED_TRACK = cs.G(3);
         const USED_TRACK = cs.G(1);
         const HIGHLIGHT = cs.C(9);
         const THUMB = cs.C(6);
-        let uib = this._uiBfr;
-        let tw = uib.width - 20, tH = 8, tbSize = 12;
-        let ty = Math.round(uib.height / 2);
-        let majT = 10, minT = 7;
         uib.push();
         uib.clear();
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...this._c);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         // Now translate to track left edge - track centre
-        uib.translate(10, ty);
+        uib.translate(this._inset, Math.round(uib.height / 2));
         // Now draw ticks
         uib.stroke(...TICKS);
         uib.strokeWeight(1);
         let dT, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
-            dT = tw / n;
+            dT = tLen / n;
             for (let i = 0; i <= n; i++) { // minor ticks
                 let tickX = i * dT;
                 uib.line(tickX, -minT, tickX, minT);
@@ -198,7 +222,7 @@ class CvsSlider extends CvsBufferedControl {
         }
         n = this._majorTicks;
         if (n >= 2) {
-            dT = tw / n;
+            dT = tLen / n;
             for (let i = 0; i <= n; i++) { // major ticks
                 let tickX = i * dT;
                 uib.line(tickX, -majT, tickX, majT);
@@ -206,11 +230,11 @@ class CvsSlider extends CvsBufferedControl {
         }
         // draw unused track
         uib.fill(...UNUSED_TRACK);
-        uib.rect(0, -tH / 2, tw, tH);
+        uib.rect(0, -tWgt / 2, tLen, tWgt);
         // draw used track
-        let tbX = tw * this._t01;
+        let tbX = tLen * this._t01;
         uib.fill(...USED_TRACK);
-        uib.rect(0, -tH / 2, tbX, tH, ...this._c);
+        uib.rect(0, -tWgt / 2, tbX, tWgt);
         // Draw thumb
         uib.fill(...THUMB);
         uib.noStroke();
@@ -218,33 +242,33 @@ class CvsSlider extends CvsBufferedControl {
             uib.strokeWeight(2);
             uib.stroke(...HIGHLIGHT);
         }
-        uib.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._c);
+        uib.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._thumbCnrs);
         if (!this._enabled)
             this._disable_hightlight(uib, cs, -10, -this._h / 2, this._w, this._h);
-        this._updateSliderPickBuffer(ty, tw, tH, tbX, tbSize);
+        this._updateSliderPickBuffer();
         uib.pop();
         // last line in this method should be
         this._bufferInvalid = false;
     }
     /** @hidden */
-    _updateSliderPickBuffer(ty, tw, tH, tbX, tbSize) {
-        tbX = Math.round(tbX);
+    _updateSliderPickBuffer() {
         let c = this._gui.pickColor(this);
         let pkb = this._pkBfr;
+        let [tLen, tWgt, tbSize] = [pkb.width - 2 * this._inset, this._trackWeight, this._thumbSize];
+        let tbX = Math.round(tLen * this._t01);
         pkb.push();
         pkb.clear();
         pkb.noStroke();
         // Now translate to track left edge - track centre
-        pkb.translate(10, ty);
-        // pkb.rect(-10, pkb.width, -ty, pkb.height); //, ...this._c);
+        pkb.translate(this._inset, Math.round(pkb.height / 2));
         // Track
         pkb.fill(c.r, c.g, c.b + 5);
-        pkb.rect(0, -tH / 2, tw, tH, ...this._c);
+        pkb.rect(0, -tWgt / 2, tLen, tWgt);
         pkb.fill(c.r, c.g, c.b + 6);
-        pkb.rect(0, -tH / 2, tbX, tH, ...this._c);
+        pkb.rect(0, -tWgt / 2, tbX, tWgt);
         // Thumb
         pkb.fill(c.r, c.g, c.b);
-        pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize); //, ...this._c);
+        pkb.rect(tbX - tbSize / 2, -tbSize / 2, tbSize, tbSize);
         pkb.pop();
     }
     /** @hidden */

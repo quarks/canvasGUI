@@ -29,7 +29,6 @@ class CvsPanel extends CvsBufferedControl {
         /** @hidden */ this._canDragY = true;
         /** @hidden */ this._constrainX = true;
         /** @hidden */ this._constrainY = true;
-        this._c = [0, 0, 0, 0];
         this._opaque = true;
         this._z = PANEL_Z;
     }
@@ -119,10 +118,10 @@ class CvsPanel extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
-        const OPAQUE = cs.C(0, this._alpha);
-        const HIGHLIGHT = cs.C(3);
-        CLOG(OPAQUE);
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        const OPAQUE = cs.C(6, this._alpha);
+        const HIGHLIGHT = cs.C(9);
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
@@ -133,7 +132,7 @@ class CvsPanel extends CvsBufferedControl {
             uib.fill(...OPAQUE);
         if (this.isOver)
             uib.stroke(...HIGHLIGHT);
-        uib.rect(0, 0, this._w, this._h);
+        uib.rect(0, 0, this._w, this._h, ...cnrs);
         // Update pick buffer before restoring
         this._updatePanelControlPB();
         // last line in this method should be
@@ -145,6 +144,7 @@ class CvsPanel extends CvsBufferedControl {
      * @hidden
      */
     _updatePanelControlPB() {
+        let cnrs = this.CNRS;
         let pkb = this._pkBfr;
         pkb.clear();
         pkb.noStroke();
@@ -152,7 +152,7 @@ class CvsPanel extends CvsBufferedControl {
         let c = this._gui.pickColor(this);
         if (this._opaque)
             pkb.fill(c.r, c.g, c.b);
-        pkb.rect(1, 1, this._w - 1, this._h - 1);
+        pkb.rect(0, 0, this._w, this._h, ...cnrs);
     }
     /** @hidden */
     _minControlSize() {
@@ -163,8 +163,6 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */ leaveParent() { return this; }
     /** @hidden */ tooltip(tiptext) { return this; }
     /** @hidden */ tipTextSize(gtts) { return this; }
-    /** @hidden */ transparent() { return this; }
-    /** @hidden */ opaque() { return this; }
     /** @hidden */ orient(dir) { return this; }
 }
 Object.assign(CvsPanel.prototype, NoParent);

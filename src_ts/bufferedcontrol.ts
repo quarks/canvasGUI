@@ -27,7 +27,6 @@ abstract class CvsBufferedControl extends CvsBaseControl {
     constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number) {
         super(gui, id, x, y, w, h);
         this._validateControlBuffers();
-        this._c = this._gui.corners();
     }
 
     /**
@@ -72,7 +71,7 @@ abstract class CvsBufferedControl extends CvsBaseControl {
         pkb.clear();
         let c = this._gui.pickColor(this);
         pkb.noStroke(); pkb.fill(c.r, c.g, c.b);
-        pkb.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
+        pkb.rect(1, 1, this._w - 1, this._h - 1, ...this.CNRS);
     }
 
     /**
@@ -106,7 +105,7 @@ abstract class CvsBufferedControl extends CvsBaseControl {
     protected _disable_hightlight(b, cs, x, y, w, h) {
         b.fill(cs.T(2));
         b.noStroke();
-        b.rect(x, y, w, h, ...this._c);
+        b.rect(x, y, w, h, ...this.CNRS);
     }
 
     /**

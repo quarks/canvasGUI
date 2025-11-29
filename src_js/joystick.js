@@ -26,7 +26,7 @@
  *    4 --- <b>Z</b> --- 0       <b>Z</b> is the dead zone.
  *        / | \
  *       /  |  \          If control is in mode 'X0' or the joystick
- *      3   2   1         position is in the dead zone the the value is -1
+ *      3   2   1         position is in the dead zone then the value is -1
  * </pre>
  * <p><code>'X0'</code> : always -1<br>
  * <code>'X4'</code> : 0, 2, 4 or 6<br>
@@ -199,7 +199,8 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
         const OPAQUE = cs.C(3, this._alpha);
         const DIAL_FACE = cs.C(1);
@@ -217,7 +218,7 @@ class CvsJoystick extends CvsBufferedControl {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         uib.translate(uib.width / 2, uib.height / 2);
         // dial face background
@@ -227,7 +228,7 @@ class CvsJoystick extends CvsBufferedControl {
         // dial face highlight
         let s = 0, e = 0.26 * this._size, da = 0;
         uib.fill(...DIAL_TINT);
-        uib.noStroke(); //b.stroke(...DIAL_TINT); b.strokeWeight(2);
+        uib.noStroke();
         uib.ellipse(0, 0, e * 2, e * 2);
         uib.ellipse(0, 0, e * 1.25, e * 1.25);
         // Dial face markers
@@ -235,20 +236,20 @@ class CvsJoystick extends CvsBufferedControl {
         switch (this._mode) {
             case 'X0':
                 s = this._pr1;
-                e = 0.33 * this._size;
                 da = Math.PI / 8;
+                let r = [0.6, 0.22, 0.35, 0.22];
                 uib.push();
                 uib.strokeWeight(0.75);
-                e = 0.3 * this._size;
                 for (let i = 0; i < 16; i++) {
-                    uib.line(s, 0, e, 0);
+                    e = s * r[i % 4];
+                    uib.line(s, 0, s - e, 0);
                     uib.rotate(da);
                 }
                 uib.pop();
                 break;
             case 'X8':
                 s = this._pr0;
-                e = 0.33 * this._size;
+                e = 0.625 * this._pr1;
                 da = Math.PI / 4;
                 uib.push();
                 uib.strokeWeight(1);
@@ -259,10 +260,10 @@ class CvsJoystick extends CvsBufferedControl {
                 uib.pop();
             case 'X4':
                 s = this._pr0;
-                e = this._pr1;
+                e = 0.85 * this._pr1;
                 da = Math.PI / 2;
                 uib.push();
-                uib.strokeWeight(1.5);
+                uib.strokeWeight(1.25);
                 for (let i = 0; i < 4; i++) {
                     uib.line(s, 0, e, 0);
                     uib.rotate(da);

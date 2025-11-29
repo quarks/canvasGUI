@@ -46,7 +46,7 @@ abstract class CvsBaseControl {
     /** @hidden */ protected _w: number = 0;
     /** @hidden */ protected _h: number = 0;
     /** @hidden */ protected _orientation: OrientNorth | OrientSouth | OrientEast | OrientWest;
-    /** @hidden */ protected _c: Array<number>;
+    /** @hidden */ protected _corners: Array<number>;
     /** @hidden */ protected _dragging: boolean;
     /** @hidden */ protected _isOver: boolean = false;
     /** @hidden */ protected _active: boolean = false;
@@ -133,8 +133,14 @@ abstract class CvsBaseControl {
     get isEnabled() { return this._enabled; }
 
     /** 
+     * <p>This is true if the control background is opaque else false.</p>
+     * <p>Use <code>opaque()</code> and <code>transparent()</code> display / hide the background.</p>
+     */
+    get isOpaque() { return this._opaque; }
+
+    /** 
      * <p>This is true if the control is visible else false.</p>
-     * <p>Use <code>hide()</code> and <code>show()</code> to control visibility.</p>
+     * <p>Use <code>hide()</code> and <code>show()</code> to set visibility.</p>
      */
     get isVisible() { return this._visible; }
 
@@ -155,6 +161,12 @@ abstract class CvsBaseControl {
             this.invalidateBuffer();
         }
     }
+
+    /** @hidden */
+    get CNRS(): Array<number> { return this._corners || this._gui._corners; }
+    /** @hidden */
+    get SCHEME(): ColorScheme { return this._scheme || this._gui._scheme; }
+
 
     /**
      * Move this control to an absolute position.
@@ -222,16 +234,34 @@ abstract class CvsBaseControl {
     }
 
     /**
-     * <p>Set or get the corner radii used for this control.</p>
-     * @param c an array of 4 corner radii
-     * @returns an array with the 4 corner radii
+     * <p>Get or set the corner radii used for this control.</p>
+     * <p>To set the radii the parameters must be one of the following</p>
+     * <ul>
+     * <li>an array of 4 numbers.</li>
+     * <li>a comma seperated list of 4 numbers.</li>
+     * <li>a single number to be used for all 4 radii.</li>
+     * </ul>
+     * <p>If no parameter is passed or does not match one of the above then an
+     * array of the currently used radii values.</p>
+     * 
+     * @param c valid radii combination
+     * @returns an array of the currently used radii values
      */
-    corners(c: Array<number>): Array<number> | CvsBaseControl {
-        if (Array.isArray(c) && c.length == 4) {
-            this._c = [...c];
-            return this;
+    corners(...c: any): Array<number> | CvsBaseControl {
+        switch (c.length) {
+            case 0: // Getter
+                return [...this.CNRS];
+            case 4:
+                this._corners = [...c];
+                break;
+            case 1:
+                if (Array.isArray(c[0]) && c[0].length == 4)
+                    this._corners = [...c[0]];
+                else
+                    this._corners = [c[0], c[0], c[0], c[0]];
+                break;
         }
-        return [...this._c];
+        return this;
     }
 
     /**
@@ -470,6 +500,7 @@ abstract class CvsBaseControl {
     opaque(alpha: number = 255): CvsBaseControl {
         this._alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
         this._opaque = true;
+        this.invalidateBuffer();
         return this;
     }
 
@@ -479,6 +510,7 @@ abstract class CvsBaseControl {
      */
     transparent(): CvsBaseControl {
         this._opaque = false;
+        this.invalidateBuffer();
         return this;
     }
 
@@ -506,74 +538,4 @@ abstract class CvsBaseControl {
      */
     _draw(uib = null, pkb = null) { }
 
-    /** @hidden */
-    _eq(a: number, b: number): boolean {
-        return Math.abs(a - b) < 0.001;
-    }
-
-    /** @hidden */
-    _neq(a: number, b: number): boolean {
-        return Math.abs(a - b) >= 0.001;
-    }
-}
-
-// Mixins
-/** @hidden */
-const NoOrient = {
-    /** This control does not support changing orientation */
-    orient(dir: string): CvsBaseControl {
-        CWARN(`Orientation cannot be changed for controls of type '${this.type}'.`);
-        return this;
-        // // Hide these methods from typeDoc
-        // /** @hidden */ orient(dir) { return this }
-    }
-}
-
-/** @hidden */
-const NoParent = {
-    /** This control does not support changing orientation */
-    parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-        return this;
-    },
-    leaveParent(): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' cannot have a parent.`);
-        return this;
-    }
-    // // Hide these methods from typeDoc
-    // /** @hidden */ parent(parent, rx, ry){ return this }
-    // /** @hidden */ leaveParent(){ return this }
-}
-
-/** @hidden */
-const NoTooltip = {
-    /** @hidden */
-    tooltip(tiptext: string): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    },
-    /** @hidden */
-    tipTextSize(gtts: number): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' cannot have tooltips.`);
-        return this;
-    }
-    // // Hide these methods from typeDoc
-    // /** @hidden */ tooltip(tiptext){ return this }
-    // /** @hidden */ tipTextSize(gtts) { return this }
-}
-
-/** @hidden */
-const FixedBackground = {
-    /** @hidden */
-    transparent(): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' do not support the 'transparent' method.`);
-        return this;
-    },
-    opaque(alpha = 255): CvsBaseControl {
-        CWARN(`Controls of type '${this.type}' do not support the 'opaque' method.`);
-        return this;
-    }
-    // // Hide these methods from typeDoc
-    // /** @hidden */ transparent(){ return this }
-    // /** @hidden */ opaque() { return this }
 }

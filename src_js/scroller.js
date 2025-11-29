@@ -7,7 +7,7 @@
  ##############################################################################
  */
 /**
- * <p>The scroller is used to scroll thorugh an object larger than the
+ * <p>The scroller is used to scroll thorough an object larger than the
  * display area.</p>
  * @hidden
  */
@@ -30,6 +30,7 @@ class CvsScroller extends CvsBufferedControl {
         /** @hidden */ this._minThumbWidth = 10;
         this._trackWidth = w - 2 * this._inset;
         this._opaque = false;
+        this._corners = [4, 4, 4, 4];
     }
     /**
      * Update the scroller from an external source.
@@ -109,7 +110,7 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
         const OPAQUE = cs.C(3);
         const BORDER = cs.G(8);
         const UNUSED_TRACK = cs.G(3);
@@ -127,7 +128,7 @@ class CvsScroller extends CvsBufferedControl {
         if (this._opaque) {
             uib.noStroke();
             uib.fill(...OPAQUE);
-            uib.rect(0, 0, w, h, ...this._c);
+            uib.rect(0, 0, w, h, ...this._corners);
         }
         // Now translate to track left edge - track centre
         uib.translate(inset, this._uiBfr.height / 2);
@@ -143,7 +144,7 @@ class CvsScroller extends CvsBufferedControl {
             uib.strokeWeight(2);
             uib.stroke(...HIGHLIGHT);
         }
-        uib.rect(tx - tbW / 2, -tbH / 2, tbW, tbH, ...this._c);
+        uib.rect(tx - tbW / 2, -tbH / 2, tbW, tbH, ...this._corners);
         if (!this._enabled)
             this._disable_hightlight(uib, cs, 0, -h / 2, w - 20, h);
         this._updateScrollerPickBuffer(tx - tbW / 2, -tbH / 2, tbW, tbH);
@@ -171,6 +172,8 @@ class CvsScroller extends CvsBufferedControl {
     // Hide these methods from typeDoc
     /** @hidden */ tooltip(tiptext) { return this; }
     /** @hidden */ tipTextSize(gtts) { return this; }
+    /** @hidden */ corners(c) { return this; }
 }
 Object.assign(CvsScroller.prototype, NoTooltip);
+Object.assign(CvsScroller.prototype, NoCorners);
 //# sourceMappingURL=scroller.js.map

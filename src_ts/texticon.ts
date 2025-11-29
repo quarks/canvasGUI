@@ -18,6 +18,13 @@ abstract class CvsText extends CvsBufferedControl {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
     }
 
+    /** @hidden */
+    get T_SIZE(): number { return this._textSize || this._gui._textSize }
+    /** @hidden */
+    get T_FONT(): string { return this._textFont || this._gui._textFont }
+    /** @hidden */
+    get T_STYLE(): string { return this._textStyle || this._gui._textStyle }
+
     /**
      * <p>Gets or sets the current text.</p>
      * <p>Processing constants are used to define the alignment.</p>
@@ -284,14 +291,15 @@ class CvsLabel extends CvsTextIcon {
         super(gui, name, x || 0, y || 0, w || 60, h || 16);
     }
 
-    /** @hidden */ setAction(event_handler) { return this }
+    /** @hidden */ setAction() { return this }
 
     /** @hidden */
     _updateControlVisual() { // CvsLabel
-        let ts = this._textSize || this._gui.textSize();
-        let tf = this._textFont || this._gui.textFont();
-        let ty = this._textStyle || this._gui.textStyle();
-        let cs = this._scheme ?? this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
 
         let p = this._p;
         let icon = this._icon, iA = this._iconAlign, tA = this._textAlign;
@@ -307,8 +315,7 @@ class CvsLabel extends CvsTextIcon {
         // Background
         if (this._opaque) {
             uib.noStroke(); uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h,
-                this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         if (icon) {
             let px = 0, py;

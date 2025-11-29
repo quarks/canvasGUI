@@ -1,30 +1,4 @@
 const CANVAS_GUI_VERSION = '!!VERSION!!';
-const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
-const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
-const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
-const FONTS = new Set(['arial', 'verdana', 'tahoma', 'trebuchet ms',
-    'times new roman', 'georgia', 'courier new', 'brush script mt',
-    'impact', 'serif', 'sans-serif', 'monospace']);
-const IS_VALID_FONT = function (fontname) {
-    return FONTS.has(fontname);
-};
-const MEASURE_TEXT = function (text, cvs, font, style, size) {
-    cvs.push();
-    cvs.textAlign('left');
-    cvs.textFont(font);
-    cvs.textStyle(style);
-    cvs.textSize(size);
-    let m = cvs.drawingContext.measureText(text);
-    cvs.pop();
-    return {
-        left: m.actualBoundingBoxLeft,
-        right: m.actualBoundingBoxRight,
-        tw: m.actualBoundingBoxLeft + m.actualBoundingBoxRight,
-        fw: m.width,
-        ascent: m.actualBoundingBoxAscent,
-        descent: m.actualBoundingBoxDescent
-    };
-};
 /**
  * <p>Core class for the canvasGUI library </p>
  * <p>Use an instance of GUI (the controller) to control all aspects of your gui.</p>
@@ -50,6 +24,8 @@ class GUI {
         // Hide / disable GUI
         /** @hidden */ this._visible = true;
         /** @hidden */ this._enabled = true;
+        /** @hidden */ this._corners = [4, 4, 4, 4];
+        /** @hidden */ this._clip = '';
         // Tooltip times
         /** @hidden */ this._show_time = TT_SHOW_TIME;
         /** @hidden */ this._repeat_time = TT_REPEAT_TIME;
@@ -61,7 +37,7 @@ class GUI {
         this._p = p; // p5 instance
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
-        this._corners = [4, 4, 4, 4];
+        // this._corners = [4, 4, 4, 4];
         this._optionGroups = new Map();
         // Text attributes
         this._textSize = 12;
@@ -729,15 +705,39 @@ class GUI {
         return this._renderer.height;
     }
     /**
-     * <p>Set or get the corner radii used for the controls</p>
-     * @param c an array of 4 corner radii
-     * @returns an array with the 4 corner radii
+     * <p>Get or set the default corner radii used in this GUI.</p>
+     * <p>To set the radii the parameters must be one of the following</p>
+     * <ul>
+     * <li>an array of 4 numbers.</li>
+     * <li>a comma seperated list of 4 numbers.</li>
+     * <li>a single number to be used for all 4 radii.</li>
+     * </ul>
+     * <p>If no parameter is passed or does not match one of the above then an
+     * array of the currently used radii values.</p>
+     *
+     * @param c valid radii combination
+     * @returns an array of the currently used radii values
      */
-    corners(c) {
-        if (Array.isArray(c) && c.length == 4)
-            this._corners = [...c];
-        return [...this._corners];
+    corners(...c) {
+        switch (c.length) {
+            case 0: // Getter
+                return [...this._corners];
+            case 4:
+                this._corners = [...c];
+                break;
+            case 1:
+                if (Array.isArray(c[0]) && c[0].length == 4)
+                    this._corners = [...c[0]];
+                else
+                    this._corners = [c[0], c[0], c[0], c[0]];
+                break;
+        }
+        return this;
     }
+    // corners(c?: Array<number>): Array<number> {
+    //   if (Array.isArray(c) && c.length == 4) this._corners = [...c];
+    //   return [...this._corners];
+    // }
     /**
      * <p>Get the associated HTML canvas tag</p>
      * @hidden

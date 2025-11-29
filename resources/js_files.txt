@@ -1,3 +1,4 @@
+constants.js
 canvas_gui.js
 colorschemes.js
 orientations.js

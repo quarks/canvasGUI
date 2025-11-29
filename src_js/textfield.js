@@ -1,9 +1,14 @@
 /**
  * This class supports a single line text entry field.
  *
- * The left/right arrow keys move the text insertion point within the
+ * The left/right arrow keys move the text-insertion-point within the
  * text. Used in combination with the shift key it enables part or all
- * of the text to be selected.
+ * of the text to be selected. The entire text can be selected with the
+ * Ctrl+A or Cmd+A keys.
+ *
+ * Selected text can be copied with the Ctrl+C or Cmd+C keys and pasted at
+ * the current text-insertion-point with the Ctrl+V or Cmd+V keys. The
+ * Ctrl+X or Cmd+X keys will cut (and copy) the selected text.
  *
  * If no text is selected then the arrows keys can move off the current
  * control to another. This only works if each textfield has a unique
@@ -32,14 +37,14 @@ class CvsTextField extends CvsText {
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
         /** @hidden */ this._nextActive = null;
+        /** @hidden */ this._linkIndex = undefined;
         /** @hidden */ this._linkOffset = 0;
         /** @hidden */ this._prevCsrIdx = 0;
         /** @hidden */ this._currCsrIdx = 0;
+        /** @hidden */ this._line = '';
         /** @hidden */ this._textInvalid = false;
         /** @hidden */ this._cursorOn = false;
-        /** @hidden */ this._line = '';
         this.textAlign(this._p.LEFT);
-        this._c = [0, 0, 0, 0];
     }
     /**
      * Set a unique index number for this text field.
@@ -60,6 +65,17 @@ class CvsTextField extends CvsText {
         return this;
     }
     /**
+     * Removes the link index from this textfield. After this it will not be possible
+     * to move focus to this textfield using the keyboard arrows.
+     * @returns this control
+     */
+    noIndex() {
+        if (Number.isFinite(this._linkIndex))
+            this._gui._links?.delete(this._linkIndex);
+        this._linkIndex = undefined;
+        return this;
+    }
+    /**
      * Gets or sets the current text.
      * Any EOL characters are stripped out of the string. If necessary the
      * string length will be reduced until it will fit inside the textfield.
@@ -75,8 +91,7 @@ class CvsTextField extends CvsText {
             return this._line;
         // setter
         this._textInvalid = false;
-        // this._lines = [t.toString().replaceAll('\n', ' ')];
-        this._line = t.toString().replaceAll('\n', ' ');
+        this._line = this._delEOL(t);
         this._validate();
         this.invalidateBuffer();
         return this;
@@ -104,17 +119,6 @@ class CvsTextField extends CvsText {
     textAlign(align) { return this; }
     /** @hidden */
     noText() { return this; }
-    /**
-     * Removes the link index from this textfield. After this it will not be possible
-     * to move focus to this textfield using the keyboard arrows.
-     * @returns this control
-     */
-    noIndex() {
-        if (Number.isFinite(this._linkIndex) && !this._gui._links)
-            this._gui._links.delete(this._linkIndex);
-        this._linkIndex = undefined;
-        return this;
-    }
     /**
      * True if the text has passed validation. If there is no validation
      * function this is always true.
@@ -234,13 +238,6 @@ class CvsTextField extends CvsText {
             this.invalidateBuffer();
         }
     }
-    // /**
-    //  * We are only interested in the first line of text
-    //  * @hidden
-    //  */
-    // _getLine(): string {
-    //     return (this._lines.length > 0 ? this._lines[0].toString() : '');
-    // }
     /**
      * Calculates the pixel length for a given character position.
      * @hidden
@@ -271,41 +268,44 @@ class CvsTextField extends CvsText {
         let tabLeft = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx == 0);
         let tabRight = Boolean(this._linkIndex && !hasSelection && this._currCsrIdx >= this._line.length);
         if (e.type == 'keydown') {
-            if (e.key.length == 1) {
-                // Ignore modifeier keys e.g. "Shift" only inetrsest in single visible character keys.
-                // can check boolean properties - e.shiftKey, e.metaKey, e.ctrlKey
+            if (e.key.length == 1) { // single character key
+                // If the control or meta key has been pressed then perform 
+                // appropraite selected text action'
                 if (e.ctrlKey || e.metaKey) {
                     switch (e.key) {
-                        case 'a':
+                        case 'a': // select all
                             this._prevCsrIdx = 0;
                             this._currCsrIdx = this._line.length;
                             break;
-                        case 'c':
-                            if (hasSelection) {
-                                CvsTextField.CLIP = this._line.substring(this._prevCsrIdx, this._currCsrIdx);
-                            }
+                        case 'c': // copy selected text
+                            if (hasSelection)
+                                this._gui._clip = this._line.substring(this._prevCsrIdx, this._currCsrIdx);
                             break;
-                        case 'v':
+                        case 'v': //paste copied text
                             if (hasSelection)
                                 this._line = this._delSeleted(this._line);
-                            if (CvsTextField.CLIP.length > 0)
-                                this._line = this._insChar(CvsTextField.CLIP, this._line, this._currCsrIdx);
-                            this._currCsrIdx += CvsTextField.CLIP.length;
+                            if (this._gui._clip.length > 0)
+                                this._line = this._insChar(this._gui._clip, this._line, this._currCsrIdx);
+                            this._currCsrIdx += this._gui._clip.length;
                             this._prevCsrIdx = this._currCsrIdx;
                             break;
+                        case 'x': // delete selected text
+                            if (hasSelection) {
+                                this._gui._clip = this._line.substring(this._prevCsrIdx, this._currCsrIdx);
+                                this._line = this._delSeleted(this._line);
+                                this._prevCsrIdx = this._currCsrIdx = Math.min(this._currCsrIdx, this._prevCsrIdx);
+                            }
                     }
                 }
                 else {
                     if (hasSelection)
                         this._line = this._delSeleted(this._line);
-                    // line = line.substring(0, this._currCsrIdx) + e.key + line.substring(this._currCsrIdx);
                     this._line = this._insChar(e.key, this._line, this._currCsrIdx);
                     this._currCsrIdx++;
                     this._prevCsrIdx++;
                     this.invalidateBuffer();
                 }
             }
-            // this._lines[0] = line;
             switch (e.key) {
                 case 'ArrowLeft':
                     if (tabLeft) {
@@ -343,7 +343,7 @@ class CvsTextField extends CvsText {
                     break;
                 case 'ArrowUp':
                     if (!hasSelection) {
-                        if (this._linkOffset !== 0) {
+                        if (this._linkOffset) {
                             this._deactivate();
                             this._activateNext(-this._linkOffset);
                         }
@@ -352,7 +352,7 @@ class CvsTextField extends CvsText {
                     break;
                 case 'ArrowDown':
                     if (!hasSelection) {
-                        if (this._linkOffset !== 0) {
+                        if (this._linkOffset) {
                             this._deactivate();
                             this._activateNext(this._linkOffset);
                         }
@@ -370,30 +370,24 @@ class CvsTextField extends CvsText {
                     else { // Delete character to left
                         if (this._currCsrIdx > 0) {
                             this._line = this._delChar(this._line, this._currCsrIdx - 1);
-                            // line = line.substring(0, this._currCsrIdx - 1) + line.substring(this._currCsrIdx);
                             this._currCsrIdx--;
                             this._prevCsrIdx = this._currCsrIdx;
                         }
                     }
-                    // this._lines[0] = line;
                     break;
                 case 'Delete':
                     if (this._prevCsrIdx != this._currCsrIdx) {
                         this._line = this._delSeleted(this._line);
                     }
                     else { // Delete character to right
-                        if (this._currCsrIdx < this._line.length) {
+                        if (this._currCsrIdx < this._line.length)
                             this._line = this._delChar(this._line, this._currCsrIdx);
-                            // line = line.substring(0, this._currCsrIdx) + line.substring(this._currCsrIdx + 1);
-                        }
                     }
-                    // this._lines[0] = line;
                     break;
                 default:
             }
             this.invalidateBuffer();
         } // End of key down
-        // Save any changes
         return this._nextActive;
     }
     /** @hidden */
@@ -426,14 +420,15 @@ class CvsTextField extends CvsText {
             else
                 return MEASURE_TEXT(line.substring(0, idx), uib, tf, ty, ts).fw;
         }
-        let ts = Number(this._textSize || this._gui.textSize());
-        let tf = this._textFont || this._gui.textFont();
-        let ty = this._textStyle || this._gui.textStyle();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
         let line = this._line;
         let tiv = this._textInvalid;
-        let sx = 4 + Math.max(this._c[0], this._c[3]);
-        let ex = this._w - (4 + Math.max(this._c[1], this._c[2]));
+        let sx = 4 + Math.max(cnrs[0], cnrs[3]);
+        let ex = this._w - (4 + Math.max(cnrs[1], cnrs[2]));
         const CURSOR = cs.G(9);
         const HIGHLIGHT = cs.C(9);
         const SELECT = cs.C(3);
@@ -455,7 +450,7 @@ class CvsTextField extends CvsText {
             uib.fill(...cs.G(0));
         uib.stroke(...FORE);
         uib.strokeWeight(2);
-        uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
+        uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         // Draw text and cursor
         uib.push();
         uib.beginClip();
@@ -475,7 +470,7 @@ class CvsTextField extends CvsText {
                 let cx0 = sx + Math.min(px, cx), cx1 = Math.abs(px - cx);
                 uib.noStroke();
                 uib.fill(...SELECT);
-                uib.rect(cx0, 1.5, cx1, this._h - 3, ...this._c);
+                uib.rect(cx0, 1.5, cx1, this._h - 3, ...cnrs);
             }
         }
         uib.textSize(ts);
@@ -495,7 +490,7 @@ class CvsTextField extends CvsText {
             uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2.5);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, ...this._c);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         }
         // Control disabled highlight
         if (!this._enabled)
@@ -506,5 +501,4 @@ class CvsTextField extends CvsText {
         this._bufferInvalid = false;
     }
 }
-/** @hidden */ CvsTextField.CLIP = '';
 //# sourceMappingURL=textfield.js.map

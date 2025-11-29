@@ -22,7 +22,6 @@ class CvsBufferedControl extends CvsBaseControl {
     constructor(gui, id, x, y, w, h) {
         super(gui, id, x, y, w, h);
         this._validateControlBuffers();
-        this._c = this._gui.corners();
     }
     /**
      * Make sure we have a ui buffer and a pick buffer of the correct size
@@ -65,7 +64,7 @@ class CvsBufferedControl extends CvsBaseControl {
         let c = this._gui.pickColor(this);
         pkb.noStroke();
         pkb.fill(c.r, c.g, c.b);
-        pkb.rect(1, 1, this._w - 1, this._h - 1, ...this._c);
+        pkb.rect(1, 1, this._w - 1, this._h - 1, ...this.CNRS);
     }
     /**
      *
@@ -98,7 +97,7 @@ class CvsBufferedControl extends CvsBaseControl {
     _disable_hightlight(b, cs, x, y, w, h) {
         b.fill(cs.T(2));
         b.noStroke();
-        b.rect(x, y, w, h, ...this._c);
+        b.rect(x, y, w, h, ...this.CNRS);
     }
     /**
      * <p>Shrink the control to fit contents.</p>

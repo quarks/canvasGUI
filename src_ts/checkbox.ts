@@ -102,10 +102,12 @@ class CvsCheckbox extends CvsText {
 
     /** @hidden */
     _updateControlVisual() { //  CvsCheckbox
-        let ts = this._textSize || this._gui.textSize();
-        let ty = this._textStyle || this._gui.textStyle();
-        let tf = this._textFont || this._gui.textFont();
-        let cs = this._scheme || this._gui.scheme();
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        let ts = this.T_SIZE;
+        let tf = this.T_FONT;
+        let ty = this.T_STYLE;
+
         let p = this._p;
         let isize = p.constrain(Number(ts) * 0.7, 12, 16);
         let iA = this._iconAlign, tA = this._textAlign;
@@ -124,8 +126,7 @@ class CvsCheckbox extends CvsText {
         uib.clear();
         if (this._opaque) {
             uib.noStroke(); uib.fill(...BACK);
-            uib.rect(0, 0, this._w, this._h,
-                this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(0, 0, this._w, this._h, ...cnrs);
         }
         // Start with box and tick
         uib.push();
@@ -163,8 +164,7 @@ class CvsCheckbox extends CvsText {
             uib.stroke(...HIGHLIGHT);
             uib.strokeWeight(2);
             uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2,
-                this._c[0], this._c[1], this._c[2], this._c[3]);
+            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
         }
         if (!this._enabled)
             this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);

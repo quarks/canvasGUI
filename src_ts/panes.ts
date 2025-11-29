@@ -290,6 +290,7 @@ abstract class CvsPane extends CvsBaseControl {
     /** @hidden */ opaque() { return this }
     /** @hidden */ tooltip(tiptext) { return this }
     /** @hidden */ tipTextSize(gtts) { return this }
+    /** @hidden */ corners(c) { return this }
 
 }
 
@@ -297,7 +298,7 @@ Object.assign(CvsPane.prototype, NoOrient);
 Object.assign(CvsPane.prototype, NoParent);
 Object.assign(CvsPane.prototype, FixedBackground);
 Object.assign(CvsPane.prototype, NoTooltip);
-
+Object.assign(CvsPane.prototype, NoCorners);
 
 
 /** @hidden */
@@ -312,7 +313,7 @@ class CvsPaneNorth extends CvsPane {
         tab.text(tab.id).setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [0, 0, this._cornerRadius, this._cornerRadius];
+        tab.corners(0, 0, this._cornerRadius, this._cornerRadius);
         this.addChild(tab);
         gui._panesNorth.push(this);
         this._gui.validateTabsNorth();
@@ -358,7 +359,7 @@ class CvsPaneSouth extends CvsPane {
         tab.text(tab.id).setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
+        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
         this.addChild(tab);
         // Add this pane control to those on East side
         this._gui._panesSouth.push(this);
@@ -402,12 +403,10 @@ class CvsPaneEast extends CvsPane {
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id)
-            .orient('north')
-            .setAction(this._tabAction);
+        tab.text(tab.id).orient('north').setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
+        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
         this.addChild(tab);
         // Add this pane control to those on East side
         this._gui._panesEast.push(this);
@@ -451,12 +450,10 @@ class CvsPaneWest extends CvsPane {
         this._status = 'closed'; // closing opening open
         // Make the tab button 
         let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id)
-            .orient('south')
-            .setAction(this._tabAction);
+        tab.text(tab.id).orient('south').setAction(this._tabAction);
         let s = tab._minControlSize();
         tab._w = s.w + CvsPane._wExtra;
-        tab._c = [this._cornerRadius, this._cornerRadius, 0, 0];
+        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
         this.addChild(tab);
         // Add this pane control to those on East side
         this._gui._panesWest.push(this);

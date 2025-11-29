@@ -32,7 +32,6 @@ class CvsPanel extends CvsBufferedControl {
      */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x || 0, y || 0, w || 100, h || 100);
-        this._c = [0, 0, 0, 0];
         this._opaque = true;
         this._z = PANEL_Z;
     }
@@ -127,17 +126,17 @@ class CvsPanel extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual(): void { // CvsPanel
-        let cs = this._scheme || this._gui.scheme();
-        const OPAQUE = cs.C(0, this._alpha);
-        const HIGHLIGHT = cs.C(3);
-        CLOG(OPAQUE)
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        const OPAQUE = cs.C(6, this._alpha);
+        const HIGHLIGHT = cs.C(9);
         let uib = this._uiBfr;
         uib.push();
         uib.clear();
         uib.strokeWeight(3); uib.noStroke(); uib.noFill();
         if (this._opaque) uib.fill(...OPAQUE);
         if (this.isOver) uib.stroke(...HIGHLIGHT);
-        uib.rect(0, 0, this._w, this._h);
+        uib.rect(0, 0, this._w, this._h, ...cnrs);
         // Update pick buffer before restoring
         this._updatePanelControlPB();
         // last line in this method should be
@@ -150,12 +149,13 @@ class CvsPanel extends CvsBufferedControl {
      * @hidden
      */
     _updatePanelControlPB() {
+        let cnrs = this.CNRS;
         let pkb = this._pkBfr;
         pkb.clear();
         pkb.noStroke(); pkb.noFill();
         let c = this._gui.pickColor(this);
         if (this._opaque) pkb.fill(c.r, c.g, c.b);
-        pkb.rect(1, 1, this._w - 1, this._h - 1);
+        pkb.rect(0, 0, this._w, this._h, ...cnrs);
     }
 
     /** @hidden */
@@ -168,8 +168,6 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */ leaveParent() { return this }
     /** @hidden */ tooltip(tiptext) { return this }
     /** @hidden */ tipTextSize(gtts) { return this }
-    /** @hidden */ transparent() { return this }
-    /** @hidden */ opaque() { return this }
     /** @hidden */ orient(dir) { return this }
 }
 

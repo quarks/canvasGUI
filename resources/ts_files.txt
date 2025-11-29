@@ -1,3 +1,4 @@
+constants.ts
 canvas_gui.ts
 colorschemes.ts
 orientations.ts
