@@ -157,7 +157,6 @@ class GUI {
         this._p = p; // p5 instance
         this._controls = new Map(); // registered controls
         this._ctrls = []; // controls in render order
-        // this._corners = [4, 4, 4, 4];
         this._optionGroups = new Map();
         // Text attributes
         this._textSize = 12;
