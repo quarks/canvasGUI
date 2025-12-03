@@ -842,11 +842,6 @@ class GUI {
     return this;
   }
 
-  // corners(c?: Array<number>): Array<number> {
-  //   if (Array.isArray(c) && c.length == 4) this._corners = [...c];
-  //   return [...this._corners];
-  // }
-
   /**
    * <p>Get the associated HTML canvas tag</p>
    * @hidden
@@ -1173,7 +1168,25 @@ class GUI {
    */
   static get(p5c: p5.Renderer, p: p5 = p5.instance) {
     let name = `#${p.floor(p.random(111111, 999999))}`;
-    CWARN(`'GUI.get(...)' has been deprcated in canvasGUI V2 use the global method 'createGUI(...)' instaed.`)
+    CWARN(`'GUI.get(...)' has been deprcated use the global method 'createGUI(...)' instead.`)
+    return GUI.create(name, p5c, p);
+  }
+
+  /**
+   * <p>Creates and returns a named GUI controller.</p>
+   * <p>This method is included for compatibility with canvasGUI V1 and has 
+   * beed deprecated. The <code>createGUI(...)</code> method should be used 
+   * instead as it fits the p5.js scheme of using <code>create???(...)</code>
+   * methods when an object instance is being initiated.</p>
+   * 
+   * @deprecated
+   * @param name unique name for the GUI
+   * @param p5c the renderer - the display canvas
+   * @param p the processing instance (required in Instance mode)
+   * @returns a GUI controller if valid name provided
+   */
+  static getNamed(name, p5c: p5.Renderer, p: p5 = p5.instance) {
+    CWARN(`'GUI.getNamed(...)' has been deprcated use the global method 'createGUI(...)' instead.`)
     return GUI.create(name, p5c, p);
   }
 
@@ -1195,7 +1208,7 @@ class GUI {
     GUI.ANNOUNCE_CANVAS_GUI();
     if (typeof name !== 'string' || name.length === 0) {
       name = `#${p.floor(p.random(111111, 999999))}`;
-      CWARN(`Invalid name provided so this GUI will be called '${name}' intead.`)
+      CWARN(`Invalid name provided so this GUI will be called '${name}' instead.`)
     }
     if (GUI._guis.has(name)) {
       CWARN(`You already have a  GUI called '${name} it will not be replaced.`);
