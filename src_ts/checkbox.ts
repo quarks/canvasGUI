@@ -1,33 +1,88 @@
 /**
  * This class supports simple true-false checkbox
  */
-class CvsCheckbox extends CvsText {
+class CvsCheckbox extends CvsTextIcon {
 
-    protected _selected: boolean;
-    protected _iconAlign: number;
-    protected _icon: p5.Graphics;
+    /** @hidden */ protected _selected: boolean;
+    /** @hidden */ protected _iSize: number;
+
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x || 0, y || 0, w || 80, h || 18);
-        this._selected = false;
-        this._iconAlign = this._p.LEFT;
-        this._textAlign = this._p.LEFT;
+        this._selected = false; // 0
+        this._createDefaultIcons();
+        this.invalidateBuffer();
+    }
+
+    /** @hidden */
+    _createDefaultIcons() {
+        const s = this._iSize || this._gui._iSize;
+        const cs = this.SCHEME;
+        const FG = cs.G$(9), BG = cs.G$(0);
+        this._icons = [];
+        // False
+        let ib = new OffscreenCanvas(s, s);
+        let ic = ib.getContext('2d');
+        ic.fillStyle = FG;
+        ic.fillRect(0, 0, s, s);
+        ic.fillStyle = BG;
+        ic.fillRect(2, 2, s - 4, s - 4);
+        this._icons.push(ib);
+        // True
+        ib = new OffscreenCanvas(s, s);
+        ic = ib.getContext('2d');
+        ic.fillStyle = FG;
+        ic.fillRect(0, 0, s, s);
+        ic.fillStyle = BG;
+        ic.fillRect(2, 2, s - 4, s - 4);
+        ic.beginPath();
+        ic.strokeStyle = FG;
+        ic.lineWidth = 2.5;
+        ic.moveTo(0.2 * s, 0.55 * s);
+        ic.lineTo(0.45 * s, 0.75 * s);
+        ic.lineTo(0.8 * s, 0.2 * s);
+        ic.stroke();
+        this._icons.push(ib);
+        // Set icon to display
+        this._icon = this._icons[Number(this._selected)];
+        this.invalidateBuffer();
     }
 
     /**
-     * <p>Gets or sets the icon and alignment relative to any text in the control.</p>
+     * <p>Sets the icon and its alignment relative to any text in 
+     * the control.</p>
      * <p>Processing constants are used to define the icon alignment.</p>
-     * @param align LEFT or RIGHT
-     * @returns this control or the current icon alignment
+     * @param icons array of 2 icons [falseImage, trueImage]
+     * @param alignH 'left', 'right' or 'center'
+     * @param alignV 'top', 'bottom' or 'center'
+     * @returns this control or the current icon
      */
-    iconAlign(align?: number) {
-        if (!align)
-            return this._iconAlign;
-        if (align == this._p.LEFT || align == this._p.RIGHT) {
-            this._iconAlign = align;
+    icons(icons: Array<cvsIcon>, alignH?: string, alignV?: string): cvsIcon | CvsControl {
+        if (Array.isArray(icons) && icons.length >= 2) {
+            this._icons = [cvsGuiCanvas(icons[0]), cvsGuiCanvas(icons[1])];
+            this._icon = this._icons[Number(this._selected)];
+            this.iconAlign(alignH, alignV);
             this.invalidateBuffer();
         }
+        return this;
+    }
+
+    /**
+     * <p>If there is no parameter then it returns the size of the default
+     * tick-box icon is returned.</p>
+     * <p>The default icon will be resized and replace any user defined
+     * icons.</p>
+     * 
+     * @param size 
+     * @returns this control
+     */
+    iconSize(size) {
+        if (!Number.isFinite(size))
+            return this._iSize || this._gui._iSize;
+        this._iSize = Math.ceil(size);
+        this._createDefaultIcons();
+        this.invalidateBuffer();
         return this;
     }
 
@@ -64,14 +119,14 @@ class CvsCheckbox extends CvsText {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 this._active = true;
                 // will be set to false if the mouse is dragged
                 this._clickAllowed = true;
-                this.isOver = true;
+                this.over = true;
                 break;
             case 'mouseout':
             case 'mouseup':
@@ -79,17 +134,18 @@ class CvsCheckbox extends CvsText {
                 if (this.isActive) {
                     if (this._clickAllowed) {
                         this._selected = !this._selected;
-                        this.action({ source: this, p5Event: e, selected: this._selected });
+                        this._icon = this._icons[Number(this._selected)];
+                        this.action({ source: this, event: e, selected: this._selected });
                     }
+                    this._active = false;
                 }
-                this._active = false;
                 this._clickAllowed = false;
-                this.isOver = false;
+                this.over = false;
                 break;
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
-                this.isOver = (this == over.control);
+                this.over = (this == over.control);
                 this._tooltip?._updateState(enter);
                 break;
             case 'mouseover':
@@ -102,99 +158,55 @@ class CvsCheckbox extends CvsText {
 
     /** @hidden */
     _updateControlVisual() { //  CvsCheckbox
-        let cs = this.SCHEME;
-        let cnrs = this.CNRS;
-        let ts = this.T_SIZE;
-        let tf = this.T_FONT;
-        let ty = this.T_STYLE;
+        if (this._textInvalid)
+            this._formatText();
+        this._updateFaceElements();
+        if (this._fitWH)
+            this._fitToContent();
 
-        let p = this._p;
-        let isize = p.constrain(Number(ts) * 0.7, 12, 16);
-        let iA = this._iconAlign, tA = this._textAlign;
-        let lines = this._lines, gap = this._gap;
-        const BACK = cs.C(3, this._alpha);
-        const FORE = cs.C(8);
-        const ICON_BG = cs.G(0);
-        const ICON_FG = cs.G(9);
-        const HIGHLIGHT = cs.C(9);
+        const cs = this.SCHEME;
+        const OPAQUE = cs.C$(3, this._alpha);
+        const FORE = cs.C$(8);
 
-        let uib = this._uiBfr;
-        uib.push();
-        uib.textFont(tf);
-        uib.textSize(ts);
-        uib.textStyle(ty);
-        uib.clear();
+        const uic = this._uicContext;
+        uic.save();
+        uic.font = this._cssFont;
+        uic.clearRect(0, 0, this._w, this._h);
+        // Background
         if (this._opaque) {
-            uib.noStroke(); uib.fill(...BACK);
-            uib.rect(0, 0, this._w, this._h, ...cnrs);
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, this.CNRS);
+            uic.fill();
         }
-        // Start with box and tick
-        uib.push();
-        let px = (iA == p.RIGHT) ? this._w - gap - isize / 2 : gap + isize / 2;
-        uib.translate(px, uib.height / 2);
-        uib.stroke(...ICON_FG); uib.fill(...ICON_BG); uib.strokeWeight(1.5);
-        uib.rect(-isize / 2, -isize / 2, isize, isize, 3);
-        if (this._selected) {
-            uib.strokeWeight(2.5);
-            uib.line(-0.281 * isize, 0, -0.188 * isize, 0.313 * isize);
-            uib.line(0.270 * isize, -0.27 * isize, -0.188 * isize, 0.313 * isize);
-        }
-        uib.pop();
-        if (lines.length > 0) {
-            let x0 = gap, x1 = this._w - gap, sx = 0;
-            // Determine extent of text area
-            if (iA == p.LEFT) x0 += isize + gap;
-            if (iA == p.RIGHT) x1 -= isize + gap;
-            let tw = x1 - x0;
-            let th = this._tbox.h;
-            let py = uib.textAscent() + (this._h - th) / 2;
-            uib.fill(...FORE);
-            for (let line of lines) {
-                switch (tA) {
-                    case p.LEFT: sx = x0; break;
-                    case p.CENTER: sx = x0 + (tw - uib.textWidth(line)) / 2; break;
-                    case p.RIGHT: sx = x1 - uib.textWidth(line) - gap; break;
-                }
-                uib.text(line, sx, py);
-                py += uib.textLeading();
-            }
-        }
-        // Mouse over control
-        if (this._isOver) {
-            uib.stroke(...HIGHLIGHT);
-            uib.strokeWeight(2);
-            uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
-        }
+        if (this._icon)
+            uic.drawImage(this._icon, this._ix, this._iy);
+        this._renderTextArea(FORE);
+
         if (!this._enabled)
-            this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
+            this._disable_highlight(cs, 0, 0, this._w, this._h);
         // Update pick buffer before restoring
-        this._updateRectControlPB();
-        uib.pop();
-        // last line in this method should be
+        this._updatePickBuffer();
+        uic.restore();
+        // The last line in this method should be
         this._bufferInvalid = false;
     }
 
     /** @hidden */
-    _minControlSize() { // CvsCheckbox
-        let b = this._uiBfr;
-        let lines = this._lines;
-        let tbox = this._tbox;
-        let sw = 0, sh = 0, gap = this._gap;
-        let ts = this._textSize || this._gui.textSize();
-        let isize = this._p.constrain(Number(ts) * 0.7, 12, 16);
-        // Calculate minimum length and height of control to hold
-        // multiple lines of text
-        if (lines.length > 0) {
-            if (!b) this._validateBuffer();
-            let ts = this._textSize || this._gui.textSize();
-            b.textSize(ts);
-            tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
-            tbox.h = (lines.length - 1) * b.textLeading() + b.textAscent() + b.textDescent();
-        }
-        sw += tbox.w + gap + isize;
-        sh = Math.max(this._tbox.h, isize + gap) + 2 * gap;
-        return { w: sw, h: sh };
+    _updatePickBuffer() {
+        let pkc = this._pkcContext;
+        let c = this._gui.pickColor(this);
+        pkc.clearRect(0, 0, this._w, this._h);
+        pkc.save();
+        pkc.fillStyle = c.cssColor;
+        pkc.beginPath();
+        pkc.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
+        pkc.fill();
+        pkc.restore();
     }
 
+    /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
 }
+
+
+Object.assign(CvsCheckbox.prototype, PICKABLE);

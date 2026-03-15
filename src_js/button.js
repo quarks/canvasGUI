@@ -6,89 +6,64 @@ class CvsButton extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        this._enabled = true;
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this.SCHEME;
-        let cnrs = this.CNRS;
-        let ts = this.T_SIZE;
-        let tf = this.T_FONT;
-        let ty = this.T_STYLE;
-        let iA = this._iconAlign, tA = this._textAlign;
-        let icon = this._icon, lines = this._lines, gap = this._gap;
-        const BACK = cs.C(3, this._alpha);
-        const FORE = cs.C(8);
-        const HIGHLIGHT = cs.C(9);
-        let uib = this._uiBfr;
-        uib.push();
-        uib.textFont(tf);
-        uib.textSize(ts);
-        uib.textStyle(ty);
-        uib.clear();
+        if (this._textInvalid)
+            this._formatText();
+        this._updateFaceElements();
+        if (this._fitWH)
+            this._fitToContent();
+        const cs = this.SCHEME;
+        const cnrs = this.CNRS;
+        // const font = this.cssFont;
+        const BACK = cs.C$(3, this._alpha);
+        const FORE = cs.C$(8);
+        const HIGHLIGHT = cs.C$(9);
+        let uic = this._uicContext;
+        this._clearUiBuffer();
+        uic.save();
+        uic.font = this._cssFont;
+        // Background
         if (this._opaque) {
-            uib.noStroke();
-            uib.fill(...BACK);
-            uib.rect(1, 1, this._w - 1, this._h - 1, ...cnrs);
+            uic.fillStyle = BACK;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.fill();
         }
-        if (icon) {
-            let px = 0, py;
-            switch (iA) {
-                case this._p.LEFT:
-                    px = gap;
-                    break;
-                case this._p.RIGHT:
-                    px = this._w - icon.width - gap;
-                    break;
-            }
-            if (lines.length == 0)
-                px = (this._w - icon.width) / 2; // no text
-            py = (this._h - icon.height) / 2;
-            uib.image(this._icon, px, py);
-        }
-        if (lines.length > 0) {
-            let x0 = gap, x1 = this._w - gap, sx = 0;
-            // Determine extent of text area
-            if (icon && iA == this._p.LEFT)
-                x0 += icon.width;
-            if (icon && iA == this._p.RIGHT)
-                x1 -= icon.width;
-            let tw = x1 - x0, th = this._tbox.h;
-            let py = uib.textAscent() + (this._h - th) / 2;
-            uib.fill(...FORE);
-            for (let line of lines) {
-                switch (tA) {
-                    case this._p.LEFT:
-                        sx = x0;
-                        break;
-                    case this._p.CENTER:
-                        sx = x0 + (tw - uib.textWidth(line)) / 2;
-                        break;
-                    case this._p.RIGHT:
-                        sx = x1 - uib.textWidth(line) - gap;
-                        break;
-                }
-                uib.text(line, sx, py);
-                py += uib.textLeading();
-            }
-        }
+        if (this._icon)
+            uic.drawImage(this._icon, this._ix, this._iy);
+        this._renderTextArea(FORE);
         // Mouse over add border highlight
-        if (this._isOver) {
-            uib.stroke(...HIGHLIGHT);
-            uib.strokeWeight(2);
-            uib.noFill();
-            uib.rect(1, 1, this._w - 2, this._h - 2, ...cnrs);
+        if (this.isActive || this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2;
+            uic.beginPath();
+            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+            uic.stroke();
         }
-        // Control disabled highlight
         if (!this._enabled)
-            this._disable_hightlight(uib, cs, 0, 0, this._w, this._h);
+            this._disable_highlight(cs, 0, 0, this._w, this._h);
         // Update pick buffer before restoring
-        this._updateRectControlPB();
-        uib.pop();
+        this._updatePickBuffer();
+        uic.restore();
         // The last line in this method should be
         this._bufferInvalid = false;
         // but if this is a pane-tab then must validate the tabs
-        if (this._parent instanceof CvsPane)
-            this._parent.validateTabs();
+        // if (this._parent instanceof CvsPane) this._parent.validateTabs();
+    }
+    /** @hidden */
+    _updatePickBuffer() {
+        let pkc = this._pkcContext;
+        let c = this._gui.pickColor(this);
+        this._clearPickBuffer();
+        pkc.save();
+        pkc.fillStyle = c.cssColor;
+        pkc.beginPath();
+        pkc.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
+        pkc.fill();
+        pkc.restore();
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
@@ -97,23 +72,23 @@ class CvsButton extends CvsTextIcon {
             case 'touchstart':
                 this._active = true;
                 this._clickAllowed = true; // false if mouse moves
-                this.isOver = true;
+                this.over = true;
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
                 if (this.isActive) {
                     if (this._clickAllowed)
-                        this.action({ source: this, p5Event: e });
+                        this.action({ source: this, event: e });
                     this._active = false;
-                    this._clickAllowed = false;
-                    this.isOver = false;
                 }
+                this._clickAllowed = false;
+                this.over = false;
                 break;
             case 'mousemove':
             case 'touchmove':
                 this._clickAllowed = false;
-                this.isOver = (this == over.control);
+                this.over = (this == over.control);
                 this._tooltip?._updateState(enter);
                 break;
             case 'mouseover':
@@ -124,4 +99,5 @@ class CvsButton extends CvsTextIcon {
         return this.isActive ? this : null;
     }
 }
+Object.assign(CvsButton.prototype, PICKABLE);
 //# sourceMappingURL=button.js.map

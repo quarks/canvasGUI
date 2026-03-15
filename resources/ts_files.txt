@@ -4,9 +4,12 @@ colorschemes.ts
 orientations.ts
 basecontrol.ts
 bufferedcontrol.ts
+image.ts
 slider.ts
 ranger.ts
+text.ts
 texticon.ts
+label.ts
 button.ts
 tooltip.ts
 scroller.ts
@@ -18,4 +21,5 @@ joystick.ts
 knob.ts
 panel.ts
 panes.ts
+poster.ts
 grid.ts

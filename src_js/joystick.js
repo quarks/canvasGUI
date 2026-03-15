@@ -123,7 +123,7 @@ class CvsJoystick extends CvsBufferedControl {
      * @hidden
      */
     _validateThumbPosition(x, y) {
-        let mag = this._p.constrain(Math.sqrt(x * x + y * y), 0, this._pr1);
+        let mag = _constrain(Math.sqrt(x * x + y * y), 0, this._pr1);
         let ang = Math.atan2(y, x);
         ang += ang < 0 ? 2 * Math.PI : 0;
         let dead = mag <= this._pr0;
@@ -149,7 +149,7 @@ class CvsJoystick extends CvsBufferedControl {
         function getValue(source, event, fini) {
             let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
             return {
-                source: source, p5Event: event, final: fini, mag: mag,
+                source: source, event: event, final: fini, mag: mag,
                 angle: source._ang, dir: source._dir, dead: source._dead,
             };
         }
@@ -160,7 +160,7 @@ class CvsJoystick extends CvsBufferedControl {
             case 'mousedown':
             case 'touchstart':
                 this._active = true;
-                this.isOver = true;
+                this.over = true;
                 break;
             case 'mouseout':
             case 'mouseup':
@@ -186,7 +186,7 @@ class CvsJoystick extends CvsBufferedControl {
                     this._validateThumbPosition(mx, my);
                     this.action(getValue(this, e, false));
                 }
-                this.isOver = (this == over.control);
+                this.over = (this == over.control);
                 this._tooltip?._updateState(enter);
                 this.invalidateBuffer();
                 break;
@@ -202,112 +202,136 @@ class CvsJoystick extends CvsBufferedControl {
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
-        const OPAQUE = cs.C(3, this._alpha);
-        const DIAL_FACE = cs.C(1);
-        const DIAL_TINT = cs.T(0);
-        const DIAL_BORDER = cs.C(9);
-        const THUMB_STROKE = cs.C(9);
-        const THUMB_OFF = cs.C(4);
-        const THUMB_OVER = cs.C(6);
-        const ROD = cs.C(7);
-        const MARKERS = cs.C(8);
-        const DEAD_ZONE = cs.T(2);
-        let uib = this._uiBfr;
-        uib.push();
-        uib.clear();
+        const OPAQUE = cs.C$(3, this._alpha); //cs.C(3, this._alpha);
+        const DIAL_FACE = cs.C$(1);
+        const DIAL_TINT = cs.T$(0);
+        const DIAL_BORDER = cs.C$(9);
+        const THUMB_STROKE = cs.C$(9);
+        const THUMB_OFF = cs.C$(4);
+        const THUMB_OVER = cs.C$(6);
+        const ROD = cs.C$(7);
+        const MARKERS = cs.C$(8);
+        const DEAD_ZONE = cs.T$(2);
+        // this._clearBuffers();
+        let uib = this._uicBuffer;
+        let uic = this._uicContext;
+        this._clearUiBuffer();
+        this._clearPickBuffer();
+        uic.save();
         if (this._opaque) {
-            uib.noStroke();
-            uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...cnrs);
+            uic.beginPath();
+            uic.fillStyle = OPAQUE;
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.fill();
         }
-        uib.translate(uib.width / 2, uib.height / 2);
+        uic.translate(uib.width / 2, uib.height / 2);
         // dial face background
-        uib.noStroke();
-        uib.fill(...DIAL_FACE);
-        uib.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
+        uic.beginPath();
+        uic.fillStyle = DIAL_FACE;
+        uic.ellipse(0, 0, this._pr1, this._pr1, 0, 0, 2 * Math.PI);
+        uic.fill();
         // dial face highlight
         let s = 0, e = 0.26 * this._size, da = 0;
-        uib.fill(...DIAL_TINT);
-        uib.noStroke();
-        uib.ellipse(0, 0, e * 2, e * 2);
-        uib.ellipse(0, 0, e * 1.25, e * 1.25);
+        uic.beginPath();
+        uic.fillStyle = DIAL_TINT;
+        uic.ellipse(0, 0, e, e, 0, 0, 2 * Math.PI);
+        uic.ellipse(0, 0, e * 0.625, e * 0.625, 0, 0, 2 * Math.PI);
+        uic.fill();
         // Dial face markers
-        uib.stroke(...MARKERS);
+        uic.strokeStyle = MARKERS;
         switch (this._mode) {
             case 'X0':
+                uic.beginPath();
                 s = this._pr1;
                 da = Math.PI / 8;
                 let r = [0.6, 0.22, 0.35, 0.22];
-                uib.push();
-                uib.strokeWeight(0.75);
+                uic.save();
+                uic.lineWidth = 0.75;
                 for (let i = 0; i < 16; i++) {
                     e = s * r[i % 4];
-                    uib.line(s, 0, s - e, 0);
-                    uib.rotate(da);
+                    uic.moveTo(s, 0);
+                    uic.lineTo(s - e, 0);
+                    uic.rotate(da);
                 }
-                uib.pop();
+                uic.stroke();
+                uic.restore();
                 break;
             case 'X8':
+                uic.beginPath();
                 s = this._pr0;
                 e = 0.625 * this._pr1;
                 da = Math.PI / 4;
-                uib.push();
-                uib.strokeWeight(1);
+                uic.save();
+                uic.lineWidth = 1;
                 for (let i = 0; i < 8; i++) {
-                    uib.line(s, 0, e, 0);
-                    uib.rotate(da);
+                    uic.moveTo(s, 0);
+                    uic.lineTo(e, 0);
+                    uic.rotate(da);
                 }
-                uib.pop();
+                uic.stroke();
+                uic.restore();
             case 'X4':
+                uic.beginPath();
                 s = this._pr0;
                 e = 0.85 * this._pr1;
                 da = Math.PI / 2;
-                uib.push();
-                uib.strokeWeight(1.25);
+                uic.save();
+                uic.lineWidth = 1.25;
                 for (let i = 0; i < 4; i++) {
-                    uib.line(s, 0, e, 0);
-                    uib.rotate(da);
+                    uic.moveTo(s, 0);
+                    uic.lineTo(e, 0);
+                    uic.rotate(da);
                 }
-                uib.pop();
+                uic.stroke();
+                uic.restore();
                 break;
         }
         // Dial border
-        uib.stroke(...DIAL_BORDER);
-        uib.strokeWeight(Math.max(3, 0.025 * this._size));
-        uib.noFill();
-        uib.ellipse(0, 0, this._pr1 * 2, this._pr1 * 2);
+        uic.beginPath();
+        uic.strokeStyle = DIAL_BORDER;
+        uic.lineWidth = Math.max(3, 0.025 * this._size);
+        uic.ellipse(0, 0, this._pr1, this._pr1, 0, 0, 2 * Math.PI);
+        uic.stroke();
         // Dead zone
-        uib.fill(...DEAD_ZONE);
-        uib.noStroke();
-        uib.ellipse(0, 0, this._pr0 * 2, this._pr0 * 2);
-        // Stick                                                                                    
-        uib.stroke(...ROD);
-        uib.strokeWeight(this._size * 0.05);
-        uib.line(0, 0, tx, ty);
+        uic.beginPath();
+        uic.fillStyle = DEAD_ZONE;
+        uic.ellipse(0, 0, this._pr0, this._pr0, 0, 0, 2 * Math.PI);
+        uic.stroke();
+        // Stick     
+        uic.beginPath();
+        uic.strokeStyle = ROD;
+        uic.lineWidth = this._size * 0.05;
+        uic.moveTo(0, 0);
+        uic.lineTo(tx, ty);
+        uic.stroke();
         // Thumb
-        uib.strokeWeight(2);
-        uib.stroke(...THUMB_STROKE);
-        if (this.isActive || this.isOver)
-            uib.fill(...THUMB_OVER);
-        else
-            uib.fill(...THUMB_OFF);
-        uib.ellipse(tx, ty, this._tSize * 2, this._tSize * 2);
-        this._updateJoystickPickBuffer(tx, ty, this._tSize);
-        uib.pop();
-        // last line in this method should be
-        this._bufferInvalid = false;
+        uic.beginPath();
+        uic.lineWidth = 2;
+        uic.strokeStyle = THUMB_STROKE;
+        uic.fillStyle = (this.isActive || this.over) ? THUMB_OVER : THUMB_OFF;
+        uic.ellipse(tx, ty, this._tSize, this._tSize, 0, 0, 2 * Math.PI);
+        uic.fill();
+        uic.stroke();
+        uic.restore();
+        this._updatePickBuffer(tx, ty, this._tSize);
+        if (!this._enabled)
+            this._disable_highlight(cs, 0, 0, this._w, this._h);
+        this._bufferInvalid = false; // Finally mark as valid
     }
     /** @hidden */
-    _updateJoystickPickBuffer(tx, ty, tSize) {
+    _updatePickBuffer(tx, ty, tSize) {
+        let pkc = this._pkcContext;
         let c = this._gui.pickColor(this);
-        let pkb = this._pkBfr;
-        pkb.push();
-        pkb.clear();
-        pkb.translate(pkb.width / 2, pkb.height / 2);
-        pkb.noStroke();
-        pkb.fill(c.r, c.g, c.b);
-        pkb.ellipse(tx, ty, tSize * 2, tSize * 2);
-        pkb.pop();
+        pkc.clearRect(0, 0, this._w, this._h);
+        pkc.save();
+        pkc.translate(this._w / 2, this._h / 2);
+        pkc.fillStyle = c.cssColor;
+        pkc.beginPath();
+        pkc.ellipse(tx, ty, tSize, tSize, 0, 0, 2 * Math.PI);
+        pkc.fill();
+        pkc.restore();
     }
+    /** @hidden */ orient(dir) { return this.warn$('orient'); }
 }
+Object.assign(CvsJoystick.prototype, PICKABLE);
 //# sourceMappingURL=joystick.js.map

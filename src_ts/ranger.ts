@@ -29,7 +29,7 @@ class CvsRanger extends CvsSlider {
      * @param v1 high value
      * @returns this control or the low/high values
      */
-    range(v0?: number, v1?: number): CvsBaseControl | Object {
+    range(v0?: number, v1?: number): CvsControl | Object {
         if (Number.isFinite(v0) && Number.isFinite(v1)) { // If two numbers then
             let t0 = this._norm01(Math.min(v0, v1));
             let t1 = this._norm01(Math.max(v0, v1));
@@ -66,7 +66,7 @@ class CvsRanger extends CvsSlider {
      * @param v1 value to set the second thumbs.
      * @returns an array of the current values or this ranger object.
      */
-    values(v0?: number, v1?: number): CvsBaseControl | Array<number> {
+    values(v0?: number, v1?: number): CvsControl | Array<number> {
         function inLimits(v: number) {
             return ((v - l0) * (v - l1) <= 0);
         }
@@ -75,8 +75,6 @@ class CvsRanger extends CvsSlider {
             if (inLimits(v0) && inLimits(v1)) {
                 this._t[0] = this._norm01(Math.min(v0, v1));
                 this._t[1] = this._norm01(Math.max(v0, v1));
-                // CLOG(`Ranger setting values to ${v0}  and  ${v1}`);
-                // CLOG(`    normalised values to ${this._t[0]}  and  ${this._t[1]}`);
                 this.invalidateBuffer();
                 return this;
             }
@@ -85,7 +83,7 @@ class CvsRanger extends CvsSlider {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
         let absPos = this.getAbsXY();
         let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
@@ -94,7 +92,7 @@ class CvsRanger extends CvsSlider {
                 if (over.part == 0 || over.part == 1) { // A thumb
                     this._active = true;
                     this._tIdx = over.part;  // Which thumb is the mouse over
-                    this.isOver = true;
+                    this.over = true;
                 }
                 break;
             case 'mouseout':
@@ -105,7 +103,7 @@ class CvsRanger extends CvsSlider {
                     let t1 = Math.max(this._t[0], this._t[1]);
                     this._t[0] = t0; this._t[1] = t1; this._tIdx = -1;
                     this.action({
-                        source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
+                        source: this, event: e, low: this._t2v(t0), high: this._t2v(t1), final: true
                     });
                     this._active = false;
                     this.invalidateBuffer();
@@ -114,7 +112,7 @@ class CvsRanger extends CvsSlider {
             case 'mousemove':
             case 'touchmove':
                 if (this.isActive) {
-                    let t01 = this._norm01(mx - this._inset, 0, this._uiBfr.width - 2 * this._inset);
+                    let t01 = this._norm01(mx - this._inset, 0, this._w - 2 * this._inset);
                     if (this._s2ticks)
                         t01 = this._nearestTickT(t01);
                     if (this._t[this._tIdx] != t01) {
@@ -122,11 +120,11 @@ class CvsRanger extends CvsSlider {
                         let t0 = Math.min(this._t[0], this._t[1]);
                         let t1 = Math.max(this._t[0], this._t[1]);
                         this.action({
-                            source: this, p5Event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
+                            source: this, event: e, low: this._t2v(t0), high: this._t2v(t1), final: false
                         });
                     }
                 }
-                this.isOver = (this == over.control && (over.part == 0 || over.part == 1));
+                this.over = (this == over.control && (over.part == 0 || over.part == 1));
                 this._tooltip?._updateState(enter);
                 this.invalidateBuffer();
                 break;
@@ -140,99 +138,113 @@ class CvsRanger extends CvsSlider {
 
     /** @hidden */
     _updateControlVisual() { // CvsRanger
-        let cs = this.SCHEME;
-        let cnrs = this.CNRS;
-        let uib = this._uiBfr;
-        let [tLen, tWgt, tbSize] =
-            [uib.width - 2 * this._inset, this._trackWeight, this._thumbSize];
-        let [majT, minT] = [this._majorTickSize, this._minorTickSize];
+        const cs = this.SCHEME;
+        const cnrs = this.CNRS;
+        const [tLen, tWgt, tbSize] =
+            [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
+        const [majT, minT] = [this._majorTickSize, this._minorTickSize];
 
-        const OPAQUE = cs.C(3, this._alpha);
-        const TICKS = cs.G(7);
-        const UNUSED_TRACK = cs.G(3);
-        const USED_TRACK = cs.G(1);
-        const HIGHLIGHT = cs.C(9);
-        const THUMB = cs.C(6);
+        const OPAQUE = cs.C$(3, this._alpha);
+        const TICKS = cs.G$(7);
+        const UNUSED_TRACK = cs.G$(3);
+        const USED_TRACK = cs.G$(1);
+        const HIGHLIGHT = cs.C$(9);
+        const THUMB = cs.C$(6);
 
-        uib.push();
-        uib.clear();
-        // Background
+        const uic = this._uicContext;
+        this._clearUiBuffer();
+        this._clearPickBuffer();
+
+        uic.save();
         if (this._opaque) {
-            uib.noStroke(); uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...cnrs);
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.fill();
         }
         // Now translate to track left edge - track centre
-        uib.translate(this._inset, Math.round(uib.height / 2));
+        uic.translate(this._inset, Math.round(this._h / 2));
         // Now draw ticks
-        uib.stroke(...TICKS);
-        uib.strokeWeight(1);
+        uic.strokeStyle = TICKS;
+        uic.lineWidth = 1;
         let dT: number, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             dT = tLen / n;
+            uic.beginPath();
             for (let i = 0; i <= n; i++) { // minor ticks
                 let tickX = i * dT;
-                uib.line(tickX, -minT, tickX, minT);
+                uic.moveTo(tickX, -minT);
+                uic.lineTo(tickX, minT);
             }
+            uic.stroke();
         }
         n = this._majorTicks;
         if (n >= 2) {
             dT = tLen / this._majorTicks;
+            uic.beginPath();
             for (let i = 0; i <= n; i++) {  // major ticks
                 let tickX = i * dT;
-                uib.line(tickX, -majT, tickX, majT);
+                uic.moveTo(tickX, -majT);
+                uic.lineTo(tickX, majT);
             }
+            uic.stroke();
         }
         // draw unused track
-        uib.fill(...UNUSED_TRACK);
-        uib.rect(0, -tWgt / 2, tLen, tWgt);
+        uic.fillStyle = UNUSED_TRACK;
+        uic.fillRect(0, -tWgt / 2, tLen, tWgt);
         // draw used track
-        let tx0 = tLen * Math.min(this._t[0], this._t[1]);
-        let tx1 = tLen * Math.max(this._t[0], this._t[1]);
-        uib.fill(...USED_TRACK);
-        uib.rect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
+        const tx0 = tLen * Math.min(this._t[0], this._t[1]);
+        const tx1 = tLen * Math.max(this._t[0], this._t[1]);
+        uic.fillStyle = USED_TRACK;
+        uic.fillRect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
         // Draw thumbs
         for (let tnbr = 0; tnbr < 2; tnbr++) {
-            uib.fill(...THUMB);
-            uib.noStroke();
-            if ((this.isActive || this.isOver)) {
-                uib.strokeWeight(2);
-                uib.stroke(...HIGHLIGHT);
+            uic.beginPath();
+            uic.roundRect(this._t[tnbr] * tLen - tbSize / 2,
+                -tbSize / 2, tbSize, tbSize, this._thumbCnrs);
+            uic.fillStyle = THUMB;
+            uic.fill()
+            if ((this.isActive || this.over)) {
+                uic.lineWidth = 2;
+                uic.strokeStyle = HIGHLIGHT;
+                uic.stroke();
             }
-            uib.rect(this._t[tnbr] * tLen - tbSize / 2, -tbSize / 2, tbSize, tbSize, ...this._thumbCnrs);
         }
+        this._updatePickBuffer();
+        uic.restore();
         if (!this._enabled)
-            this._disable_hightlight(uib, cs, -10, -this._h / 2, this._w, this._h);
-        this._updateRangerPickBuffer(tx0, tx1);
-        uib.pop();
-        // last line in this method should be
-        this._bufferInvalid = false;
+            this._disable_highlight(cs, 0, 0, this._w, this._h);
+
+        this._bufferInvalid = false; // Finally mark as valid
     }
 
     /** @hidden */
-    _updateRangerPickBuffer(tx0: number, tx1: number) {
-        let c = this._gui.pickColor(this);
-        let pkb = this._pkBfr;
-        let [tLen, tWgt, tbSize] =
-            [pkb.width - 2 * this._inset, this._trackWeight, this._thumbSize];
-        tx0 = Math.round(tx0);
-        tx1 = Math.round(tx1);
+    _updatePickBuffer() { //tx0?: number, tx1?: number) {
+        const pkc = this._pkcContext;
 
-        pkb.push();
-        pkb.clear();
-        pkb.noStroke();
+        const [tLen, tWgt, tbSize] =
+            [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
+        const tx0 = Math.round(tLen * Math.min(this._t[0], this._t[1]));
+        const tx1 = Math.round(tLen * Math.max(this._t[0], this._t[1]));
+        const c = this._gui.pickColor(this);
+
+        pkc.save();
         // Now translate to track left edge - track centre
-        pkb.translate(this._inset, Math.round(pkb.height / 2));
+        pkc.translate(this._inset, Math.round(this._h / 2));
         // Track
-        pkb.fill(c.r, c.g, c.b + 5);
-        pkb.rect(0, -tWgt / 2, tLen, tWgt);
-        pkb.fill(c.r, c.g, c.b + 6);
-        pkb.rect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
+        pkc.fillStyle = _rgb$(c.r, c.g, c.b + 5);
+        pkc.fillRect(0, -tWgt / 2, tLen, tWgt);
+        pkc.fillStyle = _rgb$(c.r, c.g, c.b + 6);
+        pkc.fillRect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
         // Thumb
-        pkb.fill(c.r, c.g, c.b);
-        pkb.rect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
-        pkb.fill(c.r, c.g, c.b + 1);
-        pkb.rect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
-        pkb.pop();
+        pkc.fillStyle = c.cssColor;
+        pkc.fillRect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
+        pkc.fillStyle = _rgb$(c.r, c.g, c.b + 1);
+        pkc.fillRect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
+        pkc.restore();
     }
 
 }
+
+
+Object.assign(CvsRanger.prototype, PICKABLE);

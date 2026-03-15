@@ -46,6 +46,7 @@ class CvsScroller extends CvsBufferedControl {
      * 
      * @param value The scroller position (0-1) 
      * @param used The amount 'used' by the source
+     * @hidden
      */
     update(value: number, used?: number) {
         // If a used value is available then use it
@@ -56,7 +57,7 @@ class CvsScroller extends CvsBufferedControl {
             this.invalidateBuffer();
         }
         if (Number.isFinite(value) && value !== this._value) {
-            value = this._p.constrain(value, 0, 1);
+            value = _constrain(value, 0, 1);
             let dv = value, u2 = this._used / 2;
             if (value < u2) dv = u2;
             else if (value > 1 - u2) dv = 1 - u2;
@@ -79,7 +80,7 @@ class CvsScroller extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
         let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
         let [tw, halfUsed] = [this._trackWidth, this._used / 2];
         switch (e.type) {
@@ -89,15 +90,15 @@ class CvsScroller extends CvsBufferedControl {
                     this._active = true;
                     this._s_value = this._value;
                     this._s_mx = mx;
-                    this.isOver = true;
+                    this.over = true;
                 }
                 break;
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: true });
+                this.action({ source: this, event: e, value: this._value, used: this._used, final: true });
                 this._active = false;
-                this.isOver = false;
+                this.over = false;
                 break;
             case 'mousemove':
             case 'touchmove':
@@ -105,10 +106,10 @@ class CvsScroller extends CvsBufferedControl {
                     let newValue = this._s_value + (mx - this._s_mx) / tw;
                     if (newValue - halfUsed >= 0 && newValue + halfUsed <= 1) {
                         this.update(newValue);
-                        this.action({ source: this, p5Event: e, value: this._value, used: this._used, final: false });
+                        this.action({ source: this, event: e, value: this._value, used: this._used, final: false });
                     }
                 }
-                this.isOver = (this == over.control);
+                this.over = (this == over.control);
                 this.invalidateBuffer();
                 break;
             case 'mouseover':
@@ -122,12 +123,13 @@ class CvsScroller extends CvsBufferedControl {
     /** @hidden */
     _updateControlVisual() { // CvsScroller
         let cs = this.SCHEME;
+        let cnrs = this.CNRS;
 
-        const OPAQUE = cs.C(3);
-        const BORDER = cs.G(8);
-        const UNUSED_TRACK = cs.G(3);
-        const HIGHLIGHT = cs.C(9);
-        const THUMB = cs.C(5);
+        const OPAQUE = cs.C$(3);
+        const BORDER = cs.G$(8);
+        const UNUSED_TRACK = cs.G$(3);
+        const HIGHLIGHT = cs.C$(9);
+        const THUMB = cs.C$(5);
 
         let [w, h, inset, used] = [this._w, this._h, this._inset, this._used];
         let [tx0, tx1] = [inset, w - inset];
@@ -136,31 +138,43 @@ class CvsScroller extends CvsBufferedControl {
         let tbH = this._thumbHeight;
         let tx = this._dvalue * this._trackWidth;
 
-        let uib = this._uiBfr;
-        uib.push();
-        uib.clear();
-        if (this._opaque) {
-            uib.noStroke(); uib.fill(...OPAQUE);
-            uib.rect(0, 0, w, h, ...this._corners);
+        let uic = this._uicContext;
+        uic.save();
+        this._clearUiBuffer();
+        this._clearPickBuffer();
+
+        uic.save();
+        if (this._opaque) { // Background
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.fill();
         }
+
         // Now translate to track left edge - track centre
-        uib.translate(inset, this._uiBfr.height / 2);
+        uic.translate(inset, this._h / 2);
         // draw track
-        uib.fill(...UNUSED_TRACK);
-        uib.stroke(...BORDER);
-        uib.strokeWeight(1);
-        uib.rect(0, -th / 2, tw, th);
+        uic.fillStyle = UNUSED_TRACK;
+        uic.strokeStyle = BORDER;
+        uic.lineWidth = 1;
+        uic.fillRect(0, -th / 2, tw, th);
+        uic.strokeRect(0, -th / 2, tw, th);
         // Draw thumb
-        uib.fill(...THUMB);
-        uib.noStroke();
-        if (this.isActive || this.isOver) {
-            uib.strokeWeight(2);
-            uib.stroke(...HIGHLIGHT);
+        uic.fillStyle = THUMB;
+        // uic.noStroke();
+        if (this.isActive || this.over) {
+            uic.lineWidth = 2;
+            uic.strokeStyle = HIGHLIGHT;
         }
-        uib.rect(tx - tbW / 2, -tbH / 2, tbW, tbH, ...this._corners);
-        if (!this._enabled) this._disable_hightlight(uib, cs, 0, -h / 2, w - 20, h);
+        uic.beginPath();
+        uic.roundRect(tx - tbW / 2, -tbH / 2, tbW, tbH, cnrs);
+        uic.fill();
+        uic.stroke();
+
+        if (!this._enabled)
+            this._disable_highlight(cs, 0, -h / 2, w - 20, h);
         this._updateScrollerPickBuffer(tx - tbW / 2, -tbH / 2, tbW, tbH);
-        uib.pop();
+        uic.restore();
         // last line in this method should be
         this._bufferInvalid = false;
     }
@@ -168,29 +182,22 @@ class CvsScroller extends CvsBufferedControl {
     /** @hidden */
     _updateScrollerPickBuffer(tbX: number, tby: number, tbw: number, tbh: number) {
         let c = this._gui.pickColor(this);
-        let pkb = this._pkBfr;
-        pkb.push();
-        pkb.clear();
-        pkb.noStroke();
-        pkb.fill(c.r, c.g, c.b);
+        let pkc = this._pkcContext;
+
+        pkc.save();
+        pkc.clearRect(0, 0, this._w, this._h);
+        pkc.fillStyle = c.cssColor;
         // Now translate to track left edge - track centre
-        pkb.translate(this._inset, this._pkBfr.height / 2);
-        pkb.rect(Math.round(tbX), Math.round(tby), tbw, tbh);
-        pkb.pop();
+        pkc.translate(this._inset, this._h / 2);
+        pkc.fillRect(Math.round(tbX), Math.round(tby), tbw, tbh);
+        pkc.restore();
     }
 
-    /** @hidden */
-    _minControlSize() {
-        return { w: this._w, h: 20 };
-    }
-
-    // Hide these methods from typeDoc
-    /** @hidden */ tooltip(tiptext) { return this }
-    /** @hidden */ tipTextSize(gtts) { return this }
-    /** @hidden */ corners(c) { return this }
+    /** @hidden */ tooltip(a) { return this.warn$('tooltip') }
+    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize') }
+    /** @hidden */ corners(c) { return this.warn$('corners') }
 
 }
 
-Object.assign(CvsScroller.prototype, NoTooltip);
-Object.assign(CvsScroller.prototype, NoCorners);
 
+Object.assign(CvsScroller.prototype, PICKABLE);

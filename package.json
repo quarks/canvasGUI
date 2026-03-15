@@ -7,7 +7,7 @@
   "scripts": {
     "tsc": "tsc > tsc_err.log 2>&1",
     "typedoc": "npx typedoc --exclude src_ts.**/*.js",
-    "gcc": "npx google-closure-compiler src_js/gui.js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2021 --language_out ECMASCRIPT_NEXT"
+    "gcc": "npx google-closure-compiler src_js/gui.js --js_output_file dist/lib/gui.min.js --language_in ECMASCRIPT_2021 --language_out ECMASCRIPT_NEXT "
   },
   "keywords": [
     "GUI",
@@ -18,9 +18,12 @@
   "license": "MIT",
   "devDependencies": {
     "@types/p5": "^1.4.2",
-    "google-closure-compiler": "^20230206.0.0",
+    "google-closure-compiler": "^20231112.0.0",
     "p5": "^1.4.2",
-    "typedoc": "^0.23.10",
-    "typescript": "^4.7.4"
+    "typedoc": "^0.28.17",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/offscreencanvas": "^2019.7.3"
   }
 }

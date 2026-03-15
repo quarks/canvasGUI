@@ -4,9 +4,12 @@ colorschemes.js
 orientations.js
 basecontrol.js
 bufferedcontrol.js
+image.js
 slider.js
 ranger.js
+text.js
 texticon.js
+label.js
 button.js
 tooltip.js
 scroller.js
@@ -18,4 +21,5 @@ joystick.js
 knob.js
 panel.js
 panes.js
+poster.js
 grid.js

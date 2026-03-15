@@ -1,5 +1,5 @@
 /*
-##############################################################################
+ ##############################################################################
  CvsBufferedControl
  This is the base class for all visual controls that require a graphic buffer
  ##############################################################################
@@ -9,10 +9,15 @@
  * <p>This is the base class for all visual controls that require a graphic buffer.</p>
  * @hidden
  */
-abstract class CvsBufferedControl extends CvsBaseControl {
+abstract class CvsBufferedControl extends CvsControl {
 
-    /** @hidden */ protected _uiBfr: p5.Renderer;
-    /** @hidden */ protected _pkBfr: p5.Renderer;
+    /** @hidden */ protected _uicBuffer: OffscreenCanvas;
+    /** @hidden */ protected _uicContext: OffscreenCanvasRenderingContext2D;
+
+    /** @hidden */ protected _pkcBuffer: OffscreenCanvas;
+    /** @hidden */ protected _pkcContext: OffscreenCanvasRenderingContext2D;
+
+    /** @hidden */ protected _textInvalid = false;
 
     /**
      * CvsBufferedControl class 
@@ -26,111 +31,114 @@ abstract class CvsBufferedControl extends CvsBaseControl {
      */
     constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number) {
         super(gui, id, x, y, w, h);
-        this._validateControlBuffers();
-    }
-
-    /**
-     * Make sure we have a ui buffer and a pick buffer of the correct size
-     * for this control.
-     * @hidden
-     */
-    _validateControlBuffers() {
-        if (!this._uiBfr || this._uiBfr.width != this._w || this._uiBfr.height != this._h) {
-            this._uiBfr = this._p.createGraphics(this._w, this._h);
-            this._uiBfr.pixelDensity(2);
-            this._uiBfr.clear();
-            this._pkBfr = this._p.createGraphics(this._w, this._h);
-            this._pkBfr.pixelDensity(1);
-            this._pkBfr.clear();
-        }
-    }
-
-    /**
-     * <p>This method ensures we have a buffer of the correct size for the control</p>
-     * @hidden
-     */
-    _validateBuffer() {
-        let b = this._uiBfr;
-        if (b.width != this._w || b.height != this._h) {
-            this._uiBfr = this._p.createGraphics(this._w, this._h);
-            this.invalidateBuffer(); // Force a redraw of the buffer
-        }
-        if (this._bufferInvalid) {
-            this._updateControlVisual();
-            this._bufferInvalid = false;
-        }
-    }
-
-    /**
-     * Update rectangular controls using full buffer i.e.
-     * Button, Option, Checkbox, Textfield
-     * @hidden
-     */
-    _updateRectControlPB() {
-        let pkb = this._pkBfr;
-        pkb.clear();
-        let c = this._gui.pickColor(this);
-        pkb.noStroke(); pkb.fill(c.r, c.g, c.b);
-        pkb.rect(1, 1, this._w - 1, this._h - 1, ...this.CNRS);
-    }
-
-    /**
-     * 
-     * @param uib ui overlay buffer
-     * @param pkb picker buffer
-     * @hidden
-     */
-    _draw(uib, pkb) {
         this._validateBuffer();
-        uib.push();
-        uib.translate(this._x, this._y);
-        if (this._visible) {
-            let tr = this._orientation.getTransform(this._w, this._h);
-            uib.translate(tr.tx, tr.ty);
-            uib.rotate(tr.rot);
-            uib.image(this._uiBfr, 0, 0);
-            // Draw pick buffer image if enabled
-            if (this._enabled) {
-                pkb.drawingContext.setTransform(uib.drawingContext.getTransform());
-                pkb.image(this._pkBfr, 0, 0);
-            }
-        }
-        // Display children
-        for (let c of this._children)
-            if (c._visible) c._draw(uib, pkb);
-        uib.pop();
-    }
-
-    /** @hidden */
-    protected _disable_hightlight(b, cs, x, y, w, h) {
-        b.fill(cs.T(2));
-        b.noStroke();
-        b.rect(x, y, w, h, ...this.CNRS);
     }
 
     /**
-     * <p>Shrink the control to fit contents.</p>
-     * <p>To shrink on one dimension only pass either 'w' (width) or 'h' 
-     * (height) to indicate which dimmension to shrink</p>
-     * @param dim the dimension to shrink 
+     * Invalidates display text.
+     * If the text or its attributes are changed then the text needs updating
+     * at next draw cycle.
+     * 
      * @returns this control
+     * @hidden
      */
-    shrink(dim?: string): CvsBaseControl {
-        let s = this._minControlSize();
-        switch (dim) {
-            case 'w':
-                this._w = s.w;
-                break;
-            case 'h':
-                this._h = s.h;
-                break;
-            default:
-                this._w = s.w;
-                this._h = s.h;
-        }
-        this._validateControlBuffers();
+    invalidateText() {
+        this._textInvalid = true;
         this.invalidateBuffer();
         return this;
     }
 
+    /**
+     * Clear the ui buffer
+     * @hidden
+     */
+    _clearUiBuffer() {
+        this._uicContext.clearRect(0, 0, this._uicBuffer.width, this._uicBuffer.height);
+    }
+
+    /**
+     * Clear the pick buffer
+     * @hidden
+     */
+    _clearPickBuffer() {
+        this._pkcContext?.clearRect(0, 0, this._pkcBuffer.width, this._pkcBuffer.height);
+    }
+
+    /**
+     * If this control has changed size then recreate the ui and pick buffers
+     * and invalidate the control so it is forced to redraw the buffers on
+     * when being rendered'
+     * @hidden
+     */
+    _validateBuffer() {
+        if (!this._uicBuffer || this._uicBuffer.width != this._w || this._uicBuffer.height != this._h) {
+            this._uicBuffer = new OffscreenCanvas(this._w, this._h);
+            this._uicContext = this._uicBuffer.getContext('2d')
+            this._uicContext.clearRect(0, 0, this._w, this._h);
+            this.invalidateBuffer();
+        }
+    }
+
+    /** @hidden */
+    _draw(guiCtx, pkCtx) {
+        // Make sure the buffer exists and the same size as the control
+        this._validateBuffer();
+        if (this._bufferInvalid)
+            this._updateControlVisual();
+        guiCtx.save();
+        guiCtx.translate(this._x, this._y);
+        if (this._visible) {
+            let tr = this._orientation.getTransform(this._w, this._h);
+            guiCtx.translate(tr.tx, tr.ty);
+            guiCtx.rotate(tr.rot);
+            guiCtx.drawImage(this._uicBuffer, 0, 0);
+            // Draw pick buffer image if enabled
+            if (this._pkcBuffer && this._enabled) {
+                pkCtx.save();
+                pkCtx.setTransform(guiCtx.getTransform());
+                pkCtx.drawImage(this._pkcBuffer, 0, 0);
+                pkCtx.restore();
+            }
+        }
+        // Display children
+        for (let c of this._children)
+            if (c._visible) c._draw(guiCtx, pkCtx);
+        guiCtx.restore();
+    }
+
+    /** @hidden */
+    protected _disable_highlight(cs: ColorScheme, x: number, y: number, w: number, h: number) {
+        this._uicContext.fillStyle = cs.T$(2);
+        this._uicContext.beginPath();
+        this._uicContext.roundRect(x, y, w, h, this.CNRS);
+        this._uicContext.fill();
+    }
+
+    /** @hidden */
+    protected _getUseableFaceRegion() {
+        const iH = Math.max(...this.CNRS, 3 * ISET_H);
+        return [iH, ISET_V, this._w - 2 * iH, this._h - 2 * ISET_V];
+    }
 }
+
+
+const PICKABLE = {
+    /**
+     * If this control has changed size then recreate the ui and pick buffers
+     * and invalidate the control so it is forced to redraw the buffers on
+     * when being rendered'
+     * @hidden
+     */
+    _validateBuffer() {
+        if (!this._uicBuffer || this._uicBuffer.width != this._w || this._uicBuffer.height != this._h) {
+            this._uicBuffer = new OffscreenCanvas(this._w, this._h);
+            this._uicContext = this._uicBuffer.getContext('2d')
+            this._uicContext.clearRect(0, 0, this._w, this._h);
+            this._pkcBuffer = new OffscreenCanvas(this._w, this._h);
+            this._pkcContext = this._pkcBuffer.getContext('2d');
+            this._pkcContext.clearRect(0, 0, this._w, this._h);
+            this.invalidateBuffer();
+        }
+    }
+}
+

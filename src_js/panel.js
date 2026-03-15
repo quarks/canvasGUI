@@ -72,7 +72,7 @@ class CvsPanel extends CvsBufferedControl {
             case 'touchstart':
                 if (over.part == 0 && (this._canDragX || this._canDragY)) {
                     this._active = true;
-                    this.isOver = true;
+                    this.over = true;
                     this._dragData = [mx, my];
                 }
                 break;
@@ -81,7 +81,7 @@ class CvsPanel extends CvsBufferedControl {
             case 'touchend':
                 if (this.isActive) {
                     this._active = false;
-                    this.isOver = false;
+                    this.over = false;
                     this.invalidateBuffer();
                 }
                 break;
@@ -91,7 +91,7 @@ class CvsPanel extends CvsBufferedControl {
                     let [msx, msy] = this._dragData;
                     let nx = this._x + (this._canDragX ? mx - msx : 0);
                     let ny = this._y + (this._canDragY ? my - msy : 0);
-                    let [pw, ph] = [this._p.width, this._p.height];
+                    let [pw, ph] = [this._gui.canvasWidth, this._gui.canvasHeight];
                     let [cw, ch] = [this._w, this._h];
                     if (this._constrainX && cw <= pw) {
                         if (nx < 0)
@@ -107,7 +107,7 @@ class CvsPanel extends CvsBufferedControl {
                     }
                     this.moveTo(nx, ny);
                 }
-                this.isOver = (this == over.control);
+                this.over = (this == over.control);
                 break;
             case 'mouseover':
                 break;
@@ -118,54 +118,46 @@ class CvsPanel extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this.SCHEME;
-        let cnrs = this.CNRS;
-        const OPAQUE = cs.C(6, this._alpha);
-        const HIGHLIGHT = cs.C(9);
-        let uib = this._uiBfr;
-        uib.push();
-        uib.clear();
-        uib.strokeWeight(3);
-        uib.noStroke();
-        uib.noFill();
+        const cs = this.SCHEME;
+        const cnrs = this.CNRS;
+        const OPAQUE = cs.C$(6, this._alpha);
+        const FORE = cs.C$(9);
+        const HIGHLIGHT = cs.C$(9);
+        const uic = this._uicContext;
+        uic.save();
+        uic.clearRect(0, 0, this._w, this._h);
+        uic.lineWidth = 3;
+        uic.fillStyle = OPAQUE;
+        uic.strokeStyle = HIGHLIGHT;
+        uic.beginPath();
+        uic.roundRect(0, 0, this._w, this._h, ...cnrs);
         if (this._opaque)
-            uib.fill(...OPAQUE);
-        if (this.isOver)
-            uib.stroke(...HIGHLIGHT);
-        uib.rect(0, 0, this._w, this._h, ...cnrs);
+            uic.fill();
+        if (this.over)
+            uic.stroke();
         // Update pick buffer before restoring
-        this._updatePanelControlPB();
+        this._updatePickBuffer();
         // last line in this method should be
         this._bufferInvalid = false;
     }
-    /**
-     * Update rectangular controls using full buffer i.e.
-     * Button, Option, Checkbox, Textfield
-     * @hidden
-     */
-    _updatePanelControlPB() {
-        let cnrs = this.CNRS;
-        let pkb = this._pkBfr;
-        pkb.clear();
-        pkb.noStroke();
-        pkb.noFill();
-        let c = this._gui.pickColor(this);
-        if (this._opaque)
-            pkb.fill(c.r, c.g, c.b);
-        pkb.rect(0, 0, this._w, this._h, ...cnrs);
-    }
     /** @hidden */
-    _minControlSize() {
-        return { w: this._w, h: this._h };
+    _updatePickBuffer() {
+        let pkc = this._pkcContext;
+        let c = this._gui.pickColor(this);
+        pkc.clearRect(0, 0, this._w, this._h);
+        pkc.save();
+        pkc.fillStyle = c.cssColor;
+        pkc.beginPath();
+        pkc.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
+        pkc.fill();
+        pkc.restore();
     }
     // Hide these methods from typeDoc
-    /** @hidden */ parent(parent, rx, ry) { return this; }
-    /** @hidden */ leaveParent() { return this; }
-    /** @hidden */ tooltip(tiptext) { return this; }
-    /** @hidden */ tipTextSize(gtts) { return this; }
-    /** @hidden */ orient(dir) { return this; }
+    /** @hidden */ parent(a, b, c) { return this.warn$('parent'); }
+    /** @hidden */ leaveParent() { return this.warn$('leaveParent'); }
+    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
+    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
+    /** @hidden */ orient(a) { return this.warn$('orient'); }
 }
-Object.assign(CvsPanel.prototype, NoParent);
-Object.assign(CvsPanel.prototype, NoTooltip);
-Object.assign(CvsPanel.prototype, NoOrient);
+Object.assign(CvsPanel.prototype, PICKABLE);
 //# sourceMappingURL=panel.js.map

@@ -1,5 +1,5 @@
-# canvasGUI   2.0.0 
-### (c) Peter Lager  2025 
+# canvasGUI   3.0.0 
+### (c) Peter Lager  2026 
 On-canvas GUI library for p5js
 
 For more information about using canvasGUI please look at

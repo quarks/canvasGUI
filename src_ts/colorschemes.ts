@@ -18,12 +18,48 @@ class ColorScheme {
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
     }
 
-    /**
-     * <p>Get the name of this color scheme e.g. 'green', 'blue' ... </p>
-     */
+    /** Get the name of this color scheme e.g. 'green', 'blue' ...  */
     get name() { return this._name }
     /** @hidden */
     set name(v) { CWARN(`Changing the name of a color scheme is not permitted`) }
+
+    /** @hidden */
+    C(n: number, alpha = 255) {
+        alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
+        return [...this._colors[n], alpha];
+    }
+
+    /** @hidden */
+    C$(n: number, alpha = 255) {
+        let a = alpha < 0 ? 0 : alpha > 255 ? 255 : alpha;
+        a = Math.floor(a / 0.255) / 10;
+        const [r, g, b] = this._colors[n];
+        return a == 100 ? `rgb(${r} ${g} ${b})` : `rgb(${r} ${g} ${b} / ${a}%)`;
+    }
+
+    /** @hidden */
+    G(n: number, alpha = 255) {
+        alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
+        return [...this._greys[n], alpha];
+    }
+
+    /** @hidden */
+    G$(n: number, alpha = 255) {
+        let a = alpha < 0 ? 0 : alpha > 255 ? 255 : alpha;
+        a = Math.floor(a / 0.255) / 10;
+        const [g] = this._greys[n];
+        return a == 100 ? `rgb(${g} ${g} ${g})` : `rgb(${g} ${g} ${g} / ${a}%)`;
+    }
+
+    /** @hidden */
+    T(n: number) { return this._tints[n] }
+
+    /** @hidden */
+    T$(n: number) {
+        let [t, a] = this._tints[n];
+        a = Math.floor(a / 0.255) / 10;
+        return `rgb(${t} ${t} ${t} / ${a}%)`
+    }
 
     /** 
      * Returns true if this scheme has been created by the user and false if
@@ -33,7 +69,7 @@ class ColorScheme {
 
     /** @hidden */
     _deepCopyArray2D(a: Array<Array<number>>) {
-        let b = [];
+        const b = [];
         a.forEach(v => b.push([...v]));
         return b;
     }
@@ -52,21 +88,6 @@ class ColorScheme {
         Object.assign(cpy, COLOR_SCHEME_EDIT);
         return cpy;
     }
-
-    /** @hidden */
-    C(n: number, alpha = 255) {
-        alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
-        return [...this._colors[n], alpha];
-    }
-
-    /** @hidden */
-    G(n: number, alpha = 255) {
-        alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
-        return [...this._greys[n], alpha];
-    }
-
-    /** @hidden */
-    T(n: number) { return this._tints[n] }
 }
 
 class BlueScheme extends ColorScheme {
@@ -148,14 +169,22 @@ class OrangeScheme extends ColorScheme {
 class LightScheme extends ColorScheme {
     constructor() {
         super('light');
-        this._colors = [[254], [228], [203], [177], [152], [127], [101], [76], [50], [25]];
+        this._colors = [
+            [254, 254, 254], [228, 228, 228], [203, 203, 203], [177, 177, 177],
+            [152, 152, 152], [127, 127, 127], [101, 101, 101], [76, 76, 76],
+            [50, 50, 50], [25, 25, 25]
+        ];
     }
 }
 
 class DarkScheme extends ColorScheme {
     constructor() {
         super('dark');
-        this._colors = [[0], [25], [50], [76], [101], [127], [152], [177], [203], [228]];
+        this._colors = [
+            [0, 0, 0], [25, 25, 25], [50, 50, 50], [76, 76, 76], [101, 101, 101],
+            [127, 127, 127], [152, 152, 152], [177, 177, 177], [203, 203, 203],
+            [228, 228, 228]
+        ];
         this._tints = [[102, 160], [131, 172], [191, 204], [226, 230]];
         this._greys = this._greys.reverse();
     }
@@ -164,7 +193,7 @@ class DarkScheme extends ColorScheme {
 // This mixin is added to any copy of a library color scheme so it can be edited
 // to create a user-defined color scheme.
 
-let COLOR_SCHEME_EDIT = {
+const COLOR_SCHEME_EDIT = {
     /**
      * Get a deep copy of the tints array which can then be edited. Changes to
      * the copy will not change the color scheme unless the matching setter is

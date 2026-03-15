@@ -4,6 +4,9 @@ interface __Position { x: number; y: number; }
 /* <p>Object type  \{ w: number; h: number; \} </p> @hidden */
 interface __Box { w: number; h: number; }
 
+/* <p>Object type  \{ w: number; h: number; \} </p> @hidden */
+interface __Line { txt: string, x: number, y: number, w: number }
+
 /* <p>Defines an overlap</p> @hidden */
 interface __Overlap {
     valid: boolean;
@@ -13,7 +16,7 @@ interface __Overlap {
 
 /*
 ##############################################################################
- CvsBaseControl
+ CvsControl
  The base class for controls and panes that don't require a graphics buffer.
  ##############################################################################
  */
@@ -22,7 +25,7 @@ interface __Overlap {
  * <p>This class provides most of the core functionality for the canvasGUI 
  * controls.</p>
  */
-abstract class CvsBaseControl {
+abstract class CvsControl {
 
     /** @hidden */
     static NORTH = new OrientNorth();
@@ -34,12 +37,12 @@ abstract class CvsBaseControl {
     static WEST = new OrientWest();
 
     /** @hidden */ protected _gui: GUI;
-    /** @hidden */ protected _p: p5;
+    // /** @hidden */ protected _p: p5;
     /** @hidden */ protected _id: string;
     /** @hidden */ protected _children: Array<any> = [];
-    /** @hidden */ protected _parent: CvsBaseControl;
+    /** @hidden */ protected _parent: CvsControl;
     /** @hidden */ protected _visible: boolean = true;
-    /** @hidden */ protected _enabled: boolean = true;
+    /** @hidden */ protected _enabled: boolean = false;
     /** @hidden */ protected _z: number = 0;
     /** @hidden */ protected _x: number = 0;
     /** @hidden */ protected _y: number = 0;
@@ -67,7 +70,7 @@ abstract class CvsBaseControl {
     action: Function = function () { };
 
     /**
-     * CvsBaseControl class
+     * CvsControl class
      * @hidden
      * @param gui
      * @param id unique id for this control
@@ -78,7 +81,7 @@ abstract class CvsBaseControl {
      */
     constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number) {
         this._gui = gui;
-        this._p = this._gui._p;
+        // this._p = this._gui._p;
         this._id = id;
         this._x = Math.round(x);
         this._y = Math.round(y);
@@ -88,7 +91,7 @@ abstract class CvsBaseControl {
         this._visible = true;
         this._enabled = true;
         this._scheme = undefined;
-        this._orientation = CvsBaseControl.EAST;
+        this._orientation = CvsControl.EAST;
         this._dragging = false; // is mouse being dragged on active control
     }
 
@@ -153,9 +156,9 @@ abstract class CvsBaseControl {
     get isActive() { return this._active }
 
     /** @hidden */
-    get isOver() { return this._isOver }
+    get over() { return this._isOver }
     /** @hidden */
-    set isOver(b) {
+    set over(b) {
         if (b != this._isOver) {
             this._isOver = b;
             this.invalidateBuffer();
@@ -166,7 +169,6 @@ abstract class CvsBaseControl {
     get CNRS(): Array<number> { return this._corners || this._gui._corners; }
     /** @hidden */
     get SCHEME(): ColorScheme { return this._scheme || this._gui._scheme; }
-
 
     /**
      * Move this control to an absolute position.
@@ -218,7 +220,7 @@ abstract class CvsBaseControl {
      * @param cascade if true propogate scheme to all child controls.
      * @returns this control or the control's color scheme
      */
-    scheme(name?: string, cascade?: boolean): ColorScheme | CvsBaseControl {
+    scheme(name?: string, cascade?: boolean): ColorScheme | CvsControl {
         if (name) {  // setter
             let next_scheme = this._gui._getScheme(name);
             if (next_scheme && this._scheme != next_scheme) {
@@ -247,7 +249,7 @@ abstract class CvsBaseControl {
      * @param c valid radii combination
      * @returns an array of the currently used radii values
      */
-    corners(...c: any): Array<number> | CvsBaseControl {
+    corners(...c: any): Array<number> | CvsControl {
         switch (c.length) {
             case 0: // Getter
                 return [...this.CNRS];
@@ -283,7 +285,7 @@ abstract class CvsBaseControl {
      * @param ry  y position relative to parent
      * @returns this control
      */
-    parent(parent: CvsBaseControl | string, rx?: number, ry?: number): CvsBaseControl {
+    parent(parent: CvsControl | string, rx?: number, ry?: number): CvsControl {
         let prnt = this._gui.$(parent);
         prnt.addChild(this, rx, ry);
         this.z = prnt.z + DELTA_Z;
@@ -294,11 +296,11 @@ abstract class CvsBaseControl {
     /**
      * <p>Add a child to this control using its relative position [rx, ry].
      * If rx and ry are not provided then it uses the values set in the child.</p> 
-     * @param c is the actual control or its id
+     * @param child is the actual control or its id
      * @returns this control
      */
-    addChild(c: CvsBaseControl | string, rx?: number, ry?: number): any {
-        let control = this._gui.$(c);
+    addChild(child: CvsControl | string, rx?: number, ry?: number): any {
+        let control = this._gui.$(child);
         rx = !Number.isFinite(rx) ? control.x : Number(rx);
         ry = !Number.isFinite(ry) ? control.y : Number(ry);
         // If the control already has a parent remove it ready for new parent.
@@ -315,11 +317,11 @@ abstract class CvsBaseControl {
 
     /**
      * <p>Remove a child control from this one so that it stays in same screen position.</p>
-     * @param c the control to remove or its id
+     * @param child the control to remove or its id
      * @returns this control
      */
-    removeChild(c: CvsBaseControl | string) {
-        let control = this._gui.$(c);
+    removeChild(child: CvsControl | string) {
+        let control = this._gui.$(child);
         for (let i = 0; i < this._children.length; i++) {
             if (control === this._children[i]) {
                 let pos = control.getAbsXY();
@@ -339,7 +341,7 @@ abstract class CvsBaseControl {
      * <p>Remove this control from its parent</p>
      * @returns this control
      */
-    leaveParent(): CvsBaseControl {
+    leaveParent(): CvsControl {
         if (this._parent) {
             this._parent.removeChild(this);
             this.z = 0;
@@ -381,21 +383,21 @@ abstract class CvsBaseControl {
      * @param dir 'north', 'south', 'east' or 'west'
      * @returns this control
      */
-    orient(dir: string = 'east'): CvsBaseControl {
+    orient(dir: string = 'east'): CvsControl {
         dir = dir.toString().toLowerCase();
         switch (dir) {
             case 'north':
-                this._orientation = CvsBaseControl.NORTH;
+                this._orientation = CvsControl.NORTH;
                 break;
             case 'south':
-                this._orientation = CvsBaseControl.SOUTH;
+                this._orientation = CvsControl.SOUTH;
                 break;
             case 'west':
-                this._orientation = CvsBaseControl.WEST;
+                this._orientation = CvsControl.WEST;
                 break;
             case 'east':
             default:
-                this._orientation = CvsBaseControl.EAST;
+                this._orientation = CvsControl.EAST;
         }
         return this;
     }
@@ -404,13 +406,11 @@ abstract class CvsBaseControl {
      * Create a tooltip for this control.
      * 
      * @param tiptext the text to appear in the tooltip
-     * @param duration how long the tip remains visible (milliseconds)
      * @returns this control
      */
     tooltip(tiptext: string) {
         let tt = this._gui.__tooltip(this._id + '.tooltip')
-            .text(tiptext)
-            .shrink();
+            .text(tiptext);
         this.addChild(tt);
         if (tt instanceof CvsTooltip) {
             tt._validatePosition();
@@ -434,7 +434,7 @@ abstract class CvsBaseControl {
      * @param cascade if true enable child controls
      * @returns this control
      */
-    enable(cascade?: boolean): CvsBaseControl {
+    enable(cascade?: boolean): CvsControl {
         if (!this._enabled) {
             this._enabled = true;
             this.invalidateBuffer();
@@ -450,7 +450,7 @@ abstract class CvsBaseControl {
      * @param cascade if true disable child controls
      * @returns this control
      */
-    disable(cascade?: boolean): CvsBaseControl {
+    disable(cascade?: boolean): CvsControl {
         if (this._enabled) {
             this._enabled = false;
             this.invalidateBuffer();
@@ -466,7 +466,7 @@ abstract class CvsBaseControl {
      * @param cascade if true show children
      * @returns this control
      */
-    show(cascade?: boolean): CvsBaseControl {
+    show(cascade?: boolean): CvsControl {
         this._visible = true;
         if (cascade)
             for (let c of this._children)
@@ -479,7 +479,7 @@ abstract class CvsBaseControl {
      * @param cascade if true hide children
      * @returns this control
      */
-    hide(cascade?: boolean): CvsBaseControl {
+    hide(cascade?: boolean): CvsControl {
         this._visible = false;
         if (cascade)
             for (let c of this._children)
@@ -492,12 +492,12 @@ abstract class CvsBaseControl {
      * on the controls color scheme.</p>
      * <p>The second parameter, alpha, is optional and controls the level 
      * of opaqueness from 0 - transparent to 255 - fully opaque 
-     * (efault value).</p>
+     * (default value).</p>
      * 
      * @param alpha alpha value for controls background color.
      * @returns this control
      */
-    opaque(alpha: number = 255): CvsBaseControl {
+    opaque(alpha: number = 255): CvsControl {
         this._alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
         this._opaque = true;
         this.invalidateBuffer();
@@ -508,7 +508,7 @@ abstract class CvsBaseControl {
      * <p>Makes the controls background fully transparent.</p>
      * @returns this control
      */
-    transparent(): CvsBaseControl {
+    transparent(): CvsControl {
         this._opaque = false;
         this.invalidateBuffer();
         return this;
@@ -520,22 +520,25 @@ abstract class CvsBaseControl {
     }
 
     /** @hidden */
-    _minControlSize() { return null; }
+    warn$(method): any {
+        CWARN(`'${method}' is not supported by '${this.type}' controls.`)
+        return this;
+    }
 
     /** @hidden */
     _updateControlVisual(): void { }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsBaseControl { return this; }
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl { return this; }
 
     /** @hidden */
     _doKeyEvent(e: KeyboardEvent) { return this; }
 
     /**
-     * @param uib ui overlay buffer
-     * @param pkb picker buffer
+     * @param uic ui overlay buffer drawing context
+     * @param pkc picker buffer drawing context
      * @hidden
      */
-    _draw(uib = null, pkb = null) { }
+    _draw(uic, pkc) { }
 
 }

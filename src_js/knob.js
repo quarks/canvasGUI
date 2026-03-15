@@ -23,7 +23,7 @@ class CvsKnob extends CvsSlider {
         this._turnArc = 2 * Math.PI; // Full turn of 360 degrees
         this._gapPos = 0.5 * Math.PI; // South
         this._tw = 0;
-        this._kRad = 0.5 * this._size;
+        this._kRad = 0.5 * this._size - 2;
         this._gRad = this._kRad - 4;
         this._opaque = true;
     }
@@ -88,7 +88,7 @@ class CvsKnob extends CvsSlider {
      * @returns this control
      */
     track(tw) {
-        tw = this._p.constrain(tw, 6, this._kRad);
+        tw = _constrain(tw, 6, this._kRad);
         this._gRad = this._kRad - tw;
         this._tw = tw;
         this.invalidateBuffer();
@@ -103,7 +103,7 @@ class CvsKnob extends CvsSlider {
      */
     turnAngle(ang) {
         if (ang > 0 && ang <= 360) {
-            this._turnArc = this._p.radians(ang);
+            this._turnArc = _radians(ang);
             this.invalidateBuffer();
         }
         return this;
@@ -121,7 +121,7 @@ class CvsKnob extends CvsSlider {
      */
     gap(ang) {
         if (ang >= 0 && ang <= 360) {
-            this._gapPos = this._p.radians(ang);
+            this._gapPos = _radians(ang);
             this.invalidateBuffer();
         }
         return this;
@@ -139,29 +139,30 @@ class CvsKnob extends CvsSlider {
                 t = this._t01 + (x - this._prevX) * this._sensitivity;
                 under = (t < 0);
                 over = (t > 1);
-                t = this._p.constrain(t, 0, 1);
+                t = _constrain(t, 0, 1);
                 break;
             case CvsKnob.Y_MODE:
                 t = this._t01 - (y - this._prevY) * this._sensitivity;
                 under = (t < 0);
                 over = (t > 1);
-                t = this._p.constrain(t, 0, 1);
+                t = _constrain(t, 0, 1);
                 break;
             case CvsKnob.A_MODE:
                 let low = Math.PI - this._turnArc / 2;
                 let high = 2 * Math.PI - low;
-                let ang = fixAngle2Pi(Math.atan2(y, x) - this._gapPos - this._deltaA);
+                let ang = _fixAngle2Pi(Math.atan2(y, x) - this._gapPos - this._deltaA);
                 under = ang < low;
                 over = ang > high;
-                t = this._p.map(ang, low, high, 0, 1, true);
+                t = _map(ang, low, high, 0, 1, true);
                 break;
         }
         return { t: t, under: under, over: over };
     }
+    /** @hidden */
     _angFromT(t) {
         let low = Math.PI - this._turnArc / 2;
         let high = 2 * Math.PI - low;
-        return this._p.map(t, 0, 1, low, high);
+        return _map(t, 0, 1, low, high);
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
@@ -174,9 +175,9 @@ class CvsKnob extends CvsSlider {
             case 'touchstart':
                 this._prevX = mx;
                 this._prevY = my;
-                this._deltaA = fixAngle2Pi(Math.atan2(my, mx) - this._gapPos - this._angFromT(this._t01));
+                this._deltaA = _fixAngle2Pi(Math.atan2(my, mx) - this._gapPos - this._angFromT(this._t01));
                 this._active = true;
-                this.isOver = true;
+                this.over = true;
                 this.invalidateBuffer();
                 break;
             case 'mouseout':
@@ -184,7 +185,7 @@ class CvsKnob extends CvsSlider {
             case 'touchend':
                 next = this._tFromXY(mx, my);
                 this._t01 = this._s2ticks ? this._nearestTickT(next.t) : next.t;
-                this.action({ source: this, p5Event: e, value: this.value(), final: true });
+                this.action({ source: this, event: e, value: this.value(), final: true });
                 this._active = false;
                 this.invalidateBuffer();
                 break;
@@ -197,10 +198,10 @@ class CvsKnob extends CvsSlider {
                         this._prevX = mx;
                         this._prevY = my;
                         this._t01 = t01;
-                        this.action({ source: this, p5Event: e, value: this.value(), final: false });
+                        this.action({ source: this, event: e, value: this.value(), final: false });
                     }
                 }
-                this.isOver = (this == over.control);
+                this.over = (this == over.control);
                 this._tooltip?._updateState(enter);
                 this.invalidateBuffer();
                 break;
@@ -215,124 +216,142 @@ class CvsKnob extends CvsSlider {
     _updateControlVisual() {
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
-        const OPAQUE = cs.C(3, this._alpha);
-        const GRIP_OFF = cs.C(7);
-        const GRIP_STROKE = cs.C(8);
-        const MARKER = cs.C(3);
-        const HIGHLIGHT = cs.C(9);
-        const TRACK_BACK = cs.C(3);
-        const TRACK_ARC = cs.C(1);
-        const TICKS = cs.G(8);
-        const USED_TRACK = cs.G(2);
-        const UNUSED_TRACK = cs.T(1);
-        let uib = this._uiBfr;
-        uib.clear();
+        const OPAQUE = cs.C$(3, this._alpha);
+        const GRIP_OFF = cs.C$(7);
+        const GRIP_STROKE = cs.C$(8);
+        const MARKER = cs.C$(3);
+        const HIGHLIGHT = cs.C$(9);
+        const TRACK_BACK = cs.C$(3);
+        const TRACK_ARC = cs.C$(1);
+        const TICKS = cs.G$(8);
+        const USED_TRACK = cs.G$(2);
+        const UNUSED_TRACK = cs.T$(2);
+        let uib = this._uicBuffer;
+        let uic = this._uicContext;
+        this._clearUiBuffer();
+        this._clearPickBuffer();
+        uic.save();
         if (this._opaque) {
-            uib.noStroke();
-            uib.fill(...OPAQUE);
-            uib.rect(0, 0, this._w, this._h, ...cnrs);
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.fill();
         }
         let arc = this._turnArc, gap = 2 * Math.PI - arc, lowA = gap / 2;
-        let rOut = this._kRad, rIn = this._gRad;
-        let dOut = 2 * rOut, dIn = 2 * rIn;
-        uib.push();
-        uib.translate(uib.width / 2, uib.height / 2);
-        uib.rotate(this._gapPos + lowA);
-        // Draw full background and track arc
-        uib.noStroke();
-        uib.fill(...TRACK_BACK);
-        uib.ellipse(0, 0, dOut, dOut);
-        uib.fill(...TRACK_ARC);
-        uib.arc(0, 0, dOut, dOut, 0, this._turnArc);
+        let rTrack = (this._kRad + this._gRad) / 2;
+        uic.save();
+        uic.translate(uib.width / 2, uib.height / 2);
+        uic.rotate(this._gapPos + lowA);
+        // Draw full background 
+        uic.fillStyle = TRACK_BACK;
+        uic.beginPath();
+        uic.ellipse(0, 0, this._kRad, this._kRad, 0, 0, 2 * Math.PI);
+        uic.fill();
+        uic.fillStyle = TRACK_ARC;
+        uic.beginPath();
+        uic.moveTo(0, 0);
+        uic.arc(0, 0, this._kRad, 0, this._turnArc, false);
+        uic.closePath();
+        uic.fill();
+        // Unused track
+        uic.fillStyle = UNUSED_TRACK;
+        uic.beginPath();
+        uic.moveTo(0, 0);
+        uic.arc(0, 0, rTrack, 0, this._turnArc, false);
+        uic.closePath();
+        uic.fill();
+        // Used track
+        uic.fillStyle = USED_TRACK;
+        uic.beginPath();
+        uic.moveTo(0, 0);
+        uic.arc(0, 0, rTrack, 0, this._t01 * arc, false);
+        uic.closePath();
+        uic.fill();
         // Draw ticks? 
         let n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
-            let b0 = this._tw, b1 = 0.65 * b0;
-            uib.stroke(...TICKS);
+            let mjrTickLen = this._kRad;
+            let mnrTickLen = this._gRad + 0.65 * (this._kRad - this._gRad);
+            uic.strokeStyle = TICKS;
             let da = arc / n;
-            uib.push();
-            {
-                uib.strokeWeight(0.9);
-                // minor ticks
-                for (let i = 0; i <= n; i++) {
-                    uib.line(rIn, 0, rIn + b1, 0);
-                    uib.rotate(da);
-                }
+            uic.save();
+            uic.lineWidth = 1;
+            // minor ticks
+            uic.beginPath();
+            for (let i = 0; i <= n; i++) {
+                uic.moveTo(0, 0);
+                uic.lineTo(mnrTickLen, 0);
+                uic.rotate(da);
             }
-            uib.pop();
+            uic.stroke();
+            uic.restore();
             n = this._majorTicks;
             if (n >= 2) {
                 let da = arc / n;
-                uib.push();
-                {
-                    uib.strokeWeight(1);
-                    // major ticks
-                    for (let i = 0; i <= n; i++) {
-                        uib.line(rIn, 0, rIn + b0, 0);
-                        uib.rotate(da);
-                    }
+                uic.save();
+                uic.beginPath();
+                uic.lineWidth = 1.2;
+                // major ticks
+                for (let i = 0; i <= n; i++) {
+                    uic.moveTo(0, 0);
+                    uic.lineTo(mjrTickLen, 0);
+                    uic.rotate(da);
                 }
-                uib.pop();
+                uic.stroke();
+                uic.restore();
             }
-            // Unused track
-            uib.noStroke();
-            uib.fill(...UNUSED_TRACK);
-            uib.arc(0, 0, dIn + b0, dIn + b0, 0, arc);
-            // Unused track
-            uib.fill(...USED_TRACK);
-            uib.arc(0, 0, dIn + b0, dIn + b0, 0, this._t01 * arc);
         }
         // Grip section
-        uib.stroke(...GRIP_STROKE);
-        uib.strokeWeight(1.5);
-        uib.fill(...GRIP_OFF);
-        uib.ellipse(0, 0, dIn, dIn);
+        uic.strokeStyle = GRIP_STROKE;
+        uic.lineWidth = 1.5;
+        uic.fillStyle = GRIP_OFF;
+        uic.beginPath();
+        uic.ellipse(0, 0, this._gRad, this._gRad, 0, 0, 2 * Math.PI);
+        uic.fill();
+        uic.stroke();
         // Grip arrow marker
-        uib.push();
-        {
-            uib.rotate(this._t01 * arc);
-            let ms = 0.2 * rIn;
-            uib.fill(...MARKER);
-            uib.noStroke();
-            uib.beginShape();
-            uib.vertex(-ms, 0);
-            uib.vertex(0, -ms);
-            uib.vertex(rIn, 0);
-            uib.vertex(0, ms);
-            uib.endShape(this._p.CLOSE);
-        }
-        uib.pop();
+        uic.save();
+        uic.rotate(this._t01 * arc);
+        let ms = 0.2 * this._gRad;
+        uic.fillStyle = MARKER;
+        uic.beginPath();
+        uic.moveTo(-ms, 0);
+        uic.lineTo(0, -ms);
+        uic.lineTo(this._gRad, 0);
+        uic.lineTo(0, ms);
+        uic.closePath();
+        uic.fill();
+        uic.restore();
         // Is over highlight?
-        if (this.isOver) {
-            uib.noFill();
-            uib.stroke(...HIGHLIGHT);
-            uib.strokeWeight(3);
-            uib.arc(0, 0, 2 * this._kRad, 2 * this._kRad, 0, arc);
+        if (this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 3;
+            uic.beginPath();
+            uic.arc(0, 0, this._kRad, 0, arc);
+            uic.stroke();
         }
-        this._updateKnobPickBuffer(dOut);
-        uib.pop();
-        // last line in this method should be
-        this._bufferInvalid = false;
+        this._updatePickBuffer();
+        uic.restore();
+        if (!this._enabled)
+            this._disable_highlight(cs, 0, 0, this._w, this._h);
+        this._bufferInvalid = false; // Now the buffer is valid
     }
     /** @hidden */
-    _updateKnobPickBuffer(dOut) {
+    _updatePickBuffer() {
+        let pkc = this._pkcContext;
         let c = this._gui.pickColor(this);
-        let pkb = this._pkBfr;
-        pkb.push();
-        pkb.clear();
-        pkb.translate(pkb.width / 2, pkb.height / 2);
-        pkb.noStroke();
+        pkc.save();
+        pkc.translate(this._w / 2, this._h / 2);
         // Background
-        pkb.fill(c.r, c.g, c.b);
-        pkb.ellipse(0, 0, dOut, dOut);
-        pkb.pop();
+        pkc.fillStyle = c.cssColor;
+        pkc.ellipse(0, 0, this._kRad, this._kRad, 0, 0, 2 * Math.PI);
+        pkc.fill();
+        pkc.restore();
     }
-    /** @hidden */
-    _minControlSize() {
-        return { w: this._size, h: this._size };
-    }
+    /** @hidden */ orient(a) { return this.warn$('orient'); }
 }
 /** @hidden */ CvsKnob.X_MODE = 1;
 /** @hidden */ CvsKnob.Y_MODE = 2;
 /** @hidden */ CvsKnob.A_MODE = 3;
+Object.assign(CvsKnob.prototype, PICKABLE);
 //# sourceMappingURL=knob.js.map

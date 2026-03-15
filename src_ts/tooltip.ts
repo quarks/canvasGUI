@@ -6,7 +6,6 @@
  * @hidden
  */
 class CvsTooltip extends CvsText {
-
     /** @hidden */ protected _gap: number;
 
     /** @hidden */
@@ -14,35 +13,31 @@ class CvsTooltip extends CvsText {
         super(gui, name);
         this._gap = 1;
         this._visible = false;
+        this._tSize = 12;
+        this.invalidateText();
     }
+
+    //  Changing the text or text size should update the control size
 
     /**
      * <p>Sets the text to be displayed in the tooltip.</p>
      * <p>Processing constants are used to define the alignment.</p>
-     * @param t the text to display
+     * @param text the text to display
      * @returns this control
      */
-    text(t: string) {
-        if (Array.isArray(t))
-            this._lines = t;
-        else {
-            let lines = t.toString().split('\n');
-            this._lines = [];
-            for (let line of lines)
-                this._lines.push(line);
-        }
-        // If necessary expand the control to surround text
-        let s = this._minControlSize();
-        this._w = Math.max(this._w, s.w);
-        this._h = Math.max(this._h, s.h);
-        this.invalidateBuffer();
+    text(text?: string | Array<string>, alignH?: string, alignV?: string): string | CvsControl {
+        if (!text)
+            return this._tLines.map(line => line.txt).join('\n');
+        super.text(text);
+        this.shrink();
+        this.invalidateText();
         return this;
     }
 
     /** @hidden */
-    show(cascade?: boolean): CvsBaseControl { return this; }
+    show(cascade?: boolean): CvsControl { return this; }
     /** @hidden */
-    hide(cascade?: boolean): CvsBaseControl { return this; }
+    hide(cascade?: boolean): CvsControl { return this; }
 
     /** @hidden */
     _updateState(enter: boolean) {
@@ -62,65 +57,34 @@ class CvsTooltip extends CvsText {
         this._x = 0, this._y = -this._h;
         if (py + this._y < 0)
             this._y += this._h + ph;
-        if (px + this._x + this._w > this._gui.canvasWidth())
+        if (px + this._x + this._w > this._gui.canvasWidth)
             this._x -= this._w - pw;
     }
 
-
     /** @hidden */
     _updateControlVisual() { // CvsTooltip
-        let ts = this._textSize || this._gui.tipTextSize();
-        let cs = this._parent.scheme() || this._gui.scheme();
-        let lines = this._lines, gap = this._gap;
-        const BACK = cs.C(3);
-        const FORE = cs.C(9);
-
-        let uib = this._uiBfr;
-        uib.push();
-        uib.clear();
-        // Backkground
-        uib.stroke(...FORE); uib.fill(...BACK);
-        uib.rect(0, 0, this._w - 1, this._h - 1);
-
-        uib.fill(...FORE).noStroke();
-        if (lines.length > 0) {
-            uib.textSize(ts);
-            let x0 = gap, x1 = this._w - gap, sx = 0;
-            // Determine extent of text area
-            let tw = x1 - x0;
-            let th = this._tbox.h;
-            let py = uib.textAscent() + (this._h - th) / 2;
-
-            for (let line of lines) {
-                sx = x0 + (tw - uib.textWidth(line)) / 2;
-                uib.text(line, sx, py);
-                py += uib.textLeading();
-            }
+        if (this._textInvalid)
+            this._formatText();
+        this._updateFaceElements();
+        if (this._fitWH) {
+            this._fitToContent();
+            this._validatePosition();
         }
-        uib.pop();
-        // last line in this method should be
-        this._bufferInvalid = false;
-    }
 
-    /** @hidden */
-    _minControlSize() {
-        let b = this._uiBfr;
-        let lines = this._lines;
-        let ts = this._textSize || this._gui.tipTextSize();
-        let tbox = this._tbox;
-        let sw = 0, sh = 0, gap = this._gap;
-        // Calculate minimum length and height of are to hold
-        // multiple lines of text
-        if (lines.length > 0) {
-            if (!b) this._validateBuffer();
-            b.textSize(ts);
-            tbox.w = ts + lines.map(t => b.textWidth(t)).reduce((x, y) => (x > y) ? x : y);
-            tbox.h = (lines.length - 1) * b.textLeading() + b.textAscent() + b.textDescent();
-            gap += this._gap;
-        }
-        sw += tbox.w + gap;
-        sh = Math.max(tbox.h, sh) + 2 * gap;
-        return { w: sw, h: sh };
-    }
+        const cs = this._parent.scheme() || this._gui.scheme();
+        const BACK = cs.C$(3);
+        const FORE = cs.C$(9);
 
+        const uic = this._uicContext;
+        this._clearUiBuffer();
+        uic.save();
+        uic.font = this._cssFont;
+        uic.strokeStyle = FORE;
+        uic.fillStyle = BACK;
+        uic.fillRect(0, 0, this._w - 1, this._h - 1);
+        uic.strokeRect(0, 0, this._w - 1, this._h - 1);
+        this._renderTextArea(FORE);
+        uic.restore();
+        this._bufferInvalid = false;    // buffer is now valid
+    }
 }

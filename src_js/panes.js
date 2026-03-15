@@ -4,7 +4,7 @@
  This is the base class side panes
  ##############################################################################
  */
-class CvsPane extends CvsBaseControl {
+class CvsPane extends CvsControl {
     /** @hidden */
     constructor(gui, id, x, y, w, h) {
         super(gui, id, x, y, w, h);
@@ -12,10 +12,44 @@ class CvsPane extends CvsBaseControl {
         this._y = y;
         this._w = w;
         this._h = h;
-        this._cornerRadius = 5;
+        this._cnrRad = 8;
         this._status = 'closed';
         this._timer = 0;
         this._z = PANE_Z;
+    }
+    /**
+     * Get the tab button.
+     * @hidden
+     */
+    get TAB() { return this._children[0]; }
+    /** @hidden */
+    get HEIGHT() { return this._tabMinHeight ?? this._gui._tabMinHeight; }
+    /**
+     * <p>Gets or sets the global minimum height for pane tabs.</p>
+     * @param th the minimum tab height (must be &ge;10)
+     * @returns this gui instance
+     */
+    tabHeight(th) {
+        if (th === undefined || !Number.isFinite(th))
+            return this._tabMinHeight;
+        if (th >= 10) {
+            this._tabMinHeight = th;
+            this.TAB.shrink(1, this.HEIGHT);
+            this.TAB.invalidateBuffer();
+            this._gui.invalidateTabs();
+        }
+        return this;
+    }
+    createTabButton(orient, corners) {
+        if (this._children.length === 0) {
+            const tab = this._gui.button(`Tab ${CvsPane._TAB_ID++}`);
+            tab.corners(corners)
+                .orient(orient)
+                .text(tab.id)
+                .setAction(this._tabAction);
+            this._gui.invalidateTabs();
+            this.addChild(tab);
+        }
     }
     /**
      * <p>Get the 'depth' the pane will intrude into the canvas when open.</p>
@@ -35,14 +69,14 @@ class CvsPane extends CvsBaseControl {
             case "open": // now add closing timer
                 this._timer = setInterval(() => { this._closing(); }, CvsPane._dI);
                 this._status = 'closing';
-                this.action({ source: this, p5Event: undefined, state: 'closed' });
+                this.action({ source: this, event: undefined, state: 'closed' });
                 break;
         }
         return this;
     }
-    /** True if the pane is closed else false.*/
+    /** True if the pane is closed else false. */
     get isClosed() { return this._status == 'closed'; }
-    /** True if the pane is closing else false.*/
+    /** True if the pane is closing else false. */
     get isClosing() { return this._status == 'closing'; }
     /**
      * <p>Open this pane.</p>
@@ -56,7 +90,7 @@ class CvsPane extends CvsBaseControl {
                 this._gui._closePanes();
                 this._timer = setInterval(() => { this._opening(); }, CvsPane._dI);
                 this._status = 'opening';
-                this.action({ source: this, p5Event: undefined, state: 'open' });
+                this.action({ source: this, event: undefined, state: 'open' });
                 break;
         }
     }
@@ -64,48 +98,6 @@ class CvsPane extends CvsBaseControl {
     get isOpen() { return this._status == 'open'; }
     /** true if the pane is opening else false.*/
     get isOpening() { return this._status == 'opening'; }
-    /** @hidden */
-    _tabAction(ta) {
-        /*
-        This method is called when the tab button is clicked. What
-        happens next depends on the pane status
-        */
-        let pane = ta.source._parent;
-        switch (pane._status) {
-            case 'open':
-                pane.close();
-                break;
-            case 'closed': // closed so we want to open it
-                pane.open();
-                break;
-            case 'opening':
-                break;
-            case 'closing':
-                break;
-        }
-    }
-    /** @hidden */
-    _draw(uib, pkb) {
-        let cs = (this.tab.scheme() || this._gui.scheme());
-        const BACKGROUND = cs.C(9, 176);
-        uib.push();
-        uib.translate(this._x, this._y);
-        pkb.push();
-        pkb.drawingContext.setTransform(uib.drawingContext.getTransform());
-        if (this._visible && this._tabstate != 'closed') {
-            uib.noStroke();
-            uib.fill(...BACKGROUND);
-            uib.rect(0, 0, this._w, this._h);
-            pkb.noStroke();
-            pkb.fill('white');
-            pkb.rect(0, 0, this._w, this._h);
-            for (let c of this._children)
-                if (c._visible)
-                    c._draw(uib, pkb);
-        }
-        pkb.pop();
-        uib.pop();
-    }
     /**
      * <p>Sets or gets the color scheme used by the pane's tab and the
      * translucent background. Controls on the pane are not affected.</p>
@@ -113,18 +105,19 @@ class CvsPane extends CvsBaseControl {
      * @returns this pane or its color scheme
      */
     scheme(name) {
-        let result = this.tab.scheme(name, false);
+        let result = this.TAB.scheme(name, false);
         return (result instanceof ColorScheme) ? result : this;
     }
     /**
      * <p>Sets the current text.</p>
      * <p>Processing constants are used to define the alignment.</p>
      * @param t the text toset
-     * @param align LEFT, CENTER or RIGHT
      * @returns this control
      */
-    text(t, align) {
-        this.tab.text(t, align);
+    text(t) {
+        this.TAB.text(t);
+        this.TAB.shrink(1, this.HEIGHT);
+        this._gui.invalidateTabs();
         return this;
     }
     /**
@@ -132,18 +125,23 @@ class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     noText() {
-        this.tab.noText();
+        this.TAB.noText();
+        this.TAB.shrink(1, this.HEIGHT);
+        this._gui.invalidateTabs();
         return this;
     }
     /**
      * <p>Sets the icon and its alignment relative to any text in the control.</p>
      * <p>Processing constants are used to define the icon alignment.</p>
      * @param i the icon to use for this control
-     * @param align LEFT or RIGHT
+     * @param alignH 'left', 'right' or 'center'
+     * @param alignV 'top', 'bottom' or 'center'
      * @returns this control
      */
-    icon(i, align) {
-        this.tab.icon(i, align);
+    icon(i, alignH, alignV) {
+        this.TAB.icon(i, alignH, alignV);
+        this.TAB.shrink(1, this.HEIGHT);
+        this._gui.invalidateTabs();
         return this;
     }
     /**
@@ -151,7 +149,31 @@ class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     noIcon() {
-        this.tab.noIcon();
+        this.TAB.noIcon();
+        this.TAB.shrink(1, this.HEIGHT);
+        this._gui.invalidateTabs();
+        return this;
+    }
+    /**
+     * <p>Sets the text font for the pane tab.</p>
+     * @param font the text font to use
+     * @returns this control
+     */
+    textFont(font) {
+        this.TAB.textFont(font);
+        this.TAB.shrink(1, this.HEIGHT);
+        this._gui.invalidateTabs();
+        return this;
+    }
+    /**
+     * <p>Sets the text style for the pane tab.</p>
+     * @param style the text style to use
+     * @returns this control
+     */
+    textStyle(style, slant) {
+        this.TAB.textStyle(style, slant);
+        this.TAB.shrink(1, this.HEIGHT);
+        this._gui.invalidateTabs();
         return this;
     }
     /**
@@ -160,47 +182,17 @@ class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     textSize(ts) {
-        this.tab.textSize(ts);
+        this.TAB.textSize(ts);
+        this.TAB.shrink(1, this.HEIGHT);
+        this._gui.invalidateTabs();
         return this;
     }
-    /**
-     * <p>Sets the text style for the pane tab.</p>
-     * @param ty the text style to use
-     * @returns this control
-     */
-    textStyle(ty) {
-        this.tab.textStyle(ty);
-        return this;
-    }
-    /**
-     * <p>Sets the text font for the pane tab.</p>
-     * @param tf the text font to use
-     * @returns this control
-     */
-    textFont(tf) {
-        this.tab.textFont(tf);
-        return this;
-    }
-    /**
-     * <p>Shrink the pane tab to fit its contents.</p>
-     * <p>To shrink on one dimension only pass either 'w' (width) or 'h'
-     * (height) to indicate which dimmension to shrink</p>
-     * @param dim the dimension to shrink
-     * @returns this control
-     */
-    shrink(dim) {
-        return this.tab.shrink();
-    }
-    /**
-     * Get the tab button.
-     */
-    get tab() { return this._children[0]; }
     /**
      * <p>Enables tab opening / closure</p>
      * @returns this control
      */
     enable() {
-        this.tab.enable();
+        this.TAB.enable();
         return this;
     }
     /**
@@ -209,7 +201,7 @@ class CvsPane extends CvsBaseControl {
      */
     disable() {
         this.close();
-        this.tab.disable();
+        this.TAB.disable();
         return this;
     }
     /**
@@ -218,7 +210,7 @@ class CvsPane extends CvsBaseControl {
      */
     hide() {
         this.close();
-        this.tab.hide();
+        this.TAB.hide();
         return this;
     }
     /**
@@ -226,49 +218,119 @@ class CvsPane extends CvsBaseControl {
      * @returns this control
      */
     show() {
-        this.tab.show();
+        this.TAB.show();
         return this;
     }
     /** @hidden */
-    _minControlSize() {
-        return { w: this._w, h: this._h };
+    _tabAction(ta) {
+        // This method is called when the tab button is clicked. What 
+        // happens next depends on the pane status
+        let pane = ta.source._parent;
+        switch (pane._status) {
+            case 'open':
+                pane.close();
+                break;
+            case 'closed':
+                pane.open();
+                break;
+            case 'opening':
+                break;
+            case 'closing':
+                break;
+        }
+    }
+    _doEvent(e, x = 0, y = 0, over, enter) {
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                this._active = true;
+                this._clickAllowed = true;
+                this.over = true;
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                if (this.isActive) {
+                    if (this._clickAllowed) {
+                        this.close();
+                    }
+                    this._active = false;
+                    this._clickAllowed = false;
+                    this.over = false;
+                }
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                this._clickAllowed = false;
+                this.over = (this == over.control);
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+        return this.isActive ? this : null;
+    }
+    /** @hidden */
+    _draw(guiCtx, pkCtx) {
+        let cs = (this.TAB.scheme() || this._gui.scheme());
+        const BACKGROUND = cs.C$(9, 176);
+        let c = this._gui.pickColor(this);
+        guiCtx.save();
+        guiCtx.translate(this._x, this._y);
+        pkCtx.save();
+        pkCtx.setTransform(guiCtx.getTransform());
+        if (this._visible) {
+            guiCtx.fillStyle = BACKGROUND;
+            guiCtx.fillRect(0, 0, this._w, this._h);
+            pkCtx.fillStyle = c.cssColor;
+            pkCtx.fillRect(0, 0, this._w, this._h);
+            for (let c of this._children)
+                if (c._visible)
+                    c._draw(guiCtx, pkCtx);
+        }
+        pkCtx.restore();
+        guiCtx.restore();
     }
     // Hide these methods from typeDoc
-    /** @hidden */ orient(dir) { return this; }
-    /** @hidden */ parent(parent, rx, ry) { return this; }
-    /** @hidden */ leaveParent() { return this; }
-    /** @hidden */ transparent() { return this; }
-    /** @hidden */ opaque() { return this; }
-    /** @hidden */ tooltip(tiptext) { return this; }
-    /** @hidden */ tipTextSize(gtts) { return this; }
-    /** @hidden */ corners(c) { return this; }
+    /** @hidden */ orient(a) { return this.warn$('orient'); }
+    /** @hidden */ parent(a, b, c) { return this.warn$('parent'); }
+    /** @hidden */ leaveParent() { return this.warn$('leaveParent'); }
+    /** @hidden */ transparent() { return this.warn$('tansparent'); }
+    /** @hidden */ opaque() { return this.warn$('opaque'); }
+    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
+    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
+    /** @hidden */ corners(a) { return this.warn$('corners'); }
+    /** @hidden */ shrink(a, b) { return this.warn$('shrink'); }
+    /** @hidden */ moveBy(a, b) { return this.warn$('moveBy'); }
+    /** @hidden */ moveTo(a, b) { return this.warn$('moveTo'); }
 }
 // Deltas used in controlling opening and closing speeds
-/** @hidden */ CvsPane._dI = 50; // Interval time (20)
-/** @hidden */ CvsPane._dC = 60; // Close speed px/sec :: was (40)
-/** @hidden */ CvsPane._dO = 40; // Open speed px/sec :: was (20)
-/** @hidden */ CvsPane._wExtra = 20;
-/** @hidden */ CvsPane._tabID = 1;
-Object.assign(CvsPane.prototype, NoOrient);
-Object.assign(CvsPane.prototype, NoParent);
-Object.assign(CvsPane.prototype, FixedBackground);
-Object.assign(CvsPane.prototype, NoTooltip);
-Object.assign(CvsPane.prototype, NoCorners);
+/** @hidden */ CvsPane._dI = 50; // Interval time (50)
+/** @hidden */ CvsPane._dC = 60; // Close speed px/sec
+/** @hidden */ CvsPane._dO = 40; // Open speed px/sec
+/** @hidden */ CvsPane._TAB_ID = 1;
 /** @hidden */
 class CvsPaneNorth extends CvsPane {
     constructor(gui, id, depth) {
-        super(gui, id, 0, -depth, gui.canvasWidth(), depth);
+        super(gui, id, 0, -depth, gui.canvasWidth, depth);
         this._depth = depth;
-        this._status = 'closed'; // closing opening open
-        // Make the tab button 
-        let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id).setAction(this._tabAction);
-        let s = tab._minControlSize();
-        tab._w = s.w + CvsPane._wExtra;
-        tab.corners(0, 0, this._cornerRadius, this._cornerRadius);
-        this.addChild(tab);
+        this.createTabButton('east', [0, 0, this._cnrRad, this._cnrRad]);
         gui._panesNorth.push(this);
-        this._gui.validateTabsNorth();
+        this._gui.invalidateTabs();
+    }
+    /**
+     * North
+     * @param tabPos the postion when shut
+     * @param cvsWidth the width of the display canvas
+     * @param cvsHeight the height of the display canvas
+     * @hidden
+     */
+    _updateLocation(tabPos, cvsWidth, cvsHeight) {
+        this._y = -this._depth;
+        this._w = cvsWidth;
+        this.TAB.y = this._depth;
+        this.TAB.x = tabPos;
     }
     _opening() {
         let py = this._y + CvsPane._dO;
@@ -288,33 +350,33 @@ class CvsPaneNorth extends CvsPane {
         }
         this._y = py;
     }
-    // Called by CvsButton if it has updated its size/status
-    validateTabs() {
-        this._gui.validateTabsNorth();
-        return this;
-    }
 }
 /** @hidden */
 class CvsPaneSouth extends CvsPane {
     constructor(gui, id, depth) {
-        super(gui, id, 0, gui.canvasHeight(), gui.canvasWidth(), depth);
+        super(gui, id, 0, gui.canvasHeight, gui.canvasWidth, depth);
         this._depth = depth;
-        this._status = 'closed'; // closing opening open
-        // Make the tab button 
-        let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id).setAction(this._tabAction);
-        let s = tab._minControlSize();
-        tab._w = s.w + CvsPane._wExtra;
-        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
-        this.addChild(tab);
-        // Add this pane control to those on East side
+        this.createTabButton('east', [this._cnrRad, this._cnrRad, 0, 0]);
         this._gui._panesSouth.push(this);
-        this._gui.validateTabsSouth();
+        this._gui.invalidateTabs();
+    }
+    /**
+     * South
+     * @param tabPos the postion when shut
+     * @param cvsWidth the width of the display canvas
+     * @param cvsHeight the height of the display canvas
+     * @hidden
+     */
+    _updateLocation(tabPos, cvsWidth, cvsHeight) {
+        this._y = cvsHeight;
+        this._w = cvsWidth;
+        this.TAB.y = -this.TAB._h;
+        this.TAB.x = tabPos;
     }
     _opening() {
         let py = this._y - CvsPane._dO;
-        if (py < this._gui.canvasHeight() - this._depth) { // See if open
-            py = this._gui.canvasHeight() - this._depth;
+        if (py < this._gui.canvasHeight - this._depth) { // See if open
+            py = this._gui.canvasHeight - this._depth;
             clearInterval(this._timer);
             this._status = 'open';
         }
@@ -322,40 +384,40 @@ class CvsPaneSouth extends CvsPane {
     }
     _closing() {
         let py = this._y + CvsPane._dC;
-        if (py > this._gui.canvasHeight()) { // See if closed
-            py = this._gui.canvasHeight();
+        if (py > this._gui.canvasHeight) { // See if closed
+            py = this._gui.canvasHeight;
             clearInterval(this._timer);
             this._status = 'closed';
         }
         this._y = py;
     }
-    // Called by CvsButton if it has updated its size/status
-    validateTabs() {
-        this._gui.validateTabsSouth();
-        return this;
-    }
 }
 /** @hidden */
 class CvsPaneEast extends CvsPane {
     constructor(gui, id, depth) {
-        super(gui, id, gui.canvasWidth(), 0, depth, gui.canvasHeight());
+        super(gui, id, gui.canvasWidth, 0, depth, gui.canvasHeight);
         this._depth = depth;
-        this._status = 'closed'; // closing opening open
-        // Make the tab button 
-        let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id).orient('north').setAction(this._tabAction);
-        let s = tab._minControlSize();
-        tab._w = s.w + CvsPane._wExtra;
-        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
-        this.addChild(tab);
-        // Add this pane control to those on East side
+        this.createTabButton('north', [this._cnrRad, this._cnrRad, 0, 0]);
         this._gui._panesEast.push(this);
-        this._gui.validateTabsEast();
+        this._gui.invalidateTabs();
+    }
+    /**
+     * East
+     * @param tabPos the postion when shut
+     * @param cvsWidth the width of the display canvas
+     * @param cvsHeight the height of the display canvas
+     * @hidden
+     */
+    _updateLocation(tabPos, cvsWidth, cvsHeight) {
+        this._x = cvsWidth;
+        this._h = cvsHeight;
+        this.TAB.x = -this.TAB.h;
+        this.TAB.y = tabPos;
     }
     _opening() {
         let px = this._x - CvsPane._dO;
-        if (px < this._gui.canvasWidth() - this._depth) { // See if open
-            px = this._gui.canvasWidth() - this._depth;
+        if (px < this._gui.canvasWidth - this._depth) { // See if open
+            px = this._gui.canvasWidth - this._depth;
             clearInterval(this._timer);
             this._status = 'open';
         }
@@ -363,35 +425,35 @@ class CvsPaneEast extends CvsPane {
     }
     _closing() {
         let px = this._x + CvsPane._dC;
-        if (px > this._gui.canvasWidth()) { // See if closed
-            px = this._gui.canvasWidth();
+        if (px > this._gui.canvasWidth) { // See if closed
+            px = this._gui.canvasWidth;
             clearInterval(this._timer);
             this._status = 'closed';
         }
         this._x = px;
     }
-    // Called by CvsButton if it has updated its size/status
-    validateTabs() {
-        this._gui.validateTabsEast();
-        return this;
-    }
 }
 /** @hidden */
 class CvsPaneWest extends CvsPane {
     constructor(gui, name, depth) {
-        super(gui, name, -depth, 0, depth, gui.canvasHeight());
+        super(gui, name, -depth, 0, depth, gui.canvasHeight);
         this._depth = depth;
-        this._status = 'closed'; // closing opening open
-        // Make the tab button 
-        let tab = this._tab = this._gui.button('Tab ' + CvsPane._tabID++);
-        tab.text(tab.id).orient('south').setAction(this._tabAction);
-        let s = tab._minControlSize();
-        tab._w = s.w + CvsPane._wExtra;
-        tab.corners(this._cornerRadius, this._cornerRadius, 0, 0);
-        this.addChild(tab);
-        // Add this pane control to those on East side
+        this.createTabButton('south', [this._cnrRad, this._cnrRad, 0, 0]);
         this._gui._panesWest.push(this);
         this._gui.validateTabsWest();
+    }
+    /**
+     * Weat
+     * @param tabPos the postion when shut
+     * @param cvsWidth the width of the display canvas
+     * @param cvsHeight the height of the display canvas
+     * @hidden
+     */
+    _updateLocation(tabPos, cvsWidth, cvsHeight) {
+        this._x = -this._depth;
+        this._h = cvsHeight;
+        this.TAB.x = this._depth;
+        this.TAB.y = tabPos;
     }
     _opening() {
         let px = this._x + CvsPane._dO;
@@ -410,11 +472,6 @@ class CvsPaneWest extends CvsPane {
             this._status = 'closed';
         }
         this._x = px;
-    }
-    // Called by CvsButton if it has updated its size/status
-    validateTabs() {
-        this._gui.validateTabsWest();
-        return this;
     }
 }
 //# sourceMappingURL=panes.js.map

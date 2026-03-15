@@ -50,13 +50,14 @@ class CvsViewer extends CvsBufferedControl {
         if (Number.isFinite(v) && Number.isFinite(l0) && Number.isFinite(l1)) {
             let low = Math.min(l0, l1);
             let high = Math.max(l0, l1);
-            let value = this._p.constrain(v, low, high);
+            let value = _constrain(v, low, high);
             // If we don't have a scaler then create it
             if (!this._scaler) {
                 let [w, h] = [this._w, this._h];
                 let sclrX = 0.25 * w, sclrY = 0.5 * h - 10;
                 let sclrW = 0.5 * w, sclrH = 20;
                 this._scaler = this._gui.slider(this._id + "-scaler", sclrX, sclrY, sclrW, sclrH)
+                    .weight(12)
                     .hide()
                     .setAction((info) => {
                     this._wscale = info.value;
@@ -82,7 +83,7 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /**
-     * <p>Sets or gets the scale and or scale limits</p>
+     * <p>Sets or gets the current scale in use.</p>
      * <p>If no parameters are passed the the current scale is returned. A
      * single parameter sets the current scale and three parameter sets the
      * current scale and the limits for the zoom slider.</p>
@@ -160,14 +161,13 @@ class CvsViewer extends CvsBufferedControl {
      * attributes.
     */
     view(wcx, wcy, wscale) {
-        // /** @hidden */
         function different(a, b) {
             return Math.abs(a - b) >= 0.001;
         }
         if (Number.isFinite(wcx) && Number.isFinite(wcy)) {
             if (different(this._wcx, wcx) || different(this._wcy, wcy)) {
-                this._wcx = this._p.constrain(wcx, 0, this._lw);
-                this._wcy = this._p.constrain(wcy, 0, this._lh);
+                this._wcx = _constrain(wcx, 0, this._lw);
+                this._wcy = _constrain(wcy, 0, this._lh);
                 this._scrH.update(wcx / this._lw);
                 this._scrV.update(wcy / this._lh);
                 this.invalidateBuffer();
@@ -179,7 +179,7 @@ class CvsViewer extends CvsBufferedControl {
                 this.invalidateBuffer();
             }
             this.action({
-                source: this, p5Event: undefined,
+                source: this, event: undefined,
                 cX: this._wcx, cY: this._wcy, scale: this._wscale
             });
         }
@@ -194,18 +194,16 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     layers(img) {
-        this._layers = (Array.isArray(img) ? Array.from(img) : [img]);
-        // Make all layers the same size as the first one
-        let lw = this._lw = this._layers[0].width;
-        let lh = this._lh = this._layers[0].height;
-        for (let idx = 1; idx < this._layers.length; idx++) {
-            let l = this._layers[idx];
-            if (l.width != lw || l.height != lh)
-                l.resize(lw, lh);
-        }
+        let imgList = (Array.isArray(img) ? Array.from(img) : [img]);
+        this._layers = [cvsGuiCanvas(imgList.shift())];
+        this._lw = this._layers[0].width;
+        this._lh = this._layers[0].height;
         // Now set the world centre based on scrollers
         this._wcx = this._scrH.getValue() * this._lw;
         this._wcy = this._scrV.getValue() * this._lh;
+        // Append any remiang images
+        if (imgList.length > 0)
+            this.appendLayers(imgList);
         this.invalidateBuffer();
         return this;
     }
@@ -220,50 +218,43 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     appendLayers(img) {
+        // If no existing layers then fresh start. 
         if (this._layers.length === 0)
             return this.layers(img);
-        let imgs = (Array.isArray(img) ? Array.from(img) : [img]);
-        let [lw, lh] = [this._lw, this._lh];
-        imgs.forEach(i => {
-            if (i.width !== lw || i.height !== lh)
-                i.resize(lw, lh);
-            this._layers.push(i);
-        });
+        // Ready to append to existing layers
+        let imgList = (Array.isArray(img) ? Array.from(img) : [img]);
+        imgList.forEach(image => this._layers.push(this._getImageToFit(image)));
         this.invalidateBuffer();
         return this;
     }
     /**
      * <p>Adds additional images the image(s) to those already displayed in
-     * this viewer. They will be inserted at the position by the first
+     * this viewer. They will be inserted after the position by the first
      * parameter.</p>
      *
      * <p>All additional images will be resized to match the first (bottom)
      * layer.</p>
      *
+     * @param idx an image or an array of images
      * @param img an image or an array of images
      * @returns this control
      */
     addLayers(idx, img) {
-        idx = Number.isFinite(idx) && idx >= 0 && idx < this._layers.length
-            ? idx : this._layers.length;
+        // If no existing layers then fresh start. 
         if (this._layers.length === 0)
             return this.layers(img);
-        if (idx === this._layers.length)
-            return this.appendLayers(img);
-        let imgs = (Array.isArray(img) ? Array.from(img) : [img]);
-        let more = [];
-        let [lw, lh] = [this._lw, this._lh];
-        imgs.forEach(i => {
-            if (i.width !== lw || i.height !== lh)
-                i.resize(lw, lh);
-            more.push(i);
-        });
-        this._layers.splice(idx, 0, ...more);
+        // Constrain insertion point to valid array position
+        idx = Number.isFinite(idx) && idx >= 0 && idx < this._layers.length
+            ? idx : this._layers.length - 1;
+        // Create new list with images resized to fit
+        let imgList = (Array.isArray(img) ? Array.from(img) : [img]);
+        let imgFitList = imgList.map(image => this._getImageToFit(image));
+        this._layers.splice(idx, 0, ...imgFitList);
         this.invalidateBuffer();
         return this;
     }
     /**
-     * Deletes 1 or more layers from this viewer.
+     * Deletes one or more layers from this viewer.
      *
      * @param idx the starting layer to delete
      * @param nbr the number of layers to delete
@@ -273,6 +264,7 @@ class CvsViewer extends CvsBufferedControl {
         if (Number.isFinite(idx) && Number.isFinite(nbr)) {
             if (idx >= 0 && idx < this._layers.length)
                 this._layers.splice(idx, nbr);
+            this.invalidateBuffer();
         }
         return this;
     }
@@ -287,20 +279,27 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /** @hidden */
-    shrink(dim) {
-        console.warn("Cannot 'shrink' a viewer");
-        return this;
+    _getImageToFit(img) {
+        const [lw, lh] = [this._lw, this._lh];
+        img = cvsGuiCanvas(img);
+        if (img.width != lw || img.height != lh) {
+            let layer = new OffscreenCanvas(lw, lh);
+            const ctx = layer.getContext('2d');
+            ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, lw, lh);
+            return layer;
+        }
+        return img;
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
         let absPos = this.getAbsXY();
         let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
-        this.isOver = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
+        this.over = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
                 this._active = true;
-                this.isOver = true;
+                this.over = true;
                 this._dragging = true;
                 // Remember starting values
                 this._mx0 = this._pmx = mx;
@@ -317,16 +316,16 @@ class CvsViewer extends CvsBufferedControl {
             case 'mouseup':
             case 'touchend':
                 this.action({
-                    source: this, p5Event: undefined,
+                    source: this, event: undefined,
                     cX: this._wcx, cY: this._wcy, scale: this._wscale
                 });
                 this._active = false;
                 this._dragging = false;
-                this.isOver = false;
+                this.over = false;
                 break;
             case 'mousemove':
             case 'touchmove':
-                if (this.isOver) {
+                if (this.over) {
                     if (this._dragging) {
                         this._scaler?.hide();
                         this._validateMouseDrag(this._dcx + (this._mx0 - mx) / this._wscale, this._dcy + (this._my0 - my) / this._wscale);
@@ -353,7 +352,7 @@ class CvsViewer extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return this.isOver ? this : null;
+        return this.over ? this : null;
     }
     /** @hidden */
     _validateMouseDrag(ncx, ncy) {
@@ -369,14 +368,14 @@ class CvsViewer extends CvsBufferedControl {
         let top = ncy - wh2, bottom = ncy + wh2;
         if (pinnedH || left < 0 && right > this._lw) // Horizontal
             ncx = this._lw / 2;
-        else if (this._xor(left < 0, right > this._lw))
+        else if (_xor(left < 0, right > this._lw))
             if (left < 0)
                 ncx -= left;
             else
                 ncx += this._lw - right;
         if (pinnedV || top < 0 && bottom > this._lh) // vertical
             ncy = this._lh / 2;
-        else if (this._xor(top < 0, bottom > this._lh))
+        else if (_xor(top < 0, bottom > this._lh))
             if (top < 0)
                 ncy -= top;
             else
@@ -386,56 +385,59 @@ class CvsViewer extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
-        let cs = this.SCHEME;
-        let p = this._p;
-        let [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
-        let [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
-        const OPAQUE = cs.C(2, this._alpha);
-        const FRAME = cs.C(7);
-        let uib = this._uiBfr;
-        uib.push();
-        if (this._opaque)
-            uib.background(...OPAQUE);
-        else
-            uib.clear();
+        const cs = this.SCHEME;
+        const [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
+        const [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
+        const OPAQUE = cs.C$(2, this._alpha);
+        const FRAME = cs.C$(7);
+        let uic = this._uicContext;
+        this._clearUiBuffer();
+        this._clearPickBuffer();
+        uic.save();
+        if (this._opaque) {
+            uic.fillStyle = OPAQUE;
+            uic.fillRect(0, 0, this._w, this._h);
+        }
+        else {
+            uic.clearRect(0, 0, this._w, this._h);
+        }
         // Get corners of requested view
-        let ww2 = Math.round(0.5 * w / ws);
-        let wh2 = Math.round(0.5 * h / ws);
-        let o = this._overlap(0, 0, lw, lh, // image corners
+        const ww2 = Math.round(0.5 * w / ws);
+        const wh2 = Math.round(0.5 * h / ws);
+        const o = this._overlap(0, 0, lw, lh, // image corners
         wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2); // world corners
-        let [ox, oy] = [Math.round(o.offsetX * ws), Math.round(o.offsetY * ws)];
-        let [ow, oh] = [Math.round(o.width * ws), Math.round(o.height * ws)];
+        this._pkBox = [
+            Math.round(o.offsetX * ws),
+            Math.round(o.offsetY * ws),
+            Math.round(o.width * ws),
+            Math.round(o.height * ws)
+        ];
         // If we have an offset then calculate the view image 
         if (o.valid) { // Calculate display offset
-            for (let i = 0, len = this._layers.length; i < len; i++) {
+            for (let i = 0; i < this._layers.length; i++) {
                 if (!this._hidden.has(i) && this._layers[i]) {
-                    // Get view image and adjust for scale
-                    let view = this._layers[i].get(o.left, o.top, o.width, o.height);
-                    if (Math.abs(ws - 1) > 0.01)
-                        view.resize(ow, oh);
-                    uib.image(view, o.offsetX * ws, o.offsetY * ws, view.width, view.height);
+                    uic.drawImage(this._layers[i], o.left, o.top, o.width, o.height, o.offsetX * ws, o.offsetY * ws, o.width * ws, o.height * ws);
                 }
             }
         }
         if (this._frameWeight > 0) {
-            uib.noFill();
-            uib.stroke(...FRAME);
-            uib.strokeWeight(this._frameWeight);
-            uib.rect(0, 0, uib.width, uib.height);
+            uic.strokeStyle = FRAME;
+            uic.strokeRect(0, 0, this._w, this._h);
         }
-        this._updateViewerPickBuffer(ox, oy, ow, oh);
-        uib.pop();
+        this._updatePickBuffer();
+        uic.restore();
     }
     /** @hidden */
-    _updateViewerPickBuffer(x, y, w, h) {
-        let c = this._gui.pickColor(this);
-        let pkb = this._pkBfr;
-        pkb.push();
-        pkb.clear();
-        pkb.noStroke();
-        pkb.fill(c.r, c.g, c.b);
-        pkb.rect(x, y, w, h);
-        pkb.pop();
+    _updatePickBuffer() {
+        const [x, y, w, h] = [...this._pkBox];
+        const c = this._gui.pickColor(this);
+        const pkc = this._pkcContext;
+        pkc.save();
+        pkc.fillStyle = 'white';
+        pkc.fillRect(0, 0, this._w, this._h);
+        pkc.fillStyle = c.cssColor;
+        pkc.fillRect(x, y, w, h);
+        pkc.restore();
     }
     /**
      * <p>the 'a' parameters represent the image size i.e. [0, 0, image_width, imgaeHeight]
@@ -471,21 +473,11 @@ class CvsViewer extends CvsBufferedControl {
             offsetX: offsetX, offsetY: offsetY,
         };
     }
-    /** @hidden */
-    _xor(a, b) {
-        return (a || b) && !(a && b);
-    }
-    /** @hidden */
-    _minControlSize() {
-        return { w: this._w, h: this._h };
-    }
     // Hide these methods from typeDoc
-    /** @hidden */ orient(dir) { return this; }
-    /** @hidden */ tooltip(tiptext) { return this; }
-    /** @hidden */ tipTextSize(tsize) { return this; }
-    /** @hidden */ corners(c) { return this; }
+    /** @hidden */ orient(dir) { return this.warn$('orient'); }
+    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
+    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
+    /** @hidden */ corners(c) { return this.warn$('corners'); }
 }
-Object.assign(CvsViewer.prototype, NoOrient);
-Object.assign(CvsViewer.prototype, NoTooltip);
-Object.assign(CvsViewer.prototype, NoCorners);
+Object.assign(CvsViewer.prototype, PICKABLE);
 //# sourceMappingURL=viewer.js.map

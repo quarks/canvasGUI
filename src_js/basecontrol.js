@@ -1,6 +1,6 @@
 /*
 ##############################################################################
- CvsBaseControl
+ CvsControl
  The base class for controls and panes that don't require a graphics buffer.
  ##############################################################################
  */
@@ -8,9 +8,9 @@
  * <p>This class provides most of the core functionality for the canvasGUI
  * controls.</p>
  */
-class CvsBaseControl {
+class CvsControl {
     /**
-     * CvsBaseControl class
+     * CvsControl class
      * @hidden
      * @param gui
      * @param id unique id for this control
@@ -22,7 +22,7 @@ class CvsBaseControl {
     constructor(gui, id, x, y, w, h) {
         /** @hidden */ this._children = [];
         /** @hidden */ this._visible = true;
-        /** @hidden */ this._enabled = true;
+        /** @hidden */ this._enabled = false;
         /** @hidden */ this._z = 0;
         /** @hidden */ this._x = 0;
         /** @hidden */ this._y = 0;
@@ -43,7 +43,7 @@ class CvsBaseControl {
          */
         this.action = function () { };
         this._gui = gui;
-        this._p = this._gui._p;
+        // this._p = this._gui._p;
         this._id = id;
         this._x = Math.round(x);
         this._y = Math.round(y);
@@ -53,7 +53,7 @@ class CvsBaseControl {
         this._visible = true;
         this._enabled = true;
         this._scheme = undefined;
-        this._orientation = CvsBaseControl.EAST;
+        this._orientation = CvsControl.EAST;
         this._dragging = false; // is mouse being dragged on active control
     }
     /** @hidden */
@@ -107,9 +107,9 @@ class CvsBaseControl {
      */
     get isActive() { return this._active; }
     /** @hidden */
-    get isOver() { return this._isOver; }
+    get over() { return this._isOver; }
     /** @hidden */
-    set isOver(b) {
+    set over(b) {
         if (b != this._isOver) {
             this._isOver = b;
             this.invalidateBuffer();
@@ -240,11 +240,11 @@ class CvsBaseControl {
     /**
      * <p>Add a child to this control using its relative position [rx, ry].
      * If rx and ry are not provided then it uses the values set in the child.</p>
-     * @param c is the actual control or its id
+     * @param child is the actual control or its id
      * @returns this control
      */
-    addChild(c, rx, ry) {
-        let control = this._gui.$(c);
+    addChild(child, rx, ry) {
+        let control = this._gui.$(child);
         rx = !Number.isFinite(rx) ? control.x : Number(rx);
         ry = !Number.isFinite(ry) ? control.y : Number(ry);
         // If the control already has a parent remove it ready for new parent.
@@ -261,11 +261,11 @@ class CvsBaseControl {
     }
     /**
      * <p>Remove a child control from this one so that it stays in same screen position.</p>
-     * @param c the control to remove or its id
+     * @param child the control to remove or its id
      * @returns this control
      */
-    removeChild(c) {
-        let control = this._gui.$(c);
+    removeChild(child) {
+        let control = this._gui.$(child);
         for (let i = 0; i < this._children.length; i++) {
             if (control === this._children[i]) {
                 let pos = control.getAbsXY();
@@ -327,17 +327,17 @@ class CvsBaseControl {
         dir = dir.toString().toLowerCase();
         switch (dir) {
             case 'north':
-                this._orientation = CvsBaseControl.NORTH;
+                this._orientation = CvsControl.NORTH;
                 break;
             case 'south':
-                this._orientation = CvsBaseControl.SOUTH;
+                this._orientation = CvsControl.SOUTH;
                 break;
             case 'west':
-                this._orientation = CvsBaseControl.WEST;
+                this._orientation = CvsControl.WEST;
                 break;
             case 'east':
             default:
-                this._orientation = CvsBaseControl.EAST;
+                this._orientation = CvsControl.EAST;
         }
         return this;
     }
@@ -345,13 +345,11 @@ class CvsBaseControl {
      * Create a tooltip for this control.
      *
      * @param tiptext the text to appear in the tooltip
-     * @param duration how long the tip remains visible (milliseconds)
      * @returns this control
      */
     tooltip(tiptext) {
         let tt = this._gui.__tooltip(this._id + '.tooltip')
-            .text(tiptext)
-            .shrink();
+            .text(tiptext);
         this.addChild(tt);
         if (tt instanceof CvsTooltip) {
             tt._validatePosition();
@@ -427,7 +425,7 @@ class CvsBaseControl {
      * on the controls color scheme.</p>
      * <p>The second parameter, alpha, is optional and controls the level
      * of opaqueness from 0 - transparent to 255 - fully opaque
-     * (efault value).</p>
+     * (default value).</p>
      *
      * @param alpha alpha value for controls background color.
      * @returns this control
@@ -452,7 +450,10 @@ class CvsBaseControl {
         return this._orientation;
     }
     /** @hidden */
-    _minControlSize() { return null; }
+    warn$(method) {
+        CWARN(`'${method}' is not supported by '${this.type}' controls.`);
+        return this;
+    }
     /** @hidden */
     _updateControlVisual() { }
     /** @hidden */
@@ -460,18 +461,18 @@ class CvsBaseControl {
     /** @hidden */
     _doKeyEvent(e) { return this; }
     /**
-     * @param uib ui overlay buffer
-     * @param pkb picker buffer
+     * @param uic ui overlay buffer drawing context
+     * @param pkc picker buffer drawing context
      * @hidden
      */
-    _draw(uib = null, pkb = null) { }
+    _draw(uic, pkc) { }
 }
 /** @hidden */
-CvsBaseControl.NORTH = new OrientNorth();
+CvsControl.NORTH = new OrientNorth();
 /** @hidden */
-CvsBaseControl.SOUTH = new OrientSouth();
+CvsControl.SOUTH = new OrientSouth();
 /** @hidden */
-CvsBaseControl.EAST = new OrientEast();
+CvsControl.EAST = new OrientEast();
 /** @hidden */
-CvsBaseControl.WEST = new OrientWest();
+CvsControl.WEST = new OrientWest();
 //# sourceMappingURL=basecontrol.js.map
