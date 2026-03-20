@@ -47,6 +47,7 @@ class GUI {
   /** @hidden */ private _canvas: HTMLCanvasElement;
   /** @hidden */ private _canvasContext: any;
   /** @hidden */ private _is3D = false;
+  /** @hidden */ private _mode: string;
   /** @hidden */ private _showUI: Function;
   /** @hidden */ private _guiShader: WebGLProgram;
   /** @hidden */ private _pr: number;
@@ -112,8 +113,9 @@ class GUI {
    * @param p5c the renderer
    * @param p the sketch instance
    */
-  public constructor(id: string, canvas: HTMLCanvasElement, pixelRatio: number) {
+  public constructor(id: string, canvas: HTMLCanvasElement, pixelRatio: number, mode: string) {
     this._uid = id;
+    this._mode = mode;
     this._pr = pixelRatio;
     this._canvas = canvas;      // HTMLCanvasElement
     this._canvasContext =       // Drawing context for canvas
@@ -141,8 +143,8 @@ class GUI {
     // Choose 2D / 3D rendering methods  
     this._showUI = this._is3D ? this._showOverWebGL : this._showOver2d;
 
-    // Prepare buffers
-    this._refreshGuiBuffers();
+    // Create buffers
+    this._createGuiBuffers(this._canvas.width, this._canvas.height);
 
     // CLOG(`GUI ctor    3D? ${this._is3D}   Device Pixel Scale: ${devicePixelRatio}`);
     // CLOG(`  Canvas size:     ${this._canvas.width} x ${this._canvas.height}`);
@@ -156,23 +158,36 @@ class GUI {
     this._tabsInvalid = true;
   }
 
+  _createGuiBuffers(w: number, h: number) {
+    // CLOG(`Create buffers  ${MILLIS()}`)
+    this._uiBuffer = new OffscreenCanvas(w, h);
+    this._uiContext = this._uiBuffer.getContext('2d');
+    this._uiContext.scale(this._pr, this._pr);
+    this._pkBuffer = new OffscreenCanvas(w, h);
+    this._pkContext = this._pkBuffer.getContext('2d');
+    this._clearGuiBuffers();
+  }
+
+  /**
+   * Clear the gui buffers ready for next frame
+   * @hidden
+   */
+  _clearGuiBuffers() {
+    this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
+    this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
+  }
+
   /**
    * Make sure we have an overlay buffer and a pick buffer of the correct size.
    * @returns true if the buffers were ressized else false.
    * @hidden
    */
-  _refreshGuiBuffers() {
+  _validateGuiBuffers() {
     const [w, h] = [this._canvas.width, this._canvas.height];
-    if (!this._uiBuffer || this._uiBuffer.width != w || this._uiBuffer.height != h) {
-      this._uiBuffer = new OffscreenCanvas(w, h);
-      this._uiContext = this._uiBuffer.getContext('2d');
-      this._uiContext.scale(this._pr, this._pr);
-      this._pkBuffer = new OffscreenCanvas(w, h);
-      this._pkContext = this._pkBuffer.getContext('2d');
+    if (this._uiBuffer.width != w || this._uiBuffer.height != h) {
+      this._createGuiBuffers(w, h);
       this.invalidateTabs();
     }
-    this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
-    this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
   }
 
   /**
@@ -180,8 +195,8 @@ class GUI {
    * @hidden
    */
   draw() {
-    // CLOG(` ${this._canvas.width} x ${this._canvas.height}    ${this._uiBuffer.width} x ${this._uiBuffer.height}    `)
-    this._refreshGuiBuffers();
+    this._validateGuiBuffers();
+    this._clearGuiBuffers();
     if (this._visible) {
       for (const c of this._ctrls)
         if (!c.getParent())
@@ -302,8 +317,8 @@ class GUI {
 
 
   image(id: string, x: number, y: number, image: cvsIcon) {
-    image = image = cvsGuiCanvas(image);
-    return this.addControl(new CvsImage(this, id, x, y, image), false);
+    const img = cvsGuiCanvas(image);
+    return this.addControl(new CvsImage(this, id, x, y, img), false);
   }
 
   /**
@@ -515,6 +530,21 @@ class GUI {
   // ######           End of control factory methods             ######
   // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
   // ##################################################################
+
+
+  /** @returns the canvas context type  */
+  get contextType() { return this._canvas["hasContext"]() }
+
+  /** @returns true gui is over a 3D canvas  */
+  get is3D() { return this._is3D }
+
+  /** @returns 'p5js' if using p5.js else returns 'JS' */
+  get mode() { return this._mode }
+
+  /** @returns an array with the names of built-in color schemes */
+  get colorSchemeNames() {
+    return Array.from(['blue', 'green', 'red', 'cyan', 'yellow', 'purple', 'orange', 'light', 'dark']);
+  }
 
   /** @returns true if this gui can respond to mouse/key events   */
   get isEnabled(): boolean { return this._enabled; }
@@ -739,7 +769,7 @@ class GUI {
 
   /** @hidden */
   private _processFocusEvent(e: FocusEvent) {
-    CLOG(`Focus event ${this._activeCtrl?.id}`);
+    // CLOG(`Focus event ${this._activeCtrl?.id}`);
     switch (e.type) {
       case 'focusout':
         if (this._activeCtrl instanceof CvsTextField) {
@@ -1282,12 +1312,12 @@ class GUI {
    * <p>The method  <code>GUI.get</code> has been removed from V2.1 </p>
    * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
    * be used instead.</p>
-   * 
+   * @deprecated
    * @throws an error that will terminate program execution
    */
-  static get(p5c: any, p: any) {
-    throw new Error(`'GUI.get' method has been removed use createGUI(id, display) instead.`);
-  }
+  // static get(p5c: any, p: any) {
+  //   throw new Error(`'GUI.get' method has been removed use createGUI(id, display) instead.`);
+  // }
 
   /**
    * <p>The method  <code>GUI.getNamed</code> has been removed from V2.1 </p>
@@ -1296,9 +1326,9 @@ class GUI {
    * 
    * @throws an error that will terminate program execution
    */
-  static getNamed(id, p5c: any) {
-    throw new Error(`'GUI.getNamed' method has been removed use createGUI(id, display) instead.`);
-  }
+  // static getNamed(id, p5c: any) {
+  //   throw new Error(`'GUI.getNamed' method has been removed use createGUI(id, display) instead.`);
+  // }
 
   /**
    * <p>This method has been removed from V2.0 </p>
@@ -1308,9 +1338,9 @@ class GUI {
    * @deprecated
    * @throws an error that will terminate program execution
    */
-  static create(id, p5c: any) {
-    throw new Error(`'GUI.create' method has been removed use createGUI(id, display) instead.`);
-  }
+  // static create(id, p5c: any) {
+  //   throw new Error(`'GUI.create' method has been removed use createGUI(id, display) instead.`);
+  // }
 
   /**
    * <p>After V2.0 this method was marked as private and should not be used.</p> 
@@ -1323,7 +1353,7 @@ class GUI {
    * @returns a GUI controller existing or new GUI with the given id.
    * @hidden
    */
-  static _create(id: any, canvas: HTMLCanvasElement, pr: number) {
+  static _create(id: any, canvas: HTMLCanvasElement, pr: number, mode: string) {
     GUI.ANNOUNCE_CANVAS_GUI();
     if (typeof id !== 'string' || id.length === 0) {
       id = `#${Math.floor(111111 + 888888 * Math.random())}`;
@@ -1334,7 +1364,7 @@ class GUI {
       return GUI._guis.get(id);
     }
     // Need to create a GUI for this canvas
-    let gui = new GUI(id, canvas, pr);
+    let gui = new GUI(id, canvas, pr, mode);
     GUI._guis.set(id, gui);
     return gui;
   }
@@ -1365,17 +1395,21 @@ class GUI {
  * @returns a GUI controller with the given id.
  */
 const createGUI = function (id: string, display: any) {
-  let elt = typeof display === 'string' ? document.getElementById(display) : display;
+  let elt = typeof display === 'string'
+    ? document.getElementById(display)
+    : display;
   // The canvas element exists.
   if (elt instanceof HTMLCanvasElement) {
-    const dp = elt.className.startsWith('p5Canvas') ? devicePixelRatio : 1;
-    return GUI._create(id, elt, dp);
+    const is_p5js = elt.className.startsWith('p5Canvas');
+    const dp = is_p5js ? devicePixelRatio : 1;
+    const mode = is_p5js ? 'p5js' : 'JS';
+    return GUI._create(id, elt, dp, mode);
   }
   // See if p5js
   if (typeof display === 'object') {
     const ctor = display.constructor.name;
     if (ctor == 'Renderer2D' || ctor == 'RendererGL')
-      return GUI._create(id, display.canvas, devicePixelRatio);
+      return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
   }
   throw new Error(`Cannot find the canvas element for the GUI '${this._uid}'`);
 }

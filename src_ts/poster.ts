@@ -92,7 +92,8 @@ class CvsPoster extends CvsBufferedControl {
      * <p>By default the poster can use the colors  -</p>
      * <ul>
      * <li>gf0 'transparent'</li>
-     * <li>gf1 the poster's color scheme ttext color</li>
+     * <li>gf1 the poster's color scheme text color</li>
+     * <li>gf2 the poster's color scheme opaque color</li>
      * </ul>
      * <p>This method allows the user to append additional color(s).</p>
      * @returns this control
@@ -310,8 +311,9 @@ class CvsPoster extends CvsBufferedControl {
         if (this._textInvalid)
             this._formatText();
         const cs = this.SCHEME;
-        // const OPAQUE = cs.C$(3, this._alpha);
+        // Color scheme fore color
         this.#colors[1] = cs.C$(8);
+        // Color scheme opaque color
         this.#colors[2] = cs.C$(3, this._alpha);
         const cnrs = this.CNRS;
 
@@ -352,7 +354,7 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */ tooltip(a) { return this.warn$('tooltip') }
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize') }
 
-}
+} // End of CvsPoster class
 
 class Poster_Icon {
     #icon: cvsIcon;
@@ -532,21 +534,28 @@ class Poster_Tag {
     #id = '';
     #attrs = [];
 
-    constructor(tag, line_length) {
+    constructor(tag: string, line_length: number) {
         let m = tag.match(/[a-z]+|\S+/g);
         this.#id = m.shift();
-        let parts = m.shift()?.split(/:{1}/);
-        parts = !parts ? [] : parts.map(x => Number(x));
-        parts = parts.concat([0, 0, 0]);
-        parts.length = 3;
-        const temp = parts[1] + parts[2];
-        if (temp === 0)
-            parts[2] = line_length;
-        else if (this.isParaTag && temp > line_length) {
-            parts[1] *= line_length / temp;
-            parts[2] *= line_length / temp;
+        let tagParts = m.shift()?.split(/:{1}/);
+        let attrs = !tagParts ? [0, 0, 0] : tagParts.map(x => Number(x));
+        attrs = attrs.concat([0, 0, 0]);
+        attrs.length = 3;
+        const reqd = attrs[1] + attrs[2];
+        if (this.isParaTag) {
+            // [1] = indent     [2] = wrap length
+            if (reqd === 0) {
+                attrs[2] = line_length;
+            }
+            else if (reqd > line_length) {
+                attrs[1] *= line_length / reqd;
+                attrs[2] *= line_length / reqd;
+            }
+            else if (attrs[1] > 0 && attrs[2] === 0) {
+                attrs[2] = line_length - attrs[1];
+            }
         }
-        this.#attrs = parts;
+        this.#attrs = attrs;
     }
 
     get id() { return this.#id }

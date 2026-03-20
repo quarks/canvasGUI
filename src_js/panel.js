@@ -120,21 +120,24 @@ class CvsPanel extends CvsBufferedControl {
     _updateControlVisual() {
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
-        const OPAQUE = cs.C$(6, this._alpha);
-        const FORE = cs.C$(9);
+        const OPAQUE = cs.C$(4, this._alpha);
         const HIGHLIGHT = cs.C$(9);
         const uic = this._uicContext;
         uic.save();
         uic.clearRect(0, 0, this._w, this._h);
-        uic.lineWidth = 3;
-        uic.fillStyle = OPAQUE;
-        uic.strokeStyle = HIGHLIGHT;
-        uic.beginPath();
-        uic.roundRect(0, 0, this._w, this._h, ...cnrs);
-        if (this._opaque)
+        if (this._opaque) {
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
-        if (this.over)
+        }
+        if (this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2;
+            uic.beginPath();
+            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
             uic.stroke();
+        }
         // Update pick buffer before restoring
         this._updatePickBuffer();
         // last line in this method should be

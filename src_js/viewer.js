@@ -421,8 +421,10 @@ class CvsViewer extends CvsBufferedControl {
             }
         }
         if (this._frameWeight > 0) {
+            const fw = this._frameWeight;
+            uic.lineWidth = fw;
             uic.strokeStyle = FRAME;
-            uic.strokeRect(0, 0, this._w, this._h);
+            uic.strokeRect(fw / 2, fw / 2, this._w - fw, this._h - fw);
         }
         this._updatePickBuffer();
         uic.restore();

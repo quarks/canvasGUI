@@ -341,7 +341,7 @@ class GUI {
      * @param p5c the renderer
      * @param p the sketch instance
      */
-    constructor(id, canvas, pixelRatio) {
+    constructor(id, canvas, pixelRatio, mode) {
         // Prevent duplicate event handlers
         /** @hidden */ this._touchListenersCreated = false;
         /** @hidden */ this._mouseListenersCreated = false;
@@ -373,6 +373,7 @@ class GUI {
         /** @hidden */ this._color2control = new Map(); // Map the base pick color to the object
         /** @hidden */ this._control2color = new Map(); // Find the colour for a given object
         this._uid = id;
+        this._mode = mode;
         this._pr = pixelRatio;
         this._canvas = canvas; // HTMLCanvasElement
         this._canvasContext = // Drawing context for canvas
@@ -396,8 +397,8 @@ class GUI {
         this._activePart = 0;
         // Choose 2D / 3D rendering methods  
         this._showUI = this._is3D ? this._showOverWebGL : this._showOver2d;
-        // Prepare buffers
-        this._refreshGuiBuffers();
+        // Create buffers
+        this._createGuiBuffers(this._canvas.width, this._canvas.height);
         // CLOG(`GUI ctor    3D? ${this._is3D}   Device Pixel Scale: ${devicePixelRatio}`);
         // CLOG(`  Canvas size:     ${this._canvas.width} x ${this._canvas.height}`);
         // CLOG(`  UI buffer size:  ${this._uiBuffer.width} x ${this._uiBuffer.height}`);
@@ -407,31 +408,42 @@ class GUI {
     invalidateTabs() {
         this._tabsInvalid = true;
     }
+    _createGuiBuffers(w, h) {
+        // CLOG(`Create buffers  ${MILLIS()}`)
+        this._uiBuffer = new OffscreenCanvas(w, h);
+        this._uiContext = this._uiBuffer.getContext('2d');
+        this._uiContext.scale(this._pr, this._pr);
+        this._pkBuffer = new OffscreenCanvas(w, h);
+        this._pkContext = this._pkBuffer.getContext('2d');
+        this._clearGuiBuffers();
+    }
+    /**
+     * Clear the gui buffers ready for next frame
+     * @hidden
+     */
+    _clearGuiBuffers() {
+        this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
+        this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
+    }
     /**
      * Make sure we have an overlay buffer and a pick buffer of the correct size.
      * @returns true if the buffers were ressized else false.
      * @hidden
      */
-    _refreshGuiBuffers() {
+    _validateGuiBuffers() {
         const [w, h] = [this._canvas.width, this._canvas.height];
-        if (!this._uiBuffer || this._uiBuffer.width != w || this._uiBuffer.height != h) {
-            this._uiBuffer = new OffscreenCanvas(w, h);
-            this._uiContext = this._uiBuffer.getContext('2d');
-            this._uiContext.scale(this._pr, this._pr);
-            this._pkBuffer = new OffscreenCanvas(w, h);
-            this._pkContext = this._pkBuffer.getContext('2d');
+        if (this._uiBuffer.width != w || this._uiBuffer.height != h) {
+            this._createGuiBuffers(w, h);
             this.invalidateTabs();
         }
-        this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
-        this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
     }
     /**
      * Draw the controls to the ui buffer then display over the canvas
      * @hidden
      */
     draw() {
-        // CLOG(` ${this._canvas.width} x ${this._canvas.height}    ${this._uiBuffer.width} x ${this._uiBuffer.height}    `)
-        this._refreshGuiBuffers();
+        this._validateGuiBuffers();
+        this._clearGuiBuffers();
         if (this._visible) {
             for (const c of this._ctrls)
                 if (!c.getParent())
@@ -535,8 +547,8 @@ class GUI {
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     image(id, x, y, image) {
-        image = image = cvsGuiCanvas(image);
-        return this.addControl(new CvsImage(this, id, x, y, image), false);
+        const img = cvsGuiCanvas(image);
+        return this.addControl(new CvsImage(this, id, x, y, img), false);
     }
     /**
      * Create a slider control
@@ -738,6 +750,16 @@ class GUI {
     // ######           End of control factory methods             ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
+    /** @returns the canvas context type  */
+    get contextType() { return this._canvas["hasContext"](); }
+    /** @returns true gui is over a 3D canvas  */
+    get is3D() { return this._is3D; }
+    /** @returns 'p5js' if using p5.js else returns 'JS' */
+    get mode() { return this._mode; }
+    /** @returns an array with the names of available color schemes */
+    get colorSchemeNames() {
+        return Array.from(['blue', 'green', 'red', 'cyan', 'yellow', 'purple', 'orange', 'light', 'dark']);
+    }
     /** @returns true if this gui can respond to mouse/key events   */
     get isEnabled() { return this._enabled; }
     /** @returns true if gui rendering is allowed   */
@@ -943,7 +965,7 @@ class GUI {
     }
     /** @hidden */
     _processFocusEvent(e) {
-        CLOG(`Focus event ${this._activeCtrl?.id}`);
+        // CLOG(`Focus event ${this._activeCtrl?.id}`);
         switch (e.type) {
             case 'focusout':
                 if (this._activeCtrl instanceof CvsTextField) {
@@ -1505,7 +1527,7 @@ class GUI {
      * @returns a GUI controller existing or new GUI with the given id.
      * @hidden
      */
-    static _create(id, canvas, pr) {
+    static _create(id, canvas, pr, mode) {
         GUI.ANNOUNCE_CANVAS_GUI();
         if (typeof id !== 'string' || id.length === 0) {
             id = `#${Math.floor(111111 + 888888 * Math.random())}`;
@@ -1516,7 +1538,7 @@ class GUI {
             return GUI._guis.get(id);
         }
         // Need to create a GUI for this canvas
-        let gui = new GUI(id, canvas, pr);
+        let gui = new GUI(id, canvas, pr, mode);
         GUI._guis.set(id, gui);
         return gui;
     }
@@ -1553,17 +1575,21 @@ GUI.VERSION = '3.0.0';
  * @returns a GUI controller with the given id.
  */
 const createGUI = function (id, display) {
-    let elt = typeof display === 'string' ? document.getElementById(display) : display;
+    let elt = typeof display === 'string'
+        ? document.getElementById(display)
+        : display;
     // The canvas element exists.
     if (elt instanceof HTMLCanvasElement) {
-        const dp = elt.className.startsWith('p5Canvas') ? devicePixelRatio : 1;
-        return GUI._create(id, elt, dp);
+        const is_p5js = elt.className.startsWith('p5Canvas');
+        const dp = is_p5js ? devicePixelRatio : 1;
+        const mode = is_p5js ? 'p5js' : 'JS';
+        return GUI._create(id, elt, dp, mode);
     }
     // See if p5js
     if (typeof display === 'object') {
         const ctor = display.constructor.name;
         if (ctor == 'Renderer2D' || ctor == 'RendererGL')
-            return GUI._create(id, display.canvas, devicePixelRatio);
+            return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
     }
     throw new Error(`Cannot find the canvas element for the GUI '${this._uid}'`);
 };
@@ -3742,7 +3768,7 @@ class CvsTooltip extends CvsText {
         if (!text)
             return this._tLines.map(line => line.txt).join('\n');
         super.text(text);
-        this.shrink();
+        this.shrink(1, 1);
         this.invalidateText();
         return this;
     }
@@ -4201,8 +4227,10 @@ class CvsOption extends CvsTextIcon {
         if (this._fitWH)
             this._fitToContent();
         const cs = this.SCHEME;
+        const cnrs = this.CNRS;
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
+        const HIGHLIGHT = cs.C$(9);
         const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
@@ -4211,12 +4239,20 @@ class CvsOption extends CvsTextIcon {
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
             uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, this.CNRS);
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
         }
         if (this._icon)
             uic.drawImage(this._icon, this._ix, this._iy);
         this._renderTextArea(FORE);
+        // Mouse over add border highlight
+        if (this.isActive || this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2;
+            uic.beginPath();
+            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+            uic.stroke();
+        }
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, this._w, this._h);
         // Update pick buffer before restoring
@@ -4327,6 +4363,7 @@ class CvsCheckbox extends CvsTextIcon {
     select() {
         if (!this._selected) {
             this._selected = true;
+            this._icon = this._icons[Number(this._selected)];
             this.invalidateBuffer();
         }
         return this;
@@ -4338,6 +4375,7 @@ class CvsCheckbox extends CvsTextIcon {
     deselect() {
         if (this._selected) {
             this._selected = false;
+            this._icon = this._icons[Number(this._selected)];
             this.invalidateBuffer();
         }
         return this;
@@ -4394,8 +4432,10 @@ class CvsCheckbox extends CvsTextIcon {
         if (this._fitWH)
             this._fitToContent();
         const cs = this.SCHEME;
+        const cnrs = this.CNRS;
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
+        const HIGHLIGHT = cs.C$(9);
         const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
@@ -4410,6 +4450,14 @@ class CvsCheckbox extends CvsTextIcon {
         if (this._icon)
             uic.drawImage(this._icon, this._ix, this._iy);
         this._renderTextArea(FORE);
+        // Mouse over add border highlight
+        if (this.isActive || this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2;
+            uic.beginPath();
+            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+            uic.stroke();
+        }
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, this._w, this._h);
         // Update pick buffer before restoring
@@ -4856,8 +4904,10 @@ class CvsViewer extends CvsBufferedControl {
             }
         }
         if (this._frameWeight > 0) {
+            const fw = this._frameWeight;
+            uic.lineWidth = fw;
             uic.strokeStyle = FRAME;
-            uic.strokeRect(0, 0, this._w, this._h);
+            uic.strokeRect(fw / 2, fw / 2, this._w - fw, this._h - fw);
         }
         this._updatePickBuffer();
         uic.restore();
@@ -5024,7 +5074,9 @@ class CvsTextField extends CvsText {
      * True if the text has passed validation. If there is no validation
      * function this is always true.
      */
-    get isValid() { return !this._validation || !this._inputInvalid; }
+    get isValid() {
+        return !this._validation || !this._inputInvalid;
+    }
     /**
      * True if there is some text and it has been accepted by a validation
      * function. If there is no text then this will be false.</p>
@@ -5070,9 +5122,9 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _performValidation() {
-        this._inputInvalid = true; // Assume it is valid
+        this._inputInvalid = false; // Assume it is valid
         if (this._validation) {
-            CLOG(`Applying validation`);
+            // CLOG(`Applying validation`)
             let r = this._validation(this._line);
             if (Array.isArray(r) && r.length > 0) {
                 this._inputInvalid = !Boolean(r[0]);
@@ -6238,21 +6290,24 @@ class CvsPanel extends CvsBufferedControl {
     _updateControlVisual() {
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
-        const OPAQUE = cs.C$(6, this._alpha);
-        const FORE = cs.C$(9);
+        const OPAQUE = cs.C$(4, this._alpha);
         const HIGHLIGHT = cs.C$(9);
         const uic = this._uicContext;
         uic.save();
         uic.clearRect(0, 0, this._w, this._h);
-        uic.lineWidth = 3;
-        uic.fillStyle = OPAQUE;
-        uic.strokeStyle = HIGHLIGHT;
-        uic.beginPath();
-        uic.roundRect(0, 0, this._w, this._h, ...cnrs);
-        if (this._opaque)
+        if (this._opaque) {
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
-        if (this.over)
+        }
+        if (this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2;
+            uic.beginPath();
+            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
             uic.stroke();
+        }
         // Update pick buffer before restoring
         this._updatePickBuffer();
         // last line in this method should be
@@ -6855,7 +6910,8 @@ class CvsPoster extends CvsBufferedControl {
      * <p>By default the poster can use the colors  -</p>
      * <ul>
      * <li>gf0 'transparent'</li>
-     * <li>gf1 the poster's color scheme ttext color</li>
+     * <li>gf1 the poster's color scheme text color</li>
+     * <li>gf2 the poster's color scheme opaque color</li>
      * </ul>
      * <p>This method allows the user to append additional color(s).</p>
      * @returns this control
@@ -7064,8 +7120,9 @@ class CvsPoster extends CvsBufferedControl {
         if (this._textInvalid)
             this._formatText();
         const cs = this.SCHEME;
-        // const OPAQUE = cs.C$(3, this._alpha);
+        // Color scheme fore color
         __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = cs.C$(8);
+        // Color scheme opaque color
         __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = cs.C$(3, this._alpha);
         const cnrs = this.CNRS;
         const uic = this._uicContext;
@@ -7101,7 +7158,7 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */ setAction() { return this.warn$('setAction'); }
     /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
-}
+} // End of CvsPoster class
 _CvsPoster_taggedText = new WeakMap(), _CvsPoster_words = new WeakMap(), _CvsPoster_fonts = new WeakMap(), _CvsPoster_colors = new WeakMap(), _CvsPoster_wrapW = new WeakMap(), _CvsPoster_icons = new WeakMap(), _CvsPoster_backStyle = new WeakMap();
 class Poster_Icon {
     constructor(icon, x = 0, y = 0) {
@@ -7279,18 +7336,25 @@ class Poster_Tag {
         _Poster_Tag_attrs.set(this, []);
         let m = tag.match(/[a-z]+|\S+/g);
         __classPrivateFieldSet(this, _Poster_Tag_id, m.shift(), "f");
-        let parts = m.shift()?.split(/:{1}/);
-        parts = !parts ? [] : parts.map(x => Number(x));
-        parts = parts.concat([0, 0, 0]);
-        parts.length = 3;
-        const temp = parts[1] + parts[2];
-        if (temp === 0)
-            parts[2] = line_length;
-        else if (this.isParaTag && temp > line_length) {
-            parts[1] *= line_length / temp;
-            parts[2] *= line_length / temp;
+        let tagParts = m.shift()?.split(/:{1}/);
+        let attrs = !tagParts ? [0, 0, 0] : tagParts.map(x => Number(x));
+        attrs = attrs.concat([0, 0, 0]);
+        attrs.length = 3;
+        const reqd = attrs[1] + attrs[2];
+        if (this.isParaTag) {
+            // [1] = indent     [2] = wrap length
+            if (reqd === 0) {
+                attrs[2] = line_length;
+            }
+            else if (reqd > line_length) {
+                attrs[1] *= line_length / reqd;
+                attrs[2] *= line_length / reqd;
+            }
+            else if (attrs[1] > 0 && attrs[2] === 0) {
+                attrs[2] = line_length - attrs[1];
+            }
         }
-        __classPrivateFieldSet(this, _Poster_Tag_attrs, parts, "f");
+        __classPrivateFieldSet(this, _Poster_Tag_attrs, attrs, "f");
     }
     get id() { return __classPrivateFieldGet(this, _Poster_Tag_id, "f"); }
     get value() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[0]; }

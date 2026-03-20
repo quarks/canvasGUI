@@ -97,7 +97,8 @@ class CvsPoster extends CvsBufferedControl {
      * <p>By default the poster can use the colors  -</p>
      * <ul>
      * <li>gf0 'transparent'</li>
-     * <li>gf1 the poster's color scheme ttext color</li>
+     * <li>gf1 the poster's color scheme text color</li>
+     * <li>gf2 the poster's color scheme opaque color</li>
      * </ul>
      * <p>This method allows the user to append additional color(s).</p>
      * @returns this control
@@ -306,8 +307,9 @@ class CvsPoster extends CvsBufferedControl {
         if (this._textInvalid)
             this._formatText();
         const cs = this.SCHEME;
-        // const OPAQUE = cs.C$(3, this._alpha);
+        // Color scheme fore color
         __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = cs.C$(8);
+        // Color scheme opaque color
         __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = cs.C$(3, this._alpha);
         const cnrs = this.CNRS;
         const uic = this._uicContext;
@@ -343,7 +345,7 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */ setAction() { return this.warn$('setAction'); }
     /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
-}
+} // End of CvsPoster class
 _CvsPoster_taggedText = new WeakMap(), _CvsPoster_words = new WeakMap(), _CvsPoster_fonts = new WeakMap(), _CvsPoster_colors = new WeakMap(), _CvsPoster_wrapW = new WeakMap(), _CvsPoster_icons = new WeakMap(), _CvsPoster_backStyle = new WeakMap();
 class Poster_Icon {
     constructor(icon, x = 0, y = 0) {
@@ -521,18 +523,25 @@ class Poster_Tag {
         _Poster_Tag_attrs.set(this, []);
         let m = tag.match(/[a-z]+|\S+/g);
         __classPrivateFieldSet(this, _Poster_Tag_id, m.shift(), "f");
-        let parts = m.shift()?.split(/:{1}/);
-        parts = !parts ? [] : parts.map(x => Number(x));
-        parts = parts.concat([0, 0, 0]);
-        parts.length = 3;
-        const temp = parts[1] + parts[2];
-        if (temp === 0)
-            parts[2] = line_length;
-        else if (this.isParaTag && temp > line_length) {
-            parts[1] *= line_length / temp;
-            parts[2] *= line_length / temp;
+        let tagParts = m.shift()?.split(/:{1}/);
+        let attrs = !tagParts ? [0, 0, 0] : tagParts.map(x => Number(x));
+        attrs = attrs.concat([0, 0, 0]);
+        attrs.length = 3;
+        const reqd = attrs[1] + attrs[2];
+        if (this.isParaTag) {
+            // [1] = indent     [2] = wrap length
+            if (reqd === 0) {
+                attrs[2] = line_length;
+            }
+            else if (reqd > line_length) {
+                attrs[1] *= line_length / reqd;
+                attrs[2] *= line_length / reqd;
+            }
+            else if (attrs[1] > 0 && attrs[2] === 0) {
+                attrs[2] = line_length - attrs[1];
+            }
         }
-        __classPrivateFieldSet(this, _Poster_Tag_attrs, parts, "f");
+        __classPrivateFieldSet(this, _Poster_Tag_attrs, attrs, "f");
     }
     get id() { return __classPrivateFieldGet(this, _Poster_Tag_id, "f"); }
     get value() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[0]; }

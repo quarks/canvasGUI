@@ -25,7 +25,7 @@ class CvsTooltip extends CvsText {
         if (!text)
             return this._tLines.map(line => line.txt).join('\n');
         super.text(text);
-        this.shrink();
+        this.shrink(1, 1);
         this.invalidateText();
         return this;
     }

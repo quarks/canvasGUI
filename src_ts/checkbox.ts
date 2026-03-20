@@ -93,6 +93,7 @@ class CvsCheckbox extends CvsTextIcon {
     select() {
         if (!this._selected) {
             this._selected = true;
+            this._icon = this._icons[Number(this._selected)];
             this.invalidateBuffer();
         }
         return this;
@@ -105,6 +106,7 @@ class CvsCheckbox extends CvsTextIcon {
     deselect() {
         if (this._selected) {
             this._selected = false;
+            this._icon = this._icons[Number(this._selected)];
             this.invalidateBuffer();
         }
         return this;
@@ -165,8 +167,10 @@ class CvsCheckbox extends CvsTextIcon {
             this._fitToContent();
 
         const cs = this.SCHEME;
+        const cnrs = this.CNRS;
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
+        const HIGHLIGHT = cs.C$(9);
 
         const uic = this._uicContext;
         uic.save();
@@ -182,7 +186,14 @@ class CvsCheckbox extends CvsTextIcon {
         if (this._icon)
             uic.drawImage(this._icon, this._ix, this._iy);
         this._renderTextArea(FORE);
-
+        // Mouse over add border highlight
+        if (this.isActive || this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2;
+            uic.beginPath();
+            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+            uic.stroke();
+        }
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, this._w, this._h);
         // Update pick buffer before restoring

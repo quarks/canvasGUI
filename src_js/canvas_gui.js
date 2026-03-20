@@ -30,7 +30,7 @@ class GUI {
      * @param p5c the renderer
      * @param p the sketch instance
      */
-    constructor(id, canvas, pixelRatio) {
+    constructor(id, canvas, pixelRatio, mode) {
         // Prevent duplicate event handlers
         /** @hidden */ this._touchListenersCreated = false;
         /** @hidden */ this._mouseListenersCreated = false;
@@ -62,6 +62,7 @@ class GUI {
         /** @hidden */ this._color2control = new Map(); // Map the base pick color to the object
         /** @hidden */ this._control2color = new Map(); // Find the colour for a given object
         this._uid = id;
+        this._mode = mode;
         this._pr = pixelRatio;
         this._canvas = canvas; // HTMLCanvasElement
         this._canvasContext = // Drawing context for canvas
@@ -85,8 +86,8 @@ class GUI {
         this._activePart = 0;
         // Choose 2D / 3D rendering methods  
         this._showUI = this._is3D ? this._showOverWebGL : this._showOver2d;
-        // Prepare buffers
-        this._refreshGuiBuffers();
+        // Create buffers
+        this._createGuiBuffers(this._canvas.width, this._canvas.height);
         // CLOG(`GUI ctor    3D? ${this._is3D}   Device Pixel Scale: ${devicePixelRatio}`);
         // CLOG(`  Canvas size:     ${this._canvas.width} x ${this._canvas.height}`);
         // CLOG(`  UI buffer size:  ${this._uiBuffer.width} x ${this._uiBuffer.height}`);
@@ -96,31 +97,42 @@ class GUI {
     invalidateTabs() {
         this._tabsInvalid = true;
     }
+    _createGuiBuffers(w, h) {
+        // CLOG(`Create buffers  ${MILLIS()}`)
+        this._uiBuffer = new OffscreenCanvas(w, h);
+        this._uiContext = this._uiBuffer.getContext('2d');
+        this._uiContext.scale(this._pr, this._pr);
+        this._pkBuffer = new OffscreenCanvas(w, h);
+        this._pkContext = this._pkBuffer.getContext('2d');
+        this._clearGuiBuffers();
+    }
+    /**
+     * Clear the gui buffers ready for next frame
+     * @hidden
+     */
+    _clearGuiBuffers() {
+        this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
+        this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
+    }
     /**
      * Make sure we have an overlay buffer and a pick buffer of the correct size.
      * @returns true if the buffers were ressized else false.
      * @hidden
      */
-    _refreshGuiBuffers() {
+    _validateGuiBuffers() {
         const [w, h] = [this._canvas.width, this._canvas.height];
-        if (!this._uiBuffer || this._uiBuffer.width != w || this._uiBuffer.height != h) {
-            this._uiBuffer = new OffscreenCanvas(w, h);
-            this._uiContext = this._uiBuffer.getContext('2d');
-            this._uiContext.scale(this._pr, this._pr);
-            this._pkBuffer = new OffscreenCanvas(w, h);
-            this._pkContext = this._pkBuffer.getContext('2d');
+        if (this._uiBuffer.width != w || this._uiBuffer.height != h) {
+            this._createGuiBuffers(w, h);
             this.invalidateTabs();
         }
-        this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
-        this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
     }
     /**
      * Draw the controls to the ui buffer then display over the canvas
      * @hidden
      */
     draw() {
-        // CLOG(` ${this._canvas.width} x ${this._canvas.height}    ${this._uiBuffer.width} x ${this._uiBuffer.height}    `)
-        this._refreshGuiBuffers();
+        this._validateGuiBuffers();
+        this._clearGuiBuffers();
         if (this._visible) {
             for (const c of this._ctrls)
                 if (!c.getParent())
@@ -224,8 +236,8 @@ class GUI {
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     image(id, x, y, image) {
-        image = image = cvsGuiCanvas(image);
-        return this.addControl(new CvsImage(this, id, x, y, image), false);
+        const img = cvsGuiCanvas(image);
+        return this.addControl(new CvsImage(this, id, x, y, img), false);
     }
     /**
      * Create a slider control
@@ -427,6 +439,16 @@ class GUI {
     // ######           End of control factory methods             ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
+    /** @returns the canvas context type  */
+    get contextType() { return this._canvas["hasContext"](); }
+    /** @returns true gui is over a 3D canvas  */
+    get is3D() { return this._is3D; }
+    /** @returns 'p5js' if using p5.js else returns 'JS' */
+    get mode() { return this._mode; }
+    /** @returns an array with the names of available color schemes */
+    get colorSchemeNames() {
+        return Array.from(['blue', 'green', 'red', 'cyan', 'yellow', 'purple', 'orange', 'light', 'dark']);
+    }
     /** @returns true if this gui can respond to mouse/key events   */
     get isEnabled() { return this._enabled; }
     /** @returns true if gui rendering is allowed   */
@@ -632,7 +654,7 @@ class GUI {
     }
     /** @hidden */
     _processFocusEvent(e) {
-        CLOG(`Focus event ${this._activeCtrl?.id}`);
+        // CLOG(`Focus event ${this._activeCtrl?.id}`);
         switch (e.type) {
             case 'focusout':
                 if (this._activeCtrl instanceof CvsTextField) {
@@ -1194,7 +1216,7 @@ class GUI {
      * @returns a GUI controller existing or new GUI with the given id.
      * @hidden
      */
-    static _create(id, canvas, pr) {
+    static _create(id, canvas, pr, mode) {
         GUI.ANNOUNCE_CANVAS_GUI();
         if (typeof id !== 'string' || id.length === 0) {
             id = `#${Math.floor(111111 + 888888 * Math.random())}`;
@@ -1205,7 +1227,7 @@ class GUI {
             return GUI._guis.get(id);
         }
         // Need to create a GUI for this canvas
-        let gui = new GUI(id, canvas, pr);
+        let gui = new GUI(id, canvas, pr, mode);
         GUI._guis.set(id, gui);
         return gui;
     }
@@ -1242,17 +1264,21 @@ GUI.VERSION = '!!VERSION!!';
  * @returns a GUI controller with the given id.
  */
 const createGUI = function (id, display) {
-    let elt = typeof display === 'string' ? document.getElementById(display) : display;
+    let elt = typeof display === 'string'
+        ? document.getElementById(display)
+        : display;
     // The canvas element exists.
     if (elt instanceof HTMLCanvasElement) {
-        const dp = elt.className.startsWith('p5Canvas') ? devicePixelRatio : 1;
-        return GUI._create(id, elt, dp);
+        const is_p5js = elt.className.startsWith('p5Canvas');
+        const dp = is_p5js ? devicePixelRatio : 1;
+        const mode = is_p5js ? 'p5js' : 'JS';
+        return GUI._create(id, elt, dp, mode);
     }
     // See if p5js
     if (typeof display === 'object') {
         const ctor = display.constructor.name;
         if (ctor == 'Renderer2D' || ctor == 'RendererGL')
-            return GUI._create(id, display.canvas, devicePixelRatio);
+            return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
     }
     throw new Error(`Cannot find the canvas element for the GUI '${this._uid}'`);
 };

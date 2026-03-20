@@ -117,7 +117,9 @@ class CvsTextField extends CvsText {
      * True if the text has passed validation. If there is no validation 
      * function this is always true.
      */
-    get isValid(): boolean { return !this._validation || !this._inputInvalid; }
+    get isValid(): boolean {
+        return !this._validation || !this._inputInvalid;
+    }
 
     /**
      * True if there is some text and it has been accepted by a validation 
@@ -167,9 +169,9 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _performValidation(): void {
-        this._inputInvalid = true; // Assume it is valid
+        this._inputInvalid = false; // Assume it is valid
         if (this._validation) {
-            CLOG(`Applying validation`)
+            // CLOG(`Applying validation`)
             let r = this._validation(this._line);
             if (Array.isArray(r) && r.length > 0) {
                 this._inputInvalid = !Boolean(r[0]);
