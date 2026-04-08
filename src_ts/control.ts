@@ -1,31 +1,8 @@
-/* <p>Object type  \{ x: number; y: number; \}  </p> @hidden */
-interface __Position { x: number; y: number; }
-
-/* <p>Object type  \{ w: number; h: number; \} </p> @hidden */
-interface __Box { w: number; h: number; }
-
-/* <p>Object type  \{ w: number; h: number; \} </p> @hidden */
-interface __Line { txt: string, x: number, y: number, w: number }
-
-/* <p>Defines an overlap</p> @hidden */
-interface __Overlap {
-    valid: boolean;
-    left?: number; right?: number; top?: number, bottom?: number,
-    width?: number; height?: number; offsetX?: number; offsetY?: number;
-}
-
-/*
-##############################################################################
- CvsControl
- The base class for controls and panes that don't require a graphics buffer.
- ##############################################################################
- */
-
 /**
- * <p>This class provides most of the core functionality for the canvasGUI 
- * controls.</p>
+ * <p>This is the base class for controls and panes that don't require an 
+ * offscreen buffer.</p>
  */
-abstract class CvsControl {
+abstract class CvsControl extends CvsPin {
 
     /** @hidden */
     static NORTH = new OrientNorth();
@@ -36,32 +13,20 @@ abstract class CvsControl {
     /** @hidden */
     static WEST = new OrientWest();
 
-    /** @hidden */ protected _gui: GUI;
-    // /** @hidden */ protected _p: p5;
-    /** @hidden */ protected _id: string;
-    /** @hidden */ protected _children: Array<any> = [];
-    /** @hidden */ protected _parent: CvsControl;
-    /** @hidden */ protected _visible: boolean = true;
-    /** @hidden */ protected _enabled: boolean = false;
-    /** @hidden */ protected _z: number = 0;
-    /** @hidden */ protected _x: number = 0;
-    /** @hidden */ protected _y: number = 0;
     /** @hidden */ protected _w: number = 0;
     /** @hidden */ protected _h: number = 0;
     /** @hidden */ protected _orientation: OrientNorth | OrientSouth | OrientEast | OrientWest;
-    /** @hidden */ protected _corners: Array<number>;
+    /** @hidden */ protected _corners: any;
     /** @hidden */ protected _dragging: boolean;
     /** @hidden */ protected _isOver: boolean = false;
     /** @hidden */ protected _active: boolean = false;
     /** @hidden */ protected _alpha: number = 255;
     /** @hidden */ protected _clickAllowed: boolean = false;
     /** @hidden */ protected _opaque: boolean = true;
-    /** @hidden */ protected _scheme: ColorScheme;
-    /** @hidden */ protected _bufferInvalid: boolean = true;
-    /** @hidden */ protected _tooltip: CvsTooltip = undefined;
+    /** @hidden */ protected _scheme: any;
+    /** @hidden */ protected _tooltip: any = undefined;
 
-
-    /** 
+    /**
      * <p>The event handler for this control. Although it is permitted to set this
      * property directly it is recommended that the <code>setAction(...)</code>
      * method is used to define the event handler actions.</p> 
@@ -79,36 +44,18 @@ abstract class CvsControl {
      * @param w width
      * @param h height
      */
-    constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number) {
-        this._gui = gui;
-        // this._p = this._gui._p;
-        this._id = id;
-        this._x = Math.round(x);
-        this._y = Math.round(y);
+    constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number, pickable: boolean) {
+        super(gui, id, x, y);
         this._w = Math.round(w);
         this._h = Math.round(h);
-        this._parent = undefined;
         this._visible = true;
         this._enabled = true;
         this._scheme = undefined;
         this._orientation = CvsControl.EAST;
         this._dragging = false; // is mouse being dragged on active control
+        if (pickable)
+            this._gui.registerPickable(this);
     }
-
-    /** @hidden */
-    get x() { return this._x; }
-    /** @hidden */
-    set x(v) { this._x = Math.round(v); }
-
-    /** @hidden */
-    get y() { return this._y; }
-    /** @hidden */
-    set y(v) { this._y = Math.round(v); }
-
-    /** @hidden */
-    get z() { return this._z; }
-    /** @hidden */
-    set z(v) { this._z = v; }
 
     /** @hidden */
     get w() { return this._w; }
@@ -120,20 +67,6 @@ abstract class CvsControl {
     /** @hidden */
     set h(v) { this._h = Math.round(v); }
 
-    /** The unique identifier for this control.   */
-    get id() { return this._id; }
-
-    /** 
-     * The type name for this control.<br>
-     * (type name = class name without the <code>Cvs</code> prefix)
-     */
-    get type() { return this.constructor.name.substring(3); };
-
-    /**
-     * <p>This is true if the control can respond to UI events else false.</p>
-     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
-     */
-    get isEnabled() { return this._enabled; }
 
     /** 
      * <p>This is true if the control background is opaque else false.</p>
@@ -141,11 +74,6 @@ abstract class CvsControl {
      */
     get isOpaque() { return this._opaque; }
 
-    /** 
-     * <p>This is true if the control is visible else false.</p>
-     * <p>Use <code>hide()</code> and <code>show()</code> to set visibility.</p>
-     */
-    get isVisible() { return this._visible; }
 
     /**
      * A control becomes active when the mouse button is pressed over it.
@@ -171,46 +99,6 @@ abstract class CvsControl {
     get SCHEME(): ColorScheme { return this._scheme || this._gui._scheme; }
 
     /**
-     * Move this control to an absolute position.
-     * @param x horizontal position
-     * @param y vertical position
-     * @returns this control
-     */
-    moveTo(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-        return this;
-    }
-
-    /**
-     * Move this control relative to current position.
-     * @param x horizontal distance
-     * @param y vertical distance
-     * @returns this control
-     */
-    moveBy(x: number, y: number) {
-        this.x += x;
-        this.y += y;
-        return this;
-    }
-
-    /**
-     * <p>Calculates the absolute position on the canvas taking into account
-     * any ancestors.</p>
-     * @returns the actual position in the canvas
-     * @hidden
-     */
-    getAbsXY(): __Position {
-        if (!this._parent) {
-            return { x: this._x, y: this._y };
-        } else {
-            let pos = this._parent.getAbsXY();
-            pos.x += this._x; pos.y += this._y;
-            return pos;
-        }
-    }
-
-    /**
      * <p>If the name of a valid color scheme is provided then it will use it
      * to display the control, non-existant scheme names will be ignored. In 
      * both cases this control is returned.</p>
@@ -222,7 +110,7 @@ abstract class CvsControl {
      */
     scheme(name?: string, cascade?: boolean): ColorScheme | CvsControl {
         if (name) {  // setter
-            let next_scheme = this._gui._getScheme(name);
+            let next_scheme = this._gui.getScheme(name);
             if (next_scheme && this._scheme != next_scheme) {
                 this._scheme = next_scheme;
                 this.invalidateBuffer();
@@ -264,96 +152,6 @@ abstract class CvsControl {
                 break;
         }
         return this;
-    }
-
-    /**
-     * <p>This method will force the control to update its visual appearance 
-     * when the next frame is rendered.</p>
-     * <p><em>It is included in the most unlikely event it is needed.</em></p>
-     * @returns this control
-     * @hidden
-     */
-    invalidateBuffer() {
-        this._bufferInvalid = true;
-        return this;
-    }
-
-    /**
-     * <p>Adds this control to another control which becomes its parent.</p>
-     * @param parent is the parental control or its id
-     * @param rx x position relative to parent
-     * @param ry  y position relative to parent
-     * @returns this control
-     */
-    parent(parent: CvsControl | string, rx?: number, ry?: number): CvsControl {
-        let prnt = this._gui.$(parent);
-        prnt.addChild(this, rx, ry);
-        this.z = prnt.z + DELTA_Z;
-        this._gui.setRenderOrder();
-        return this;
-    }
-
-    /**
-     * <p>Add a child to this control using its relative position [rx, ry].
-     * If rx and ry are not provided then it uses the values set in the child.</p> 
-     * @param child is the actual control or its id
-     * @returns this control
-     */
-    addChild(child: CvsControl | string, rx?: number, ry?: number): any {
-        let control = this._gui.$(child);
-        rx = !Number.isFinite(rx) ? control.x : Number(rx);
-        ry = !Number.isFinite(ry) ? control.y : Number(ry);
-        // If the control already has a parent remove it ready for new parent.
-        if (!control._parent) control.leaveParent();
-        // Position and add parent to control control
-        control.x = rx;
-        control.y = ry;
-        control._parent = this;
-        control.z = this.z + DELTA_Z;
-        this._children.push(control);
-        this._gui.setRenderOrder();
-        return this;
-    }
-
-    /**
-     * <p>Remove a child control from this one so that it stays in same screen position.</p>
-     * @param child the control to remove or its id
-     * @returns this control
-     */
-    removeChild(child: CvsControl | string) {
-        let control = this._gui.$(child);
-        for (let i = 0; i < this._children.length; i++) {
-            if (control === this._children[i]) {
-                let pos = control.getAbsXY();
-                control._x = pos.x;
-                control._y = pos.y;
-                control._parent = null;
-                this._children[i] = undefined;
-                break;
-            }
-        }
-        this._children = this._children.filter(Boolean);
-        this._gui.setRenderOrder();
-        return this;
-    }
-
-    /**
-     * <p>Remove this control from its parent</p>
-     * @returns this control
-     */
-    leaveParent(): CvsControl {
-        if (this._parent) {
-            this._parent.removeChild(this);
-            this.z = 0;
-        }
-        return this;
-    }
-
-    /**
-     * @hidden
-     */
-    getParent() {
-        return this._parent;
     }
 
     /**
@@ -463,20 +261,20 @@ abstract class CvsControl {
 
     /**
      * <p>Make this control visible.</p>
-     * @param cascade if true show children
+     * @param cascade if true then show any children
      * @returns this control
      */
     show(cascade?: boolean): CvsControl {
         this._visible = true;
         if (cascade)
             for (let c of this._children)
-                c.show(cascade);
+                c.show(true);
         return this;
     }
 
     /**
      * <p>Make this control invisible.</p>
-     * @param cascade if true hide children
+     * @param cascade if true hide any children
      * @returns this control
      */
     hide(cascade?: boolean): CvsControl {
@@ -520,16 +318,10 @@ abstract class CvsControl {
     }
 
     /** @hidden */
-    warn$(method): any {
-        CWARN(`'${method}' is not supported by '${this.type}' controls.`)
-        return this;
-    }
-
-    /** @hidden */
     _updateControlVisual(): void { }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl { return this; }
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any { return this; }
 
     /** @hidden */
     _doKeyEvent(e: KeyboardEvent) { return this; }
@@ -539,6 +331,6 @@ abstract class CvsControl {
      * @param pkc picker buffer drawing context
      * @hidden
      */
-    _draw(uic, pkc) { }
+    _draw(uic: OffscreenCanvasRenderingContext2D, pkc: OffscreenCanvasRenderingContext2D) { }
 
 }

@@ -63,8 +63,8 @@ class CvsJoystick extends CvsBufferedControl {
     /** @hidden */ protected _tSize: number;
     /** @hidden */ protected _mag: number;
     /** @hidden */ protected _ang: number;
-    /** @hidden */ protected _dir: number;
-    /** @hidden */ protected _dead: boolean;
+    /** @hidden */ protected _dir!: number;
+    /** @hidden */ protected _dead!: boolean;
 
     // Mode either 0 (free) or 4, 8 (constrained
     /** @hidden */ protected _mode: string;
@@ -81,7 +81,7 @@ class CvsJoystick extends CvsBufferedControl {
       * @param h height
       */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        super(gui, name, x, y, w, h, true);
         this._size = Math.min(w, h);
         this._pr0 = 0.05 * this._size; this._pr1 = 0.40 * this._size;
         this._tSize = Math.max(0.075 * this._size, 6);
@@ -162,7 +162,7 @@ class CvsJoystick extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         /** @hidden */
         function getValue(source: CvsJoystick, event: any, fini: boolean) {
             let mag = (source._mag - source._pr0) / (source._pr1 - source._pr0);
@@ -216,6 +216,11 @@ class CvsJoystick extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual(): void { // CvsStick
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         let [tx, ty] =
@@ -231,12 +236,6 @@ class CvsJoystick extends CvsBufferedControl {
         const ROD = cs.C$(7);
         const MARKERS = cs.C$(8);
         const DEAD_ZONE = cs.T$(2);
-
-        // this._clearBuffers();
-        let uib = this._uicBuffer;
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
 
         uic.save();
         if (this._opaque) {
@@ -341,10 +340,13 @@ class CvsJoystick extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _updatePickBuffer(tx: number, ty: number, tSize: number) {// CvsStick
-        let pkc = this._pkcContext;
+    _updatePickBuffer(tx: number, ty: number, tSize: number) { // CvsStick
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
+
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.translate(this._w / 2, this._h / 2);
         pkc.fillStyle = c.cssColor;
@@ -355,8 +357,7 @@ class CvsJoystick extends CvsBufferedControl {
     }
 
 
-    /** @hidden */ orient(dir) { return this.warn$('orient') }
+    /** @hidden */ orient(dir: any) { return this.warn$('orient') }
 
 }
 
-Object.assign(CvsJoystick.prototype, PICKABLE);

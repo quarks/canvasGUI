@@ -4,31 +4,29 @@
  */
 abstract class CvsTextIcon extends CvsText {
 
-    /** @hidden */ protected _icon: cvsIcon;
-    /** @hidden */ protected _ix: number;
-    /** @hidden */ protected _iy: number;
-    /** @hidden */ protected _icons: Array<cvsIcon>;
+    /** @hidden */ protected _icon: cvsIcon | undefined;
+    /** @hidden */ protected _ix: number = 0;
+    /** @hidden */ protected _iy: number = 0;
+    /** @hidden */ protected _icons: Array<cvsIcon> = [];
     /** @hidden */ protected _iAlignH = 'left';
     /** @hidden */ protected _iAlignV = 'center';
 
     /** @hidden */
-    constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+    constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number, pickable: boolean) {
+        super(gui, name, x, y, w, h, pickable);
         this._icon = undefined;
     }
 
+
     /**
-     * <p>Replaces the existing icons representing false / true states.</p>
-     * <p>The first parameter must be an array of 2 images [falseImage, trueImage]
-     * representing the state of the checkbox. It is recomended that the images
-     * the same size</p>
-     * 
-     * If provided the last two paratmeters control the icon alignment within
-     * the control.</p>
+     * <p>Sets the icon and its alignment relative to any text in the 
+     * control.</p>
+     * <p>Processing constants can also be used to define the icon 
+     * alignment.</p>
      * @see iconAlign
-     * @param icon the icon to appear
-     * @param alignH horizontal position relative to the text.
-     * @param alignV vertical position within the control
+     * @param icon the icon to show
+     * @param alignH 'left', 'right' or 'center'
+     * @param alignV 'top', 'bottom' or 'center'
      * @returns this control or the current icon
      */
     icon(icon: cvsIcon, alignH?: string, alignV?: string): cvsIcon | CvsControl {
@@ -105,7 +103,7 @@ abstract class CvsTextIcon extends CvsText {
         else {
             const [iw, ih] = this._icon ? [this._icon.width, this._icon.height] : [0, 0];
             let ix = fx, iy = fy;
-            let textX: number, textW: number;
+            let textX: number = 0, textW: number = 0;
             switch (this._iAlignH) {
                 case "left":
                     ix = fx;

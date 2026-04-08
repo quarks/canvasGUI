@@ -1,5 +1,6 @@
 /**
  * The parent class for all color schemes.
+ * @hidden
  */
 class ColorScheme {
     /** @hidden */
@@ -10,6 +11,8 @@ class ColorScheme {
     _tints: Array<Array<number>> = [];
     /** @hidden */
     _name: string = 'color scheme name';
+    /**@hidden */
+    _original = true;
 
     /** @hidden */
     constructor(name = 'color scheme name') {
@@ -21,7 +24,13 @@ class ColorScheme {
     /** Get the name of this color scheme e.g. 'green', 'blue' ...  */
     get name() { return this._name }
     /** @hidden */
-    set name(v) { CWARN(`Changing the name of a color scheme is not permitted`) }
+    set name(v) { CWARN(`Cannot change the name of a library color scheme.`) }
+
+    /** 
+     * <p>Returns true if this scheme is one of the canvasGUI library color 
+     * schemes and false for a user defined scheme.</p>
+     */
+    get isOriginal() { return this._original }
 
     /** @hidden */
     C(n: number, alpha = 255) {
@@ -61,34 +70,92 @@ class ColorScheme {
         return `rgb(${t} ${t} ${t} / ${a}%)`
     }
 
-    /** 
-     * Returns true if this scheme has been created by the user and false if
-     * is one of the canvasGUI library color schemes.
-     */
-    get isCopy() { return Boolean(this['setColors']); }
-
     /** @hidden */
-    _deepCopyArray2D(a: Array<Array<number>>) {
-        const b = [];
+    _deepCopyArray2D(a: Array<Array<number>>): Array<Array<number>> {
+        const b: any = [];
         a.forEach(v => b.push([...v]));
         return b;
     }
 
+}
+
+/**
+ * <p>User color scheme</p>
+ * @hidden
+ */
+class UserColorScheme extends ColorScheme {
+
+    constructor(name: string, scheme: ColorScheme) {
+        super(name);
+        this._original = false;
+        this._tints = this._deepCopyArray2D(scheme._tints);
+        this._greys = this._deepCopyArray2D(scheme._greys);
+        this._colors = this._deepCopyArray2D(scheme._colors);
+    }
+
     /**
-     * Creates a new color scheme which is a deep copy of this one. The new scheme
-     * name will be the same as this one with '-copy' appended
-     * @returns a copy copy of this color scheme
-     * @hidden
+     * <p>Change the name of this user color scheme.</p>
      */
-    _copy() {
-        let cpy = new ColorScheme(`${this._name}-copy`);
-        cpy._tints = this._deepCopyArray2D(this._tints);
-        cpy._greys = this._deepCopyArray2D(this._greys);
-        cpy._colors = this._deepCopyArray2D(this._colors);
-        Object.assign(cpy, COLOR_SCHEME_EDIT);
-        return cpy;
+    set name(n: string) { this._name = n }
+
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getTints(): Array<Array<number>> {
+        return this._deepCopyArray2D(this._tints);
+    }
+
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getGreys(): Array<Array<number>> {
+        return this._deepCopyArray2D(this._greys);
+    }
+
+    /**
+     * <p>Get a deep copy of the colors array which can then be edited. Changes
+     * to the copy will not change the color scheme unless the matching set 
+     * method is called.</p>
+     */
+    getColors(): Array<Array<number>> {
+        return this._deepCopyArray2D(this._colors);
+    }
+
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param tints 
+     */
+    setTints(tints: Array<Array<number>>) {
+        this._tints = tints;
+    }
+
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param greys 
+     */
+    setGreys(greys: Array<Array<number>>) {
+        this._greys = greys;
+    }
+
+    /**
+     * <p>Replaces the scheme's colors array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param colors 
+     */
+    setColors(colors: Array<Array<number>>) {
+        this._colors = colors;
     }
 }
+
 
 class BlueScheme extends ColorScheme {
     constructor() {
@@ -189,66 +256,3 @@ class DarkScheme extends ColorScheme {
         this._greys = this._greys.reverse();
     }
 }
-
-// This mixin is added to any copy of a library color scheme so it can be edited
-// to create a user-defined color scheme.
-
-const COLOR_SCHEME_EDIT = {
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getTints(): Array<Array<number>> {
-        return this._deepCopyArray2D(this._tints);
-    },
-
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getGreys(): Array<Array<number>> {
-        return this._deepCopyArray2D(this._greys);
-    },
-
-    /**
-     * Get a deep copy of the colors array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getColors(): Array<Array<number>> {
-        return this._deepCopyArray2D(this._colors);
-    },
-
-    /**
-     * <p>Replaces the scheme's tints array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param tints 
-     */
-    setTints(tints: Array<Array<number>>) {
-        this._tints = tints;
-    },
-
-    /**
-     * <p>Replaces the scheme's tints array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param greys 
-     */
-    setGreys(greys: Array<Array<number>>) {
-        this._greys = greys;
-    },
-
-    /**
-     * <p>Replaces the scheme's colors array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param colors 
-     */
-    setColors(colors: Array<Array<number>>) {
-        this._colors = colors;
-    }
-
-};

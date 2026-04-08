@@ -35,9 +35,7 @@
 class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
-        /** @hidden */ this._nextActive = null;
-        /** @hidden */ this._linkIndex = undefined;
+        super(gui, name, x, y, w, h, true);
         /** @hidden */ this._linkOffset = 0;
         /** @hidden */ this._prevCsrIdx = 0;
         /** @hidden */ this._currCsrIdx = 0;
@@ -59,7 +57,7 @@ class CvsTextField extends CvsText {
      */
     index(idx, deltaIndex) {
         if (Number.isFinite(idx)) {
-            if (Number.isFinite(deltaIndex))
+            if (deltaIndex && Number.isFinite(deltaIndex))
                 this._linkOffset = deltaIndex;
             this._linkIndex = idx;
             if (!this._gui._links)
@@ -75,7 +73,7 @@ class CvsTextField extends CvsText {
      */
     noIndex() {
         if (Number.isFinite(this._linkIndex))
-            this._gui._links?.delete(this._linkIndex);
+            this._gui._links?.delete(Number(this._linkIndex));
         this._linkIndex = undefined;
         return this;
     }
@@ -210,8 +208,9 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _activateNext(offset) {
-        let links = this._gui._links, ctrl = null;
-        if (links) {
+        const links = this._gui._links;
+        let ctrl = null;
+        if (links && this._linkIndex) {
             let idx = this._linkIndex;
             do {
                 idx += offset;
@@ -404,6 +403,11 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const [isetH, isetV] = [Math.max(...cnrs) + ISET_H, 2 * ISET_V];
@@ -414,10 +418,7 @@ class CvsTextField extends CvsText {
         const DARK = cs.C$(9);
         const ACTIVE_BACK = cs.G$(0);
         let FORE = DARK;
-        // Prepare buffer
-        let uic = this._uicContext;
         uic.save();
-        uic.clearRect(0, 0, this._w, this._h);
         uic.font = this._cssFont;
         uic.textBaseline = 'top';
         // Draw background based on whether active or not
@@ -492,9 +493,12 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -504,5 +508,4 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */ orient(a) { return this.warn$('orient'); }
 }
-Object.assign(CvsTextField.prototype, PICKABLE);
 //# sourceMappingURL=textfield.js.map

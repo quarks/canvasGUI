@@ -1,5 +1,6 @@
 /**
  * The parent class for all color schemes.
+ * @hidden
  */
 class ColorScheme {
     /** @hidden */
@@ -12,6 +13,8 @@ class ColorScheme {
         this._tints = [];
         /** @hidden */
         this._name = 'color scheme name';
+        /**@hidden */
+        this._original = true;
         this._name = name;
         this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
@@ -19,7 +22,12 @@ class ColorScheme {
     /** Get the name of this color scheme e.g. 'green', 'blue' ...  */
     get name() { return this._name; }
     /** @hidden */
-    set name(v) { CWARN(`Changing the name of a color scheme is not permitted`); }
+    set name(v) { CWARN(`Cannot change the name of a library color scheme.`); }
+    /**
+     * <p>Returns true if this scheme is one of the canvasGUI library color
+     * schemes and false for a user defined scheme.</p>
+     */
+    get isOriginal() { return this._original; }
     /** @hidden */
     C(n, alpha = 255) {
         alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
@@ -52,30 +60,79 @@ class ColorScheme {
         a = Math.floor(a / 0.255) / 10;
         return `rgb(${t} ${t} ${t} / ${a}%)`;
     }
-    /**
-     * Returns true if this scheme has been created by the user and false if
-     * is one of the canvasGUI library color schemes.
-     */
-    get isCopy() { return Boolean(this['setColors']); }
     /** @hidden */
     _deepCopyArray2D(a) {
         const b = [];
         a.forEach(v => b.push([...v]));
         return b;
     }
+}
+/**
+ * <p>User color scheme</p>
+ * @hidden
+ */
+class UserColorScheme extends ColorScheme {
+    constructor(name, scheme) {
+        super(name);
+        this._original = false;
+        this._tints = this._deepCopyArray2D(scheme._tints);
+        this._greys = this._deepCopyArray2D(scheme._greys);
+        this._colors = this._deepCopyArray2D(scheme._colors);
+    }
     /**
-     * Creates a new color scheme which is a deep copy of this one. The new scheme
-     * name will be the same as this one with '-copy' appended
-     * @returns a copy copy of this color scheme
-     * @hidden
+     * <p>Change the name of this user color scheme.</p>
      */
-    _copy() {
-        let cpy = new ColorScheme(`${this._name}-copy`);
-        cpy._tints = this._deepCopyArray2D(this._tints);
-        cpy._greys = this._deepCopyArray2D(this._greys);
-        cpy._colors = this._deepCopyArray2D(this._colors);
-        Object.assign(cpy, COLOR_SCHEME_EDIT);
-        return cpy;
+    set name(n) { this._name = n; }
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getTints() {
+        return this._deepCopyArray2D(this._tints);
+    }
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getGreys() {
+        return this._deepCopyArray2D(this._greys);
+    }
+    /**
+     * <p>Get a deep copy of the colors array which can then be edited. Changes
+     * to the copy will not change the color scheme unless the matching set
+     * method is called.</p>
+     */
+    getColors() {
+        return this._deepCopyArray2D(this._colors);
+    }
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param tints
+     */
+    setTints(tints) {
+        this._tints = tints;
+    }
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param greys
+     */
+    setGreys(greys) {
+        this._greys = greys;
+    }
+    /**
+     * <p>Replaces the scheme's colors array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param colors
+     */
+    setColors(colors) {
+        this._colors = colors;
     }
 }
 class BlueScheme extends ColorScheme {
@@ -170,59 +227,4 @@ class DarkScheme extends ColorScheme {
         this._greys = this._greys.reverse();
     }
 }
-// This mixin is added to any copy of a library color scheme so it can be edited
-// to create a user-defined color scheme.
-const COLOR_SCHEME_EDIT = {
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getTints() {
-        return this._deepCopyArray2D(this._tints);
-    },
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getGreys() {
-        return this._deepCopyArray2D(this._greys);
-    },
-    /**
-     * Get a deep copy of the colors array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getColors() {
-        return this._deepCopyArray2D(this._colors);
-    },
-    /**
-     * <p>Replaces the scheme's tints array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param tints
-     */
-    setTints(tints) {
-        this._tints = tints;
-    },
-    /**
-     * <p>Replaces the scheme's tints array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param greys
-     */
-    setGreys(greys) {
-        this._greys = greys;
-    },
-    /**
-     * <p>Replaces the scheme's colors array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param colors
-     */
-    setColors(colors) {
-        this._colors = colors;
-    }
-};
 //# sourceMappingURL=colorschemes.js.map

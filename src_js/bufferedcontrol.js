@@ -19,11 +19,55 @@ class CvsBufferedControl extends CvsControl {
      * @param w width
      * @param h height
      */
-    constructor(gui, id, x, y, w, h) {
-        super(gui, id, x, y, w, h);
+    constructor(gui, id, x, y, w, h, pickable = false) {
+        super(gui, id, x, y, w, h, pickable);
         /** @hidden */ this._textInvalid = false;
-        this._validateBuffer();
+        this._createBuffer = pickable ? this._createUIandPKbuffer : this._createUIbuffer;
+        this._createBuffer(w, h);
+        this.invalidateBuffer();
     }
+    /**
+     * Create the UI buffer
+     * @hidden
+     */
+    _createBuffer(w, h) {
+        this._uicBuffer = new OffscreenCanvas(w, h);
+        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this._pkcBuffer = new OffscreenCanvas(w, h);
+        this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this.invalidateBuffer();
+    }
+    _createUIbuffer(w, h) {
+        this._uicBuffer = new OffscreenCanvas(w, h);
+        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this.invalidateBuffer();
+    }
+    _createUIandPKbuffer(w, h) {
+        this._uicBuffer = new OffscreenCanvas(w, h);
+        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this._pkcBuffer = new OffscreenCanvas(w, h);
+        this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this.invalidateBuffer();
+    }
+    _clearBuffer(buff, ctx) {
+        if (buff && ctx)
+            ctx.clearRect(0, 0, buff.width, buff.height);
+    }
+    /**
+     * If this control has changed size then recreate the ui buffers
+     * and invalidate the control so it is forced to recreate the buffer on
+     * when being rendered.
+     * @hidden
+     */
+    _validateBuffer(w = this._uicBuffer.width, h = this._uicBuffer.height) {
+        if (this._uicBuffer.width != w || this._uicBuffer.height != h)
+            this._createBuffer(w, h);
+    }
+    /**
+     * Test function to show existing puffers
+     * @hidden
+     */
+    get bufferStatus() { return { ui: Boolean(this._uicBuffer), pk: Boolean(this._pkcBuffer) }; }
     /**
      * Invalidates display text.
      * If the text or its attributes are changed then the text needs updating
@@ -37,38 +81,10 @@ class CvsBufferedControl extends CvsControl {
         this.invalidateBuffer();
         return this;
     }
-    /**
-     * Clear the ui buffer
-     * @hidden
-     */
-    _clearUiBuffer() {
-        this._uicContext.clearRect(0, 0, this._uicBuffer.width, this._uicBuffer.height);
-    }
-    /**
-     * Clear the pick buffer
-     * @hidden
-     */
-    _clearPickBuffer() {
-        this._pkcContext?.clearRect(0, 0, this._pkcBuffer.width, this._pkcBuffer.height);
-    }
-    /**
-     * If this control has changed size then recreate the ui and pick buffers
-     * and invalidate the control so it is forced to redraw the buffers on
-     * when being rendered'
-     * @hidden
-     */
-    _validateBuffer() {
-        if (!this._uicBuffer || this._uicBuffer.width != this._w || this._uicBuffer.height != this._h) {
-            this._uicBuffer = new OffscreenCanvas(this._w, this._h);
-            this._uicContext = this._uicBuffer.getContext('2d');
-            this._uicContext.clearRect(0, 0, this._w, this._h);
-            this.invalidateBuffer();
-        }
-    }
     /** @hidden */
     _draw(guiCtx, pkCtx) {
         // Make sure the buffer exists and the same size as the control
-        this._validateBuffer();
+        this._validateBuffer(this._w, this._h);
         if (this._bufferInvalid)
             this._updateControlVisual();
         guiCtx.save();
@@ -94,10 +110,13 @@ class CvsBufferedControl extends CvsControl {
     }
     /** @hidden */
     _disable_highlight(cs, x, y, w, h) {
-        this._uicContext.fillStyle = cs.T$(2);
-        this._uicContext.beginPath();
-        this._uicContext.roundRect(x, y, w, h, this.CNRS);
-        this._uicContext.fill();
+        const uic = this._uicBuffer.getContext('2d');
+        if (uic) {
+            uic.fillStyle = cs.T$(2);
+            uic.beginPath();
+            uic.roundRect(x, y, w, h, this.CNRS);
+            uic.fill();
+        }
     }
     /** @hidden */
     _getUseableFaceRegion() {
@@ -105,23 +124,4 @@ class CvsBufferedControl extends CvsControl {
         return [iH, ISET_V, this._w - 2 * iH, this._h - 2 * ISET_V];
     }
 }
-const PICKABLE = {
-    /**
-     * If this control has changed size then recreate the ui and pick buffers
-     * and invalidate the control so it is forced to redraw the buffers on
-     * when being rendered'
-     * @hidden
-     */
-    _validateBuffer() {
-        if (!this._uicBuffer || this._uicBuffer.width != this._w || this._uicBuffer.height != this._h) {
-            this._uicBuffer = new OffscreenCanvas(this._w, this._h);
-            this._uicContext = this._uicBuffer.getContext('2d');
-            this._uicContext.clearRect(0, 0, this._w, this._h);
-            this._pkcBuffer = new OffscreenCanvas(this._w, this._h);
-            this._pkcContext = this._pkcBuffer.getContext('2d');
-            this._pkcContext.clearRect(0, 0, this._w, this._h);
-            this.invalidateBuffer();
-        }
-    }
-};
 //# sourceMappingURL=bufferedcontrol.js.map

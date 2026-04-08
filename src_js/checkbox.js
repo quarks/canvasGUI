@@ -4,7 +4,7 @@
 class CvsCheckbox extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 18);
+        super(gui, name, x, y, w, h, true);
         this._selected = false; // 0
         this._createDefaultIcons();
         this.invalidateBuffer();
@@ -18,33 +18,43 @@ class CvsCheckbox extends CvsTextIcon {
         // False
         let ib = new OffscreenCanvas(s, s);
         let ic = ib.getContext('2d');
-        ic.fillStyle = FG;
-        ic.fillRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.fillRect(2, 2, s - 4, s - 4);
+        if (ic) {
+            ic.fillStyle = FG;
+            ic.fillRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.fillRect(2, 2, s - 4, s - 4);
+        }
         this._icons.push(ib);
         // True
         ib = new OffscreenCanvas(s, s);
         ic = ib.getContext('2d');
-        ic.fillStyle = FG;
-        ic.fillRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.fillRect(2, 2, s - 4, s - 4);
-        ic.beginPath();
-        ic.strokeStyle = FG;
-        ic.lineWidth = 2.5;
-        ic.moveTo(0.2 * s, 0.55 * s);
-        ic.lineTo(0.45 * s, 0.75 * s);
-        ic.lineTo(0.8 * s, 0.2 * s);
-        ic.stroke();
+        if (ic) {
+            ic.fillStyle = FG;
+            ic.fillRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.fillRect(2, 2, s - 4, s - 4);
+            ic.beginPath();
+            ic.strokeStyle = FG;
+            ic.lineWidth = 2.5;
+            ic.moveTo(0.2 * s, 0.55 * s);
+            ic.lineTo(0.45 * s, 0.75 * s);
+            ic.lineTo(0.8 * s, 0.2 * s);
+            ic.stroke();
+        }
         this._icons.push(ib);
         // Set icon to display
         this._icon = this._icons[Number(this._selected)];
         this.invalidateBuffer();
     }
     /**
-     * <p>Sets the icon and its alignment relative to any text in
-     * the control.</p>
+     * <p>Replaces the existing icons representing false / true states.</p>
+     * <p>The first parameter must be an array of 2 images [falseImage, trueImage]
+     * representing the state of the checkbox. It is recomended that the images
+     * the same size</p>
+     *
+     * If provided the last two paratmeters control the icon alignment within
+     * the control. </p>
+     *
      * <p>Processing constants are used to define the icon alignment.</p>
      * @param icons array of 2 icons [falseImage, trueImage]
      * @param alignH 'left', 'right' or 'center'
@@ -147,6 +157,11 @@ class CvsCheckbox extends CvsTextIcon {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -157,10 +172,8 @@ class CvsCheckbox extends CvsTextIcon {
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
-        const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
-        uic.clearRect(0, 0, this._w, this._h);
         // Background
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -189,9 +202,12 @@ class CvsCheckbox extends CvsTextIcon {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -201,5 +217,4 @@ class CvsCheckbox extends CvsTextIcon {
     }
     /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
 }
-Object.assign(CvsCheckbox.prototype, PICKABLE);
 //# sourceMappingURL=checkbox.js.map

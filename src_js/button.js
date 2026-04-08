@@ -5,11 +5,16 @@
 class CvsButton extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        super(gui, name, x, y, w, h, true);
         this._enabled = true;
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -17,12 +22,9 @@ class CvsButton extends CvsTextIcon {
             this._fitToContent();
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
-        // const font = this.cssFont;
         const BACK = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
-        let uic = this._uicContext;
-        this._clearUiBuffer();
         uic.save();
         uic.font = this._cssFont;
         // Background
@@ -32,8 +34,14 @@ class CvsButton extends CvsTextIcon {
             uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
         }
-        if (this._icon)
+        if (this._icon) {
+            uic.save();
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.clip();
             uic.drawImage(this._icon, this._ix, this._iy);
+            uic.restore();
+        }
         this._renderTextArea(FORE);
         // Mouse over add border highlight
         if (this.isActive || this.over) {
@@ -50,14 +58,15 @@ class CvsButton extends CvsTextIcon {
         uic.restore();
         // The last line in this method should be
         this._bufferInvalid = false;
-        // but if this is a pane-tab then must validate the tabs
-        // if (this._parent instanceof CvsPane) this._parent.validateTabs();
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        this._clearPickBuffer();
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -99,5 +108,4 @@ class CvsButton extends CvsTextIcon {
         return this.isActive ? this : null;
     }
 }
-Object.assign(CvsButton.prototype, PICKABLE);
 //# sourceMappingURL=button.js.map

@@ -17,7 +17,7 @@ class CvsPanel extends CvsBufferedControl {
 
     /** @hidden */ protected _canDragX: boolean = true;
     /** @hidden */ protected _canDragY: boolean = true;
-    /** @hidden */ protected _dragData: Array<number>;
+    /** @hidden */ protected _dragData!: Array<number>;
     /** @hidden */ protected _constrainX: boolean = true;
     /** @hidden */ protected _constrainY: boolean = true;
 
@@ -31,7 +31,7 @@ class CvsPanel extends CvsBufferedControl {
      * @param h height
      */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 100);
+        super(gui, name, x, y, w, h, true);
         this._opaque = true;
         this._z = PANEL_Z;
     }
@@ -72,7 +72,7 @@ class CvsPanel extends CvsBufferedControl {
     get canDragY() { return this._canDragY }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         let absPos = this.getAbsXY();
         let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
@@ -127,22 +127,24 @@ class CvsPanel extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual(): void { // CvsPanel
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const OPAQUE = cs.C$(4, this._alpha);
         const HIGHLIGHT = cs.C$(9);
 
-        const uic = this._uicContext;
-
         uic.save();
-        uic.clearRect(0, 0, this._w, this._h);
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
             uic.beginPath();
             uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
         }
-        if (this.over) {
+        if (this.isDraggable && this.over) {
             uic.strokeStyle = HIGHLIGHT;
             uic.lineWidth = 2;
             uic.beginPath();
@@ -157,9 +159,12 @@ class CvsPanel extends CvsBufferedControl {
 
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
+
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -169,12 +174,9 @@ class CvsPanel extends CvsBufferedControl {
     }
 
     // Hide these methods from typeDoc
-    /** @hidden */ parent(a, b, c) { return this.warn$('parent') }
+    /** @hidden */ parent(a: any, b: any, c: any) { return this.warn$('parent') }
     /** @hidden */ leaveParent() { return this.warn$('leaveParent') }
-    /** @hidden */ tooltip(a) { return this.warn$('tooltip') }
-    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize') }
-    /** @hidden */ orient(a) { return this.warn$('orient') }
+    /** @hidden */ tooltip(a: any) { return this.warn$('tooltip') }
+    /** @hidden */ tipTextSize(a: any) { return this.warn$('tipTextSize') }
+    /** @hidden */ orient(a: any) { return this.warn$('orient') }
 }
-
-Object.assign(CvsPanel.prototype, PICKABLE);
-

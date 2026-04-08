@@ -4,10 +4,15 @@
 class CvsLabel extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 60, h || 16);
+        super(gui, name, x, y, w, h, false);
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -17,10 +22,8 @@ class CvsLabel extends CvsTextIcon {
         const cnrs = this.CNRS;
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
-        const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
-        uic.clearRect(0, 0, this._w, this._h);
         // Background
         if (this._opaque) {
             uic.fillStyle = OPAQUE;

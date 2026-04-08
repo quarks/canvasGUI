@@ -35,20 +35,20 @@
  */
 class CvsTextField extends CvsText {
 
-    /** @hidden */ protected _nextActive = null;
-    /** @hidden */ protected _linkIndex: number = undefined;
+    /** @hidden */ protected _nextActive: any;
+    /** @hidden */ protected _linkIndex: number | undefined;
     /** @hidden */ protected _linkOffset = 0;
     /** @hidden */ protected _prevCsrIdx = 0;
     /** @hidden */ protected _currCsrIdx = 0;
     /** @hidden */ protected _line: string = '';
     /** @hidden */ protected _cursorOn = false;
-    /** @hidden */ protected _validation: Function;
+    /** @hidden */ protected _validation: Function | undefined;
     /** @hidden */ protected _inputInvalid: boolean = false;
 
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        super(gui, name, x, y, w, h, true);
         this.textAlign("left", "top");
         this.invalidateBuffer();
     }
@@ -66,7 +66,8 @@ class CvsTextField extends CvsText {
      */
     index(idx: number, deltaIndex?: number) {
         if (Number.isFinite(idx)) {
-            if (Number.isFinite(deltaIndex)) this._linkOffset = deltaIndex;
+            if (deltaIndex && Number.isFinite(deltaIndex))
+                this._linkOffset = deltaIndex;
             this._linkIndex = idx;
             if (!this._gui._links)
                 this._gui._links = new Map();
@@ -82,7 +83,7 @@ class CvsTextField extends CvsText {
      */
     noIndex() {
         if (Number.isFinite(this._linkIndex))
-            this._gui._links?.delete(this._linkIndex);
+            this._gui._links?.delete(Number(this._linkIndex));
         this._linkIndex = undefined;
         return this;
     }
@@ -227,8 +228,9 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _activateNext(offset: number) {
-        let links = this._gui._links, ctrl = null;
-        if (links) {
+        const links = this._gui._links;
+        let ctrl = null;
+        if (links && this._linkIndex) {
             let idx = this._linkIndex;
             do {
                 idx += offset;
@@ -251,7 +253,7 @@ class CvsTextField extends CvsText {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -426,6 +428,11 @@ class CvsTextField extends CvsText {
 
     /** @hidden */
     _updateControlVisual() { // CvsTextField
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const [isetH, isetV] = [Math.max(...cnrs) + ISET_H, 2 * ISET_V];
@@ -438,10 +445,7 @@ class CvsTextField extends CvsText {
         const ACTIVE_BACK = cs.G$(0);
         let FORE = DARK;
 
-        // Prepare buffer
-        let uic = this._uicContext;
         uic.save();
-        uic.clearRect(0, 0, this._w, this._h);
         uic.font = this._cssFont;
         uic.textBaseline = 'top';
 
@@ -522,9 +526,12 @@ class CvsTextField extends CvsText {
 
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
+
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -533,8 +540,6 @@ class CvsTextField extends CvsText {
         pkc.restore();
     }
 
-    /** @hidden */ orient(a) { return this.warn$('orient'); }
+    /** @hidden */ orient(a: any) { return this.warn$('orient'); }
 }
 
-
-Object.assign(CvsTextField.prototype, PICKABLE);

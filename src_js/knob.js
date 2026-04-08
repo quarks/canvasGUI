@@ -15,7 +15,7 @@ class CvsKnob extends CvsSlider {
      * @param h height
      */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        super(gui, name, x, y, w, h);
         // Mouse / touch mode
         /** @hidden */ this._mode = CvsKnob.X_MODE;
         /** @hidden */ this._sensitivity = 0.005;
@@ -214,6 +214,11 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         const OPAQUE = cs.C$(3, this._alpha);
@@ -226,10 +231,6 @@ class CvsKnob extends CvsSlider {
         const TICKS = cs.G$(8);
         const USED_TRACK = cs.G$(2);
         const UNUSED_TRACK = cs.T$(2);
-        let uib = this._uicBuffer;
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -338,7 +339,11 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
         pkc.translate(this._w / 2, this._h / 2);
@@ -353,5 +358,4 @@ class CvsKnob extends CvsSlider {
 /** @hidden */ CvsKnob.X_MODE = 1;
 /** @hidden */ CvsKnob.Y_MODE = 2;
 /** @hidden */ CvsKnob.A_MODE = 3;
-Object.assign(CvsKnob.prototype, PICKABLE);
 //# sourceMappingURL=knob.js.map

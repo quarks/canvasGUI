@@ -55,12 +55,17 @@ class GUI {
         /** @hidden */ this._panesNorth = [];
         /** @hidden */ this._tabsInvalid = false;
         /** @hidden */ this._tabMinHeight = 16;
+        // Attributes
+        /** @hidden */ this._schemes = new Map();
         /** @hidden */ this._clipboard = '';
         // Tooltip times
         /** @hidden */ this._show_time = TT_SHOW_TIME;
         /** @hidden */ this._repeat_time = TT_REPEAT_TIME;
         /** @hidden */ this._color2control = new Map(); // Map the base pick color to the object
         /** @hidden */ this._control2color = new Map(); // Find the colour for a given object
+        // Mouse position
+        /** @hidden */ this._mouseX = 0;
+        /** @hidden */ this._mouseY = 0;
         this._uid = id;
         this._mode = mode;
         this._pr = pixelRatio;
@@ -88,22 +93,17 @@ class GUI {
         this._showUI = this._is3D ? this._showOverWebGL : this._showOver2d;
         // Create buffers
         this._createGuiBuffers(this._canvas.width, this._canvas.height);
-        // CLOG(`GUI ctor    3D? ${this._is3D}   Device Pixel Scale: ${devicePixelRatio}`);
-        // CLOG(`  Canvas size:     ${this._canvas.width} x ${this._canvas.height}`);
-        // CLOG(`  UI buffer size:  ${this._uiBuffer.width} x ${this._uiBuffer.height}`);
-        // CLOG(`  PK buffer size:  ${this._pkBuffer.width} x ${this._pkBuffer.height}`);
     }
     /** @hidden */
     invalidateTabs() {
         this._tabsInvalid = true;
     }
+    /** @hidden */
     _createGuiBuffers(w, h) {
-        // CLOG(`Create buffers  ${MILLIS()}`)
         this._uiBuffer = new OffscreenCanvas(w, h);
-        this._uiContext = this._uiBuffer.getContext('2d');
-        this._uiContext.scale(this._pr, this._pr);
+        this._uiBuffer.getContext('2d')?.scale(this._pr, this._pr);
         this._pkBuffer = new OffscreenCanvas(w, h);
-        this._pkContext = this._pkBuffer.getContext('2d');
+        this._pkBuffer.getContext('2d');
         this._clearGuiBuffers();
     }
     /**
@@ -111,8 +111,9 @@ class GUI {
      * @hidden
      */
     _clearGuiBuffers() {
-        this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
-        this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
+        const [uib, pkb] = [this._uiBuffer, this._pkBuffer];
+        uib.getContext('2d')?.clearRect(0, 0, uib.width, uib.height);
+        pkb.getContext('2d')?.clearRect(0, 0, pkb.width, pkb.height);
     }
     /**
      * Make sure we have an overlay buffer and a pick buffer of the correct size.
@@ -131,12 +132,16 @@ class GUI {
      * @hidden
      */
     draw() {
+        const uic = this._uiBuffer.getContext('2d');
+        const pkc = this._pkBuffer.getContext('2d');
+        if (!uic || !pkc)
+            return;
         this._validateGuiBuffers();
         this._clearGuiBuffers();
         if (this._visible) {
             for (const c of this._ctrls)
                 if (!c.getParent())
-                    c._draw(this._uiContext, this._pkContext);
+                    c._draw(uic, pkc);
             this._showUI();
         }
         if (this._tabsInvalid) {
@@ -235,9 +240,79 @@ class GUI {
     // ######         Factory methods to create controls           ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
-    image(id, x, y, image) {
-        const img = cvsGuiCanvas(image);
-        return this.addControl(new CvsImage(this, id, x, y, img), false);
+    /**
+     * <p>Create a pin control.</p>
+     * <p>The Pin control is a simple place holder for containing child controls
+     * relative to each other.</p>
+     * @param id
+     * @param x
+     * @param y
+     * @returns
+     */
+    pin(id, x, y) {
+        return new CvsPin(this, id, x, y);
+    }
+    /**
+     * Create a label control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param text optional face text
+     * @param icon optional face icon
+     * @returns a label
+     */
+    label(id, x, y, w, h, text, icon) {
+        const ctrl = new CvsLabel(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        if (icon)
+            ctrl.icon(icon);
+        return ctrl;
+    }
+    /**
+     * Create a button control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param text optional face text
+     * @param icon optional face icon
+     * @returns a button
+     */
+    button(id, x, y, w, h, text, icon) {
+        const ctrl = new CvsButton(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        if (icon)
+            ctrl.icon(icon);
+        return ctrl;
+    }
+    /**
+     * <p>Create an image button control.</p>
+     * <p>The button size is determined by the size of the off-button image. If
+     * a second image is provided (optional) then it will be used for the
+     * over-button state. In the absence of the second image otherwise a border
+     * highlight is used.</p>
+     *
+     * <p>The button hit-zone is any non-transparent pixel if the off-button
+     * image of the mask image if provided. Any pixel with an alpha value
+     * &ge;128 is considered non-transparent.</p>
+     *
+     *
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param images array of images for off-button and over-button states
+     * @param mask hit zone image
+     * @returns image button control
+     */
+    image(id, x, y, images, mask) {
+        const ctrl = new CvsImage(this, id, x, y, cvsGuiCanvas(images), mask);
+        ctrl._makePickImage();
+        return ctrl;
     }
     /**
      * Create a slider control
@@ -249,7 +324,7 @@ class GUI {
      * @returns slider control
      */
     slider(id, x, y, w, h) {
-        return this.addControl(new CvsSlider(this, id, x, y, w, h), true);
+        return new CvsSlider(this, id, x, y, w, h);
     }
     /**
      * Create a ranger control
@@ -261,19 +336,7 @@ class GUI {
      * @returns ranger control
      */
     ranger(id, x, y, w, h) {
-        return this.addControl(new CvsRanger(this, id, x, y, w, h), true);
-    }
-    /**
-     * Create a button control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a button
-     */
-    button(id, x, y, w, h) {
-        return this.addControl(new CvsButton(this, id, x, y, w, h), true);
+        return new CvsRanger(this, id, x, y, w, h);
     }
     /**
      * Create a single line text input control
@@ -286,7 +349,7 @@ class GUI {
      */
     textfield(id, x, y, w, h) {
         this._addKeyEventHandlers();
-        return this.addControl(new CvsTextField(this, id, x, y, w, h), true);
+        return new CvsTextField(this, id, x, y, w, h);
     }
     /**
      * Create a checkbox control
@@ -295,10 +358,14 @@ class GUI {
      * @param y top pixel position
      * @param w width
      * @param h height
+     * @param text optional face text
      * @returns a checkbox
      */
-    checkbox(id, x, y, w, h) {
-        return this.addControl(new CvsCheckbox(this, id, x, y, w, h), true);
+    checkbox(id, x, y, w, h, text) {
+        const ctrl = new CvsCheckbox(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        return ctrl;
     }
     /**
      * Create an option (radio button) control
@@ -307,22 +374,14 @@ class GUI {
      * @param y top pixel position
      * @param w width
      * @param h height
+     * @param text optional face text
      * @returns an option button
      */
-    option(id, x, y, w, h) {
-        return this.addControl(new CvsOption(this, id, x, y, w, h), true);
-    }
-    /**
-     * Create a label control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a label
-     */
-    label(id, x, y, w, h) {
-        return this.addControl(new CvsLabel(this, id, x, y, w, h), false);
+    option(id, x, y, w, h, text) {
+        const ctrl = new CvsOption(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        return ctrl;
     }
     /**
      * Create a poster control
@@ -334,7 +393,7 @@ class GUI {
      * @returns a label
      */
     poster(id, x, y, w, h) {
-        return this.addControl(new CvsPoster(this, id, x, y, w, h), false);
+        return new CvsPoster(this, id, x, y, w, h);
     }
     /**
      * Create a label control
@@ -346,7 +405,7 @@ class GUI {
      * @returns a label
      */
     panel(id, x, y, w, h) {
-        return this.addControl(new CvsPanel(this, id, x, y, w, h), true);
+        return new CvsPanel(this, id, x, y, w, h);
     }
     /**
      * Create a viewer control
@@ -358,7 +417,7 @@ class GUI {
      * @returns an image viewer
      */
     viewer(id, x, y, w, h) {
-        return this.addControl(new CvsViewer(this, id, x, y, w, h), true);
+        return new CvsViewer(this, id, x, y, w, h);
     }
     /**
      * Create a joystick control
@@ -370,7 +429,7 @@ class GUI {
      * @returns a joystick control
      */
     joystick(id, x, y, w, h) {
-        return this.addControl(new CvsJoystick(this, id, x, y, w, h), true);
+        return new CvsJoystick(this, id, x, y, w, h);
     }
     /**
      * Create a knob control
@@ -382,7 +441,7 @@ class GUI {
      * @returns a knob control
      */
     knob(id, x, y, w, h) {
-        return this.addControl(new CvsKnob(this, id, x, y, w, h), true);
+        return new CvsKnob(this, id, x, y, w, h);
     }
     /**
      * Create a scroller control
@@ -395,7 +454,7 @@ class GUI {
      * @hidden
      */
     __scroller(id, x, y, w, h) {
-        return this.addControl(new CvsScroller(this, id, x, y, w, h), true);
+        return new CvsScroller(this, id, x, y, w, h);
     }
     /**
      * Description placeholder
@@ -404,7 +463,7 @@ class GUI {
      * @hidden
      */
     __tooltip(id) {
-        return this.addControl(new CvsTooltip(this, id), false);
+        return new CvsTooltip(this, id);
     }
     /**
      * Create a side pane. The pane location is either 'north', 'south',
@@ -434,18 +493,18 @@ class GUI {
             case 'east':
             default: ctrl = new CvsPaneEast(this, id, depth);
         }
-        return this.addControl(ctrl, true);
+        return ctrl;
     }
     // ######           End of control factory methods             ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /** @returns the canvas context type  */
-    get contextType() { return this._canvas["hasContext"](); }
+    // get contextType() { return this._canvas["hasContext"]() }
     /** @returns true gui is over a 3D canvas  */
     get is3D() { return this._is3D; }
     /** @returns 'p5js' if using p5.js else returns 'JS' */
     get mode() { return this._mode; }
-    /** @returns an array with the names of available color schemes */
+    /** @returns an array with the names of built-in color schemes */
     get colorSchemeNames() {
         return Array.from(['blue', 'green', 'red', 'cyan', 'yellow', 'purple', 'orange', 'light', 'dark']);
     }
@@ -565,10 +624,10 @@ class GUI {
     _addKeyEventHandlers() {
         if (!this._keyListenersCreated) {
             const keyTarget = document.getElementById(this._canvas.id);
-            keyTarget.setAttribute('tabindex', '0');
-            keyTarget.focus();
-            keyTarget.addEventListener('keydown', (e) => { this._processKeyEvent(e); return false; });
-            keyTarget.addEventListener('keyup', (e) => { this._processKeyEvent(e); return false; });
+            keyTarget?.setAttribute('tabindex', '0');
+            keyTarget?.focus();
+            keyTarget?.addEventListener('keydown', (e) => { this._processKeyEvent(e); return false; });
+            keyTarget?.addEventListener('keyup', (e) => { this._processKeyEvent(e); return false; });
             this._keyListenersCreated = true;
         }
     }
@@ -680,30 +739,27 @@ class GUI {
     $(id) {
         return (typeof id === "string") ? this._controls.get(id) : id;
     }
-    /**
-     * <p>Adds a child control to this gui.</p>
-     * @param control the child control to add
-     * @returns the control just added
-     * @hidden
-     */
-    addControl(control, pickable = false) {
+    registerID(control) {
         CASSERT(!this._controls.has(control.id), `Control '${control.id}' already exists and will be replaced.`);
         // Map control by ID
         this._controls.set(control.id, control);
         // Now find render order
         this._ctrls = [...this._controls.values()];
         this.setRenderOrder();
-        if (pickable)
-            this.register(control);
         return control;
     }
     /**
-     * Sorts the controls so that they are rendered in order of their z
-     * value (low z --> high z).
-     * @hidden
+     * <p>Register a control so it is pickable.</p>
+     * <p>If the control has already been registered it will be unchanged.</p>
+     *
+     * @param control the control to make pickable
      */
-    setRenderOrder() {
-        this._ctrls.sort((a, b) => { return a.z - b.z; });
+    registerPickable(control) {
+        if (control && !this._control2color.has(control)) {
+            this._control2color.set(control, this._NEXT_COLOR);
+            this._color2control.set(this._NEXT_COLOR, control);
+            this._NEXT_COLOR += this._COLOR_STEP;
+        }
     }
     /**
      * Add an object so it can be detected using this pick buffer.
@@ -718,6 +774,14 @@ class GUI {
         }
     }
     /**
+     * Sorts the controls so that they are rendered in order of their z
+     * value (low z --> high z).
+     * @hidden
+     */
+    setRenderOrder() {
+        this._ctrls.sort((a, b) => { return a.z - b.z; });
+    }
+    /**
      * Remove this object so it can't be detected using this pick buffer.
      * @param control the object to remove
      * @hidden
@@ -730,9 +794,13 @@ class GUI {
         }
     }
     /**
+     * <p>Get the pick color associated with the control. If the control is
+     * pickable it will return an object describing the pick color otherwise
+     * it returns the color 'white'</p>
+     *
      * @hidden
-     * @param control the control we need the pick color for
-     * @returns the associated pick color numeric value (rgb)
+     * @param control the control we are interested in.
+     * @returns the pick color descriptor object
      */
     pickColor(control) {
         if (this._control2color.has(control)) {
@@ -740,7 +808,7 @@ class GUI {
             const [r, g, b] = [(pc >> 16) & 0xFF, (pc >> 8) & 0xFF, pc & 0xFF];
             return { r: r, g: g, b: b, cssColor: `rgb(${r} ${g} ${b})` };
         }
-        return undefined;
+        return { r: 255, g: 255, b: 255, cssColor: 'white' };
     }
     /**
      * Display a 2D buffer in a canvas element with the specified ID.
@@ -767,34 +835,40 @@ class GUI {
             ele.setAttribute('padding', '3px');
             ele.style.border = '2px solid #FF0000';
             const ctx = ele.getContext('2d');
-            ctx.drawImage(buffer, 0, 0, buffer.width, buffer.height, 0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx?.drawImage(buffer, 0, 0, buffer.width, buffer.height, 0, 0, ctx.canvas.width, ctx.canvas.height);
         }
     }
     /**
-     * List the controls created so far
+     * List the controls and their buffers.
      * @hidden
      */
-    listControls() {
-        CLOG("--------------------   List of controls   --------------------");
-        this._ctrls.forEach(c => {
-            const id = `${c.id}                               `.substring(0, 15);
-            const ctype = `${c.constructor.name}                   `.substring(0, 15);
-            const z = `Z: ${c.z}      `.substring(0, 10);
-            const pc = `Color key: ${this._control2color.get(c)}`;
-            CLOG(id + ctype + z + pc);
-        });
-        CLOG('--------------------------------------------------------------');
+    listBuffers() {
+        CLOG('----------------------   List of Buffers    ---------------------');
+        for (let [id, ctrl] of this._controls) {
+            const bs = ctrl.bufferStatus;
+            const uic = bs.ui ? 'Y' : 'N';
+            const pkc = bs.pk ? 'Y' : 'N';
+            const pickable = this._control2color.has(ctrl) ? "Y" : "N";
+            const id = `${ctrl.type}   ${ctrl.id}  ................................`
+                .substring(0, 30);
+            CLOG(`${id}    ui: ${uic}     pk: ${pkc}     pickable:${pickable}`);
+        }
+        CLOG('-----------------------------------------------------------------');
     }
     /**
-     * <p>Gets the option group associated with a given name.</p>
+     * <p>Gets the option group associated with a given name. If the group
+     * does not exist create it.</p>
      * @param name the name of the option group
-     * @returns the option group
+     * @returns the maatching option group
      * @hidden
      */
     getOptionGroup(name) {
-        if (!this._optionGroups.has(name))
-            this._optionGroups.set(name, new CvsOptionGroup(name));
-        return this._optionGroups.get(name);
+        let og = this._optionGroups.get(name);
+        if (!og) {
+            og = new CvsOptionGroup(name);
+            this._optionGroups.set(name, og);
+        }
+        return og;
     }
     /**
      * Sets the global default icon for checkboxes and option buttons.
@@ -805,7 +879,7 @@ class GUI {
         if (!Number.isFinite(size))
             return this._iSize;
         this._iSize = Math.ceil(size);
-        this._controls.forEach((c) => {
+        this._ctrls.forEach((c) => {
             if (c instanceof CvsCheckbox || c instanceof CvsOption)
                 c.invalidateBuffer();
         });
@@ -821,9 +895,9 @@ class GUI {
     textSize(tsize) {
         if (!Number.isFinite(tsize))
             return this._tSize;
-        this._tSize = tsize;
+        this._tSize = Number(tsize);
         // Update visual for all controls
-        this._controls.forEach((c) => { c.invalidateBuffer(); });
+        this._ctrls.forEach((c) => { c.invalidateBuffer(); });
         return this;
     }
     /**
@@ -851,7 +925,7 @@ class GUI {
         if (fface)
             this._tFace = fface;
         else
-            CWARN(`'${font.toString()}' is unrecognized so will be ignored!`);
+            CWARN(`'${font?.toString()}' is unrecognized so will be ignored!`);
         return this;
     }
     /**
@@ -1032,17 +1106,17 @@ class GUI {
     }
     /** @hidden */
     _initColorSchemes() {
-        this._schemes = [];
-        this._schemes['blue'] = new BlueScheme();
-        this._schemes['green'] = new GreenScheme();
-        this._schemes['red'] = new RedScheme();
-        this._schemes['cyan'] = new CyanScheme();
-        this._schemes['yellow'] = new YellowScheme();
-        this._schemes['purple'] = new PurpleScheme();
-        this._schemes['orange'] = new OrangeScheme();
-        this._schemes['light'] = new LightScheme();
-        this._schemes['dark'] = new DarkScheme();
-        this._scheme = this._schemes['blue'];
+        this._scheme = new BlueScheme();
+        this._schemes
+            .set('blue', this._scheme)
+            .set('green', new GreenScheme())
+            .set('red', new RedScheme())
+            .set('cyan', new CyanScheme())
+            .set('yellow', new YellowScheme())
+            .set('purple', new PurpleScheme())
+            .set('orange', new OrangeScheme())
+            .set('light', new LightScheme())
+            .set('dark', new DarkScheme());
     }
     /**
      * <p>Set or get the existing global color scheme.</p>
@@ -1054,13 +1128,11 @@ class GUI {
             return this._scheme;
         }
         // set global scheme and invalidate any controls using the global scheme
-        if (this._schemes[csName]) {
-            this._scheme = this._schemes[csName];
-            // Update visual for all these using the global color scheme
-            this._controls.forEach((c) => {
-                if (!c.scheme())
-                    c.invalidateBuffer();
-            });
+        const scheme = this._schemes.get(csName);
+        if (scheme) {
+            this._scheme = scheme;
+            // Invalidate all controls
+            this._ctrls.forEach((c) => c.invalidateBuffer());
         }
         else
             CWARN(`'${csName}' is not a valid color scheme`);
@@ -1070,14 +1142,13 @@ class GUI {
      * <p>Get the named color scheme.</p>
      * @param csName the name of the color scheme
      * @returns the color scheme or undefined if it doesn't exist
-     * @hidden
      */
-    _getScheme(csName) {
-        if (csName && this._schemes[csName]) {
-            return this._schemes[csName];
-        }
+    getScheme(csName) {
+        const scheme = this._schemes.get(csName);
+        if (scheme)
+            return scheme;
         CWARN(`Unable to retrieve color scheme '${csName}'`);
-        return null;
+        return undefined;
     }
     /**
      * <p>This will create a new color scheme from an existing one. The returned
@@ -1091,25 +1162,21 @@ class GUI {
      * <li>the source scheme does not exist.</li>
      * </ul>
      *
-     * @param destName a unique name for the new color scheme.
-     * @param srcName the name of the source scheme.
+     * @param userName a unique name for the user's color scheme.
+     * @param srcName the name of an existing color scheme.
      * @returns the new color scheme or null if unable to create it.
      */
-    createScheme(destName, srcName) {
-        if (!(typeof destName === "string") || destName.length === 0
-            || !(typeof srcName === "string") || srcName.length === 0
-            || destName.toLowerCase() == srcName.toLowerCase()) {
-            CWARN(`Unable to create color scheme, '${destName}' and '${srcName}' are invalid names.`);
-            return null;
-        }
-        const srcScheme = this._getScheme(srcName);
+    createScheme(userName = '', srcName = '') {
+        const srcScheme = this.getScheme(srcName);
         if (!srcScheme) {
-            CWARN(`Unable to create color scheme because the source scheme, '${srcName}', does not exist.`);
-            return null;
+            CWARN(`The source scheme '${srcName}', does not exist.`);
+            return undefined;
         }
-        const destScheme = srcScheme._copy();
-        destScheme._name = destName;
-        return destScheme;
+        if (typeof userName !== "string" || userName.length === 0) {
+            CWARN(`Inavlid name for the user color scheme.`);
+            return undefined;
+        }
+        return new UserColorScheme(userName, srcScheme);
     }
     /**
      * <p>Adds a new color scheme to those already available. It does not replace an
@@ -1118,12 +1185,13 @@ class GUI {
      * @returns this gui instance
      */
     addScheme(scheme) {
-        if (!(scheme instanceof ColorScheme))
+        if (!(scheme instanceof ColorScheme)) {
             CWARN(`The parameter is not a valid color scheme so can't be used.`);
-        else if (this._schemes[scheme.name])
+        }
+        else if (this._schemes.has(scheme.name))
             CERROR(`Cannot add scheme '${scheme.name}' because it already exists.'`);
         else
-            this._schemes[scheme.name] = scheme;
+            this._schemes.set(scheme.name, scheme);
         return this;
     }
     /**
@@ -1148,10 +1216,10 @@ class GUI {
         return result;
     }
     getPickColor(x, y) {
-        const imgData = this._pkContext.getImageData(x, y, 1, 1);
-        const r = imgData.data[0];
-        const g = imgData.data[1];
-        const b = imgData.data[2];
+        const imgData = this._pkBuffer.getContext('2d')?.getImageData(x, y, 1, 1);
+        const r = imgData?.data[0] ?? 255;
+        const g = imgData?.data[1] ?? 255;
+        const b = imgData?.data[2] ?? 255;
         const rgb = (r << 16) + (g << 8) + b;
         return rgb;
     }
@@ -1175,37 +1243,6 @@ class GUI {
         return GUI._guis.get(id);
     }
     /**
-     * <p>The method  <code>GUI.get</code> has been removed from V2.1 </p>
-     * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
-     * be used instead.</p>
-     *
-     * @throws an error that will terminate program execution
-     */
-    static get(p5c, p) {
-        throw new Error(`'GUI.get' method has been removed use createGUI(id, display) instead.`);
-    }
-    /**
-     * <p>The method  <code>GUI.getNamed</code> has been removed from V2.1 </p>
-     * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
-     * be used instead.</p>
-     *
-     * @throws an error that will terminate program execution
-     */
-    static getNamed(id, p5c) {
-        throw new Error(`'GUI.getNamed' method has been removed use createGUI(id, display) instead.`);
-    }
-    /**
-     * <p>This method has been removed from V2.0 </p>
-     * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
-     * be used instead.</p>
-     *
-     * @deprecated
-     * @throws an error that will terminate program execution
-     */
-    static create(id, p5c) {
-        throw new Error(`'GUI.create' method has been removed use createGUI(id, display) instead.`);
-    }
-    /**
      * <p>After V2.0 this method was marked as private and should not be used.</p>
      * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
      * be used instead.</p>
@@ -1218,10 +1255,6 @@ class GUI {
      */
     static _create(id, canvas, pr, mode) {
         GUI.ANNOUNCE_CANVAS_GUI();
-        if (typeof id !== 'string' || id.length === 0) {
-            id = `#${Math.floor(111111 + 888888 * Math.random())}`;
-            CWARN(`Invalid id provided so this GUI will be called '${id}' instead.`);
-        }
         if (GUI._guis.has(id)) {
             CWARN(`You already have a GUI called '${id} it will not be replaced.`);
             return GUI._guis.get(id);
@@ -1240,22 +1273,21 @@ GUI.VERSION = '!!VERSION!!';
 // Vertices used in shader program to reneder gui over WebGL2 canvas
 /** @hidden */ GUI.VERTS = new Float32Array([-1, -1, 0, -1, 1, 0, 1, 1, 0, 1, -1, 0]);
 /**
- * <p>This function <b><em>must be used</em></b> when creating a GUI.</p>
  *
- * <p>Creates and returns a named GUI controller. If a GUI with the same id
- * exists then it is returned and a new GUI is not created.</p>
+ * <h2>Creates and returns a GUI controller.</h2>
+ * <p><b><em>This function must be used when creating a GUI.</em></b></p>
  *
- * <p>If the first parameter is not a string variable or an empty string a
- * random id will be generated for the new GUI.</p>
+ * <p>If no 'id' is passed to the function canvasGUI will generate a random
+ * 'id'. If there is a pre-exisiting gui with the id provided it will be returned
+ * instead of creating a new one.</p>
  *
  * <p>The second parameter must be the one of the following :</p>
  * <ul>
  * <li>an existing HTML canvas element</li>
  * <li>the id of an existing HTML canvas element</li>
  * <li>if using p5js then value returned by the <code>createCanvas()'</code>
- * method executed in the <code>setup()'</code> function.</li>
+ * method when executed in the <code>setup()'</code> function.</li>
  * </ul>
- *
  * <p>Any other value will result the program being terminated with an
  * error</p>
  *
@@ -1264,7 +1296,12 @@ GUI.VERSION = '!!VERSION!!';
  * @returns a GUI controller with the given id.
  */
 const createGUI = function (id, display) {
-    let elt = typeof display === 'string'
+    if (arguments.length === 1) {
+        display = arguments[0];
+        id = `#${Math.floor(1111 + 8888 * Math.random())}`;
+        CWARN(`Since no 'id' was provided this GUI will be called '${id}'.`);
+    }
+    const elt = typeof display === 'string'
         ? document.getElementById(display)
         : display;
     // The canvas element exists.
@@ -1280,7 +1317,7 @@ const createGUI = function (id, display) {
         if (ctor == 'Renderer2D' || ctor == 'RendererGL')
             return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
     }
-    throw new Error(`Cannot find the canvas element for the GUI '${this._uid}'`);
+    throw new Error(`Cannot find the canvas element for the GUI '${id}'`);
 };
 /**
  * <p>Get the GUI with the given unique id. If no such GUI exists then the

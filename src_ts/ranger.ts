@@ -11,7 +11,7 @@ class CvsRanger extends CvsSlider {
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 20);
+        super(gui, name, x, y, w, h);
         this._t = [0.25, 0.75];
         this._tIdx = -1;
         this._limit0 = 0;
@@ -31,6 +31,8 @@ class CvsRanger extends CvsSlider {
      */
     range(v0?: number, v1?: number): CvsControl | Object {
         if (Number.isFinite(v0) && Number.isFinite(v1)) { // If two numbers then
+            v0 = Number(v0);
+            v1 = Number(v1);
             let t0 = this._norm01(Math.min(v0, v1));
             let t1 = this._norm01(Math.max(v0, v1));
             if (t0 >= 0 && t0 <= 1 && t1 >= 0 && t1 <= 1) {
@@ -72,6 +74,8 @@ class CvsRanger extends CvsSlider {
         }
         let [l0, l1] = [this._limit0, this._limit1]
         if (Number.isFinite(v0) && Number.isFinite(v1)) {
+            v0 = Number(v0);
+            v1 = Number(v1);
             if (inLimits(v0) && inLimits(v1)) {
                 this._t[0] = this._norm01(Math.min(v0, v1));
                 this._t[1] = this._norm01(Math.max(v0, v1));
@@ -83,7 +87,7 @@ class CvsRanger extends CvsSlider {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         let absPos = this.getAbsXY();
         let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
@@ -138,6 +142,11 @@ class CvsRanger extends CvsSlider {
 
     /** @hidden */
     _updateControlVisual() { // CvsRanger
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const [tLen, tWgt, tbSize] =
@@ -150,10 +159,6 @@ class CvsRanger extends CvsSlider {
         const USED_TRACK = cs.G$(1);
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(6);
-
-        const uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
 
         uic.save();
         if (this._opaque) {
@@ -220,7 +225,10 @@ class CvsRanger extends CvsSlider {
 
     /** @hidden */
     _updatePickBuffer() { //tx0?: number, tx1?: number) {
-        const pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
 
         const [tLen, tWgt, tbSize] =
             [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
@@ -244,7 +252,6 @@ class CvsRanger extends CvsSlider {
         pkc.restore();
     }
 
+    /** @hidden */ value(v: any) { return this.warn$('value') }
+
 }
-
-
-Object.assign(CvsRanger.prototype, PICKABLE);

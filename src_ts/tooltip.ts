@@ -10,7 +10,7 @@ class CvsTooltip extends CvsText {
 
     /** @hidden */
     constructor(gui: GUI, name: string) {
-        super(gui, name);
+        super(gui, name, 0, 0, 100, 30, false);
         this._gap = 1;
         this._visible = false;
         this._tSize = 12;
@@ -53,7 +53,7 @@ class CvsTooltip extends CvsText {
     _validatePosition() {
         let p = this._parent;
         let { x: px, y: py } = p.getAbsXY();
-        let [pw, ph] = p.orientation().wh(p.w, p.h)
+        let [pw, ph] = p['orientation']().wh(p['_w'], p['_h'])
         this._x = 0, this._y = -this._h;
         if (py + this._y < 0)
             this._y += this._h + ph;
@@ -63,6 +63,11 @@ class CvsTooltip extends CvsText {
 
     /** @hidden */
     _updateControlVisual() { // CvsTooltip
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -71,12 +76,10 @@ class CvsTooltip extends CvsText {
             this._validatePosition();
         }
 
-        const cs = this._parent.scheme() || this._gui.scheme();
+        const cs = this._parent['scheme']() || this._gui.scheme();
         const BACK = cs.C$(3);
         const FORE = cs.C$(9);
 
-        const uic = this._uicContext;
-        this._clearUiBuffer();
         uic.save();
         uic.font = this._cssFont;
         uic.strokeStyle = FORE;

@@ -1,4 +1,10 @@
 /**
+ * Defines an line of text, its position and length
+ * @hidden
+ */
+interface __Line { txt: string, x: number, y: number, w: number }
+
+/**
  * </p>The base class for any control that displays text as part of its 
  * visual interface</p>
  * @hidden
@@ -9,12 +15,12 @@ abstract class CvsText extends CvsBufferedControl {
     /** @hidden */ protected _tBox: Array<number> = [0, 0];
     /** @hidden */ protected _tAlignH = "center";
     /** @hidden */ protected _tAlignV = "center";
-    /** @hidden */ protected _tFace: string = undefined;
-    /** @hidden */ protected _tSize: number = undefined;
-    /** @hidden */ protected _tStyle: string = undefined;
+    /** @hidden */ protected _tFace: any;
+    /** @hidden */ protected _tSize: any;
+    /** @hidden */ protected _tStyle: any;
     /** @hidden */ protected _tSlant = 14;
     /** @hidden */ protected _tArea: Array<number> = [];
-    /** @hidden */ protected _fitWH: Array<number>;
+    /** @hidden */ protected _fitWH: any;
 
     /** @hidden */
     get T_SIZE(): number { return this._tSize || this._gui._tSize }
@@ -24,8 +30,8 @@ abstract class CvsText extends CvsBufferedControl {
     get T_STYLE(): string { return this._tStyle || this._gui._tStyle }
 
     /** @hidden */
-    constructor(gui: GUI, name: string, x?: number, y?: number, w?: number, h?: number) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+    constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number, pickable: boolean) {
+        super(gui, name, x, y, w, h, pickable);
         this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
     }
 
@@ -43,7 +49,7 @@ abstract class CvsText extends CvsBufferedControl {
         // Convert first parameter to an array if not already'
         if (!Array.isArray(text)) text = [text];
         this._tLines = [];
-        let lines = [];
+        let lines: Array<string> = [];
         // Split any array elements containing newline characters and trim any
         // leading or trailing whitespace.
         text.forEach(t => lines = lines.concat(String(t).split(/\s*\n+\s*/)));
@@ -82,7 +88,7 @@ abstract class CvsText extends CvsBufferedControl {
             this.invalidateText();
         }
         else
-            CWARN(`'${font.toString()}' is unrecognized so will be ignored!`);
+            CWARN(`'${font?.toString()}' is unrecognized so will be ignored!`);
         return this;
     }
 
@@ -108,7 +114,7 @@ abstract class CvsText extends CvsBufferedControl {
      * @param slant the oblique slant angle (degrees)
      * @returns this control
      */
-    textStyle(style?: string, slant?: number) {
+    textStyle(style?: string, slant: number = 0) {
         if (!style)
             return this._tStyle; // getter
         style = _validateTextStyle(style);
@@ -208,11 +214,11 @@ abstract class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _textMetrics(str: string) {
-        const uic = this._uicContext;
-        uic.save();
-        uic.font = this._cssFont;
-        let tm = uic.measureText(str);
-        uic.restore();
+        const uic = this._uicBuffer.getContext('2d');
+        uic!.save();
+        uic!.font = this._cssFont;
+        let tm = uic!.measureText(str);
+        uic!.restore();
         return {
             tWidth: tm.actualBoundingBoxRight + tm.actualBoundingBoxLeft,
             tAscent: tm.actualBoundingBoxAscent,
@@ -283,10 +289,10 @@ abstract class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _calcTextBox() {
-        let c = this._uicContext;
-        c.save();
-        c.font = this._cssFont;
-        c.textBaseline = 'alphabetic';
+        const uic = this._uicBuffer.getContext('2d');
+        uic!.save();
+        uic!.font = this._cssFont;
+        uic!.textBaseline = 'alphabetic';
         let ln = 0, maxW = 0, maxH = 0, tm: any;
         this._tLines.forEach(line => {
             tm = this._textMetrics(line.txt);
@@ -310,7 +316,7 @@ abstract class CvsText extends CvsBufferedControl {
             }
         });
         maxH = tm ? this._tLines.length * tm.fHeight : 0;
-        c.restore();
+        uic!.restore();
         return { boxW: maxW, boxH: maxH };
     }
 
@@ -320,7 +326,7 @@ abstract class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _renderTextArea(tcolor: string) {
-        const c = this._uicContext;
+        const uic = this._uicBuffer.getContext('2d');
         const [tx, ty, tw, th] = [...this._tArea];
         const [bw, bh] = [...this._tBox];
         let px = tx, py = ty;
@@ -340,17 +346,17 @@ abstract class CvsText extends CvsBufferedControl {
                 py += (th - bh) / 2;
                 break;
         }
-        c.save();
-        c.beginPath();
-        c.rect(tx, ty, tw, th);
-        c.clip();
-        c.textBaseline = 'alphabetic';
-        c.font = this._cssFont;
-        c.fillStyle = tcolor;
+        uic!.save();
+        uic!.beginPath();
+        uic!.rect(tx, ty, tw, th);
+        uic!.clip();
+        uic!.textBaseline = 'alphabetic';
+        uic!.font = this._cssFont;
+        uic!.fillStyle = tcolor;
         this._tLines.forEach(line => {
-            c.fillText(line.txt, line.x + px, line.y + py);
+            uic!.fillText(line.txt, line.x + px, line.y + py);
         });
-        c.restore();
+        uic!.restore();
     }
 }
 

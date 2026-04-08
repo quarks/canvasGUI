@@ -23,9 +23,9 @@ class CvsKnob extends CvsSlider {
     /** @hidden */ protected _mode = CvsKnob.X_MODE;
     /** @hidden */ protected _sensitivity = 0.005;
     // Previus position and angle
-    /** @hidden */ protected _prevX: number;
-    /** @hidden */ protected _prevY: number;
-    /** @hidden */ protected _deltaA: number;
+    /** @hidden */ protected _prevX!: number;
+    /** @hidden */ protected _prevY!: number;
+    /** @hidden */ protected _deltaA!: number;
 
     /**
      * @hidden
@@ -37,7 +37,7 @@ class CvsKnob extends CvsSlider {
      * @param h height
      */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        super(gui, name, x, y, w, h);
         this._size = Math.min(w, h);
         this._turnArc = 2 * Math.PI;   // Full turn of 360 degrees
         this._gapPos = 0.5 * Math.PI;  // South
@@ -183,7 +183,7 @@ class CvsKnob extends CvsSlider {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
         mx -= w / 2; my -= h / 2;  // Make relative to knob centre
         let next;
@@ -232,6 +232,11 @@ class CvsKnob extends CvsSlider {
 
     /** @hidden */
     _updateControlVisual(): void { // CvsKnob
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
 
@@ -245,11 +250,6 @@ class CvsKnob extends CvsSlider {
         const TICKS = cs.G$(8);
         const USED_TRACK = cs.G$(2);
         const UNUSED_TRACK = cs.T$(2);
-
-        let uib = this._uicBuffer;
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
 
         uic.save();
         if (this._opaque) {
@@ -292,7 +292,6 @@ class CvsKnob extends CvsSlider {
         uic.fill();
         // Draw ticks? 
         let n = this._majorTicks * this._minorTicks;
-
         if (n >= 2) {
             let mjrTickLen = this._kRad;
             let mnrTickLen = this._gRad + 0.65 * (this._kRad - this._gRad);
@@ -309,7 +308,6 @@ class CvsKnob extends CvsSlider {
             }
             uic.stroke();
             uic.restore();
-
             n = this._majorTicks;
             if (n >= 2) {
                 let da = arc / n;
@@ -365,7 +363,11 @@ class CvsKnob extends CvsSlider {
 
     /** @hidden */
     _updatePickBuffer() { // CvsKnob
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
+
         let c = this._gui.pickColor(this);
         pkc.save();
         pkc.translate(this._w / 2, this._h / 2);
@@ -376,8 +378,5 @@ class CvsKnob extends CvsSlider {
         pkc.restore();
     }
 
-    /** @hidden */ orient(a) { return this.warn$('orient'); }
+    /** @hidden */ orient(a: any) { return this.warn$('orient'); }
 }
-
-
-Object.assign(CvsKnob.prototype, PICKABLE);

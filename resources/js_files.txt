@@ -2,7 +2,8 @@ constants.js
 canvas_gui.js
 colorschemes.js
 orientations.js
-basecontrol.js
+pin.js
+control.js
 bufferedcontrol.js
 image.js
 slider.js

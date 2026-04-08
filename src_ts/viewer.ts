@@ -1,4 +1,14 @@
 /**
+ * Defines an overlap between 2 rectangles
+ * @hidden
+ */
+interface __Overlap {
+    valid: boolean;
+    left: number; right: number; top: number, bottom: number,
+    width: number; height: number; offsetX: number; offsetY: number;
+}
+
+/**
  * <p>This control is used to scroll and zoom on an image.</p>
  * <p>When the mouse moves over the control scrollbars will appear (if needed)
  * inside the bottom and right-hand-side edges of the view. When the mouse is 
@@ -22,34 +32,36 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ protected _usedY: number = 0;
     /** @hidden */ protected _scrH: CvsScroller;
     /** @hidden */ protected _scrV: CvsScroller;
-    /** @hidden */ protected _scaler: CvsSlider;
+    /** @hidden */ protected _scaler?: CvsSlider;
     /** @hidden */ protected _scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
-    /** @hidden */ protected _mx0: number;
-    /** @hidden */ protected _my0: number;
-    /** @hidden */ protected _dcx: number;
-    /** @hidden */ protected _dcy: number;
-    /** @hidden */ protected _pmx: number;
-    /** @hidden */ protected _pmy: number;
-    /** @hidden */ protected _pkBox: Array<number>;
+    /** @hidden */ protected _mx0!: number;
+    /** @hidden */ protected _my0!: number;
+    /** @hidden */ protected _dcx!: number;
+    /** @hidden */ protected _dcy!: number;
+    /** @hidden */ protected _pmx!: number;
+    /** @hidden */ protected _pmy!: number;
+    /** @hidden */ protected _pkBox!: Array<number>;
 
 
-    /** @hidden */ protected _value: number;
-    /** @hidden */ protected _used: number;
+    /** @hidden */ protected _value!: number;
+    /** @hidden */ protected _used!: number;
 
     /** @hidden */ protected _frameWeight: number = 0;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x, y, w, h);
+        super(gui, name, x, y, w, h, true);
         this._corners = [0, 0, 0, 0];
-        this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
-            .setAction((info) => {
+        this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20)
+        this._scrH.hide()
+            .setAction((info: any) => {
                 this.view(info.value * this._lw, this._wcy);
                 this.invalidateBuffer();
             });
 
-        this._scrV = gui.__scroller(this._id + "-scrV", w - 24, 4, h - 28, 20).orient('south').hide()
-            .setAction((info) => {
+        this._scrV = gui.__scroller(this._id + "-scrV", w - 24, 4, h - 28, 20)
+        this._scrV.orient('south').hide()
+            .setAction((info: any) => {
                 this.view(this._wcx, info.value * this._lh);
                 this.invalidateBuffer();
             });
@@ -76,10 +88,10 @@ class CvsViewer extends CvsBufferedControl {
                 let sclrX = 0.25 * w, sclrY = 0.5 * h - 10;
                 let sclrW = 0.5 * w, sclrH = 20;
                 this._scaler = this._gui.slider(this._id + "-scaler",
-                    sclrX, sclrY, sclrW, sclrH)
-                    .weight(12)
-                    .hide()
-                    .setAction((info) => {
+                    sclrX, sclrY, sclrW, sclrH);
+                this._scaler.weight(12)
+                this._scaler.hide()
+                    .setAction((info: any) => {
                         this._wscale = info.value;
                         this.invalidateBuffer();
                     });
@@ -90,8 +102,8 @@ class CvsViewer extends CvsBufferedControl {
                 };
             }
             // Now update the scroller
-            this._scaler.limits(low, high);
-            this._scaler.value(value);
+            this._scaler?.limits(low, high);
+            this._scaler?.value(value);
             this._wscale = value;
             // If we already have layers then update centre position
             if (this._lw > 0 && this._lh > 0) {
@@ -186,7 +198,7 @@ class CvsViewer extends CvsBufferedControl {
      * action on the viewer to report back changes to the view centre and/or scale
      * attributes.
     */
-    view(wcx: number, wcy: number, wscale?: number) {
+    view(wcx: number, wcy: number, wscale: number = this._wscale) {
         function different(a: number, b: number): boolean {
             return Math.abs(a - b) >= 0.001;
         }
@@ -316,14 +328,14 @@ class CvsViewer extends CvsBufferedControl {
         if (img.width != lw || img.height != lh) {
             let layer = new OffscreenCanvas(lw, lh);
             const ctx = layer.getContext('2d');
-            ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, lw, lh);
+            ctx?.drawImage(img, 0, 0, img.width, img.height, 0, 0, lw, lh);
             return layer;
         }
         return img;
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         let absPos = this.getAbsXY();
         let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         this.over = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
@@ -413,16 +425,17 @@ class CvsViewer extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual() { // CvsViewer
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         const cs = this.SCHEME;
         const [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
         const [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
 
         const OPAQUE = cs.C$(2, this._alpha);
         const FRAME = cs.C$(7);
-
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
 
         uic.save();
         if (this._opaque) {
@@ -464,9 +477,13 @@ class CvsViewer extends CvsBufferedControl {
 
     /** @hidden */
     _updatePickBuffer() {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
+
         const [x, y, w, h] = [...this._pkBox];
         const c = this._gui.pickColor(this);
-        const pkc = this._pkcContext;
         pkc.save();
         pkc.fillStyle = 'white';
         pkc.fillRect(0, 0, this._w, this._h);
@@ -492,7 +509,10 @@ class CvsViewer extends CvsBufferedControl {
         let rightB = Math.max(bx0, bx1);  // world edges
 
         if (botA <= topB || botB <= topA || rightA <= leftB || rightB <= leftA)
-            return { valid: false };
+            return {
+                valid: false, left: 0, right: 0, top: 0, bottom: 0,
+                width: 0, height: 0, offsetX: 0, offsetY: 0,
+            };
 
         let leftO = leftA < leftB ? leftB : leftA;
         let rightO = rightA > rightB ? rightB : rightA;
@@ -515,11 +535,9 @@ class CvsViewer extends CvsBufferedControl {
     }
 
     // Hide these methods from typeDoc
-    /** @hidden */ orient(dir) { return this.warn$('orient') }
-    /** @hidden */ tooltip(a) { return this.warn$('tooltip') }
-    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize') }
-    /** @hidden */ corners(c) { return this.warn$('corners') }
+    /** @hidden */ orient(dir: any) { return this.warn$('orient') }
+    /** @hidden */ tooltip(a: any) { return this.warn$('tooltip') }
+    /** @hidden */ tipTextSize(a: any) { return this.warn$('tipTextSize') }
+    /** @hidden */ corners(c: any) { return this.warn$('corners') }
 }
 
-
-Object.assign(CvsViewer.prototype, PICKABLE);

@@ -18,29 +18,63 @@ class CvsPoster extends CvsBufferedControl {
 
     /** @hidden */ #taggedText: string = '';
     /** @hidden */ #words: Array<Poster_Ascii> = [];
-    /** @hidden */ #fonts: Array<string> = GENERIC_FONTS();
+    /** @hidden */ #fonts: Array<string> = FONT_FAMILIES();
     /** @hidden */ #colors: Array<string> = new Array(3);
     /** @hidden */ #wrapW: number;
+    /** @hidden */ #isetHorz = 3;
+    /** @hidden */ #isetVert = 2;
     /** @hidden */ #icons: Array<Poster_Icon> = [];
     /** @hidden */ #backStyle = 2;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 320, h || 240);
-        this.#wrapW = this._w - 2 * ISET_H;
+        super(gui, name, x, y, w, h, false);
+        this.#wrapW = this._w - 2 * this.#isetHorz;
         this.#colors[0] = 'transparent';
+        this.#colors[1] = this.SCHEME.C$(8);
+        this.#colors[2] = this.SCHEME.C$(3, this._alpha);
         this.invalidateBuffer();
     }
 
+    /** Get the number of fonts in this poster */
+    get fontCount() { return this.#fonts.length }
+
+    /** Get the number of colors in this poster */
+    get colorCount() { return this.#colors.length }
+
     /**
-     * This method accepts the tagged text which it formats and styles ready
-     * to display in the control.
+     * <p>If the name of a valid color scheme is provided then it will used
+     * to display this control, non-existant scheme names will be ignored. In 
+     * both cases this control is returned.</p>
+     * <p>If there is no parameter it returns the name of the current color 
+     * scheme used by this control.</p>
+     * @param name the color scheme name e.g. 'blue'
+     * @param cascade if true propogate scheme to all child controls.
+     * @returns this control or the control's color scheme
+     */
+    scheme(name?: string, cascade?: boolean): ColorScheme | CvsControl {
+        if (name) {  // setter
+            super.scheme(name, false);
+            this.#colors[1] = this.SCHEME.C$(8);
+            this.#colors[2] = this.SCHEME.C$(3, this._alpha);
+            return this;
+        }
+        return this._scheme;
+    }
+
+    /**
+     * <p>This method accepts the tagged text which it formats and styles 
+     * ready to display in the control.</p>
+     * <p>The text can be a single string or an array of strings. If it is an 
+     * array then the elements will be concatenated using the 'separator' 
+     * between elements.</p>
      * 
      * @param text a string or an array of strings
+     * @param separator default value is an empty string.
      * @returns this control
      */
-    text(text: string | Array<string>) {
-        this.#taggedText = Array.isArray(text) ? text.join('') : text;
+    text(text: string | Array<string>, separator = '') {
+        this.#taggedText = Array.isArray(text) ? text.join(separator) : text;
         this.invalidateText();
         return this;
     }
@@ -67,60 +101,106 @@ class CvsPoster extends CvsBufferedControl {
     }
 
     /**
-     * <p>By default the poster can use the logical fonts -</p>
+     * <p>By default the user can select from one the logical fonts -</p>
      * <ul>
      * <li>ft0 'serif'</li>
      * <li>ft1 'sans-serif'</li>
      * <li>ft2 'monospace'</li>
-     * <li>ft3 'cursive'</li>
-     * <li>ft4 'fantasy'</li>
+     * <li>ft3 'fantasy'</li>
+     * <li>ft4 'cursive'</li>
      * </ul>
-     * <p>This method allows the user to append additional font(s).</p>
+     * <p>This method allows the user to replace or append to any existing 
+     * font(s).</p>
      * 
-     * @param fonts a font or an array of fonts
+     * @param fonts an array of one or more fonts.
+     * @param replace if true existing fonts are replaced but if false (default)
+     * the fonts are appended to existing fonts.
      * @returns this control
      */
-    fonts(fonts: string | object | Array<string | object>) {
-        let ffs = Array.isArray(fonts) ? fonts : [fonts];
-        ffs = ffs.map(ff => cvsGuiFont(ff));
-        this.#fonts = this.#fonts.concat(...ffs);
-        this.invalidateText();
-        return this;
+    fonts(fonts: string | object | Array<string | object>, replace = false) {
+        if (fonts) {
+            let data = Array.isArray(fonts) ? Array.from(fonts) : [fonts];
+            data = data.filter(x => x !== undefined && x !== null);
+            let fontList = data.map(ff => cvsGuiFont(ff));
+            if (fontList.length > 0) {
+                if (replace)
+                    this.#fonts = fontList;
+                else
+                    this.#fonts = this.#fonts.concat(...fontList);
+                this.invalidateText();
+            }
+            return this;
+        }
+        return Array.from(this.#fonts);
     }
 
     /**
-     * <p>By default the poster can use the colors  -</p>
+     * <p>By default the user can select one of the following colors  -</p>
      * <ul>
      * <li>gf0 'transparent'</li>
      * <li>gf1 the poster's color scheme text color</li>
      * <li>gf2 the poster's color scheme opaque color</li>
      * </ul>
-     * <p>This method allows the user to append additional color(s).</p>
+     * <p>This method allows the user to replace or append to any existing 
+     * color(s).</p>
+     * 
+     * @param colors a color or an array of CSS color definitions.
+     * @param replace if true existing colors are replaced but if false (default)
+     * the colors are appended to existing colors.
      * @returns this control
      */
-    colors(colors: string | object | Array<string | object>) {
-        let clrs = Array.isArray(colors) ? colors : [colors];
-        clrs = clrs.map(ff => cvsGuiColor(ff));
-        this.#colors = this.#colors.concat(...clrs);
-        this.invalidateBuffer();
-        return this;
+    colors(colors: string | object | Array<string | object>, replace = false) {
+        if (colors) {
+            let data = Array.isArray(colors) ? Array.from(colors) : [colors];
+            data = data.filter(x => x.length > 0);
+            let colorList: string[] = data.map(ff => cvsGuiColor(ff));
+            if (colorList.length > 0) {
+                if (replace)
+                    this.#colors = colorList;
+                else
+                    this.#colors = this.#colors.concat(...colorList);
+                this.invalidateBuffer();
+            }
+            return this;
+        }
+        return Array.from(this.#colors);
     }
 
     /**
      * <p>This sets the background color to be used when the poster has been set 
      * to opaque by calling the 'opaque(alpha)' function.</p>
      * <If no index value is passed to the function then the default value 2 
-     * is used which correseponds the scheme color and alpha (transparency) value 
-     * specified in the call to the 'opaque(alpha)' function.</p>
+     * is used which correseponds the scheme color and alpha (transparency) 
+     * value specified in the call to the 'opaque(alpha)' function.</p>
      * <p>This method has no effect if the poster state is transparent.</p>
      * 
      * @param index the index into the colors array
      * @returns this control
      */
-    backStyle(index = 2) {
+    background(index = 2) {
         this.#backStyle = index % this.#colors.length;
         return this;
     }
+
+    /**
+     * Sets the internal margins to use when formating text.
+     * @param mgnX left / right margin
+     * @param mgnY top margin
+     * @returns this control;
+     */
+    margins(mgnX = 0, mgnY = mgnX) {
+        this.#isetHorz = mgnX;
+        this.#isetVert = mgnY;
+        this.#wrapW = this._w - 2 * mgnX;
+        this.invalidateText();
+        return this;
+    }
+
+    /** 
+     * The maximum line length (pixels) possible. The length depends on the 
+     * poster width and the horizontal margins. 
+     */
+    get wrapWidth() { return this.#wrapW }
 
     /**
      * Parses the raw text into tokens (Tag and Ascii objects)
@@ -128,31 +208,40 @@ class CvsPoster extends CvsBufferedControl {
      * @hidden
      */
     _makeTokens() {
-        function findTokens(chunk: string, pw: number) {
-            if (chunk.startsWith("<")) {
-                chunk = chunk.substring(1, chunk.length - 1);
-                chunk.split(/\s+/g)
-                    .forEach(m => tokens.push(new Poster_Tag(m, pw)));
-            }
-            else
-                tokens.push(new Poster_Ascii(chunk));
+        function getChunks(tagtxt: string): string[] {
+            const tagPtn = /<[a-zA-Z0-9 .:-]+>|\s+|[^&<> ]+/gu;
+            let ch = tagtxt.match(tagPtn);
+            return ch ? ch.map(t => String(t)) : [];
         }
-        const tokens = [];
-        const tagPtn = /&\w+;|<[a-zA-Z0-9 .:]+>|\s+|[^&<> ]+/ug;
-        const matches = this.#taggedText.match(tagPtn);
-        matches.forEach(m => findTokens(m, this.#wrapW));
+
+        function getTokens(chunks: string[], pw: number) {
+            const tokens: any[] = [];
+            chunks.forEach(chunk => {
+                if (chunk.startsWith("<")) {
+                    chunk = chunk.substring(1, chunk.length - 1);
+                    chunk.split(/\s+/g)
+                        .forEach(m => tokens.push(new Poster_Tag(String(m), pw)));
+                }
+                else
+                    tokens.push(new Poster_Ascii(chunk));
+            });
+            return tokens;
+        }
+
+        const chunks = getChunks(this.#taggedText);
+        const tokens = getTokens(chunks, this.#wrapW);
         return tokens;
     }
 
     /** @hidden */
-    _makeParagraphs(tokens) {
+    _makeParagraphs(tokens: any[]) {
         const paras: Array<Poster_Para> = [];
         let para: Poster_Para;
         if (!tokens[0].isParaTag)
-            paras.push(para = new Poster_Para('pc', 0, 0, this.#wrapW));
+            paras.push(para = new Poster_Para('pc', 0, 0, this.#wrapW, 0));
         tokens.forEach(tkn => {
             if (tkn.isParaTag)
-                paras.push(para = new Poster_Para(tkn.id, tkn.value, tkn.indent, tkn.wrapW));
+                paras.push(para = new Poster_Para(tkn.id, tkn.value, tkn.indent, tkn.wrapW, tkn.leading));
             else
                 para.tokens.push(tkn);
         });
@@ -160,16 +249,21 @@ class CvsPoster extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _applyTextAttributes(paras) {
+    _applyTextAttributes(paras: any[]) {
         const stack = new Poster_Stack();
-        let state = new Poster_State();
+        let state: any = new Poster_State();
         stack.push(state);
         paras.forEach(para => {
-            const asciiTokens = [];
-            para.tokens.forEach(tkn => {
+            const asciiTokens: any[] = [];
+            para.tokens.forEach((tkn: any) => {
                 if (tkn instanceof Poster_Tag && TAGS.has(tkn.id)) {
                     switch (tkn.id) {
-                        case 'o':
+                        case 'ol': // left slant
+                            state.slant = -tkn.value;
+                            state.style = TAGS.get(tkn.id);
+                            break;
+                        case 'or': // right slant
+                        case 'o': // right slant
                             state.slant = tkn.value;
                         case 'n':
                         case 't':
@@ -211,33 +305,37 @@ class CvsPoster extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _measureText(paras) {
-        const uic = this._uicContext;
-        uic.save();
-        uic.textBaseline = 'alphabetic';
-        paras.forEach(para => {
-            para.tokens.forEach(tkn => {
-                uic.save();
-                uic.font = tkn.cssFont;
-                let tm = textMetrics(uic, tkn.ascii);
-                tkn.width = tm.fWidth;
-                tkn.height = tm.fHeight;
-                tkn.ascent = tm.fAscent;
-                uic.restore();
+    _measureText(paras: any[]) {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (uic) {
+            uic.save();
+            uic.textBaseline = 'alphabetic';
+            paras.forEach(para => {
+                para.tokens.forEach((tkn: any) => {
+                    uic.save();
+                    uic.font = tkn.cssFont;
+                    let tm = textMetrics(uic, tkn.ascii);
+                    tkn.width = tm.fWidth;
+                    tkn.height = tm.fHeight;
+                    tkn.ascent = tm.fAscent;
+                    uic.restore();
+                });
             });
-        });
-        uic.restore();
+            uic.restore();
+        }
     }
 
     /** @hidden */
-    _splitIntoLines(paras) {
-        const lines = [];
+    _splitIntoLines(paras: any[]) {
+        const lines: any[] = [];
         paras.forEach(para => {
-            let line: Poster_Line, advance = 0;
-            lines.push(line = new Poster_Line(para.align, para.gap, para.indent, para.wrapW));
-            para.tokens.forEach(ascii => {
+            let line: Poster_Line;
+            let advance = 0;
+            lines.push(line = new Poster_Line(para.gap, para));
+            para.tokens.forEach((ascii: any) => {
                 if (advance + ascii.width > line.wrapW) { // Start a new line
-                    lines.push(line = new Poster_Line(para.align, 0, para.indent, para.wrapW));
+                    lines.push(line = new Poster_Line(0, para));
                     advance = 0;
                     if (ascii.isAscii) {
                         ascii.x = advance;
@@ -261,9 +359,9 @@ class CvsPoster extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _positionWords(lines) {
-        const words = [];
-        let py = lines[0].ascent + 2 * ISET_V;
+    _positionWords(lines: any[]) {
+        const words: any[] = [];
+        let py = lines[0].ascent + 2 * this.#isetVert;
         lines.forEach(line => {
             const ww = line.wrapW;
             const px = line.indent;
@@ -281,16 +379,16 @@ class CvsPoster extends CvsBufferedControl {
                     break;
                 case 'justified':
                     sx = px;
-                    if (line.nbrWords >= 2 && line.length / ww > 0 / 75)
+                    if (line.nbrWords >= 2 && line.length / ww > 0.75)
                         dx = (ww - line.length) / (line.nbrWords - 1);
             }
-            sx += ISET_H;
+            sx += this.#isetHorz;
             for (let i = 0; i < line.nbrWords; i++) {
                 line.words[i].x += sx + i * dx;
                 line.words[i].y = py;
                 words.push(line.words[i]);
             }
-            py += line.height + 3;
+            py += line.height + line.leading;
         });
         return words;
     }
@@ -308,20 +406,23 @@ class CvsPoster extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual() { // CvsLabel
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         if (this._textInvalid)
             this._formatText();
         const cs = this.SCHEME;
-        // Color scheme fore color
+        // Color scheme fore and opaque colors
         this.#colors[1] = cs.C$(8);
-        // Color scheme opaque color
         this.#colors[2] = cs.C$(3, this._alpha);
+        const OPAQUE = this.#colors[this.#backStyle];
         const cnrs = this.CNRS;
 
-        const uic = this._uicContext;
-        uic.clearRect(0, 0, this._w, this._h);
         if (this._opaque && this.#backStyle != 0) {
             uic.save();
-            uic.fillStyle = this.#colors[this.#backStyle];
+            uic.fillStyle = OPAQUE;
             uic.beginPath();
             uic.roundRect(0, 0, this._w, this._h, ...cnrs);
             uic.fill();
@@ -333,29 +434,37 @@ class CvsPoster extends CvsBufferedControl {
 
         uic.textBaseline = 'alphabetic';
         this.#words.forEach(word => {
-            if (word.fill > 0) {
-                uic.font = word.cssFont;
-                uic.fillStyle = this.#colors[word.fill % this.#colors.length];
+            uic.font = word.cssFont;
+            const fill = this.#colors[word.fill % this.#colors.length];
+            if (fill !== 'transparent') {
+                uic.fillStyle = fill;  //this.#colors[word.fill % this.#colors.length];
                 uic.fillText(word.ascii, word.x, word.y);
             }
-            if (word.strokeWidth > 0) {
+            const stroke = this.#colors[word.stroke % this.#colors.length];
+            if (stroke !== 'transparent') {
                 uic.lineWidth = word.strokeWidth;
-                uic.strokeStyle = this.#colors[word.stroke % this.#colors.length];
+                uic.strokeStyle = stroke;  //this.#colors[word.stroke % this.#colors.length];
                 uic.strokeText(word.ascii, word.x, word.y);
             }
         });
         this._bufferInvalid = false;  // buffer is now valid
     }
 
-    /** @hidden */ orient(a) { return this.warn$('orient') }
+    /** @hidden */ orient(a: any) { return this.warn$('orient') }
     /** @hidden */ enable() { return this.warn$('enable'); }
     /** @hidden */ disable() { return this.warn$('disable'); }
     /** @hidden */ setAction() { return this.warn$('setAction'); }
-    /** @hidden */ tooltip(a) { return this.warn$('tooltip') }
-    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize') }
+    /** @hidden */ tooltip(a: any) { return this.warn$('tooltip') }
+    /** @hidden */ tipTextSize(a: any) { return this.warn$('tipTextSize') }
 
 } // End of CvsPoster class
 
+
+
+
+// ##################################################################
+//        Supporting classes for formating text & icons
+// ##################################################################
 class Poster_Icon {
     #icon: cvsIcon;
     #x: number;
@@ -370,24 +479,25 @@ class Poster_Icon {
     get icon() { return this.#icon }
     get x() { return this.#x }
     get y() { return this.#y }
-
 }
 
 /** @hidden */
 class Poster_Line {
-    #words = [];
+    #words: any[] = [];
     #align: string;
     #lAscent: number = 0;
     #lHeight: number = 0;
     #gap: number = 0;
     #indent: number = 0;
     #wrapW: number = 0;
+    #leading = 0;
 
-    constructor(align, gap, indent, wrapW) {
-        this.#align = align;
+    constructor(gap: number, para: Poster_Para) {
         this.#gap = gap;
-        this.#indent = indent;
-        this.#wrapW = wrapW;
+        this.#align = para.align;
+        this.#indent = para.indent;
+        this.#wrapW = para.wrapW;
+        this.#leading = para.leading;
     }
 
     get words() { return this.#words };
@@ -412,6 +522,9 @@ class Poster_Line {
     set height(h) { this.#lHeight = h };
     get height() { return this.#lHeight };
 
+    set leading(ld) { this.#leading = ld }
+    get leading() { return this.#leading }
+
     get length() {
         if (this.#words.length > 0) {
             let word = this.#words[this.#words.length - 1];
@@ -421,14 +534,13 @@ class Poster_Line {
             return 0;
     }
 
-    addWord(word) { this.#words.push(word); }
+    addWord(word: any) { this.#words.push(word); }
 
     toString() {
-        let [aln, indent, wrapW, asc, hgt, len] = [this.align, this.indent, this.wrapW,
+        const [aln, indent, wrapW, asc, hgt, len] = [this.align, this.indent, this.wrapW,
         Math.round(this.ascent), Math.round(this.height), Math.round(this.length)];
-        let s = `LINE  "${aln}"  Len: ${len}  Height: ${hgt}  Ascent: ${asc}  Indent: ${indent}  Wrap: ${wrapW} \n`;
-        // this.#words.forEach(word => s += word.toString() + '\n');
-        return s;
+        return `LINE  "${aln}"  Len: ${len}  Height: ${hgt}  Ascent: ${asc}`
+            + `  Indent: ${indent}  Wrap: ${wrapW} \n`;
     }
 }
 
@@ -439,12 +551,14 @@ class Poster_Para {
     #gap = 0;
     #indent = 0;
     #wrapW = 0;
+    #leading = 0;
 
-    constructor(tagId = 'pc', gap: number, indent: number, wrapW: number) {
+    constructor(tagId = 'pc', gap: number, indent: number, wrapW: number, leading: number) {
         this.#align = TAGS.get(tagId);
         this.#gap = gap;
         this.#indent = indent;
         this.#wrapW = wrapW;
+        this.#leading = leading;
     }
 
     get tokens() { return this.#tokens }
@@ -454,9 +568,12 @@ class Poster_Para {
     get gap() { return this.#gap }
     get indent() { return this.#indent }
     get wrapW() { return this.#wrapW }
+    get leading() { return this.#leading }
 
     toString() {
-        return `PARAGRAPH (${this.#align})   Gap: ${this.gap}   Indent: ${this.indent}   wrapW: ${this.wrapW}`;
+        return `PARAGRAPH (${this.#align})   Gap: ${this.gap}   `
+            + `Indent: ${this.indent}   wrapW: ${this.wrapW}    `
+            + `leading: ${this.leading}`
     }
 }
 
@@ -504,16 +621,11 @@ class Poster_Ascii {
 
     constructor(chunk: string) {
         this.#cssFont = this.cssFont;
-        if (chunk.startsWith("&")) {
-            this.#ascii = CHAR_ENTITIES.has(chunk)
-                ? CHAR_ENTITIES.get(chunk) : chunk;
-        }
-        else {
-            this.#ascii = chunk;
-        }
+        const ptn = /(&\w+;)/gu;
+        this.#ascii = chunk.replace(ptn, m => CHAR_ENTITIES.get(m) || m);
     }
 
-    applyState(state) {
+    applyState(state: Poster_State) {
         this.cssFont = state.cssFont;
         this.strokeWidth = state.strokeWidth;
         this.stroke = state.stroke;
@@ -521,10 +633,12 @@ class Poster_Ascii {
     }
 
     toString() {
-        let s = `WORD   "${this.ascii}" \n`;
-        s += `          Font:     ${this.cssFont} \n`;
-        s += `          Pos:      (${this.x}, ${this.y})   Size: ${this.width} x ${this.height} \n`;
-        s += `          Ascent:   ${this.ascent} \n`;
+        const [x, y, w, h] = [this.x, this.y, this.width, this.height];
+        const [word, font, ascent, t]
+            = [this.ascii, this.cssFont, this.ascent, '          '];
+        let s = `WORD   "${word}" \n${t}Font:     ${font} \n`;
+        s += `${t}Pos:      (${x}, ${y})   Size: ${w} x ${h} \n`;
+        s += `${t}Ascent:   ${ascent} \n`;
         return s;
     }
 }
@@ -532,15 +646,15 @@ class Poster_Ascii {
 /** @hidden */
 class Poster_Tag {
     #id = '';
-    #attrs = [];
+    #attrs: any[] = [];
 
     constructor(tag: string, line_length: number) {
         let m = tag.match(/[a-z]+|\S+/g);
-        this.#id = m.shift();
-        let tagParts = m.shift()?.split(/:{1}/);
-        let attrs = !tagParts ? [0, 0, 0] : tagParts.map(x => Number(x));
-        attrs = attrs.concat([0, 0, 0]);
-        attrs.length = 3;
+        this.#id = m ? String(m.shift()) : '?';
+        let tagParts = m ? m.shift()?.split(/:{1}/) : undefined;
+        let attrs: any[] = !tagParts ? [0, 0, 0, 0] : tagParts.map(x => Number(x));
+        attrs = attrs.concat([0, 0, 0, 0]);
+        attrs.length = 4;
         const reqd = attrs[1] + attrs[2];
         if (this.isParaTag) {
             // [1] = indent     [2] = wrap length
@@ -562,11 +676,13 @@ class Poster_Tag {
     get value() { return this.#attrs[0] }
     get indent() { return this.#attrs[1] }
     get wrapW() { return this.#attrs[2] }
+    get leading() { return this.#attrs[3] }
+
     get isParaTag() { return Boolean(this.#id.match(/^p[lrcj]/)) }
 
     toString() {
         let s = `TAG id: "${this.#id}" (para tag? ${this.isParaTag})  `;
-        s += `Value: ${this.value}   Indent: ${this.indent}   Line length: ${this.wrapW}`
+        s += `Value: ${this.value}   Indent: ${this.indent}   Line length: ${this.wrapW}  Leading: ${this.leading}`
         return s;
     }
 }
@@ -608,7 +724,7 @@ class Poster_State {
         return cssFont$(this.#font, this.#size, this.#style, this.#slant);
     }
 
-    clone() {
+    clone(): Poster_State {
         let clone = new Poster_State();
         clone.font = this.font;
         clone.size = this.size;
@@ -632,7 +748,7 @@ class Poster_State {
 
 /** @hidden */
 class Poster_Stack {
-    #stack = [];
+    #stack: Poster_State[] = [];
 
     constructor() { }
 

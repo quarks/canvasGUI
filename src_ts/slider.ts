@@ -11,12 +11,12 @@ class CvsSlider extends CvsBufferedControl {
     protected _majorTicks: number;
     protected _minorTicks: number;
     protected _s2ticks: boolean;
-    protected _trackWeight: number;
-    protected _thumbSize: number;
-    protected _thumbCnrs: Array<number>;
-    protected _majorTickSize: number;
-    protected _minorTickSize: number;
-    protected _inset: number;
+    protected _trackWeight!: number;
+    protected _thumbSize!: number;
+    protected _thumbCnrs!: Array<number>;
+    protected _majorTickSize!: number;
+    protected _minorTickSize!: number;
+    protected _inset!: number;
 
     /**
      * @hidden
@@ -28,7 +28,7 @@ class CvsSlider extends CvsBufferedControl {
      * @param h height
      */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 20);
+        super(gui, name, x, y, w, h, true);
         this._t01 = 0.5;
         this._limit0 = 0;
         this._limit1 = 1;
@@ -86,23 +86,22 @@ class CvsSlider extends CvsBufferedControl {
 
     /**
      * <p>Gets or sets the thickness of the track.</p>
-     * <p>If there is no parameter the currect track thickness is returned. 
-     * Any other value is constrained to the range &ge;&nbsp;4 and
+     * <p>The thickness is constrained to the range &ge;&nbsp;4 and
      * &le;&nbsp;0.1 * control width.</p>
      * @param tWgt the required track thickness)
      * @returns the curent track thickness or this control
      */
-    weight(tWgt: number): number | CvsControl {
-        if (!tWgt) // getter
+    weight(tWgt: number): CvsControl | number {
+        if (!tWgt)
             return this._trackWeight;
         // Setter
         let maxWgt = Math.round(Math.max(8, this.w / 10));
         tWgt = _constrain(tWgt, 4, maxWgt);
         this._trackWeight = tWgt;
-        this._thumbSize = Math.max(14, tWgt * 1.5);
+        this._thumbSize = Math.max(9, tWgt * 1.5);
         this._thumbCnrs = [tWgt / 3, tWgt / 3, tWgt / 3, tWgt / 3];
-        this._majorTickSize = Math.max(10, 1.25 * tWgt);
-        this._minorTickSize = Math.max(7, 0.90 * tWgt);
+        this._majorTickSize = Math.max(8, 1.25 * tWgt);
+        this._minorTickSize = Math.max(6, 0.90 * tWgt);
         this._inset = Math.round(this._thumbSize / 2 + 4);
         return this;
     }
@@ -116,6 +115,7 @@ class CvsSlider extends CvsBufferedControl {
      */
     value(value?: number): CvsControl | number {
         if (Number.isFinite(value)) {
+            value = Number(value)
             if ((value - this._limit0) * (value - this._limit1) <= 0) {
                 this._t01 = this._norm01(value);
                 this.invalidateBuffer();
@@ -160,7 +160,7 @@ class CvsSlider extends CvsBufferedControl {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         let absPos = this.getAbsXY();
         let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
         switch (e.type) {
@@ -213,6 +213,11 @@ class CvsSlider extends CvsBufferedControl {
 
     /** @hidden */
     _updateControlVisual(): void { // CvsSlider
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
 
@@ -226,10 +231,6 @@ class CvsSlider extends CvsBufferedControl {
         const USED_TRACK = cs.G$(1);
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(6);
-
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
 
         uic.save();
         if (this._opaque) { // Background
@@ -292,13 +293,16 @@ class CvsSlider extends CvsBufferedControl {
 
     /** @hidden */
     _updatePickBuffer() { // CvsSlider
-        const pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
+
         const c = this._gui.pickColor(this);
         const [tLen, tWgt, tbSize] =
             [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
         const tbX = Math.round(tLen * this._t01);
 
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         // Now translate to track left edge - track centre
         pkc.translate(this._inset, Math.round(this.h / 2));
@@ -314,6 +318,3 @@ class CvsSlider extends CvsBufferedControl {
     }
 
 }
-
-
-Object.assign(CvsSlider.prototype, PICKABLE);

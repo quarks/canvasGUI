@@ -2,7 +2,8 @@ constants.ts
 canvas_gui.ts
 colorschemes.ts
 orientations.ts
-basecontrol.ts
+pin.ts
+control.ts
 bufferedcontrol.ts
 image.ts
 slider.ts

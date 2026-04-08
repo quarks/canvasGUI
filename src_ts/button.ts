@@ -1,17 +1,23 @@
 /**
- * <p>This class is to create simple clickable buttons with text and/or icons
- * on its face.</p>
+ * <h2>Clickable button with text and/or icon</h2>
+ * <p>The button can be displayed with either text or icon or both on it's
+ * face. The text and icon alignment is configurable.</p>
  */
 class CvsButton extends CvsTextIcon {
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        super(gui, name, x, y, w, h, true);
         this._enabled = true;
     }
 
     /** @hidden */
     _updateControlVisual() { // CvsButton
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -20,13 +26,10 @@ class CvsButton extends CvsTextIcon {
 
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
-        // const font = this.cssFont;
         const BACK = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
 
-        let uic = this._uicContext;
-        this._clearUiBuffer();
         uic.save();
         uic.font = this._cssFont;
         // Background
@@ -36,9 +39,16 @@ class CvsButton extends CvsTextIcon {
             uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
         }
-        if (this._icon)
+        if (this._icon) {
+            uic.save();
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.clip()
             uic.drawImage(this._icon, this._ix, this._iy);
+            uic.restore();
+        }
         this._renderTextArea(FORE);
+
         // Mouse over add border highlight
         if (this.isActive || this.over) {
             uic.strokeStyle = HIGHLIGHT;
@@ -54,15 +64,16 @@ class CvsButton extends CvsTextIcon {
         uic.restore();
         // The last line in this method should be
         this._bufferInvalid = false;
-        // but if this is a pane-tab then must validate the tabs
-        // if (this._parent instanceof CvsPane) this._parent.validateTabs();
     }
 
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
+
         let c = this._gui.pickColor(this);
-        this._clearPickBuffer();
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -72,7 +83,7 @@ class CvsButton extends CvsTextIcon {
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -107,4 +118,3 @@ class CvsButton extends CvsTextIcon {
 
 }
 
-Object.assign(CvsButton.prototype, PICKABLE);

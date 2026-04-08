@@ -5,11 +5,16 @@ class CvsLabel extends CvsTextIcon {
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 60, h || 16);
+        super(gui, name, x, y, w, h, false);
     }
 
     /** @hidden */
     _updateControlVisual() { // CvsLabel
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -21,10 +26,8 @@ class CvsLabel extends CvsTextIcon {
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
 
-        const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
-        uic.clearRect(0, 0, this._w, this._h);
         // Background
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -44,8 +47,8 @@ class CvsLabel extends CvsTextIcon {
 
     /** @hidden */ setAction() { return this.warn$('setAction') }
 
-    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
-    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
+    /** @hidden */ tooltip(a: any) { return this.warn$('tooltip'); }
+    /** @hidden */ tipTextSize(a: any) { return this.warn$('tipTextSize'); }
     /** @hidden */ enable() { return this.warn$('enable'); }
     /** @hidden */ disable() { return this.warn$('disable'); }
 

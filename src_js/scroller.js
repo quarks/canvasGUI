@@ -14,7 +14,7 @@
 class CvsScroller extends CvsBufferedControl {
     /** @hidden */
     constructor(gui, name, x = 0, y = 0, w = 100, h = 20) {
-        super(gui, name, x, y, w, h);
+        super(gui, name, x, y, w, h, true);
         // All values are in the range 0-1
         /** @hidden */ this._value = 0.5;
         /** @hidden */ this._dvalue = 0.5;
@@ -41,13 +41,13 @@ class CvsScroller extends CvsBufferedControl {
      */
     update(value, used) {
         // If a used value is available then use it
-        if (Number.isFinite(used) && used !== this._used) {
+        if (used && Number.isFinite(used) && used !== this._used) {
             this._used = used;
             this._minV = this._used / 2;
             this._maxV = 1 - this._used / 2;
             this.invalidateBuffer();
         }
-        if (Number.isFinite(value) && value !== this._value) {
+        if (value && Number.isFinite(value) && value !== this._value) {
             value = _constrain(value, 0, 1);
             let dv = value, u2 = this._used / 2;
             if (value < u2)
@@ -111,6 +111,11 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         const OPAQUE = cs.C$(3);
@@ -124,10 +129,6 @@ class CvsScroller extends CvsBufferedControl {
         let tbW = Math.max(used * tw, this._minThumbWidth);
         let tbH = this._thumbHeight;
         let tx = this._dvalue * this._trackWidth;
-        let uic = this._uicContext;
-        uic.save();
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) { // Background
             uic.fillStyle = OPAQUE;
@@ -163,10 +164,13 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateScrollerPickBuffer(tbX, tby, tbw, tbh) {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        let pkc = this._pkcContext;
         pkc.save();
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.fillStyle = c.cssColor;
         // Now translate to track left edge - track centre
         pkc.translate(this._inset, this._h / 2);
@@ -177,5 +181,4 @@ class CvsScroller extends CvsBufferedControl {
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
     /** @hidden */ corners(c) { return this.warn$('corners'); }
 }
-Object.assign(CvsScroller.prototype, PICKABLE);
 //# sourceMappingURL=scroller.js.map

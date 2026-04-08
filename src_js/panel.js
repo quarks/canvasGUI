@@ -24,7 +24,7 @@ class CvsPanel extends CvsBufferedControl {
      * @param h height
      */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 100);
+        super(gui, name, x, y, w, h, true);
         /** @hidden */ this._canDragX = true;
         /** @hidden */ this._canDragY = true;
         /** @hidden */ this._constrainX = true;
@@ -118,20 +118,23 @@ class CvsPanel extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const OPAQUE = cs.C$(4, this._alpha);
         const HIGHLIGHT = cs.C$(9);
-        const uic = this._uicContext;
         uic.save();
-        uic.clearRect(0, 0, this._w, this._h);
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
             uic.beginPath();
             uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
         }
-        if (this.over) {
+        if (this.isDraggable && this.over) {
             uic.strokeStyle = HIGHLIGHT;
             uic.lineWidth = 2;
             uic.beginPath();
@@ -145,9 +148,12 @@ class CvsPanel extends CvsBufferedControl {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -162,5 +168,4 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
     /** @hidden */ orient(a) { return this.warn$('orient'); }
 }
-Object.assign(CvsPanel.prototype, PICKABLE);
 //# sourceMappingURL=panel.js.map

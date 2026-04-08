@@ -2,7 +2,7 @@ import p5 from "../libraries/p5.min.js";
 
 export { GUI };
 export { ColorScheme };
-export { CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
+export { CvsPin, CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
 export { CvsControl, CvsBufferedControl, CvsText, CvsTextIcon, CvsImage };
 export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
 export { CvsTextField, CvsJoystick, CvsKnob, CvsPanel, CvsPoster, CvsViewer };

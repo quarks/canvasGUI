@@ -1,5 +1,5 @@
  /**
- * @preserve canvasGUI    (c) Peter Lager  2025
+ * @preserve canvasGUI    (c) Peter Lager  2026
  * @license MIT
  * @version 3.0.0
  */
@@ -13,37 +13,8 @@ const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
 const START_TIME = Date.now(), MILLIS = function () { return Date.now() - START_TIME; };
 // =================================================================
 // ====    Poster and text attributes
-const CHAR_ENTITIES = function () {
-    let c = [
-        // Math symbols
-        [60, 'lt'], [62, 'gt'], [8804, 'le'], [8805, 'ge'], [8800, 'ne'],
-        [8776, 'asymp'], [177, 'plusmin'], [215, 'times'], [247, 'divide'],
-        [8901, 'sdot'], [8733, 'prop'], [8736, 'ang'],
-        // Currency symbols
-        [162, 'cent'], [163, 'pound'], [8364, 'euro'], [165, 'yen'],
-        // Arrows
-        [8592, 'larr'], [8595, 'uarr'], [8594, 'rarr'], [8595, 'darr'],
-        [8596, 'harr'], [8629, 'crarr'],
-        // Fractions and superscripts (deg = superscript0)
-        [188, 'frac14'], [189, 'frac12'], [190, 'frac34'],
-        [176, 'deg'], [185, 'sup1'], [178, 'sup2'], [179, 'sup3'],
-        // Greek symbols
-        [945, 'alpha'], [946, 'beta'], [947, 'gamma'], [948, 'delta'],
-        [949, 'epsilon'], [960, 'pi'],
-        // Bullets and markers
-        [8226, 'bull'], [9674, 'loz'], [8224, 'dagger'], [8225, 'Dagger'],
-        // Playing card suits
-        [9824, 'spades'], [9827, 'clubs'], [9829, 'hearts'], [9830, 'diams'],
-        // Symbols
-        [169, 'copy'], [174, 'reg'], [8482, 'trade'], [182, 'para'],
-        [8230, 'hellip'], [171, 'laquo'], [187, 'raquo'], [167, 'sect'],
-    ];
-    let m = new Map();
-    c.forEach(e => m.set(`&${e[1]};`, String.fromCharCode(Number(e[0]))));
-    return m;
-}();
-const GENERIC_FONTS = function () {
-    return Array.of('sans-serif', 'serif', 'monospace', 'cursive', 'fantasy');
+const FONT_FAMILIES = function () {
+    return Array.of('serif', 'sans-serif', 'monospace', 'fantasy', 'cursive');
 };
 const TAGS = function () {
     let m = new Map();
@@ -59,7 +30,9 @@ const TAGS = function () {
     m.set('i', 'italic');
     m.set('ti', 'thin italic');
     m.set('bi', 'bold italic');
-    m.set('o', 'oblique');
+    m.set('o', 'oblique'); // right slant
+    m.set('or', 'oblique'); // right slant
+    m.set('ol', 'oblique'); // left slant
     // Font
     m.set('ft', 'font face name');
     m.set('fs', 'font size');
@@ -196,17 +169,20 @@ const ISET_H = 3, ISET_V = 2, GUTTER = 3;
  * @hidden
  */
 const cvsGuiCanvas = function (icon) {
-    return icon.canvas ? icon.canvas : icon;
+    if (icon)
+        return icon.canvas ? icon.canvas : icon;
+    return undefined;
 };
 /**
- * Used to retrieve the font family name depending on the parameter type.
- * Acceptable types are
- *  System or logical font
- *  A JS FontFace object
- *  A p5js font object loaded with loadFont(...)
- *
+ * <p>Used to retrieve the font family name depending on the parameter type.</p>
+ * <p>Acceptable types are -</p>
+ * <ol>
+ *  <li>System or logical font</li>
+ *  <li>A JS FontFace object</li>
+ *  <li>A p5js font object loaded with loadFont(...)</li>
+ * </ol>
  * @param font an acceptable font type
- * @returns the font family name or undefined if type not recognised.
+ * @returns the font family name or 'sans-serif' if type not recognised.
  * @hidden
  */
 const cvsGuiFont = function (font) {
@@ -216,11 +192,11 @@ const cvsGuiFont = function (font) {
         return font.family;
     else if (font["face"] instanceof FontFace)
         return font["face"].family;
-    return undefined;
+    return 'sans-serif';
 };
 /**
  * Accepts a css color descriptor or a p5.Color object and returns a css
- * color descriptor. Any other input returns undefined.
+ * color descriptor. Any other input returns 'transparent'.
  *
  * @param color either css color or p5js p5.Color object
  * @returns css color descriptor for valid parameters
@@ -229,7 +205,7 @@ const cvsGuiFont = function (font) {
 const cvsGuiColor = function (color) {
     if (typeof color === 'string')
         return color;
-    if (color["_getRed"] && color["_getGreen"] && color["_getBlue"] && color["_getAlpha"]) {
+    if (color && color["_getRed"] && color["_getGreen"] && color["_getBlue"] && color["_getAlpha"]) {
         let [r, g, b, a] = [color['_getRed'](255), color['_getGreen'](255),
             color['_getBlue'](255), color['_getAlpha'](100)];
         if (a < 100)
@@ -238,7 +214,7 @@ const cvsGuiColor = function (color) {
             return `rgb(${r} ${g} ${b})`;
     }
     ;
-    return undefined;
+    return 'transparent';
 };
 // =================================================================
 // ====    General utility functions
@@ -295,18 +271,216 @@ const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, conso
 // Posted by user1693593, modified by community. 
 // See post 'Timeline' for change history
 // Retrieved 2026-02-06, License - CC BY-SA 3.0
-// Store existing call
-HTMLCanvasElement.prototype["_getContext"] = HTMLCanvasElement.prototype.getContext;
-// Store context type
-HTMLCanvasElement.prototype["._contextType"] = null;
-// Register getContext wrapper method
+// Modified by Quark for this project.
+// Store original code 
+HTMLCanvasElement.prototype["_getContext"] =
+    HTMLCanvasElement.prototype.getContext;
+// Store context type 
+HTMLCanvasElement.prototype["_contextType"] = '';
+// Register getContext wrapper method 
 HTMLCanvasElement.prototype.getContext = function (type) {
-    this._contextType = type;
-    return this._getContext(type);
+    this["_contextType"] = type;
+    return this["_getContext"](type);
 };
-// Return the context type. If no context type has bee set return null
+// Return the context type used 
 HTMLCanvasElement.prototype["hasContext"] = function () {
-    return this._contextType;
+    return this["_contextType"];
+};
+// =================================================================
+// ====    HTML Character Entities
+const CHAR_ENTITIES = function () {
+    let c = [
+        // ISO-8859-1 Symbols
+        ['iexcl', 161], // Inverted exclamation mark
+        ['cent', 162], // Cent
+        ['pound', 163], // Pound
+        ['curren', 164], // Currency
+        ['yen', 165], // Yen
+        ['brvbar', 166], // Broken vertical bar
+        ['sect', 167], // Section
+        ['uml', 168], // Spacing diaeresis
+        ['copy', 169], // Copyright
+        ['ordf', 170], // Feminine ordinal indicator
+        ['laquo', 171], // Opening/Left angle quotation mark
+        ['not', 172], // Negation
+        ['reg', 174], // Registered trademark
+        ['macr', 175], // Spacing macron
+        ['deg', 176], // Degree
+        ['plusmn', 177], // Plus or minus
+        ['sup2', 178], // Superscript 2
+        ['sup3', 179], // Superscript 3
+        ['acute', 180], // Spacing acute
+        ['micro', 181], // Micro
+        ['para', 182], // Paragraph
+        ['cedil', 184], // Spacing cedilla
+        ['sup1', 185], // Superscript 1
+        ['ordm', 186], // Masculine ordinal indicator
+        ['raquo', 187], // Closing/Right angle quotation mark
+        ['frac14', 188], // Fraction 1/4
+        ['frac12', 189], // Fraction 1/2
+        ['frac34', 190], // Fraction 3/4
+        ['iquest', 191], // Inverted question mark
+        ['times', 215], // Multiplication
+        ['divide', 247], // Divide
+        // Math Symbols
+        ['lt', 60], // Less-than
+        ['gt', 62], // Greater than
+        ['forall', 8704], // For all
+        ['part', 8706], // Part
+        ['exist', 8707], // Exist
+        ['empty', 8709], // Empty
+        ['nabla', 8711], // Nabla
+        ['isin', 8712], // Is in
+        ['notin', 8713], // Not in
+        ['ni', 8715], // Ni
+        ['prod', 8719], // Product
+        ['sum', 8721], // Sum
+        ['minus', 8722], // Minus
+        ['lowast', 8727], // Asterisk (Lowast)
+        ['radic', 8730], // Square root
+        ['prop', 8733], // Proportional to
+        ['infin', 8734], // Infinity
+        ['ang', 8736], // Angle
+        ['and', 8743], // And
+        ['or', 8744], // Or
+        ['cap', 8745], // Cap
+        ['cup', 8746], // Cup
+        ['int', 8747], // Integral
+        ['there4', 8756], // Therefore
+        ['sim', 8764], // Similar to
+        ['cong', 8773], // Congurent to
+        ['asymp', 8776], // Almost equal
+        ['ne', 8800], //  Not equal
+        ['equiv', 8801], // Equivalent
+        ['le', 8804], // Less or equal
+        ['ge', 8805], // Greater or equal
+        ['sub', 8834], // Subset of
+        ['sup', 8835], // Superset of
+        ['nsub', 8836], // Not subset of
+        ['sube', 8838], // Subset or equal
+        ['supe', 8839], // Superset or equal
+        ['oplus', 8853], // Circled plus
+        ['otimes', 8855], // Circled times
+        ['perp', 8869], // Perpendicular
+        ['sdot', 8901], // Dot operator
+        // Greek Letters
+        ['Alpha', 913], // Alpha
+        ['Beta', 914], // Beta
+        ['Gamma', 915], // Gamma
+        ['Delta', 916], // Delta
+        ['Epsilon', 917], // Epsilon
+        ['Zeta', 918], // Zeta
+        ['Eta', 919], // Eta
+        ['Theta', 920], // Theta
+        ['Iota', 921], // Iota
+        ['Kappa', 922], // Kappa
+        ['Lambda', 923], // Lambda
+        ['Mu', 924], // Mu
+        ['Nu', 925], // Nu
+        ['Xi', 926], // Xi
+        ['Omicron', 927], // Omicron
+        ['Pi', 928], // Pi
+        ['Rho', 929], // Rho
+        ['Sigma', 931], // Sigma
+        ['Tau', 932], // Tau
+        ['Upsilon', 933], // Upsilon
+        ['Phi', 934], // Phi
+        ['Chi', 935], // Chi
+        ['Psi', 936], // Psi
+        ['Omega', 937], // Omega
+        ['alpha', 945], // alpha
+        ['beta', 946], // beta
+        ['gamma', 947], // gamma
+        ['delta', 948], // delta
+        ['epsilon', 949], // epsilon
+        ['zeta', 950], // zeta
+        ['eta', 951], // eta
+        ['theta', 952], // theta
+        ['iota', 953], // iota
+        ['kappa', 954], // kappa
+        ['lambda', 955], // lambda
+        ['mu', 956], // mu
+        ['nu', 957], // nu
+        ['xi', 958], // xi
+        ['omicron', 959], // omicron
+        ['pi', 960], // pi
+        ['rho', 961], // rho
+        ['sigmaf', 962], // sigmaf
+        ['sigma', 963], // sigma
+        ['tau', 964], // tau
+        ['upsilon', 965], // upsilon
+        ['phi', 966], // phi
+        ['chi', 97], // chi
+        ['psi', 968], // psi
+        ['omega', 969], // omega
+        ['thetasym', 977], // Theta symbol
+        ['upsih', 978], // Upsilon symbol
+        ['piv', 982], // Pi symbol
+        // Miscellaneous HTML entities
+        ['OElig', 338], // Uppercase ligature OE
+        ['oelig', 339], // Lowercase ligature OE
+        ['Scaron', 352], // Uppercase S with caron
+        ['scaron', 353], // Lowercase S with caron
+        ['Yuml', 376], // Capital Y with diaeres
+        ['fnof', 402], // Lowercase with hook
+        ['circ', 710], // Circumflex accent
+        ['tilde', 732], // Tilde
+        ['ensp', 8194], // En space
+        ['emsp', 8195], // Em space
+        ['thinsp', 8194], // Thin space
+        ['ndash', 8211], // En dash
+        ['mdash', 8212], // Em dash
+        ['lsquo', 8216], // Left single quotation mark
+        ['rsquo', 8217], // Right single quotation mark
+        ['sbquo', 8218], // Single low-9 quotation mark
+        ['ldquo', 8220], // Left double quotation mark
+        ['rdquo', 8221], // Right double quotation mark
+        ['bdquo', 8222], // Double low-9 quotation mark
+        ['dagger', 8224], // Dagger
+        ['Dagger', 8225], // Double dagger
+        ['bull', 8226], // Bullet
+        ['hellip', 8230], // Horizontal ellipsis
+        ['permil', 8240], // Per mille
+        ['prime', 8242], // Minutes (Degrees)
+        ['Prime', 8243], // Seconds (Degrees)
+        ['lsaquo', 8249], // Single left angle quotation
+        ['rsaquo', 8250], // Single right angle quotation
+        ['oline', 8254], // Overline
+        ['euro', 8364], // Euro
+        ['trade', 8482], // Trademark
+        ['larr', 8592], // Left arrow
+        ['uarr', 8593], // Up arrow
+        ['rarr', 8594], // Right arrow
+        ['darr', 8595], // Down arrow
+        ['harr', 8596], // Left right arrow
+        ['crarr', 8629], // Carriage return arrow
+        ['lceil', 8968], // Left ceiling
+        ['rceil', 8969], // Right ceiling
+        ['lfloor', 8970], // Left floor
+        ['rfloor', 8971], // Right floor
+        ['loz', 9674], // Lozenge
+        ['spades', 9824], // Spade
+        ['clubs', 9827], // Club
+        ['hearts', 9829], // Heart
+        ['diams', 9830], // Diamond
+    ];
+    let m = new Map();
+    c.forEach(e => {
+        let ch = typeof e[1] === 'number'
+            ? String.fromCharCode(Number(e[1]))
+            : e[1];
+        m.set(`&${e[0]};`, ch);
+    });
+    return m;
+}();
+/**
+ * @param str a string with possible character entities
+ * @returns the string with recognised enties replaced with unicode character
+ * @hidden
+ */
+const replaceEntities = function (str) {
+    const ptn = /(&\w+;)/gu;
+    return str.replace(ptn, m => CHAR_ENTITIES.get(m) || m);
 };
 //# sourceMappingURL=constants.js.map
 const CANVAS_GUI_VERSION = '3.0.0';
@@ -366,12 +540,17 @@ class GUI {
         /** @hidden */ this._panesNorth = [];
         /** @hidden */ this._tabsInvalid = false;
         /** @hidden */ this._tabMinHeight = 16;
+        // Attributes
+        /** @hidden */ this._schemes = new Map();
         /** @hidden */ this._clipboard = '';
         // Tooltip times
         /** @hidden */ this._show_time = TT_SHOW_TIME;
         /** @hidden */ this._repeat_time = TT_REPEAT_TIME;
         /** @hidden */ this._color2control = new Map(); // Map the base pick color to the object
         /** @hidden */ this._control2color = new Map(); // Find the colour for a given object
+        // Mouse position
+        /** @hidden */ this._mouseX = 0;
+        /** @hidden */ this._mouseY = 0;
         this._uid = id;
         this._mode = mode;
         this._pr = pixelRatio;
@@ -399,22 +578,17 @@ class GUI {
         this._showUI = this._is3D ? this._showOverWebGL : this._showOver2d;
         // Create buffers
         this._createGuiBuffers(this._canvas.width, this._canvas.height);
-        // CLOG(`GUI ctor    3D? ${this._is3D}   Device Pixel Scale: ${devicePixelRatio}`);
-        // CLOG(`  Canvas size:     ${this._canvas.width} x ${this._canvas.height}`);
-        // CLOG(`  UI buffer size:  ${this._uiBuffer.width} x ${this._uiBuffer.height}`);
-        // CLOG(`  PK buffer size:  ${this._pkBuffer.width} x ${this._pkBuffer.height}`);
     }
     /** @hidden */
     invalidateTabs() {
         this._tabsInvalid = true;
     }
+    /** @hidden */
     _createGuiBuffers(w, h) {
-        // CLOG(`Create buffers  ${MILLIS()}`)
         this._uiBuffer = new OffscreenCanvas(w, h);
-        this._uiContext = this._uiBuffer.getContext('2d');
-        this._uiContext.scale(this._pr, this._pr);
+        this._uiBuffer.getContext('2d')?.scale(this._pr, this._pr);
         this._pkBuffer = new OffscreenCanvas(w, h);
-        this._pkContext = this._pkBuffer.getContext('2d');
+        this._pkBuffer.getContext('2d');
         this._clearGuiBuffers();
     }
     /**
@@ -422,8 +596,9 @@ class GUI {
      * @hidden
      */
     _clearGuiBuffers() {
-        this._uiContext.clearRect(0, 0, this._uiBuffer.width, this._uiBuffer.height);
-        this._pkContext.clearRect(0, 0, this._pkBuffer.width, this._pkBuffer.height);
+        const [uib, pkb] = [this._uiBuffer, this._pkBuffer];
+        uib.getContext('2d')?.clearRect(0, 0, uib.width, uib.height);
+        pkb.getContext('2d')?.clearRect(0, 0, pkb.width, pkb.height);
     }
     /**
      * Make sure we have an overlay buffer and a pick buffer of the correct size.
@@ -442,12 +617,16 @@ class GUI {
      * @hidden
      */
     draw() {
+        const uic = this._uiBuffer.getContext('2d');
+        const pkc = this._pkBuffer.getContext('2d');
+        if (!uic || !pkc)
+            return;
         this._validateGuiBuffers();
         this._clearGuiBuffers();
         if (this._visible) {
             for (const c of this._ctrls)
                 if (!c.getParent())
-                    c._draw(this._uiContext, this._pkContext);
+                    c._draw(uic, pkc);
             this._showUI();
         }
         if (this._tabsInvalid) {
@@ -546,9 +725,79 @@ class GUI {
     // ######         Factory methods to create controls           ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
-    image(id, x, y, image) {
-        const img = cvsGuiCanvas(image);
-        return this.addControl(new CvsImage(this, id, x, y, img), false);
+    /**
+     * <p>Create a pin control.</p>
+     * <p>The Pin control is a simple place holder for containing child controls
+     * relative to each other.</p>
+     * @param id
+     * @param x
+     * @param y
+     * @returns
+     */
+    pin(id, x, y) {
+        return new CvsPin(this, id, x, y);
+    }
+    /**
+     * Create a label control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param text optional face text
+     * @param icon optional face icon
+     * @returns a label
+     */
+    label(id, x, y, w, h, text, icon) {
+        const ctrl = new CvsLabel(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        if (icon)
+            ctrl.icon(icon);
+        return ctrl;
+    }
+    /**
+     * Create a button control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param text optional face text
+     * @param icon optional face icon
+     * @returns a button
+     */
+    button(id, x, y, w, h, text, icon) {
+        const ctrl = new CvsButton(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        if (icon)
+            ctrl.icon(icon);
+        return ctrl;
+    }
+    /**
+     * <p>Create an image button control.</p>
+     * <p>The button size is determined by the size of the off-button image. If
+     * a second image is provided (optional) then it will be used for the
+     * over-button state. In the absence of the second image otherwise a border
+     * highlight is used.</p>
+     *
+     * <p>The button hit-zone is any non-transparent pixel if the off-button
+     * image of the mask image if provided. Any pixel with an alpha value
+     * &ge;128 is considered non-transparent.</p>
+     *
+     *
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param images array of images for off-button and over-button states
+     * @param mask hit zone image
+     * @returns image button control
+     */
+    image(id, x, y, images, mask) {
+        const ctrl = new CvsImage(this, id, x, y, cvsGuiCanvas(images), mask);
+        ctrl._makePickImage();
+        return ctrl;
     }
     /**
      * Create a slider control
@@ -560,7 +809,7 @@ class GUI {
      * @returns slider control
      */
     slider(id, x, y, w, h) {
-        return this.addControl(new CvsSlider(this, id, x, y, w, h), true);
+        return new CvsSlider(this, id, x, y, w, h);
     }
     /**
      * Create a ranger control
@@ -572,19 +821,7 @@ class GUI {
      * @returns ranger control
      */
     ranger(id, x, y, w, h) {
-        return this.addControl(new CvsRanger(this, id, x, y, w, h), true);
-    }
-    /**
-     * Create a button control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a button
-     */
-    button(id, x, y, w, h) {
-        return this.addControl(new CvsButton(this, id, x, y, w, h), true);
+        return new CvsRanger(this, id, x, y, w, h);
     }
     /**
      * Create a single line text input control
@@ -597,7 +834,7 @@ class GUI {
      */
     textfield(id, x, y, w, h) {
         this._addKeyEventHandlers();
-        return this.addControl(new CvsTextField(this, id, x, y, w, h), true);
+        return new CvsTextField(this, id, x, y, w, h);
     }
     /**
      * Create a checkbox control
@@ -606,10 +843,14 @@ class GUI {
      * @param y top pixel position
      * @param w width
      * @param h height
+     * @param text optional face text
      * @returns a checkbox
      */
-    checkbox(id, x, y, w, h) {
-        return this.addControl(new CvsCheckbox(this, id, x, y, w, h), true);
+    checkbox(id, x, y, w, h, text) {
+        const ctrl = new CvsCheckbox(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        return ctrl;
     }
     /**
      * Create an option (radio button) control
@@ -618,22 +859,14 @@ class GUI {
      * @param y top pixel position
      * @param w width
      * @param h height
+     * @param text optional face text
      * @returns an option button
      */
-    option(id, x, y, w, h) {
-        return this.addControl(new CvsOption(this, id, x, y, w, h), true);
-    }
-    /**
-     * Create a label control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a label
-     */
-    label(id, x, y, w, h) {
-        return this.addControl(new CvsLabel(this, id, x, y, w, h), false);
+    option(id, x, y, w, h, text) {
+        const ctrl = new CvsOption(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        return ctrl;
     }
     /**
      * Create a poster control
@@ -645,7 +878,7 @@ class GUI {
      * @returns a label
      */
     poster(id, x, y, w, h) {
-        return this.addControl(new CvsPoster(this, id, x, y, w, h), false);
+        return new CvsPoster(this, id, x, y, w, h);
     }
     /**
      * Create a label control
@@ -657,7 +890,7 @@ class GUI {
      * @returns a label
      */
     panel(id, x, y, w, h) {
-        return this.addControl(new CvsPanel(this, id, x, y, w, h), true);
+        return new CvsPanel(this, id, x, y, w, h);
     }
     /**
      * Create a viewer control
@@ -669,7 +902,7 @@ class GUI {
      * @returns an image viewer
      */
     viewer(id, x, y, w, h) {
-        return this.addControl(new CvsViewer(this, id, x, y, w, h), true);
+        return new CvsViewer(this, id, x, y, w, h);
     }
     /**
      * Create a joystick control
@@ -681,7 +914,7 @@ class GUI {
      * @returns a joystick control
      */
     joystick(id, x, y, w, h) {
-        return this.addControl(new CvsJoystick(this, id, x, y, w, h), true);
+        return new CvsJoystick(this, id, x, y, w, h);
     }
     /**
      * Create a knob control
@@ -693,7 +926,7 @@ class GUI {
      * @returns a knob control
      */
     knob(id, x, y, w, h) {
-        return this.addControl(new CvsKnob(this, id, x, y, w, h), true);
+        return new CvsKnob(this, id, x, y, w, h);
     }
     /**
      * Create a scroller control
@@ -706,7 +939,7 @@ class GUI {
      * @hidden
      */
     __scroller(id, x, y, w, h) {
-        return this.addControl(new CvsScroller(this, id, x, y, w, h), true);
+        return new CvsScroller(this, id, x, y, w, h);
     }
     /**
      * Description placeholder
@@ -715,7 +948,7 @@ class GUI {
      * @hidden
      */
     __tooltip(id) {
-        return this.addControl(new CvsTooltip(this, id), false);
+        return new CvsTooltip(this, id);
     }
     /**
      * Create a side pane. The pane location is either 'north', 'south',
@@ -745,18 +978,18 @@ class GUI {
             case 'east':
             default: ctrl = new CvsPaneEast(this, id, depth);
         }
-        return this.addControl(ctrl, true);
+        return ctrl;
     }
     // ######           End of control factory methods             ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /** @returns the canvas context type  */
-    get contextType() { return this._canvas["hasContext"](); }
+    // get contextType() { return this._canvas["hasContext"]() }
     /** @returns true gui is over a 3D canvas  */
     get is3D() { return this._is3D; }
     /** @returns 'p5js' if using p5.js else returns 'JS' */
     get mode() { return this._mode; }
-    /** @returns an array with the names of available color schemes */
+    /** @returns an array with the names of built-in color schemes */
     get colorSchemeNames() {
         return Array.from(['blue', 'green', 'red', 'cyan', 'yellow', 'purple', 'orange', 'light', 'dark']);
     }
@@ -876,10 +1109,10 @@ class GUI {
     _addKeyEventHandlers() {
         if (!this._keyListenersCreated) {
             const keyTarget = document.getElementById(this._canvas.id);
-            keyTarget.setAttribute('tabindex', '0');
-            keyTarget.focus();
-            keyTarget.addEventListener('keydown', (e) => { this._processKeyEvent(e); return false; });
-            keyTarget.addEventListener('keyup', (e) => { this._processKeyEvent(e); return false; });
+            keyTarget?.setAttribute('tabindex', '0');
+            keyTarget?.focus();
+            keyTarget?.addEventListener('keydown', (e) => { this._processKeyEvent(e); return false; });
+            keyTarget?.addEventListener('keyup', (e) => { this._processKeyEvent(e); return false; });
             this._keyListenersCreated = true;
         }
     }
@@ -991,30 +1224,27 @@ class GUI {
     $(id) {
         return (typeof id === "string") ? this._controls.get(id) : id;
     }
-    /**
-     * <p>Adds a child control to this gui.</p>
-     * @param control the child control to add
-     * @returns the control just added
-     * @hidden
-     */
-    addControl(control, pickable = false) {
+    registerID(control) {
         CASSERT(!this._controls.has(control.id), `Control '${control.id}' already exists and will be replaced.`);
         // Map control by ID
         this._controls.set(control.id, control);
         // Now find render order
         this._ctrls = [...this._controls.values()];
         this.setRenderOrder();
-        if (pickable)
-            this.register(control);
         return control;
     }
     /**
-     * Sorts the controls so that they are rendered in order of their z
-     * value (low z --> high z).
-     * @hidden
+     * <p>Register a control so it is pickable.</p>
+     * <p>If the control has already been registered it will be unchanged.</p>
+     *
+     * @param control the control to make pickable
      */
-    setRenderOrder() {
-        this._ctrls.sort((a, b) => { return a.z - b.z; });
+    registerPickable(control) {
+        if (control && !this._control2color.has(control)) {
+            this._control2color.set(control, this._NEXT_COLOR);
+            this._color2control.set(this._NEXT_COLOR, control);
+            this._NEXT_COLOR += this._COLOR_STEP;
+        }
     }
     /**
      * Add an object so it can be detected using this pick buffer.
@@ -1029,6 +1259,14 @@ class GUI {
         }
     }
     /**
+     * Sorts the controls so that they are rendered in order of their z
+     * value (low z --> high z).
+     * @hidden
+     */
+    setRenderOrder() {
+        this._ctrls.sort((a, b) => { return a.z - b.z; });
+    }
+    /**
      * Remove this object so it can't be detected using this pick buffer.
      * @param control the object to remove
      * @hidden
@@ -1041,9 +1279,13 @@ class GUI {
         }
     }
     /**
+     * <p>Get the pick color associated with the control. If the control is
+     * pickable it will return an object describing the pick color otherwise
+     * it returns the color 'white'</p>
+     *
      * @hidden
-     * @param control the control we need the pick color for
-     * @returns the associated pick color numeric value (rgb)
+     * @param control the control we are interested in.
+     * @returns the pick color descriptor object
      */
     pickColor(control) {
         if (this._control2color.has(control)) {
@@ -1051,7 +1293,7 @@ class GUI {
             const [r, g, b] = [(pc >> 16) & 0xFF, (pc >> 8) & 0xFF, pc & 0xFF];
             return { r: r, g: g, b: b, cssColor: `rgb(${r} ${g} ${b})` };
         }
-        return undefined;
+        return { r: 255, g: 255, b: 255, cssColor: 'white' };
     }
     /**
      * Display a 2D buffer in a canvas element with the specified ID.
@@ -1078,34 +1320,40 @@ class GUI {
             ele.setAttribute('padding', '3px');
             ele.style.border = '2px solid #FF0000';
             const ctx = ele.getContext('2d');
-            ctx.drawImage(buffer, 0, 0, buffer.width, buffer.height, 0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx?.drawImage(buffer, 0, 0, buffer.width, buffer.height, 0, 0, ctx.canvas.width, ctx.canvas.height);
         }
     }
     /**
-     * List the controls created so far
+     * List the controls and their buffers.
      * @hidden
      */
-    listControls() {
-        CLOG("--------------------   List of controls   --------------------");
-        this._ctrls.forEach(c => {
-            const id = `${c.id}                               `.substring(0, 15);
-            const ctype = `${c.constructor.name}                   `.substring(0, 15);
-            const z = `Z: ${c.z}      `.substring(0, 10);
-            const pc = `Color key: ${this._control2color.get(c)}`;
-            CLOG(id + ctype + z + pc);
-        });
-        CLOG('--------------------------------------------------------------');
+    listBuffers() {
+        CLOG('----------------------   List of Buffers    ---------------------');
+        for (let [id, ctrl] of this._controls) {
+            const bs = ctrl.bufferStatus;
+            const uic = bs.ui ? 'Y' : 'N';
+            const pkc = bs.pk ? 'Y' : 'N';
+            const pickable = this._control2color.has(ctrl) ? "Y" : "N";
+            const id = `${ctrl.type}   ${ctrl.id}  ................................`
+                .substring(0, 30);
+            CLOG(`${id}    ui: ${uic}     pk: ${pkc}     pickable:${pickable}`);
+        }
+        CLOG('-----------------------------------------------------------------');
     }
     /**
-     * <p>Gets the option group associated with a given name.</p>
+     * <p>Gets the option group associated with a given name. If the group
+     * does not exist create it.</p>
      * @param name the name of the option group
-     * @returns the option group
+     * @returns the maatching option group
      * @hidden
      */
     getOptionGroup(name) {
-        if (!this._optionGroups.has(name))
-            this._optionGroups.set(name, new CvsOptionGroup(name));
-        return this._optionGroups.get(name);
+        let og = this._optionGroups.get(name);
+        if (!og) {
+            og = new CvsOptionGroup(name);
+            this._optionGroups.set(name, og);
+        }
+        return og;
     }
     /**
      * Sets the global default icon for checkboxes and option buttons.
@@ -1116,7 +1364,7 @@ class GUI {
         if (!Number.isFinite(size))
             return this._iSize;
         this._iSize = Math.ceil(size);
-        this._controls.forEach((c) => {
+        this._ctrls.forEach((c) => {
             if (c instanceof CvsCheckbox || c instanceof CvsOption)
                 c.invalidateBuffer();
         });
@@ -1132,9 +1380,9 @@ class GUI {
     textSize(tsize) {
         if (!Number.isFinite(tsize))
             return this._tSize;
-        this._tSize = tsize;
+        this._tSize = Number(tsize);
         // Update visual for all controls
-        this._controls.forEach((c) => { c.invalidateBuffer(); });
+        this._ctrls.forEach((c) => { c.invalidateBuffer(); });
         return this;
     }
     /**
@@ -1162,7 +1410,7 @@ class GUI {
         if (fface)
             this._tFace = fface;
         else
-            CWARN(`'${font.toString()}' is unrecognized so will be ignored!`);
+            CWARN(`'${font?.toString()}' is unrecognized so will be ignored!`);
         return this;
     }
     /**
@@ -1343,17 +1591,17 @@ class GUI {
     }
     /** @hidden */
     _initColorSchemes() {
-        this._schemes = [];
-        this._schemes['blue'] = new BlueScheme();
-        this._schemes['green'] = new GreenScheme();
-        this._schemes['red'] = new RedScheme();
-        this._schemes['cyan'] = new CyanScheme();
-        this._schemes['yellow'] = new YellowScheme();
-        this._schemes['purple'] = new PurpleScheme();
-        this._schemes['orange'] = new OrangeScheme();
-        this._schemes['light'] = new LightScheme();
-        this._schemes['dark'] = new DarkScheme();
-        this._scheme = this._schemes['blue'];
+        this._scheme = new BlueScheme();
+        this._schemes
+            .set('blue', this._scheme)
+            .set('green', new GreenScheme())
+            .set('red', new RedScheme())
+            .set('cyan', new CyanScheme())
+            .set('yellow', new YellowScheme())
+            .set('purple', new PurpleScheme())
+            .set('orange', new OrangeScheme())
+            .set('light', new LightScheme())
+            .set('dark', new DarkScheme());
     }
     /**
      * <p>Set or get the existing global color scheme.</p>
@@ -1365,13 +1613,11 @@ class GUI {
             return this._scheme;
         }
         // set global scheme and invalidate any controls using the global scheme
-        if (this._schemes[csName]) {
-            this._scheme = this._schemes[csName];
-            // Update visual for all these using the global color scheme
-            this._controls.forEach((c) => {
-                if (!c.scheme())
-                    c.invalidateBuffer();
-            });
+        const scheme = this._schemes.get(csName);
+        if (scheme) {
+            this._scheme = scheme;
+            // Invalidate all controls
+            this._ctrls.forEach((c) => c.invalidateBuffer());
         }
         else
             CWARN(`'${csName}' is not a valid color scheme`);
@@ -1381,14 +1627,13 @@ class GUI {
      * <p>Get the named color scheme.</p>
      * @param csName the name of the color scheme
      * @returns the color scheme or undefined if it doesn't exist
-     * @hidden
      */
-    _getScheme(csName) {
-        if (csName && this._schemes[csName]) {
-            return this._schemes[csName];
-        }
+    getScheme(csName) {
+        const scheme = this._schemes.get(csName);
+        if (scheme)
+            return scheme;
         CWARN(`Unable to retrieve color scheme '${csName}'`);
-        return null;
+        return undefined;
     }
     /**
      * <p>This will create a new color scheme from an existing one. The returned
@@ -1402,25 +1647,21 @@ class GUI {
      * <li>the source scheme does not exist.</li>
      * </ul>
      *
-     * @param destName a unique name for the new color scheme.
-     * @param srcName the name of the source scheme.
+     * @param userName a unique name for the user's color scheme.
+     * @param srcName the name of an existing color scheme.
      * @returns the new color scheme or null if unable to create it.
      */
-    createScheme(destName, srcName) {
-        if (!(typeof destName === "string") || destName.length === 0
-            || !(typeof srcName === "string") || srcName.length === 0
-            || destName.toLowerCase() == srcName.toLowerCase()) {
-            CWARN(`Unable to create color scheme, '${destName}' and '${srcName}' are invalid names.`);
-            return null;
-        }
-        const srcScheme = this._getScheme(srcName);
+    createScheme(userName = '', srcName = '') {
+        const srcScheme = this.getScheme(srcName);
         if (!srcScheme) {
-            CWARN(`Unable to create color scheme because the source scheme, '${srcName}', does not exist.`);
-            return null;
+            CWARN(`The source scheme '${srcName}', does not exist.`);
+            return undefined;
         }
-        const destScheme = srcScheme._copy();
-        destScheme._name = destName;
-        return destScheme;
+        if (typeof userName !== "string" || userName.length === 0) {
+            CWARN(`Inavlid name for the user color scheme.`);
+            return undefined;
+        }
+        return new UserColorScheme(userName, srcScheme);
     }
     /**
      * <p>Adds a new color scheme to those already available. It does not replace an
@@ -1429,12 +1670,13 @@ class GUI {
      * @returns this gui instance
      */
     addScheme(scheme) {
-        if (!(scheme instanceof ColorScheme))
+        if (!(scheme instanceof ColorScheme)) {
             CWARN(`The parameter is not a valid color scheme so can't be used.`);
-        else if (this._schemes[scheme.name])
+        }
+        else if (this._schemes.has(scheme.name))
             CERROR(`Cannot add scheme '${scheme.name}' because it already exists.'`);
         else
-            this._schemes[scheme.name] = scheme;
+            this._schemes.set(scheme.name, scheme);
         return this;
     }
     /**
@@ -1459,10 +1701,10 @@ class GUI {
         return result;
     }
     getPickColor(x, y) {
-        const imgData = this._pkContext.getImageData(x, y, 1, 1);
-        const r = imgData.data[0];
-        const g = imgData.data[1];
-        const b = imgData.data[2];
+        const imgData = this._pkBuffer.getContext('2d')?.getImageData(x, y, 1, 1);
+        const r = imgData?.data[0] ?? 255;
+        const g = imgData?.data[1] ?? 255;
+        const b = imgData?.data[2] ?? 255;
         const rgb = (r << 16) + (g << 8) + b;
         return rgb;
     }
@@ -1486,37 +1728,6 @@ class GUI {
         return GUI._guis.get(id);
     }
     /**
-     * <p>The method  <code>GUI.get</code> has been removed from V2.1 </p>
-     * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
-     * be used instead.</p>
-     *
-     * @throws an error that will terminate program execution
-     */
-    static get(p5c, p) {
-        throw new Error(`'GUI.get' method has been removed use createGUI(id, display) instead.`);
-    }
-    /**
-     * <p>The method  <code>GUI.getNamed</code> has been removed from V2.1 </p>
-     * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
-     * be used instead.</p>
-     *
-     * @throws an error that will terminate program execution
-     */
-    static getNamed(id, p5c) {
-        throw new Error(`'GUI.getNamed' method has been removed use createGUI(id, display) instead.`);
-    }
-    /**
-     * <p>This method has been removed from V2.0 </p>
-     * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
-     * be used instead.</p>
-     *
-     * @deprecated
-     * @throws an error that will terminate program execution
-     */
-    static create(id, p5c) {
-        throw new Error(`'GUI.create' method has been removed use createGUI(id, display) instead.`);
-    }
-    /**
      * <p>After V2.0 this method was marked as private and should not be used.</p>
      * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
      * be used instead.</p>
@@ -1529,10 +1740,6 @@ class GUI {
      */
     static _create(id, canvas, pr, mode) {
         GUI.ANNOUNCE_CANVAS_GUI();
-        if (typeof id !== 'string' || id.length === 0) {
-            id = `#${Math.floor(111111 + 888888 * Math.random())}`;
-            CWARN(`Invalid id provided so this GUI will be called '${id}' instead.`);
-        }
         if (GUI._guis.has(id)) {
             CWARN(`You already have a GUI called '${id} it will not be replaced.`);
             return GUI._guis.get(id);
@@ -1551,22 +1758,21 @@ GUI.VERSION = '3.0.0';
 // Vertices used in shader program to reneder gui over WebGL2 canvas
 /** @hidden */ GUI.VERTS = new Float32Array([-1, -1, 0, -1, 1, 0, 1, 1, 0, 1, -1, 0]);
 /**
- * <p>This function <b><em>must be used</em></b> when creating a GUI.</p>
  *
- * <p>Creates and returns a named GUI controller. If a GUI with the same id
- * exists then it is returned and a new GUI is not created.</p>
+ * <h2>Creates and returns a GUI controller.</h2>
+ * <p><b><em>This function must be used when creating a GUI.</em></b></p>
  *
- * <p>If the first parameter is not a string variable or an empty string a
- * random id will be generated for the new GUI.</p>
+ * <p>If no 'id' is passed to the function canvasGUI will generate a random
+ * 'id'. If there is a pre-exisiting gui with the id provided it will be returned
+ * instead of creating a new one.</p>
  *
  * <p>The second parameter must be the one of the following :</p>
  * <ul>
  * <li>an existing HTML canvas element</li>
  * <li>the id of an existing HTML canvas element</li>
  * <li>if using p5js then value returned by the <code>createCanvas()'</code>
- * method executed in the <code>setup()'</code> function.</li>
+ * method when executed in the <code>setup()'</code> function.</li>
  * </ul>
- *
  * <p>Any other value will result the program being terminated with an
  * error</p>
  *
@@ -1575,7 +1781,12 @@ GUI.VERSION = '3.0.0';
  * @returns a GUI controller with the given id.
  */
 const createGUI = function (id, display) {
-    let elt = typeof display === 'string'
+    if (arguments.length === 1) {
+        display = arguments[0];
+        id = `#${Math.floor(1111 + 8888 * Math.random())}`;
+        CWARN(`Since no 'id' was provided this GUI will be called '${id}'.`);
+    }
+    const elt = typeof display === 'string'
         ? document.getElementById(display)
         : display;
     // The canvas element exists.
@@ -1591,7 +1802,7 @@ const createGUI = function (id, display) {
         if (ctor == 'Renderer2D' || ctor == 'RendererGL')
             return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
     }
-    throw new Error(`Cannot find the canvas element for the GUI '${this._uid}'`);
+    throw new Error(`Cannot find the canvas element for the GUI '${id}'`);
 };
 /**
  * <p>Get the GUI with the given unique id. If no such GUI exists then the
@@ -1605,6 +1816,7 @@ const getGUI = function (id) {
 //# sourceMappingURL=canvas_gui.js.map
 /**
  * The parent class for all color schemes.
+ * @hidden
  */
 class ColorScheme {
     /** @hidden */
@@ -1617,6 +1829,8 @@ class ColorScheme {
         this._tints = [];
         /** @hidden */
         this._name = 'color scheme name';
+        /**@hidden */
+        this._original = true;
         this._name = name;
         this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
@@ -1624,7 +1838,12 @@ class ColorScheme {
     /** Get the name of this color scheme e.g. 'green', 'blue' ...  */
     get name() { return this._name; }
     /** @hidden */
-    set name(v) { CWARN(`Changing the name of a color scheme is not permitted`); }
+    set name(v) { CWARN(`Cannot change the name of a library color scheme.`); }
+    /**
+     * <p>Returns true if this scheme is one of the canvasGUI library color
+     * schemes and false for a user defined scheme.</p>
+     */
+    get isOriginal() { return this._original; }
     /** @hidden */
     C(n, alpha = 255) {
         alpha = Math.floor((alpha < 0 ? 0 : alpha > 255 ? 255 : alpha));
@@ -1657,30 +1876,79 @@ class ColorScheme {
         a = Math.floor(a / 0.255) / 10;
         return `rgb(${t} ${t} ${t} / ${a}%)`;
     }
-    /**
-     * Returns true if this scheme has been created by the user and false if
-     * is one of the canvasGUI library color schemes.
-     */
-    get isCopy() { return Boolean(this['setColors']); }
     /** @hidden */
     _deepCopyArray2D(a) {
         const b = [];
         a.forEach(v => b.push([...v]));
         return b;
     }
+}
+/**
+ * <p>User color scheme</p>
+ * @hidden
+ */
+class UserColorScheme extends ColorScheme {
+    constructor(name, scheme) {
+        super(name);
+        this._original = false;
+        this._tints = this._deepCopyArray2D(scheme._tints);
+        this._greys = this._deepCopyArray2D(scheme._greys);
+        this._colors = this._deepCopyArray2D(scheme._colors);
+    }
     /**
-     * Creates a new color scheme which is a deep copy of this one. The new scheme
-     * name will be the same as this one with '-copy' appended
-     * @returns a copy copy of this color scheme
-     * @hidden
+     * <p>Change the name of this user color scheme.</p>
      */
-    _copy() {
-        let cpy = new ColorScheme(`${this._name}-copy`);
-        cpy._tints = this._deepCopyArray2D(this._tints);
-        cpy._greys = this._deepCopyArray2D(this._greys);
-        cpy._colors = this._deepCopyArray2D(this._colors);
-        Object.assign(cpy, COLOR_SCHEME_EDIT);
-        return cpy;
+    set name(n) { this._name = n; }
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getTints() {
+        return this._deepCopyArray2D(this._tints);
+    }
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getGreys() {
+        return this._deepCopyArray2D(this._greys);
+    }
+    /**
+     * <p>Get a deep copy of the colors array which can then be edited. Changes
+     * to the copy will not change the color scheme unless the matching set
+     * method is called.</p>
+     */
+    getColors() {
+        return this._deepCopyArray2D(this._colors);
+    }
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param tints
+     */
+    setTints(tints) {
+        this._tints = tints;
+    }
+    /**
+     * <p>Replaces the scheme's tints array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param greys
+     */
+    setGreys(greys) {
+        this._greys = greys;
+    }
+    /**
+     * <p>Replaces the scheme's colors array.</p>
+     * <p>No error checking is performed so invalid parameter values
+     * may cause the sketch to crash.</p>
+     * @param colors
+     */
+    setColors(colors) {
+        this._colors = colors;
     }
 }
 class BlueScheme extends ColorScheme {
@@ -1775,61 +2043,6 @@ class DarkScheme extends ColorScheme {
         this._greys = this._greys.reverse();
     }
 }
-// This mixin is added to any copy of a library color scheme so it can be edited
-// to create a user-defined color scheme.
-const COLOR_SCHEME_EDIT = {
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getTints() {
-        return this._deepCopyArray2D(this._tints);
-    },
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getGreys() {
-        return this._deepCopyArray2D(this._greys);
-    },
-    /**
-     * Get a deep copy of the colors array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getColors() {
-        return this._deepCopyArray2D(this._colors);
-    },
-    /**
-     * <p>Replaces the scheme's tints array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param tints
-     */
-    setTints(tints) {
-        this._tints = tints;
-    },
-    /**
-     * <p>Replaces the scheme's tints array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param greys
-     */
-    setGreys(greys) {
-        this._greys = greys;
-    },
-    /**
-     * <p>Replaces the scheme's colors array.</p>
-     * <p>No error checking is performed so invalid parameter values
-     * may cause the sketch to crash.</p>
-     * @param colors
-     */
-    setColors(colors) {
-        this._colors = colors;
-    }
-};
 //# sourceMappingURL=colorschemes.js.map
 /*
 ##############################################################################
@@ -1887,64 +2100,36 @@ class OrientWest {
     }
 }
 //# sourceMappingURL=orientations.js.map
-/*
-##############################################################################
- CvsControl
- The base class for controls and panes that don't require a graphics buffer.
- ##############################################################################
- */
 /**
- * <p>This class provides most of the core functionality for the canvasGUI
- * controls.</p>
+ *
+ * <p>This control is a placeholder for other controls (its children). It has
+ * a position but no visual representation.</p>
+ *
+ * <p>Its children will be shown relative to the pins xy position.</p>
  */
-class CvsControl {
-    /**
-     * CvsControl class
-     * @hidden
-     * @param gui
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     */
-    constructor(gui, id, x, y, w, h) {
+class CvsPin {
+    constructor(gui, id, x, y) {
         /** @hidden */ this._children = [];
-        /** @hidden */ this._visible = true;
-        /** @hidden */ this._enabled = false;
-        /** @hidden */ this._z = 0;
         /** @hidden */ this._x = 0;
         /** @hidden */ this._y = 0;
-        /** @hidden */ this._w = 0;
-        /** @hidden */ this._h = 0;
-        /** @hidden */ this._isOver = false;
-        /** @hidden */ this._active = false;
-        /** @hidden */ this._alpha = 255;
-        /** @hidden */ this._clickAllowed = false;
-        /** @hidden */ this._opaque = true;
+        /** @hidden */ this._z = 0;
+        /** @hidden */ this._visible = false;
+        /** @hidden */ this._enabled = false;
         /** @hidden */ this._bufferInvalid = true;
-        /** @hidden */ this._tooltip = undefined;
-        /**
-         * <p>The event handler for this control. Although it is permitted to set this
-         * property directly it is recommended that the <code>setAction(...)</code>
-         * method is used to define the event handler actions.</p>
-         * @hidden
-         */
-        this.action = function () { };
         this._gui = gui;
-        // this._p = this._gui._p;
         this._id = id;
         this._x = Math.round(x);
         this._y = Math.round(y);
-        this._w = Math.round(w);
-        this._h = Math.round(h);
-        this._parent = undefined;
-        this._visible = true;
-        this._enabled = true;
-        this._scheme = undefined;
-        this._orientation = CvsControl.EAST;
-        this._dragging = false; // is mouse being dragged on active control
+        this._gui.registerID(this);
     }
+    /** The unique identifier for this control.   */
+    get id() { return this._id; }
+    /**
+     * The type name for this control.<br>
+     * (type name = class name without the <code>Cvs</code> prefix)
+     */
+    get type() { return this.constructor.name.substring(3); }
+    ;
     /** @hidden */
     get x() { return this._x; }
     /** @hidden */
@@ -1957,57 +2142,31 @@ class CvsControl {
     get z() { return this._z; }
     /** @hidden */
     set z(v) { this._z = v; }
-    /** @hidden */
-    get w() { return this._w; }
-    /** @hidden */
-    set w(v) { this._w = Math.round(v); }
-    /** @hidden */
-    get h() { return this._h; }
-    /** @hidden */
-    set h(v) { this._h = Math.round(v); }
-    /** The unique identifier for this control.   */
-    get id() { return this._id; }
-    /**
-     * The type name for this control.<br>
-     * (type name = class name without the <code>Cvs</code> prefix)
-     */
-    get type() { return this.constructor.name.substring(3); }
-    ;
     /**
      * <p>This is true if the control can respond to UI events else false.</p>
      * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
      */
     get isEnabled() { return this._enabled; }
     /**
-     * <p>This is true if the control background is opaque else false.</p>
-     * <p>Use <code>opaque()</code> and <code>transparent()</code> display / hide the background.</p>
-     */
-    get isOpaque() { return this._opaque; }
-    /**
      * <p>This is true if the control is visible else false.</p>
      * <p>Use <code>hide()</code> and <code>show()</code> to set visibility.</p>
      */
     get isVisible() { return this._visible; }
+    // /**
+    //  * <p>Sets the visibility of this control.</p>
+    //  * <p>It is an alternative to using show and hide.</p>
+    //  */
+    // set visible(v) { this._visible = v }
+    // /**
+    //  * <p>Gets the visibility of this control.</p>
+    //  * <p>It is an alternative to using isVisible.</p>
+    //  */
+    // get visible() { return this._visible }
     /**
-     * A control becomes active when the mouse button is pressed over it.
-     * This method has little practical use except when debugging.
-     * @returns true if this control is expecting more mouse events
+     * Test function to show existing puffers
      * @hidden
      */
-    get isActive() { return this._active; }
-    /** @hidden */
-    get over() { return this._isOver; }
-    /** @hidden */
-    set over(b) {
-        if (b != this._isOver) {
-            this._isOver = b;
-            this.invalidateBuffer();
-        }
-    }
-    /** @hidden */
-    get CNRS() { return this._corners || this._gui._corners; }
-    /** @hidden */
-    get SCHEME() { return this._scheme || this._gui._scheme; }
+    get bufferStatus() { return { ui: false, pk: false }; }
     /**
      * Move this control to an absolute position.
      * @param x horizontal position
@@ -2048,6 +2207,273 @@ class CvsControl {
         }
     }
     /**
+     * <p>Adds this control to another control which becomes its parent.</p>
+     * @param parent is the parental control or its id
+     * @param rx x position relative to parent
+     * @param ry  y position relative to parent
+     * @returns this control
+     */
+    parent(parent, rx, ry) {
+        const prnt = this._gui.$(parent);
+        if (prnt) {
+            prnt.addChild(this, rx, ry);
+            this.z = prnt.z + DELTA_Z;
+            this._gui.setRenderOrder();
+        }
+        return this;
+    }
+    /**
+     * <p>Add a child to this control using its relative position [rx, ry].
+     * If rx and ry are not provided then it uses the values set in the child.</p>
+     * @param child is the actual control or its id
+     * @returns this control
+     */
+    addChild(child, rx, ry) {
+        const control = this._gui.$(child);
+        if (control) {
+            rx = !Number.isFinite(rx) ? control.x : Number(rx);
+            ry = !Number.isFinite(ry) ? control.y : Number(ry);
+            // If the control already has a parent remove it ready for new parent.
+            if (!control._parent)
+                control.leaveParent();
+            // Position and add parent to control control
+            control.x = rx;
+            control.y = ry;
+            control._parent = this;
+            control.z = this.z + DELTA_Z;
+            this._children.push(control);
+            this._gui.setRenderOrder();
+        }
+        return this;
+    }
+    /**
+     * <p>Remove a child control from this one so that it stays in same screen position.</p>
+     * @param child the control to remove or its id
+     * @returns this control
+     */
+    removeChild(child) {
+        const control = this._gui.$(child);
+        if (control) {
+            for (let i = 0; i < this._children.length; i++) {
+                if (control === this._children[i]) {
+                    let pos = control.getAbsXY();
+                    control._x = pos.x;
+                    control._y = pos.y;
+                    control._parent = null;
+                    this._children[i] = undefined;
+                    break;
+                }
+            }
+            this._children = this._children.filter(Boolean);
+            this._gui.setRenderOrder();
+        }
+        return this;
+    }
+    /**
+     * <p>Remove this control from its parent</p>
+     * @returns this control
+     */
+    leaveParent() {
+        if (this._parent) {
+            this._parent.removeChild(this);
+            this.z = 0;
+        }
+        return this;
+    }
+    /**
+     * @hidden
+     */
+    getParent() {
+        return this._parent;
+    }
+    /**
+     * <p>Enables this control and all its children.</p>
+     * @param cascade if true enable child controls
+     * @returns this control
+     */
+    enable(cascade) {
+        cascade = true;
+        if (cascade)
+            for (let c of this._children)
+                c.enable(cascade);
+        return this;
+    }
+    /**
+     * <p>Disables this control and all its children.</p>
+     * @param cascade if true disable child controls
+     * @returns this control
+     */
+    disable(cascade) {
+        cascade = true;
+        if (cascade)
+            for (let c of this._children)
+                c.disable(cascade);
+        return this;
+    }
+    /**
+     * An alternative to the enable / disable methods.
+     *
+     * @param enable true / false
+     * @param cascade  true apply to all children
+     * @returns this control
+     */
+    setEnabled(enable, cascade) {
+        if (enable)
+            return this.enable(cascade);
+        else
+            return this.disable(cascade);
+    }
+    /**
+     * <p>Show all the children for this 'pin'.</p>
+     * @param cascade always true
+     * @returns this control
+     */
+    show(cascade) {
+        cascade = true;
+        if (cascade)
+            for (let c of this._children)
+                c.show(cascade);
+        return this;
+    }
+    /**
+     * <p>Hide all the children for this 'pin'.</p>
+     * @param cascade always true
+     * @returns this control
+     */
+    hide(cascade) {
+        cascade = true;
+        if (cascade)
+            for (let c of this._children)
+                c.hide(cascade);
+        return this;
+    }
+    /**
+     * An alternative to the show / hide methods.
+     *
+     * @param visible true / false
+     * @param cascade if true hide children
+     * @returns this control
+     */
+    setVisible(visible, cascade) {
+        if (visible)
+            return this.show(cascade);
+        else
+            return this.hide(cascade);
+    }
+    /**
+     * <p>This method will force the control to update its visual appearance
+     * when the next frame is rendered.</p>
+     * <p><em>It is included in the most unlikely event it is needed.</em></p>
+     * @returns this control
+     * @hidden
+     */
+    invalidateBuffer() {
+        this._bufferInvalid = true;
+        return this;
+    }
+    /** @hidden */
+    warn$(method) {
+        CWARN(`'${method}' is not supported by '${this.type}' controls.`);
+        return this;
+    }
+    /**
+     * @param guiCtx ui overlay buffer drawing context
+     * @param pkCtx picker buffer drawing context
+     * @hidden
+     */
+    _draw(guiCtx, pkCtx) {
+        guiCtx.save();
+        guiCtx.translate(this._x, this._y);
+        // Display children
+        for (let c of this._children)
+            if (c._visible)
+                c._draw(guiCtx, pkCtx);
+        guiCtx.restore();
+    }
+}
+//# sourceMappingURL=pin.js.map
+/*
+##############################################################################
+ CvsControl
+ The base class for controls and panes that don't require a graphics buffer.
+ ##############################################################################
+ */
+/**
+ * <p>This class provides most of the core functionality for the canvasGUI
+ * controls.</p>
+ */
+class CvsControl extends CvsPin {
+    /**
+     * CvsControl class
+     * @hidden
+     * @param gui
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     */
+    constructor(gui, id, x, y, w, h, pickable) {
+        super(gui, id, x, y);
+        /** @hidden */ this._w = 0;
+        /** @hidden */ this._h = 0;
+        /** @hidden */ this._isOver = false;
+        /** @hidden */ this._active = false;
+        /** @hidden */ this._alpha = 255;
+        /** @hidden */ this._clickAllowed = false;
+        /** @hidden */ this._opaque = true;
+        /** @hidden */ this._tooltip = undefined;
+        /**
+         * <p>The event handler for this control. Although it is permitted to set this
+         * property directly it is recommended that the <code>setAction(...)</code>
+         * method is used to define the event handler actions.</p>
+         * @hidden
+         */
+        this.action = function () { };
+        this._w = Math.round(w);
+        this._h = Math.round(h);
+        this._visible = true;
+        this._enabled = true;
+        this._scheme = undefined;
+        this._orientation = CvsControl.EAST;
+        this._dragging = false; // is mouse being dragged on active control
+        if (pickable)
+            this._gui.registerPickable(this);
+    }
+    /** @hidden */
+    get w() { return this._w; }
+    /** @hidden */
+    set w(v) { this._w = Math.round(v); }
+    /** @hidden */
+    get h() { return this._h; }
+    /** @hidden */
+    set h(v) { this._h = Math.round(v); }
+    /**
+     * <p>This is true if the control background is opaque else false.</p>
+     * <p>Use <code>opaque()</code> and <code>transparent()</code> display / hide the background.</p>
+     */
+    get isOpaque() { return this._opaque; }
+    /**
+     * A control becomes active when the mouse button is pressed over it.
+     * This method has little practical use except when debugging.
+     * @returns true if this control is expecting more mouse events
+     * @hidden
+     */
+    get isActive() { return this._active; }
+    /** @hidden */
+    get over() { return this._isOver; }
+    /** @hidden */
+    set over(b) {
+        if (b != this._isOver) {
+            this._isOver = b;
+            this.invalidateBuffer();
+        }
+    }
+    /** @hidden */
+    get CNRS() { return this._corners || this._gui._corners; }
+    /** @hidden */
+    get SCHEME() { return this._scheme || this._gui._scheme; }
+    /**
      * <p>If the name of a valid color scheme is provided then it will use it
      * to display the control, non-existant scheme names will be ignored. In
      * both cases this control is returned.</p>
@@ -2059,7 +2485,7 @@ class CvsControl {
      */
     scheme(name, cascade) {
         if (name) { // setter
-            let next_scheme = this._gui._getScheme(name);
+            let next_scheme = this._gui.getScheme(name);
             if (next_scheme && this._scheme != next_scheme) {
                 this._scheme = next_scheme;
                 this.invalidateBuffer();
@@ -2100,91 +2526,6 @@ class CvsControl {
                 break;
         }
         return this;
-    }
-    /**
-     * <p>This method will force the control to update its visual appearance
-     * when the next frame is rendered.</p>
-     * <p><em>It is included in the most unlikely event it is needed.</em></p>
-     * @returns this control
-     * @hidden
-     */
-    invalidateBuffer() {
-        this._bufferInvalid = true;
-        return this;
-    }
-    /**
-     * <p>Adds this control to another control which becomes its parent.</p>
-     * @param parent is the parental control or its id
-     * @param rx x position relative to parent
-     * @param ry  y position relative to parent
-     * @returns this control
-     */
-    parent(parent, rx, ry) {
-        let prnt = this._gui.$(parent);
-        prnt.addChild(this, rx, ry);
-        this.z = prnt.z + DELTA_Z;
-        this._gui.setRenderOrder();
-        return this;
-    }
-    /**
-     * <p>Add a child to this control using its relative position [rx, ry].
-     * If rx and ry are not provided then it uses the values set in the child.</p>
-     * @param child is the actual control or its id
-     * @returns this control
-     */
-    addChild(child, rx, ry) {
-        let control = this._gui.$(child);
-        rx = !Number.isFinite(rx) ? control.x : Number(rx);
-        ry = !Number.isFinite(ry) ? control.y : Number(ry);
-        // If the control already has a parent remove it ready for new parent.
-        if (!control._parent)
-            control.leaveParent();
-        // Position and add parent to control control
-        control.x = rx;
-        control.y = ry;
-        control._parent = this;
-        control.z = this.z + DELTA_Z;
-        this._children.push(control);
-        this._gui.setRenderOrder();
-        return this;
-    }
-    /**
-     * <p>Remove a child control from this one so that it stays in same screen position.</p>
-     * @param child the control to remove or its id
-     * @returns this control
-     */
-    removeChild(child) {
-        let control = this._gui.$(child);
-        for (let i = 0; i < this._children.length; i++) {
-            if (control === this._children[i]) {
-                let pos = control.getAbsXY();
-                control._x = pos.x;
-                control._y = pos.y;
-                control._parent = null;
-                this._children[i] = undefined;
-                break;
-            }
-        }
-        this._children = this._children.filter(Boolean);
-        this._gui.setRenderOrder();
-        return this;
-    }
-    /**
-     * <p>Remove this control from its parent</p>
-     * @returns this control
-     */
-    leaveParent() {
-        if (this._parent) {
-            this._parent.removeChild(this);
-            this.z = 0;
-        }
-        return this;
-    }
-    /**
-     * @hidden
-     */
-    getParent() {
-        return this._parent;
     }
     /**
      * <p>This sets the event handler to be used when this control fires
@@ -2287,19 +2628,19 @@ class CvsControl {
     }
     /**
      * <p>Make this control visible.</p>
-     * @param cascade if true show children
+     * @param cascade if true then show any children
      * @returns this control
      */
     show(cascade) {
         this._visible = true;
         if (cascade)
             for (let c of this._children)
-                c.show(cascade);
+                c.show(true);
         return this;
     }
     /**
      * <p>Make this control invisible.</p>
-     * @param cascade if true hide children
+     * @param cascade if true hide any children
      * @returns this control
      */
     hide(cascade) {
@@ -2339,11 +2680,6 @@ class CvsControl {
         return this._orientation;
     }
     /** @hidden */
-    warn$(method) {
-        CWARN(`'${method}' is not supported by '${this.type}' controls.`);
-        return this;
-    }
-    /** @hidden */
     _updateControlVisual() { }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) { return this; }
@@ -2364,7 +2700,7 @@ CvsControl.SOUTH = new OrientSouth();
 CvsControl.EAST = new OrientEast();
 /** @hidden */
 CvsControl.WEST = new OrientWest();
-//# sourceMappingURL=basecontrol.js.map
+//# sourceMappingURL=control.js.map
 /*
  ##############################################################################
  CvsBufferedControl
@@ -2386,11 +2722,55 @@ class CvsBufferedControl extends CvsControl {
      * @param w width
      * @param h height
      */
-    constructor(gui, id, x, y, w, h) {
-        super(gui, id, x, y, w, h);
+    constructor(gui, id, x, y, w, h, pickable = false) {
+        super(gui, id, x, y, w, h, pickable);
         /** @hidden */ this._textInvalid = false;
-        this._validateBuffer();
+        this._createBuffer = pickable ? this._createUIandPKbuffer : this._createUIbuffer;
+        this._createBuffer(w, h);
+        this.invalidateBuffer();
     }
+    /**
+     * Create the UI buffer
+     * @hidden
+     */
+    _createBuffer(w, h) {
+        this._uicBuffer = new OffscreenCanvas(w, h);
+        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this._pkcBuffer = new OffscreenCanvas(w, h);
+        this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this.invalidateBuffer();
+    }
+    _createUIbuffer(w, h) {
+        this._uicBuffer = new OffscreenCanvas(w, h);
+        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this.invalidateBuffer();
+    }
+    _createUIandPKbuffer(w, h) {
+        this._uicBuffer = new OffscreenCanvas(w, h);
+        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this._pkcBuffer = new OffscreenCanvas(w, h);
+        this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
+        this.invalidateBuffer();
+    }
+    _clearBuffer(buff, ctx) {
+        if (buff && ctx)
+            ctx.clearRect(0, 0, buff.width, buff.height);
+    }
+    /**
+     * If this control has changed size then recreate the ui buffers
+     * and invalidate the control so it is forced to recreate the buffer on
+     * when being rendered.
+     * @hidden
+     */
+    _validateBuffer(w = this._uicBuffer.width, h = this._uicBuffer.height) {
+        if (this._uicBuffer.width != w || this._uicBuffer.height != h)
+            this._createBuffer(w, h);
+    }
+    /**
+     * Test function to show existing puffers
+     * @hidden
+     */
+    get bufferStatus() { return { ui: Boolean(this._uicBuffer), pk: Boolean(this._pkcBuffer) }; }
     /**
      * Invalidates display text.
      * If the text or its attributes are changed then the text needs updating
@@ -2404,38 +2784,10 @@ class CvsBufferedControl extends CvsControl {
         this.invalidateBuffer();
         return this;
     }
-    /**
-     * Clear the ui buffer
-     * @hidden
-     */
-    _clearUiBuffer() {
-        this._uicContext.clearRect(0, 0, this._uicBuffer.width, this._uicBuffer.height);
-    }
-    /**
-     * Clear the pick buffer
-     * @hidden
-     */
-    _clearPickBuffer() {
-        this._pkcContext?.clearRect(0, 0, this._pkcBuffer.width, this._pkcBuffer.height);
-    }
-    /**
-     * If this control has changed size then recreate the ui and pick buffers
-     * and invalidate the control so it is forced to redraw the buffers on
-     * when being rendered'
-     * @hidden
-     */
-    _validateBuffer() {
-        if (!this._uicBuffer || this._uicBuffer.width != this._w || this._uicBuffer.height != this._h) {
-            this._uicBuffer = new OffscreenCanvas(this._w, this._h);
-            this._uicContext = this._uicBuffer.getContext('2d');
-            this._uicContext.clearRect(0, 0, this._w, this._h);
-            this.invalidateBuffer();
-        }
-    }
     /** @hidden */
     _draw(guiCtx, pkCtx) {
         // Make sure the buffer exists and the same size as the control
-        this._validateBuffer();
+        this._validateBuffer(this._w, this._h);
         if (this._bufferInvalid)
             this._updateControlVisual();
         guiCtx.save();
@@ -2461,10 +2813,13 @@ class CvsBufferedControl extends CvsControl {
     }
     /** @hidden */
     _disable_highlight(cs, x, y, w, h) {
-        this._uicContext.fillStyle = cs.T$(2);
-        this._uicContext.beginPath();
-        this._uicContext.roundRect(x, y, w, h, this.CNRS);
-        this._uicContext.fill();
+        const uic = this._uicBuffer.getContext('2d');
+        if (uic) {
+            uic.fillStyle = cs.T$(2);
+            uic.beginPath();
+            uic.roundRect(x, y, w, h, this.CNRS);
+            uic.fill();
+        }
     }
     /** @hidden */
     _getUseableFaceRegion() {
@@ -2472,25 +2827,6 @@ class CvsBufferedControl extends CvsControl {
         return [iH, ISET_V, this._w - 2 * iH, this._h - 2 * ISET_V];
     }
 }
-const PICKABLE = {
-    /**
-     * If this control has changed size then recreate the ui and pick buffers
-     * and invalidate the control so it is forced to redraw the buffers on
-     * when being rendered'
-     * @hidden
-     */
-    _validateBuffer() {
-        if (!this._uicBuffer || this._uicBuffer.width != this._w || this._uicBuffer.height != this._h) {
-            this._uicBuffer = new OffscreenCanvas(this._w, this._h);
-            this._uicContext = this._uicBuffer.getContext('2d');
-            this._uicContext.clearRect(0, 0, this._w, this._h);
-            this._pkcBuffer = new OffscreenCanvas(this._w, this._h);
-            this._pkcContext = this._pkcBuffer.getContext('2d');
-            this._pkcContext.clearRect(0, 0, this._w, this._h);
-            this.invalidateBuffer();
-        }
-    }
-};
 //# sourceMappingURL=bufferedcontrol.js.map
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
@@ -2503,31 +2839,67 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _CvsImage_image, _CvsImage_border, _CvsImage_frameWeight;
+var _CvsImage_offImg, _CvsImage_overImg, _CvsImage_maskImg;
 /**
- * Wraps an image into a control
+ * <p>This class represents clickable image buttons.</p>
+ *
+ * <p>The hit-zone is any non-transparent pixel in the off-state image or if
+ * provided the mask-image.</p>
+ *
+ * <p>The over-button state occurs when the mouse is in the hit-zone. When
+ * this occurs the button face image will be displayed, or if not defined, a
+ * simple a simple border highlight is used.</p>
  */
 class CvsImage extends CvsBufferedControl {
     /** @hidden */
-    constructor(gui, name, x, y, image) {
-        image = cvsGuiCanvas(image);
-        super(gui, name, x || 0, y || 0, image.width, image.height);
-        _CvsImage_image.set(this, void 0);
-        _CvsImage_border.set(this, 0);
-        _CvsImage_frameWeight.set(this, 0);
-        __classPrivateFieldSet(this, _CvsImage_image, image, "f");
+    constructor(gui, name, x, y, faceImages, mask) {
+        let images = Array.isArray(faceImages) ? faceImages : [faceImages];
+        let [w, h] = [images[0].width, images[0].height];
+        super(gui, name, x, y, w, h, true);
+        _CvsImage_offImg.set(this, void 0);
+        _CvsImage_overImg.set(this, void 0);
+        _CvsImage_maskImg.set(this, void 0);
+        __classPrivateFieldSet(this, _CvsImage_offImg, cvsGuiCanvas(images[0]), "f");
+        __classPrivateFieldSet(this, _CvsImage_overImg, cvsGuiCanvas(images[1]), "f");
+        __classPrivateFieldSet(this, _CvsImage_maskImg, cvsGuiCanvas(mask), "f");
+        this._uicBuffer.getContext('2d')?.drawImage(__classPrivateFieldGet(this, _CvsImage_offImg, "f"), 0, 0, w, h, 0, 0, w, h);
         this.invalidateBuffer();
     }
-    /**
-     * Sets the stroke weight to use for the frame. If not provided
-     * or &lt;0 then no frame is drawn.
-     * @param sw the stroke weight for the frame
-     * @returns this control
-     */
-    frame(sw = 0) {
-        __classPrivateFieldSet(this, _CvsImage_frameWeight, sw < 0 ? 0 : sw, "f");
-        this.invalidateBuffer();
-        return this;
+    /** @hidden */
+    _makePickImage() {
+        let pickCol = this._gui.pickColor(this);
+        let [w, h] = [__classPrivateFieldGet(this, _CvsImage_offImg, "f").width, __classPrivateFieldGet(this, _CvsImage_offImg, "f").height];
+        let p_rgb = [pickCol.r, pickCol.g, pickCol.b, 255];
+        // Source color byte data array from either the off-image or
+        // the mask if it exists.
+        let srcData;
+        if (__classPrivateFieldGet(this, _CvsImage_maskImg, "f")) {
+            const cvs = new OffscreenCanvas(w, h);
+            const ctx = cvs.getContext('2d');
+            ctx?.drawImage(__classPrivateFieldGet(this, _CvsImage_maskImg, "f"), 0, 0, w, h, 0, 0, w, h);
+            srcData = ctx?.getImageData(0, 0, w, h).data;
+        }
+        else {
+            srcData = this._uicBuffer.getContext('2d')?.getImageData(0, 0, w, h).data;
+        }
+        // Create the pick image and clear context
+        __classPrivateFieldSet(this, _CvsImage_maskImg, new OffscreenCanvas(w, h), "f");
+        let pkCtx = __classPrivateFieldGet(this, _CvsImage_maskImg, "f").getContext('2d');
+        pkCtx?.clearRect(0, 0, w, h);
+        // Create the dest color byte data array
+        if (srcData) {
+            let dstData = new Uint8ClampedArray(srcData.length);
+            for (let i = 0; i < dstData.length; i += 4) {
+                if (srcData[i + 3] >= 128) {
+                    dstData[i] = p_rgb[0];
+                    dstData[i + 1] = p_rgb[1];
+                    dstData[i + 2] = p_rgb[2];
+                    dstData[i + 3] = 255;
+                }
+            }
+            let dstImgData = new ImageData(dstData, w, h);
+            pkCtx?.putImageData(dstImgData, 0, 0);
+        }
     }
     /**
      * <p>Resizes the control.</p>
@@ -2546,10 +2918,10 @@ class CvsImage extends CvsBufferedControl {
         h = Math.round(h);
         if (Number.isNaN(w) || Number.isNaN(h) || (w == this._w && h == this._h))
             return this;
-        const aspect = __classPrivateFieldGet(this, _CvsImage_image, "f").width / __classPrivateFieldGet(this, _CvsImage_image, "f").height;
+        const aspect = __classPrivateFieldGet(this, _CvsImage_offImg, "f").width / __classPrivateFieldGet(this, _CvsImage_offImg, "f").height;
         if (w == 0 && h == 0) {
-            w = __classPrivateFieldGet(this, _CvsImage_image, "f").width;
-            h = __classPrivateFieldGet(this, _CvsImage_image, "f").height;
+            w = __classPrivateFieldGet(this, _CvsImage_offImg, "f").width;
+            h = __classPrivateFieldGet(this, _CvsImage_offImg, "f").height;
         }
         else if (w == 0 && h > 0)
             w = Math.ceil(h * aspect);
@@ -2562,46 +2934,96 @@ class CvsImage extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
+        const [w, h] = [this._w, this._h];
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const OPAQUE = cs.C$(2, this._alpha);
-        const FORE = cs.C$(8);
-        const img = __classPrivateFieldGet(this, _CvsImage_image, "f");
-        const [w, h] = [this._w, this._h];
-        const fw = __classPrivateFieldGet(this, _CvsImage_frameWeight, "f");
-        const uic = this._uicContext;
+        const HIGHLIGHT = cs.C$(9);
         uic.save();
-        uic.clearRect(0, 0, w, h);
         // Image clipped for corners
         uic.save();
         uic.beginPath();
-        uic.roundRect(fw / 2, fw / 2, w - fw, h - fw, cnrs);
+        uic.roundRect(0, 0, w, h, cnrs);
         uic.clip();
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
             uic.fillRect(0, 0, w, h);
         }
-        uic.drawImage(img, 0, 0, img.width, img.height, 0, 0, w, h);
+        const highlight = (this.isActive || this.over);
+        const icon = highlight && __classPrivateFieldGet(this, _CvsImage_overImg, "f") ? __classPrivateFieldGet(this, _CvsImage_overImg, "f") : __classPrivateFieldGet(this, _CvsImage_offImg, "f");
+        uic.drawImage(icon, 0, 0, icon.width, icon.height, 0, 0, w, h);
         uic.restore();
-        if (fw > 0) {
-            uic.strokeStyle = FORE;
-            uic.lineWidth = __classPrivateFieldGet(this, _CvsImage_frameWeight, "f");
-            uic.roundRect(fw, fw, w - 2 * fw, h - 2 * fw, cnrs);
+        // End of clipped region
+        // Mouse over and no over-image then add border highlight
+        if (highlight && !__classPrivateFieldGet(this, _CvsImage_overImg, "f")) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2;
+            uic.beginPath();
+            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
             uic.stroke();
         }
+        // Update pick buffer before restoring
+        this._updatePickBuffer();
         uic.restore();
         // last line in this method should be
         this._bufferInvalid = false;
     }
-    /** @hidden */ get isEnabled() { return this.warn$('isEnabled'); }
-    /** @hidden */ setAction() { return this.warn$('setAction'); }
-    /** @hidden */ orient(a) { return this.warn$('orient'); }
-    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
-    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
-    /** @hidden */ enable() { return this.warn$('enable'); }
-    /** @hidden */ disable() { return this.warn$('disable'); }
+    _updatePickBuffer() {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
+        const [w, h] = [this._pkcBuffer.width, this._pkcBuffer.height];
+        const mask = __classPrivateFieldGet(this, _CvsImage_maskImg, "f");
+        const cnrs = this.CNRS;
+        pkc.save();
+        pkc.beginPath();
+        pkc.roundRect(0, 0, w, h, cnrs);
+        pkc.clip();
+        pkc.drawImage(mask, 0, 0, mask.width, mask.height, 0, 0, w, h);
+        pkc.restore();
+    }
+    /** @hidden */
+    _doEvent(e, x = 0, y = 0, over, enter) {
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                this._active = true;
+                this._clickAllowed = true; // false if mouse moves
+                this.over = true;
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                if (this.isActive) {
+                    if (this._clickAllowed)
+                        this.action({ source: this, event: e });
+                    this._active = false;
+                }
+                this._clickAllowed = false;
+                this.over = false;
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                this._clickAllowed = false;
+                this.over = (this == over.control);
+                this._tooltip?._updateState(enter);
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+        return this.isActive ? this : null;
+    }
 }
-_CvsImage_image = new WeakMap(), _CvsImage_border = new WeakMap(), _CvsImage_frameWeight = new WeakMap();
+_CvsImage_offImg = new WeakMap(), _CvsImage_overImg = new WeakMap(), _CvsImage_maskImg = new WeakMap();
 //# sourceMappingURL=image.js.map
 /**
  * <p>This class represents a horizontal slider with a draggable thumb to
@@ -2620,7 +3042,7 @@ class CvsSlider extends CvsBufferedControl {
      * @param h height
      */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 20);
+        super(gui, name, x, y, w, h, true);
         this._t01 = 0.5;
         this._limit0 = 0;
         this._limit1 = 1;
@@ -2674,23 +3096,22 @@ class CvsSlider extends CvsBufferedControl {
     }
     /**
      * <p>Gets or sets the thickness of the track.</p>
-     * <p>If there is no parameter the currect track thickness is returned.
-     * Any other value is constrained to the range &ge;&nbsp;4 and
+     * <p>The thickness is constrained to the range &ge;&nbsp;4 and
      * &le;&nbsp;0.1 * control width.</p>
      * @param tWgt the required track thickness)
      * @returns the curent track thickness or this control
      */
     weight(tWgt) {
-        if (!tWgt) // getter
+        if (!tWgt)
             return this._trackWeight;
         // Setter
         let maxWgt = Math.round(Math.max(8, this.w / 10));
         tWgt = _constrain(tWgt, 4, maxWgt);
         this._trackWeight = tWgt;
-        this._thumbSize = Math.max(14, tWgt * 1.5);
+        this._thumbSize = Math.max(9, tWgt * 1.5);
         this._thumbCnrs = [tWgt / 3, tWgt / 3, tWgt / 3, tWgt / 3];
-        this._majorTickSize = Math.max(10, 1.25 * tWgt);
-        this._minorTickSize = Math.max(7, 0.90 * tWgt);
+        this._majorTickSize = Math.max(8, 1.25 * tWgt);
+        this._minorTickSize = Math.max(6, 0.90 * tWgt);
         this._inset = Math.round(this._thumbSize / 2 + 4);
         return this;
     }
@@ -2703,6 +3124,7 @@ class CvsSlider extends CvsBufferedControl {
      */
     value(value) {
         if (Number.isFinite(value)) {
+            value = Number(value);
             if ((value - this._limit0) * (value - this._limit1) <= 0) {
                 this._t01 = this._norm01(value);
                 this.invalidateBuffer();
@@ -2794,6 +3216,11 @@ class CvsSlider extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         let [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
@@ -2804,9 +3231,6 @@ class CvsSlider extends CvsBufferedControl {
         const USED_TRACK = cs.G$(1);
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(6);
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) { // Background
             uic.fillStyle = OPAQUE;
@@ -2866,11 +3290,14 @@ class CvsSlider extends CvsBufferedControl {
     }
     /** @hidden */
     _updatePickBuffer() {
-        const pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         const c = this._gui.pickColor(this);
         const [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
         const tbX = Math.round(tLen * this._t01);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         // Now translate to track left edge - track centre
         pkc.translate(this._inset, Math.round(this.h / 2));
@@ -2885,7 +3312,6 @@ class CvsSlider extends CvsBufferedControl {
         pkc.restore();
     }
 }
-Object.assign(CvsSlider.prototype, PICKABLE);
 //# sourceMappingURL=slider.js.map
 /**
  * <p>This class represents a slider with 2 draggable thumbs to
@@ -2896,7 +3322,7 @@ Object.assign(CvsSlider.prototype, PICKABLE);
 class CvsRanger extends CvsSlider {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 20);
+        super(gui, name, x, y, w, h);
         /** @hidden */ this._t = [0.25, 0.75];
         /** @hidden */ this._tIdx = -1;
         this._t = [0.25, 0.75];
@@ -2917,6 +3343,8 @@ class CvsRanger extends CvsSlider {
      */
     range(v0, v1) {
         if (Number.isFinite(v0) && Number.isFinite(v1)) { // If two numbers then
+            v0 = Number(v0);
+            v1 = Number(v1);
             let t0 = this._norm01(Math.min(v0, v1));
             let t1 = this._norm01(Math.max(v0, v1));
             if (t0 >= 0 && t0 <= 1 && t1 >= 0 && t1 <= 1) {
@@ -2956,6 +3384,8 @@ class CvsRanger extends CvsSlider {
         }
         let [l0, l1] = [this._limit0, this._limit1];
         if (Number.isFinite(v0) && Number.isFinite(v1)) {
+            v0 = Number(v0);
+            v1 = Number(v1);
             if (inLimits(v0) && inLimits(v1)) {
                 this._t[0] = this._norm01(Math.min(v0, v1));
                 this._t[1] = this._norm01(Math.max(v0, v1));
@@ -3022,6 +3452,11 @@ class CvsRanger extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
@@ -3032,9 +3467,6 @@ class CvsRanger extends CvsSlider {
         const USED_TRACK = cs.G$(1);
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(6);
-        const uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -3097,7 +3529,11 @@ class CvsRanger extends CvsSlider {
     }
     /** @hidden */
     _updatePickBuffer() {
-        const pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         const [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
         const tx0 = Math.round(tLen * Math.min(this._t[0], this._t[1]));
         const tx1 = Math.round(tLen * Math.max(this._t[0], this._t[1]));
@@ -3117,8 +3553,8 @@ class CvsRanger extends CvsSlider {
         pkc.fillRect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
         pkc.restore();
     }
+    /** @hidden */ value(v) { return this.warn$('value'); }
 }
-Object.assign(CvsRanger.prototype, PICKABLE);
 //# sourceMappingURL=ranger.js.map
 /**
  * </p>The base class for any control that displays text as part of its
@@ -3133,15 +3569,12 @@ class CvsText extends CvsBufferedControl {
     /** @hidden */
     get T_STYLE() { return this._tStyle || this._gui._tStyle; }
     /** @hidden */
-    constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+    constructor(gui, name, x, y, w, h, pickable) {
+        super(gui, name, x, y, w, h, pickable);
         /** @hidden */ this._tLines = [];
         /** @hidden */ this._tBox = [0, 0];
         /** @hidden */ this._tAlignH = "center";
         /** @hidden */ this._tAlignV = "center";
-        /** @hidden */ this._tFace = undefined;
-        /** @hidden */ this._tSize = undefined;
-        /** @hidden */ this._tStyle = undefined;
         /** @hidden */ this._tSlant = 14;
         /** @hidden */ this._tArea = [];
         this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
@@ -3197,7 +3630,7 @@ class CvsText extends CvsBufferedControl {
             this.invalidateText();
         }
         else
-            CWARN(`'${font.toString()}' is unrecognized so will be ignored!`);
+            CWARN(`'${font?.toString()}' is unrecognized so will be ignored!`);
         return this;
     }
     /**
@@ -3222,7 +3655,7 @@ class CvsText extends CvsBufferedControl {
      * @param slant the oblique slant angle (degrees)
      * @returns this control
      */
-    textStyle(style, slant) {
+    textStyle(style, slant = 0) {
         if (!style)
             return this._tStyle; // getter
         style = _validateTextStyle(style);
@@ -3316,7 +3749,7 @@ class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _textMetrics(str) {
-        const uic = this._uicContext;
+        const uic = this._uicBuffer.getContext('2d');
         uic.save();
         uic.font = this._cssFont;
         let tm = uic.measureText(str);
@@ -3386,10 +3819,10 @@ class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _calcTextBox() {
-        let c = this._uicContext;
-        c.save();
-        c.font = this._cssFont;
-        c.textBaseline = 'alphabetic';
+        const uic = this._uicBuffer.getContext('2d');
+        uic.save();
+        uic.font = this._cssFont;
+        uic.textBaseline = 'alphabetic';
         let ln = 0, maxW = 0, maxH = 0, tm;
         this._tLines.forEach(line => {
             tm = this._textMetrics(line.txt);
@@ -3413,7 +3846,7 @@ class CvsText extends CvsBufferedControl {
             }
         });
         maxH = tm ? this._tLines.length * tm.fHeight : 0;
-        c.restore();
+        uic.restore();
         return { boxW: maxW, boxH: maxH };
     }
     /**
@@ -3422,7 +3855,7 @@ class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _renderTextArea(tcolor) {
-        const c = this._uicContext;
+        const uic = this._uicBuffer.getContext('2d');
         const [tx, ty, tw, th] = [...this._tArea];
         const [bw, bh] = [...this._tBox];
         let px = tx, py = ty;
@@ -3442,17 +3875,17 @@ class CvsText extends CvsBufferedControl {
                 py += (th - bh) / 2;
                 break;
         }
-        c.save();
-        c.beginPath();
-        c.rect(tx, ty, tw, th);
-        c.clip();
-        c.textBaseline = 'alphabetic';
-        c.font = this._cssFont;
-        c.fillStyle = tcolor;
+        uic.save();
+        uic.beginPath();
+        uic.rect(tx, ty, tw, th);
+        uic.clip();
+        uic.textBaseline = 'alphabetic';
+        uic.font = this._cssFont;
+        uic.fillStyle = tcolor;
         this._tLines.forEach(line => {
-            c.fillText(line.txt, line.x + px, line.y + py);
+            uic.fillText(line.txt, line.x + px, line.y + py);
         });
-        c.restore();
+        uic.restore();
     }
 }
 //# sourceMappingURL=text.js.map
@@ -3462,24 +3895,24 @@ class CvsText extends CvsBufferedControl {
  */
 class CvsTextIcon extends CvsText {
     /** @hidden */
-    constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+    constructor(gui, name, x, y, w, h, pickable) {
+        super(gui, name, x, y, w, h, pickable);
+        /** @hidden */ this._ix = 0;
+        /** @hidden */ this._iy = 0;
+        /** @hidden */ this._icons = [];
         /** @hidden */ this._iAlignH = 'left';
         /** @hidden */ this._iAlignV = 'center';
         this._icon = undefined;
     }
     /**
-     * <p>Replaces the existing icons representing false / true states.</p>
-     * <p>The first parameter must be an array of 2 images [falseImage, trueImage]
-     * representing the state of the checkbox. It is recomended that the images
-     * the same size</p>
-     *
-     * If provided the last two paratmeters control the icon alignment within
-     * the control.</p>
+     * <p>Sets the icon and its alignment relative to any text in the
+     * control.</p>
+     * <p>Processing constants can also be used to define the icon
+     * alignment.</p>
      * @see iconAlign
-     * @param icon the icon to appear
-     * @param alignH horizontal position relative to the text.
-     * @param alignV vertical position within the control
+     * @param icon the icon to show
+     * @param alignH 'left', 'right' or 'center'
+     * @param alignV 'top', 'bottom' or 'center'
      * @returns this control or the current icon
      */
     icon(icon, alignH, alignV) {
@@ -3552,7 +3985,7 @@ class CvsTextIcon extends CvsText {
         else {
             const [iw, ih] = this._icon ? [this._icon.width, this._icon.height] : [0, 0];
             let ix = fx, iy = fy;
-            let textX, textW;
+            let textX = 0, textW = 0;
             switch (this._iAlignH) {
                 case "left":
                     ix = fx;
@@ -3599,10 +4032,15 @@ class CvsTextIcon extends CvsText {
 class CvsLabel extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 60, h || 16);
+        super(gui, name, x, y, w, h, false);
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -3612,10 +4050,8 @@ class CvsLabel extends CvsTextIcon {
         const cnrs = this.CNRS;
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
-        const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
-        uic.clearRect(0, 0, this._w, this._h);
         // Background
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -3645,11 +4081,16 @@ class CvsLabel extends CvsTextIcon {
 class CvsButton extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+        super(gui, name, x, y, w, h, true);
         this._enabled = true;
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -3657,12 +4098,9 @@ class CvsButton extends CvsTextIcon {
             this._fitToContent();
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
-        // const font = this.cssFont;
         const BACK = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
-        let uic = this._uicContext;
-        this._clearUiBuffer();
         uic.save();
         uic.font = this._cssFont;
         // Background
@@ -3672,8 +4110,14 @@ class CvsButton extends CvsTextIcon {
             uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
         }
-        if (this._icon)
+        if (this._icon) {
+            uic.save();
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.clip();
             uic.drawImage(this._icon, this._ix, this._iy);
+            uic.restore();
+        }
         this._renderTextArea(FORE);
         // Mouse over add border highlight
         if (this.isActive || this.over) {
@@ -3690,14 +4134,15 @@ class CvsButton extends CvsTextIcon {
         uic.restore();
         // The last line in this method should be
         this._bufferInvalid = false;
-        // but if this is a pane-tab then must validate the tabs
-        // if (this._parent instanceof CvsPane) this._parent.validateTabs();
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        this._clearPickBuffer();
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -3739,7 +4184,6 @@ class CvsButton extends CvsTextIcon {
         return this.isActive ? this : null;
     }
 }
-Object.assign(CvsButton.prototype, PICKABLE);
 //# sourceMappingURL=button.js.map
 /**
  * <p>A tooltip is a simply text hint that appears near to a control with the
@@ -3751,7 +4195,7 @@ Object.assign(CvsButton.prototype, PICKABLE);
 class CvsTooltip extends CvsText {
     /** @hidden */
     constructor(gui, name) {
-        super(gui, name);
+        super(gui, name, 0, 0, 100, 30, false);
         this._gap = 1;
         this._visible = false;
         this._tSize = 12;
@@ -3789,7 +4233,7 @@ class CvsTooltip extends CvsText {
     _validatePosition() {
         let p = this._parent;
         let { x: px, y: py } = p.getAbsXY();
-        let [pw, ph] = p.orientation().wh(p.w, p.h);
+        let [pw, ph] = p['orientation']().wh(p['_w'], p['_h']);
         this._x = 0, this._y = -this._h;
         if (py + this._y < 0)
             this._y += this._h + ph;
@@ -3798,6 +4242,11 @@ class CvsTooltip extends CvsText {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -3805,11 +4254,9 @@ class CvsTooltip extends CvsText {
             this._fitToContent();
             this._validatePosition();
         }
-        const cs = this._parent.scheme() || this._gui.scheme();
+        const cs = this._parent['scheme']() || this._gui.scheme();
         const BACK = cs.C$(3);
         const FORE = cs.C$(9);
-        const uic = this._uicContext;
-        this._clearUiBuffer();
         uic.save();
         uic.font = this._cssFont;
         uic.strokeStyle = FORE;
@@ -3838,7 +4285,7 @@ class CvsTooltip extends CvsText {
 class CvsScroller extends CvsBufferedControl {
     /** @hidden */
     constructor(gui, name, x = 0, y = 0, w = 100, h = 20) {
-        super(gui, name, x, y, w, h);
+        super(gui, name, x, y, w, h, true);
         // All values are in the range 0-1
         /** @hidden */ this._value = 0.5;
         /** @hidden */ this._dvalue = 0.5;
@@ -3865,13 +4312,13 @@ class CvsScroller extends CvsBufferedControl {
      */
     update(value, used) {
         // If a used value is available then use it
-        if (Number.isFinite(used) && used !== this._used) {
+        if (used && Number.isFinite(used) && used !== this._used) {
             this._used = used;
             this._minV = this._used / 2;
             this._maxV = 1 - this._used / 2;
             this.invalidateBuffer();
         }
-        if (Number.isFinite(value) && value !== this._value) {
+        if (value && Number.isFinite(value) && value !== this._value) {
             value = _constrain(value, 0, 1);
             let dv = value, u2 = this._used / 2;
             if (value < u2)
@@ -3935,6 +4382,11 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         const OPAQUE = cs.C$(3);
@@ -3948,10 +4400,6 @@ class CvsScroller extends CvsBufferedControl {
         let tbW = Math.max(used * tw, this._minThumbWidth);
         let tbH = this._thumbHeight;
         let tx = this._dvalue * this._trackWidth;
-        let uic = this._uicContext;
-        uic.save();
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) { // Background
             uic.fillStyle = OPAQUE;
@@ -3987,10 +4435,13 @@ class CvsScroller extends CvsBufferedControl {
     }
     /** @hidden */
     _updateScrollerPickBuffer(tbX, tby, tbw, tbh) {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        let pkc = this._pkcContext;
         pkc.save();
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.fillStyle = c.cssColor;
         // Now translate to track left edge - track centre
         pkc.translate(this._inset, this._h / 2);
@@ -4001,7 +4452,6 @@ class CvsScroller extends CvsBufferedControl {
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
     /** @hidden */ corners(c) { return this.warn$('corners'); }
 }
-Object.assign(CvsScroller.prototype, PICKABLE);
 //# sourceMappingURL=scroller.js.map
 /**
  * <p>The option group manages a group of option buttons where only one can
@@ -4021,10 +4471,9 @@ class CvsOptionGroup {
      * @hidden
      */
     _add(option) {
-        // If this option is selected then deselect all the existing options in group
+        // If option is selected then deselect all other options in group
         if (option.isSelected())
-            for (let opt of this._group)
-                opt._deselect();
+            this._group.forEach(opt => opt._deselect());
         this._group.add(option);
     }
     /**
@@ -4060,7 +4509,7 @@ class CvsOptionGroup {
 class CvsOption extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 18);
+        super(gui, name, x, y, w, h, true);
         this._selected = false; // 0
         this._createDefaultIcons();
         this.invalidateBuffer();
@@ -4076,38 +4525,48 @@ class CvsOption extends CvsTextIcon {
         // False
         let ib = new OffscreenCanvas(s, s);
         let ic = ib.getContext('2d');
-        ic.clearRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.strokeStyle = FG;
-        ic.lineWidth = 2;
-        ic.beginPath();
-        ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
-        ic.fill();
-        ic.stroke();
+        if (ic) {
+            ic.clearRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.strokeStyle = FG;
+            ic.lineWidth = 2;
+            ic.beginPath();
+            ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
+            ic.fill();
+            ic.stroke();
+        }
         this._icons.push(ib);
         // True
         ib = new OffscreenCanvas(s, s);
         ic = ib.getContext('2d');
-        ic.clearRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.strokeStyle = FG;
-        ic.lineWidth = 2;
-        ic.beginPath();
-        ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
-        ic.fill();
-        ic.stroke();
-        ic.fillStyle = FG;
-        ic.beginPath();
-        ic.arc(ctr, ctr, r1, 0, 2 * Math.PI);
-        ic.fill();
+        if (ic) {
+            ic.clearRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.strokeStyle = FG;
+            ic.lineWidth = 2;
+            ic.beginPath();
+            ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
+            ic.fill();
+            ic.stroke();
+            ic.fillStyle = FG;
+            ic.beginPath();
+            ic.arc(ctr, ctr, r1, 0, 2 * Math.PI);
+            ic.fill();
+        }
         this._icons.push(ib);
         // Set icon to display
         this._icon = this._icons[Number(this._selected)];
         this.invalidateBuffer();
     }
     /**
-     * <p>Sets the icon and its alignment relative to any text in
-     * the control.</p>
+     * <p>Replaces the existing icons representing false / true states.</p>
+     * <p>The first parameter must be an array of 2 images [falseImage, trueImage]
+     * representing the state of the checkbox. It is recomended that the images
+     * the same size</p>
+     *
+     * If provided the last two paratmeters control the icon alignment within
+     * the control. </p>
+     *
      * <p>Processing constants are used to define the icon alignment.</p>
      * @param icons array of 2 icons [falseImage, trueImage]
      * @param alignH 'left', 'right' or 'center'
@@ -4175,6 +4634,8 @@ class CvsOption extends CvsTextIcon {
      * @returns this control
      */
     group(optGroupName) {
+        const og = this._gui.getOptionGroup(optGroupName);
+        // if (og)
         this._optGroup = this._gui.getOptionGroup(optGroupName);
         this._optGroup._add(this);
         return this;
@@ -4221,6 +4682,11 @@ class CvsOption extends CvsTextIcon {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -4231,10 +4697,8 @@ class CvsOption extends CvsTextIcon {
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
-        const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
-        uic.clearRect(0, 0, this._w, this._h);
         // Background
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -4263,9 +4727,12 @@ class CvsOption extends CvsTextIcon {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -4275,7 +4742,6 @@ class CvsOption extends CvsTextIcon {
     }
     /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
 }
-Object.assign(CvsOption.prototype, PICKABLE);
 //# sourceMappingURL=option.js.map
 /**
  * This class supports simple true-false checkbox
@@ -4283,7 +4749,7 @@ Object.assign(CvsOption.prototype, PICKABLE);
 class CvsCheckbox extends CvsTextIcon {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 18);
+        super(gui, name, x, y, w, h, true);
         this._selected = false; // 0
         this._createDefaultIcons();
         this.invalidateBuffer();
@@ -4297,33 +4763,43 @@ class CvsCheckbox extends CvsTextIcon {
         // False
         let ib = new OffscreenCanvas(s, s);
         let ic = ib.getContext('2d');
-        ic.fillStyle = FG;
-        ic.fillRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.fillRect(2, 2, s - 4, s - 4);
+        if (ic) {
+            ic.fillStyle = FG;
+            ic.fillRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.fillRect(2, 2, s - 4, s - 4);
+        }
         this._icons.push(ib);
         // True
         ib = new OffscreenCanvas(s, s);
         ic = ib.getContext('2d');
-        ic.fillStyle = FG;
-        ic.fillRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.fillRect(2, 2, s - 4, s - 4);
-        ic.beginPath();
-        ic.strokeStyle = FG;
-        ic.lineWidth = 2.5;
-        ic.moveTo(0.2 * s, 0.55 * s);
-        ic.lineTo(0.45 * s, 0.75 * s);
-        ic.lineTo(0.8 * s, 0.2 * s);
-        ic.stroke();
+        if (ic) {
+            ic.fillStyle = FG;
+            ic.fillRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.fillRect(2, 2, s - 4, s - 4);
+            ic.beginPath();
+            ic.strokeStyle = FG;
+            ic.lineWidth = 2.5;
+            ic.moveTo(0.2 * s, 0.55 * s);
+            ic.lineTo(0.45 * s, 0.75 * s);
+            ic.lineTo(0.8 * s, 0.2 * s);
+            ic.stroke();
+        }
         this._icons.push(ib);
         // Set icon to display
         this._icon = this._icons[Number(this._selected)];
         this.invalidateBuffer();
     }
     /**
-     * <p>Sets the icon and its alignment relative to any text in
-     * the control.</p>
+     * <p>Replaces the existing icons representing false / true states.</p>
+     * <p>The first parameter must be an array of 2 images [falseImage, trueImage]
+     * representing the state of the checkbox. It is recomended that the images
+     * the same size</p>
+     *
+     * If provided the last two paratmeters control the icon alignment within
+     * the control. </p>
+     *
      * <p>Processing constants are used to define the icon alignment.</p>
      * @param icons array of 2 icons [falseImage, trueImage]
      * @param alignH 'left', 'right' or 'center'
@@ -4426,6 +4902,11 @@ class CvsCheckbox extends CvsTextIcon {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -4436,10 +4917,8 @@ class CvsCheckbox extends CvsTextIcon {
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
-        const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
-        uic.clearRect(0, 0, this._w, this._h);
         // Background
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -4468,9 +4947,12 @@ class CvsCheckbox extends CvsTextIcon {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -4480,7 +4962,6 @@ class CvsCheckbox extends CvsTextIcon {
     }
     /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
 }
-Object.assign(CvsCheckbox.prototype, PICKABLE);
 //# sourceMappingURL=checkbox.js.map
 /**
  * <p>This control is used to scroll and zoom on an image.</p>
@@ -4495,7 +4976,7 @@ Object.assign(CvsCheckbox.prototype, PICKABLE);
 class CvsViewer extends CvsBufferedControl {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x, y, w, h);
+        super(gui, name, x, y, w, h, true);
         /** @hidden */ this._layers = [];
         /** @hidden */ this._hidden = new Set();
         // Layer width and height (pixels)
@@ -4509,12 +4990,14 @@ class CvsViewer extends CvsBufferedControl {
         /** @hidden */ this._scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
         /** @hidden */ this._frameWeight = 0;
         this._corners = [0, 0, 0, 0];
-        this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20).hide()
+        this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20);
+        this._scrH.hide()
             .setAction((info) => {
             this.view(info.value * this._lw, this._wcy);
             this.invalidateBuffer();
         });
-        this._scrV = gui.__scroller(this._id + "-scrV", w - 24, 4, h - 28, 20).orient('south').hide()
+        this._scrV = gui.__scroller(this._id + "-scrV", w - 24, 4, h - 28, 20);
+        this._scrV.orient('south').hide()
             .setAction((info) => {
             this.view(this._wcx, info.value * this._lh);
             this.invalidateBuffer();
@@ -4540,9 +5023,9 @@ class CvsViewer extends CvsBufferedControl {
                 let [w, h] = [this._w, this._h];
                 let sclrX = 0.25 * w, sclrY = 0.5 * h - 10;
                 let sclrW = 0.5 * w, sclrH = 20;
-                this._scaler = this._gui.slider(this._id + "-scaler", sclrX, sclrY, sclrW, sclrH)
-                    .weight(12)
-                    .hide()
+                this._scaler = this._gui.slider(this._id + "-scaler", sclrX, sclrY, sclrW, sclrH);
+                this._scaler.weight(12);
+                this._scaler.hide()
                     .setAction((info) => {
                     this._wscale = info.value;
                     this.invalidateBuffer();
@@ -4554,8 +5037,8 @@ class CvsViewer extends CvsBufferedControl {
                 };
             }
             // Now update the scroller
-            this._scaler.limits(low, high);
-            this._scaler.value(value);
+            this._scaler?.limits(low, high);
+            this._scaler?.value(value);
             this._wscale = value;
             // If we already have layers then update centre position
             if (this._lw > 0 && this._lh > 0) {
@@ -4643,7 +5126,7 @@ class CvsViewer extends CvsBufferedControl {
      * action on the viewer to report back changes to the view centre and/or scale
      * attributes.
     */
-    view(wcx, wcy, wscale) {
+    view(wcx, wcy, wscale = this._wscale) {
         function different(a, b) {
             return Math.abs(a - b) >= 0.001;
         }
@@ -4768,7 +5251,7 @@ class CvsViewer extends CvsBufferedControl {
         if (img.width != lw || img.height != lh) {
             let layer = new OffscreenCanvas(lw, lh);
             const ctx = layer.getContext('2d');
-            ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, lw, lh);
+            ctx?.drawImage(img, 0, 0, img.width, img.height, 0, 0, lw, lh);
             return layer;
         }
         return img;
@@ -4868,14 +5351,16 @@ class CvsViewer extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
         const [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
         const OPAQUE = cs.C$(2, this._alpha);
         const FRAME = cs.C$(7);
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -4914,9 +5399,13 @@ class CvsViewer extends CvsBufferedControl {
     }
     /** @hidden */
     _updatePickBuffer() {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         const [x, y, w, h] = [...this._pkBox];
         const c = this._gui.pickColor(this);
-        const pkc = this._pkcContext;
         pkc.save();
         pkc.fillStyle = 'white';
         pkc.fillRect(0, 0, this._w, this._h);
@@ -4939,7 +5428,10 @@ class CvsViewer extends CvsBufferedControl {
         let leftB = Math.min(bx0, bx1);
         let rightB = Math.max(bx0, bx1); // world edges
         if (botA <= topB || botB <= topA || rightA <= leftB || rightB <= leftA)
-            return { valid: false };
+            return {
+                valid: false, left: 0, right: 0, top: 0, bottom: 0,
+                width: 0, height: 0, offsetX: 0, offsetY: 0,
+            };
         let leftO = leftA < leftB ? leftB : leftA;
         let rightO = rightA > rightB ? rightB : rightA;
         let botO = botA > botB ? botB : botA;
@@ -4964,7 +5456,6 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
     /** @hidden */ corners(c) { return this.warn$('corners'); }
 }
-Object.assign(CvsViewer.prototype, PICKABLE);
 //# sourceMappingURL=viewer.js.map
 /**
  * This class supports a single line text entry field.
@@ -5003,9 +5494,7 @@ Object.assign(CvsViewer.prototype, PICKABLE);
 class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
-        /** @hidden */ this._nextActive = null;
-        /** @hidden */ this._linkIndex = undefined;
+        super(gui, name, x, y, w, h, true);
         /** @hidden */ this._linkOffset = 0;
         /** @hidden */ this._prevCsrIdx = 0;
         /** @hidden */ this._currCsrIdx = 0;
@@ -5027,7 +5516,7 @@ class CvsTextField extends CvsText {
      */
     index(idx, deltaIndex) {
         if (Number.isFinite(idx)) {
-            if (Number.isFinite(deltaIndex))
+            if (deltaIndex && Number.isFinite(deltaIndex))
                 this._linkOffset = deltaIndex;
             this._linkIndex = idx;
             if (!this._gui._links)
@@ -5043,7 +5532,7 @@ class CvsTextField extends CvsText {
      */
     noIndex() {
         if (Number.isFinite(this._linkIndex))
-            this._gui._links?.delete(this._linkIndex);
+            this._gui._links?.delete(Number(this._linkIndex));
         this._linkIndex = undefined;
         return this;
     }
@@ -5178,8 +5667,9 @@ class CvsTextField extends CvsText {
      * @hidden
      */
     _activateNext(offset) {
-        let links = this._gui._links, ctrl = null;
-        if (links) {
+        const links = this._gui._links;
+        let ctrl = null;
+        if (links && this._linkIndex) {
             let idx = this._linkIndex;
             do {
                 idx += offset;
@@ -5372,6 +5862,11 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const [isetH, isetV] = [Math.max(...cnrs) + ISET_H, 2 * ISET_V];
@@ -5382,10 +5877,7 @@ class CvsTextField extends CvsText {
         const DARK = cs.C$(9);
         const ACTIVE_BACK = cs.G$(0);
         let FORE = DARK;
-        // Prepare buffer
-        let uic = this._uicContext;
         uic.save();
-        uic.clearRect(0, 0, this._w, this._h);
         uic.font = this._cssFont;
         uic.textBaseline = 'top';
         // Draw background based on whether active or not
@@ -5460,9 +5952,12 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -5472,7 +5967,6 @@ class CvsTextField extends CvsText {
     }
     /** @hidden */ orient(a) { return this.warn$('orient'); }
 }
-Object.assign(CvsTextField.prototype, PICKABLE);
 //# sourceMappingURL=textfield.js.map
 /**
  * <p>This class simulates a multi-mode joystick. Each of the three possible
@@ -5540,7 +6034,7 @@ class CvsJoystick extends CvsBufferedControl {
       * @param h height
       */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        super(gui, name, x, y, w, h, true);
         this._size = Math.min(w, h);
         this._pr0 = 0.05 * this._size;
         this._pr1 = 0.40 * this._size;
@@ -5675,6 +6169,11 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
@@ -5688,11 +6187,6 @@ class CvsJoystick extends CvsBufferedControl {
         const ROD = cs.C$(7);
         const MARKERS = cs.C$(8);
         const DEAD_ZONE = cs.T$(2);
-        // this._clearBuffers();
-        let uib = this._uicBuffer;
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) {
             uic.beginPath();
@@ -5796,9 +6290,12 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */
     _updatePickBuffer(tx, ty, tSize) {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.translate(this._w / 2, this._h / 2);
         pkc.fillStyle = c.cssColor;
@@ -5809,7 +6306,6 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */ orient(dir) { return this.warn$('orient'); }
 }
-Object.assign(CvsJoystick.prototype, PICKABLE);
 //# sourceMappingURL=joystick.js.map
 /**
  * <p>This class represents a turnable knob with a surrounding status track
@@ -5828,7 +6324,7 @@ class CvsKnob extends CvsSlider {
      * @param h height
      */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        super(gui, name, x, y, w, h);
         // Mouse / touch mode
         /** @hidden */ this._mode = CvsKnob.X_MODE;
         /** @hidden */ this._sensitivity = 0.005;
@@ -6027,6 +6523,11 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         const OPAQUE = cs.C$(3, this._alpha);
@@ -6039,10 +6540,6 @@ class CvsKnob extends CvsSlider {
         const TICKS = cs.G$(8);
         const USED_TRACK = cs.G$(2);
         const UNUSED_TRACK = cs.T$(2);
-        let uib = this._uicBuffer;
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -6151,7 +6648,11 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
         pkc.translate(this._w / 2, this._h / 2);
@@ -6166,7 +6667,6 @@ class CvsKnob extends CvsSlider {
 /** @hidden */ CvsKnob.X_MODE = 1;
 /** @hidden */ CvsKnob.Y_MODE = 2;
 /** @hidden */ CvsKnob.A_MODE = 3;
-Object.assign(CvsKnob.prototype, PICKABLE);
 //# sourceMappingURL=knob.js.map
 /**
  * <p>This class represents a draggable panel that can be used to hold other
@@ -6194,7 +6694,7 @@ class CvsPanel extends CvsBufferedControl {
      * @param h height
      */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 100);
+        super(gui, name, x, y, w, h, true);
         /** @hidden */ this._canDragX = true;
         /** @hidden */ this._canDragY = true;
         /** @hidden */ this._constrainX = true;
@@ -6288,20 +6788,23 @@ class CvsPanel extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const OPAQUE = cs.C$(4, this._alpha);
         const HIGHLIGHT = cs.C$(9);
-        const uic = this._uicContext;
         uic.save();
-        uic.clearRect(0, 0, this._w, this._h);
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
             uic.beginPath();
             uic.roundRect(0, 0, this._w, this._h, cnrs);
             uic.fill();
         }
-        if (this.over) {
+        if (this.isDraggable && this.over) {
             uic.strokeStyle = HIGHLIGHT;
             uic.lineWidth = 2;
             uic.beginPath();
@@ -6315,9 +6818,12 @@ class CvsPanel extends CvsBufferedControl {
     }
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -6332,7 +6838,6 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
     /** @hidden */ orient(a) { return this.warn$('orient'); }
 }
-Object.assign(CvsPanel.prototype, PICKABLE);
 //# sourceMappingURL=panel.js.map
 /*
 ##############################################################################
@@ -6343,7 +6848,7 @@ Object.assign(CvsPanel.prototype, PICKABLE);
 class CvsPane extends CvsControl {
     /** @hidden */
     constructor(gui, id, x, y, w, h) {
-        super(gui, id, x, y, w, h);
+        super(gui, id, x, y, w, h, true);
         this._x = x;
         this._y = y;
         this._w = w;
@@ -6378,11 +6883,12 @@ class CvsPane extends CvsControl {
     }
     createTabButton(orient, corners) {
         if (this._children.length === 0) {
-            const tab = this._gui.button(`Tab ${CvsPane._TAB_ID++}`);
-            tab.corners(corners)
-                .orient(orient)
-                .text(tab.id)
-                .setAction(this._tabAction);
+            const tabid = `Tab ${CvsPane._TAB_ID++}`;
+            const tab = this._gui.button(tabid, 0, 0, 80, this.HEIGHT);
+            tab.corners(corners);
+            tab.orient(orient);
+            tab.text(tab.id);
+            tab.setAction(this._tabAction);
             this._gui.invalidateTabs();
             this.addChild(tab);
         }
@@ -6610,7 +7116,7 @@ class CvsPane extends CvsControl {
     /** @hidden */
     _draw(guiCtx, pkCtx) {
         let cs = (this.TAB.scheme() || this._gui.scheme());
-        const BACKGROUND = cs.C$(9, 176);
+        const BACKGROUND = cs.C$(9, 208);
         let c = this._gui.pickColor(this);
         guiCtx.save();
         guiCtx.translate(this._x, this._y);
@@ -6811,18 +7317,18 @@ class CvsPaneWest extends CvsPane {
     }
 }
 //# sourceMappingURL=panes.js.map
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var _CvsPoster_taggedText, _CvsPoster_words, _CvsPoster_fonts, _CvsPoster_colors, _CvsPoster_wrapW, _CvsPoster_icons, _CvsPoster_backStyle, _Poster_Icon_icon, _Poster_Icon_x, _Poster_Icon_y, _Poster_Line_words, _Poster_Line_align, _Poster_Line_lAscent, _Poster_Line_lHeight, _Poster_Line_gap, _Poster_Line_indent, _Poster_Line_wrapW, _Poster_Para_tokens, _Poster_Para_align, _Poster_Para_gap, _Poster_Para_indent, _Poster_Para_wrapW, _Poster_Ascii_ascii, _Poster_Ascii_x, _Poster_Ascii_y, _Poster_Ascii_w, _Poster_Ascii_h, _Poster_Ascii_a, _Poster_Ascii_cssFont, _Poster_Ascii_glyphStrokeWidth, _Poster_Ascii_glyphStroke, _Poster_Ascii_glyphFill, _Poster_Tag_id, _Poster_Tag_attrs, _Poster_State_font, _Poster_State_size, _Poster_State_style, _Poster_State_slant, _Poster_State_glyphStrokeWidth, _Poster_State_glyphStroke, _Poster_State_glyphFill, _Poster_Stack_stack;
+var _CvsPoster_taggedText, _CvsPoster_words, _CvsPoster_fonts, _CvsPoster_colors, _CvsPoster_wrapW, _CvsPoster_isetHorz, _CvsPoster_isetVert, _CvsPoster_icons, _CvsPoster_backStyle, _Poster_Icon_icon, _Poster_Icon_x, _Poster_Icon_y, _Poster_Line_words, _Poster_Line_align, _Poster_Line_lAscent, _Poster_Line_lHeight, _Poster_Line_gap, _Poster_Line_indent, _Poster_Line_wrapW, _Poster_Line_leading, _Poster_Para_tokens, _Poster_Para_align, _Poster_Para_gap, _Poster_Para_indent, _Poster_Para_wrapW, _Poster_Para_leading, _Poster_Ascii_ascii, _Poster_Ascii_x, _Poster_Ascii_y, _Poster_Ascii_w, _Poster_Ascii_h, _Poster_Ascii_a, _Poster_Ascii_cssFont, _Poster_Ascii_glyphStrokeWidth, _Poster_Ascii_glyphStroke, _Poster_Ascii_glyphFill, _Poster_Tag_id, _Poster_Tag_attrs, _Poster_State_font, _Poster_State_size, _Poster_State_style, _Poster_State_slant, _Poster_State_glyphStrokeWidth, _Poster_State_glyphStroke, _Poster_State_glyphFill, _Poster_Stack_stack;
 /**
  * <p>This control creates a text-based poster where the user has full control
  * over the font-face, text size, text sty</p>
@@ -6842,27 +7348,58 @@ var _CvsPoster_taggedText, _CvsPoster_words, _CvsPoster_fonts, _CvsPoster_colors
 class CvsPoster extends CvsBufferedControl {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 320, h || 240);
+        super(gui, name, x, y, w, h, false);
         /** @hidden */ _CvsPoster_taggedText.set(this, '');
         /** @hidden */ _CvsPoster_words.set(this, []);
-        /** @hidden */ _CvsPoster_fonts.set(this, GENERIC_FONTS());
+        /** @hidden */ _CvsPoster_fonts.set(this, FONT_FAMILIES());
         /** @hidden */ _CvsPoster_colors.set(this, new Array(3));
         /** @hidden */ _CvsPoster_wrapW.set(this, void 0);
+        /** @hidden */ _CvsPoster_isetHorz.set(this, 3);
+        /** @hidden */ _CvsPoster_isetVert.set(this, 2);
         /** @hidden */ _CvsPoster_icons.set(this, []);
         /** @hidden */ _CvsPoster_backStyle.set(this, 2);
-        __classPrivateFieldSet(this, _CvsPoster_wrapW, this._w - 2 * ISET_H, "f");
+        __classPrivateFieldSet(this, _CvsPoster_wrapW, this._w - 2 * __classPrivateFieldGet(this, _CvsPoster_isetHorz, "f"), "f");
         __classPrivateFieldGet(this, _CvsPoster_colors, "f")[0] = 'transparent';
+        __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = this.SCHEME.C$(8);
+        __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = this.SCHEME.C$(3, this._alpha);
         this.invalidateBuffer();
     }
+    /** Get the number of fonts in this poster */
+    get fontCount() { return __classPrivateFieldGet(this, _CvsPoster_fonts, "f").length; }
+    /** Get the number of colors in this poster */
+    get colorCount() { return __classPrivateFieldGet(this, _CvsPoster_colors, "f").length; }
     /**
-     * This method accepts the tagged text which it formats and styles ready
-     * to display in the control.
+     * <p>If the name of a valid color scheme is provided then it will used
+     * to display this control, non-existant scheme names will be ignored. In
+     * both cases this control is returned.</p>
+     * <p>If there is no parameter it returns the name of the current color
+     * scheme used by this control.</p>
+     * @param name the color scheme name e.g. 'blue'
+     * @param cascade if true propogate scheme to all child controls.
+     * @returns this control or the control's color scheme
+     */
+    scheme(name, cascade) {
+        if (name) { // setter
+            super.scheme(name, false);
+            __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = this.SCHEME.C$(8);
+            __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = this.SCHEME.C$(3, this._alpha);
+            return this;
+        }
+        return this._scheme;
+    }
+    /**
+     * <p>This method accepts the tagged text which it formats and styles
+     * ready to display in the control.</p>
+     * <p>The text can be a single string or an array of strings. If it is an
+     * array then the elements will be concatenated using the 'separator'
+     * between elements.</p>
      *
      * @param text a string or an array of strings
+     * @param separator default value is an empty string.
      * @returns this control
      */
-    text(text) {
-        __classPrivateFieldSet(this, _CvsPoster_taggedText, Array.isArray(text) ? text.join('') : text, "f");
+    text(text, separator = '') {
+        __classPrivateFieldSet(this, _CvsPoster_taggedText, Array.isArray(text) ? text.join(separator) : text, "f");
         this.invalidateText();
         return this;
     }
@@ -6886,77 +7423,128 @@ class CvsPoster extends CvsBufferedControl {
         return this;
     }
     /**
-     * <p>By default the poster can use the logical fonts -</p>
+     * <p>By default the user can select from one the logical fonts -</p>
      * <ul>
      * <li>ft0 'serif'</li>
      * <li>ft1 'sans-serif'</li>
      * <li>ft2 'monospace'</li>
-     * <li>ft3 'cursive'</li>
-     * <li>ft4 'fantasy'</li>
+     * <li>ft3 'fantasy'</li>
+     * <li>ft4 'cursive'</li>
      * </ul>
-     * <p>This method allows the user to append additional font(s).</p>
+     * <p>This method allows the user to replace or append to any existing
+     * font(s).</p>
      *
-     * @param fonts a font or an array of fonts
+     * @param fonts an array of one or more fonts.
+     * @param replace if true existing fonts are replaced but if false (default)
+     * the fonts are appended to existing fonts.
      * @returns this control
      */
-    fonts(fonts) {
-        let ffs = Array.isArray(fonts) ? fonts : [fonts];
-        ffs = ffs.map(ff => cvsGuiFont(ff));
-        __classPrivateFieldSet(this, _CvsPoster_fonts, __classPrivateFieldGet(this, _CvsPoster_fonts, "f").concat(...ffs), "f");
-        this.invalidateText();
-        return this;
+    fonts(fonts, replace = false) {
+        if (fonts) {
+            let data = Array.isArray(fonts) ? Array.from(fonts) : [fonts];
+            data = data.filter(x => x !== undefined && x !== null);
+            let fontList = data.map(ff => cvsGuiFont(ff));
+            if (fontList.length > 0) {
+                if (replace)
+                    __classPrivateFieldSet(this, _CvsPoster_fonts, fontList, "f");
+                else
+                    __classPrivateFieldSet(this, _CvsPoster_fonts, __classPrivateFieldGet(this, _CvsPoster_fonts, "f").concat(...fontList), "f");
+                this.invalidateText();
+            }
+            return this;
+        }
+        return Array.from(__classPrivateFieldGet(this, _CvsPoster_fonts, "f"));
     }
     /**
-     * <p>By default the poster can use the colors  -</p>
+     * <p>By default the user can select one of the following colors  -</p>
      * <ul>
      * <li>gf0 'transparent'</li>
      * <li>gf1 the poster's color scheme text color</li>
      * <li>gf2 the poster's color scheme opaque color</li>
      * </ul>
-     * <p>This method allows the user to append additional color(s).</p>
+     * <p>This method allows the user to replace or append to any existing
+     * color(s).</p>
+     *
+     * @param colors a color or an array of CSS color definitions.
+     * @param replace if true existing colors are replaced but if false (default)
+     * the colors are appended to existing colors.
      * @returns this control
      */
-    colors(colors) {
-        let clrs = Array.isArray(colors) ? colors : [colors];
-        clrs = clrs.map(ff => cvsGuiColor(ff));
-        __classPrivateFieldSet(this, _CvsPoster_colors, __classPrivateFieldGet(this, _CvsPoster_colors, "f").concat(...clrs), "f");
-        this.invalidateBuffer();
-        return this;
+    colors(colors, replace = false) {
+        if (colors) {
+            let data = Array.isArray(colors) ? Array.from(colors) : [colors];
+            data = data.filter(x => x.length > 0);
+            let colorList = data.map(ff => cvsGuiColor(ff));
+            if (colorList.length > 0) {
+                if (replace)
+                    __classPrivateFieldSet(this, _CvsPoster_colors, colorList, "f");
+                else
+                    __classPrivateFieldSet(this, _CvsPoster_colors, __classPrivateFieldGet(this, _CvsPoster_colors, "f").concat(...colorList), "f");
+                this.invalidateBuffer();
+            }
+            return this;
+        }
+        return Array.from(__classPrivateFieldGet(this, _CvsPoster_colors, "f"));
     }
     /**
      * <p>This sets the background color to be used when the poster has been set
      * to opaque by calling the 'opaque(alpha)' function.</p>
      * <If no index value is passed to the function then the default value 2
-     * is used which correseponds the scheme color and alpha (transparency) value
-     * specified in the call to the 'opaque(alpha)' function.</p>
+     * is used which correseponds the scheme color and alpha (transparency)
+     * value specified in the call to the 'opaque(alpha)' function.</p>
      * <p>This method has no effect if the poster state is transparent.</p>
      *
      * @param index the index into the colors array
      * @returns this control
      */
-    backStyle(index = 2) {
+    background(index = 2) {
         __classPrivateFieldSet(this, _CvsPoster_backStyle, index % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length, "f");
         return this;
     }
+    /**
+     * Sets the internal margins to use when formating text.
+     * @param mgnX left / right margin
+     * @param mgnY top margin
+     * @returns this control;
+     */
+    margins(mgnX = 0, mgnY = mgnX) {
+        __classPrivateFieldSet(this, _CvsPoster_isetHorz, mgnX, "f");
+        __classPrivateFieldSet(this, _CvsPoster_isetVert, mgnY, "f");
+        __classPrivateFieldSet(this, _CvsPoster_wrapW, this._w - 2 * mgnX, "f");
+        this.invalidateText();
+        return this;
+    }
+    /**
+     * The maximum line length (pixels) possible. The length depends on the
+     * poster width and the horizontal margins.
+     */
+    get wrapWidth() { return __classPrivateFieldGet(this, _CvsPoster_wrapW, "f"); }
     /**
      * Parses the raw text into tokens (Tag and Ascii objects)
      * @returns the list of tokens
      * @hidden
      */
     _makeTokens() {
-        function findTokens(chunk, pw) {
-            if (chunk.startsWith("<")) {
-                chunk = chunk.substring(1, chunk.length - 1);
-                chunk.split(/\s+/g)
-                    .forEach(m => tokens.push(new Poster_Tag(m, pw)));
-            }
-            else
-                tokens.push(new Poster_Ascii(chunk));
+        function getChunks(tagtxt) {
+            const tagPtn = /<[a-zA-Z0-9 .:-]+>|\s+|[^&<> ]+/gu;
+            let ch = tagtxt.match(tagPtn);
+            return ch ? ch.map(t => String(t)) : [];
         }
-        const tokens = [];
-        const tagPtn = /&\w+;|<[a-zA-Z0-9 .:]+>|\s+|[^&<> ]+/ug;
-        const matches = __classPrivateFieldGet(this, _CvsPoster_taggedText, "f").match(tagPtn);
-        matches.forEach(m => findTokens(m, __classPrivateFieldGet(this, _CvsPoster_wrapW, "f")));
+        function getTokens(chunks, pw) {
+            const tokens = [];
+            chunks.forEach(chunk => {
+                if (chunk.startsWith("<")) {
+                    chunk = chunk.substring(1, chunk.length - 1);
+                    chunk.split(/\s+/g)
+                        .forEach(m => tokens.push(new Poster_Tag(String(m), pw)));
+                }
+                else
+                    tokens.push(new Poster_Ascii(chunk));
+            });
+            return tokens;
+        }
+        const chunks = getChunks(__classPrivateFieldGet(this, _CvsPoster_taggedText, "f"));
+        const tokens = getTokens(chunks, __classPrivateFieldGet(this, _CvsPoster_wrapW, "f"));
         return tokens;
     }
     /** @hidden */
@@ -6964,10 +7552,10 @@ class CvsPoster extends CvsBufferedControl {
         const paras = [];
         let para;
         if (!tokens[0].isParaTag)
-            paras.push(para = new Poster_Para('pc', 0, 0, __classPrivateFieldGet(this, _CvsPoster_wrapW, "f")));
+            paras.push(para = new Poster_Para('pc', 0, 0, __classPrivateFieldGet(this, _CvsPoster_wrapW, "f"), 0));
         tokens.forEach(tkn => {
             if (tkn.isParaTag)
-                paras.push(para = new Poster_Para(tkn.id, tkn.value, tkn.indent, tkn.wrapW));
+                paras.push(para = new Poster_Para(tkn.id, tkn.value, tkn.indent, tkn.wrapW, tkn.leading));
             else
                 para.tokens.push(tkn);
         });
@@ -6980,10 +7568,15 @@ class CvsPoster extends CvsBufferedControl {
         stack.push(state);
         paras.forEach(para => {
             const asciiTokens = [];
-            para.tokens.forEach(tkn => {
+            para.tokens.forEach((tkn) => {
                 if (tkn instanceof Poster_Tag && TAGS.has(tkn.id)) {
                     switch (tkn.id) {
-                        case 'o':
+                        case 'ol': // left slant
+                            state.slant = -tkn.value;
+                            state.style = TAGS.get(tkn.id);
+                            break;
+                        case 'or': // right slant
+                        case 'o': // right slant
                             state.slant = tkn.value;
                         case 'n':
                         case 't':
@@ -7025,31 +7618,35 @@ class CvsPoster extends CvsBufferedControl {
     }
     /** @hidden */
     _measureText(paras) {
-        const uic = this._uicContext;
-        uic.save();
-        uic.textBaseline = 'alphabetic';
-        paras.forEach(para => {
-            para.tokens.forEach(tkn => {
-                uic.save();
-                uic.font = tkn.cssFont;
-                let tm = textMetrics(uic, tkn.ascii);
-                tkn.width = tm.fWidth;
-                tkn.height = tm.fHeight;
-                tkn.ascent = tm.fAscent;
-                uic.restore();
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (uic) {
+            uic.save();
+            uic.textBaseline = 'alphabetic';
+            paras.forEach(para => {
+                para.tokens.forEach((tkn) => {
+                    uic.save();
+                    uic.font = tkn.cssFont;
+                    let tm = textMetrics(uic, tkn.ascii);
+                    tkn.width = tm.fWidth;
+                    tkn.height = tm.fHeight;
+                    tkn.ascent = tm.fAscent;
+                    uic.restore();
+                });
             });
-        });
-        uic.restore();
+            uic.restore();
+        }
     }
     /** @hidden */
     _splitIntoLines(paras) {
         const lines = [];
         paras.forEach(para => {
-            let line, advance = 0;
-            lines.push(line = new Poster_Line(para.align, para.gap, para.indent, para.wrapW));
-            para.tokens.forEach(ascii => {
+            let line;
+            let advance = 0;
+            lines.push(line = new Poster_Line(para.gap, para));
+            para.tokens.forEach((ascii) => {
                 if (advance + ascii.width > line.wrapW) { // Start a new line
-                    lines.push(line = new Poster_Line(para.align, 0, para.indent, para.wrapW));
+                    lines.push(line = new Poster_Line(0, para));
                     advance = 0;
                     if (ascii.isAscii) {
                         ascii.x = advance;
@@ -7074,7 +7671,7 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */
     _positionWords(lines) {
         const words = [];
-        let py = lines[0].ascent + 2 * ISET_V;
+        let py = lines[0].ascent + 2 * __classPrivateFieldGet(this, _CvsPoster_isetVert, "f");
         lines.forEach(line => {
             const ww = line.wrapW;
             const px = line.indent;
@@ -7092,16 +7689,16 @@ class CvsPoster extends CvsBufferedControl {
                     break;
                 case 'justified':
                     sx = px;
-                    if (line.nbrWords >= 2 && line.length / ww > 0 / 75)
+                    if (line.nbrWords >= 2 && line.length / ww > 0.75)
                         dx = (ww - line.length) / (line.nbrWords - 1);
             }
-            sx += ISET_H;
+            sx += __classPrivateFieldGet(this, _CvsPoster_isetHorz, "f");
             for (let i = 0; i < line.nbrWords; i++) {
                 line.words[i].x += sx + i * dx;
                 line.words[i].y = py;
                 words.push(line.words[i]);
             }
-            py += line.height + 3;
+            py += line.height + line.leading;
         });
         return words;
     }
@@ -7117,19 +7714,22 @@ class CvsPoster extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
         const cs = this.SCHEME;
-        // Color scheme fore color
+        // Color scheme fore and opaque colors
         __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = cs.C$(8);
-        // Color scheme opaque color
         __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = cs.C$(3, this._alpha);
+        const OPAQUE = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[__classPrivateFieldGet(this, _CvsPoster_backStyle, "f")];
         const cnrs = this.CNRS;
-        const uic = this._uicContext;
-        uic.clearRect(0, 0, this._w, this._h);
         if (this._opaque && __classPrivateFieldGet(this, _CvsPoster_backStyle, "f") != 0) {
             uic.save();
-            uic.fillStyle = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[__classPrivateFieldGet(this, _CvsPoster_backStyle, "f")];
+            uic.fillStyle = OPAQUE;
             uic.beginPath();
             uic.roundRect(0, 0, this._w, this._h, ...cnrs);
             uic.fill();
@@ -7139,14 +7739,16 @@ class CvsPoster extends CvsBufferedControl {
         __classPrivateFieldGet(this, _CvsPoster_icons, "f").forEach(i => uic.drawImage(i.icon, i.x, i.y));
         uic.textBaseline = 'alphabetic';
         __classPrivateFieldGet(this, _CvsPoster_words, "f").forEach(word => {
-            if (word.fill > 0) {
-                uic.font = word.cssFont;
-                uic.fillStyle = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[word.fill % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length];
+            uic.font = word.cssFont;
+            const fill = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[word.fill % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length];
+            if (fill !== 'transparent') {
+                uic.fillStyle = fill; //this.#colors[word.fill % this.#colors.length];
                 uic.fillText(word.ascii, word.x, word.y);
             }
-            if (word.strokeWidth > 0) {
+            const stroke = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[word.stroke % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length];
+            if (stroke !== 'transparent') {
                 uic.lineWidth = word.strokeWidth;
-                uic.strokeStyle = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[word.stroke % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length];
+                uic.strokeStyle = stroke; //this.#colors[word.stroke % this.#colors.length];
                 uic.strokeText(word.ascii, word.x, word.y);
             }
         });
@@ -7159,7 +7761,10 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
 } // End of CvsPoster class
-_CvsPoster_taggedText = new WeakMap(), _CvsPoster_words = new WeakMap(), _CvsPoster_fonts = new WeakMap(), _CvsPoster_colors = new WeakMap(), _CvsPoster_wrapW = new WeakMap(), _CvsPoster_icons = new WeakMap(), _CvsPoster_backStyle = new WeakMap();
+_CvsPoster_taggedText = new WeakMap(), _CvsPoster_words = new WeakMap(), _CvsPoster_fonts = new WeakMap(), _CvsPoster_colors = new WeakMap(), _CvsPoster_wrapW = new WeakMap(), _CvsPoster_isetHorz = new WeakMap(), _CvsPoster_isetVert = new WeakMap(), _CvsPoster_icons = new WeakMap(), _CvsPoster_backStyle = new WeakMap();
+// ##################################################################
+//        Supporting classes for formating text & icons
+// ##################################################################
 class Poster_Icon {
     constructor(icon, x = 0, y = 0) {
         _Poster_Icon_icon.set(this, void 0);
@@ -7176,7 +7781,7 @@ class Poster_Icon {
 _Poster_Icon_icon = new WeakMap(), _Poster_Icon_x = new WeakMap(), _Poster_Icon_y = new WeakMap();
 /** @hidden */
 class Poster_Line {
-    constructor(align, gap, indent, wrapW) {
+    constructor(gap, para) {
         _Poster_Line_words.set(this, []);
         _Poster_Line_align.set(this, void 0);
         _Poster_Line_lAscent.set(this, 0);
@@ -7184,10 +7789,12 @@ class Poster_Line {
         _Poster_Line_gap.set(this, 0);
         _Poster_Line_indent.set(this, 0);
         _Poster_Line_wrapW.set(this, 0);
-        __classPrivateFieldSet(this, _Poster_Line_align, align, "f");
+        _Poster_Line_leading.set(this, 0);
         __classPrivateFieldSet(this, _Poster_Line_gap, gap, "f");
-        __classPrivateFieldSet(this, _Poster_Line_indent, indent, "f");
-        __classPrivateFieldSet(this, _Poster_Line_wrapW, wrapW, "f");
+        __classPrivateFieldSet(this, _Poster_Line_align, para.align, "f");
+        __classPrivateFieldSet(this, _Poster_Line_indent, para.indent, "f");
+        __classPrivateFieldSet(this, _Poster_Line_wrapW, para.wrapW, "f");
+        __classPrivateFieldSet(this, _Poster_Line_leading, para.leading, "f");
     }
     get words() { return __classPrivateFieldGet(this, _Poster_Line_words, "f"); }
     ;
@@ -7217,6 +7824,8 @@ class Poster_Line {
     ;
     get height() { return __classPrivateFieldGet(this, _Poster_Line_lHeight, "f"); }
     ;
+    set leading(ld) { __classPrivateFieldSet(this, _Poster_Line_leading, ld, "f"); }
+    get leading() { return __classPrivateFieldGet(this, _Poster_Line_leading, "f"); }
     get length() {
         if (__classPrivateFieldGet(this, _Poster_Line_words, "f").length > 0) {
             let word = __classPrivateFieldGet(this, _Poster_Line_words, "f")[__classPrivateFieldGet(this, _Poster_Line_words, "f").length - 1];
@@ -7227,26 +7836,27 @@ class Poster_Line {
     }
     addWord(word) { __classPrivateFieldGet(this, _Poster_Line_words, "f").push(word); }
     toString() {
-        let [aln, indent, wrapW, asc, hgt, len] = [this.align, this.indent, this.wrapW,
+        const [aln, indent, wrapW, asc, hgt, len] = [this.align, this.indent, this.wrapW,
             Math.round(this.ascent), Math.round(this.height), Math.round(this.length)];
-        let s = `LINE  "${aln}"  Len: ${len}  Height: ${hgt}  Ascent: ${asc}  Indent: ${indent}  Wrap: ${wrapW} \n`;
-        // this.#words.forEach(word => s += word.toString() + '\n');
-        return s;
+        return `LINE  "${aln}"  Len: ${len}  Height: ${hgt}  Ascent: ${asc}`
+            + `  Indent: ${indent}  Wrap: ${wrapW} \n`;
     }
 }
-_Poster_Line_words = new WeakMap(), _Poster_Line_align = new WeakMap(), _Poster_Line_lAscent = new WeakMap(), _Poster_Line_lHeight = new WeakMap(), _Poster_Line_gap = new WeakMap(), _Poster_Line_indent = new WeakMap(), _Poster_Line_wrapW = new WeakMap();
+_Poster_Line_words = new WeakMap(), _Poster_Line_align = new WeakMap(), _Poster_Line_lAscent = new WeakMap(), _Poster_Line_lHeight = new WeakMap(), _Poster_Line_gap = new WeakMap(), _Poster_Line_indent = new WeakMap(), _Poster_Line_wrapW = new WeakMap(), _Poster_Line_leading = new WeakMap();
 /** @hidden */
 class Poster_Para {
-    constructor(tagId = 'pc', gap, indent, wrapW) {
+    constructor(tagId = 'pc', gap, indent, wrapW, leading) {
         _Poster_Para_tokens.set(this, []);
         _Poster_Para_align.set(this, 'center');
         _Poster_Para_gap.set(this, 0);
         _Poster_Para_indent.set(this, 0);
         _Poster_Para_wrapW.set(this, 0);
+        _Poster_Para_leading.set(this, 0);
         __classPrivateFieldSet(this, _Poster_Para_align, TAGS.get(tagId), "f");
         __classPrivateFieldSet(this, _Poster_Para_gap, gap, "f");
         __classPrivateFieldSet(this, _Poster_Para_indent, indent, "f");
         __classPrivateFieldSet(this, _Poster_Para_wrapW, wrapW, "f");
+        __classPrivateFieldSet(this, _Poster_Para_leading, leading, "f");
     }
     get tokens() { return __classPrivateFieldGet(this, _Poster_Para_tokens, "f"); }
     set tokens(v) { __classPrivateFieldSet(this, _Poster_Para_tokens, v, "f"); }
@@ -7254,11 +7864,14 @@ class Poster_Para {
     get gap() { return __classPrivateFieldGet(this, _Poster_Para_gap, "f"); }
     get indent() { return __classPrivateFieldGet(this, _Poster_Para_indent, "f"); }
     get wrapW() { return __classPrivateFieldGet(this, _Poster_Para_wrapW, "f"); }
+    get leading() { return __classPrivateFieldGet(this, _Poster_Para_leading, "f"); }
     toString() {
-        return `PARAGRAPH (${__classPrivateFieldGet(this, _Poster_Para_align, "f")})   Gap: ${this.gap}   Indent: ${this.indent}   wrapW: ${this.wrapW}`;
+        return `PARAGRAPH (${__classPrivateFieldGet(this, _Poster_Para_align, "f")})   Gap: ${this.gap}   `
+            + `Indent: ${this.indent}   wrapW: ${this.wrapW}    `
+            + `leading: ${this.leading}`;
     }
 }
-_Poster_Para_tokens = new WeakMap(), _Poster_Para_align = new WeakMap(), _Poster_Para_gap = new WeakMap(), _Poster_Para_indent = new WeakMap(), _Poster_Para_wrapW = new WeakMap();
+_Poster_Para_tokens = new WeakMap(), _Poster_Para_align = new WeakMap(), _Poster_Para_gap = new WeakMap(), _Poster_Para_indent = new WeakMap(), _Poster_Para_wrapW = new WeakMap(), _Poster_Para_leading = new WeakMap();
 /** @hidden */
 class Poster_Ascii {
     get x() { return __classPrivateFieldGet(this, _Poster_Ascii_x, "f"); }
@@ -7306,13 +7919,8 @@ class Poster_Ascii {
         _Poster_Ascii_glyphStroke.set(this, 0);
         _Poster_Ascii_glyphFill.set(this, 0);
         __classPrivateFieldSet(this, _Poster_Ascii_cssFont, this.cssFont, "f");
-        if (chunk.startsWith("&")) {
-            __classPrivateFieldSet(this, _Poster_Ascii_ascii, CHAR_ENTITIES.has(chunk)
-                ? CHAR_ENTITIES.get(chunk) : chunk, "f");
-        }
-        else {
-            __classPrivateFieldSet(this, _Poster_Ascii_ascii, chunk, "f");
-        }
+        const ptn = /(&\w+;)/gu;
+        __classPrivateFieldSet(this, _Poster_Ascii_ascii, chunk.replace(ptn, m => CHAR_ENTITIES.get(m) || m), "f");
     }
     applyState(state) {
         this.cssFont = state.cssFont;
@@ -7321,10 +7929,11 @@ class Poster_Ascii {
         this.fill = state.fill;
     }
     toString() {
-        let s = `WORD   "${this.ascii}" \n`;
-        s += `          Font:     ${this.cssFont} \n`;
-        s += `          Pos:      (${this.x}, ${this.y})   Size: ${this.width} x ${this.height} \n`;
-        s += `          Ascent:   ${this.ascent} \n`;
+        const [x, y, w, h] = [this.x, this.y, this.width, this.height];
+        const [word, font, ascent, t] = [this.ascii, this.cssFont, this.ascent, '          '];
+        let s = `WORD   "${word}" \n${t}Font:     ${font} \n`;
+        s += `${t}Pos:      (${x}, ${y})   Size: ${w} x ${h} \n`;
+        s += `${t}Ascent:   ${ascent} \n`;
         return s;
     }
 }
@@ -7335,11 +7944,11 @@ class Poster_Tag {
         _Poster_Tag_id.set(this, '');
         _Poster_Tag_attrs.set(this, []);
         let m = tag.match(/[a-z]+|\S+/g);
-        __classPrivateFieldSet(this, _Poster_Tag_id, m.shift(), "f");
-        let tagParts = m.shift()?.split(/:{1}/);
-        let attrs = !tagParts ? [0, 0, 0] : tagParts.map(x => Number(x));
-        attrs = attrs.concat([0, 0, 0]);
-        attrs.length = 3;
+        __classPrivateFieldSet(this, _Poster_Tag_id, m ? String(m.shift()) : '?', "f");
+        let tagParts = m ? m.shift()?.split(/:{1}/) : undefined;
+        let attrs = !tagParts ? [0, 0, 0, 0] : tagParts.map(x => Number(x));
+        attrs = attrs.concat([0, 0, 0, 0]);
+        attrs.length = 4;
         const reqd = attrs[1] + attrs[2];
         if (this.isParaTag) {
             // [1] = indent     [2] = wrap length
@@ -7360,10 +7969,11 @@ class Poster_Tag {
     get value() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[0]; }
     get indent() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[1]; }
     get wrapW() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[2]; }
+    get leading() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[3]; }
     get isParaTag() { return Boolean(__classPrivateFieldGet(this, _Poster_Tag_id, "f").match(/^p[lrcj]/)); }
     toString() {
         let s = `TAG id: "${__classPrivateFieldGet(this, _Poster_Tag_id, "f")}" (para tag? ${this.isParaTag})  `;
-        s += `Value: ${this.value}   Indent: ${this.indent}   Line length: ${this.wrapW}`;
+        s += `Value: ${this.value}   Indent: ${this.indent}   Line length: ${this.wrapW}  Leading: ${this.leading}`;
         return s;
     }
 }

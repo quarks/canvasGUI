@@ -11,15 +11,12 @@ class CvsText extends CvsBufferedControl {
     /** @hidden */
     get T_STYLE() { return this._tStyle || this._gui._tStyle; }
     /** @hidden */
-    constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+    constructor(gui, name, x, y, w, h, pickable) {
+        super(gui, name, x, y, w, h, pickable);
         /** @hidden */ this._tLines = [];
         /** @hidden */ this._tBox = [0, 0];
         /** @hidden */ this._tAlignH = "center";
         /** @hidden */ this._tAlignV = "center";
-        /** @hidden */ this._tFace = undefined;
-        /** @hidden */ this._tSize = undefined;
-        /** @hidden */ this._tStyle = undefined;
         /** @hidden */ this._tSlant = 14;
         /** @hidden */ this._tArea = [];
         this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
@@ -75,7 +72,7 @@ class CvsText extends CvsBufferedControl {
             this.invalidateText();
         }
         else
-            CWARN(`'${font.toString()}' is unrecognized so will be ignored!`);
+            CWARN(`'${font?.toString()}' is unrecognized so will be ignored!`);
         return this;
     }
     /**
@@ -100,7 +97,7 @@ class CvsText extends CvsBufferedControl {
      * @param slant the oblique slant angle (degrees)
      * @returns this control
      */
-    textStyle(style, slant) {
+    textStyle(style, slant = 0) {
         if (!style)
             return this._tStyle; // getter
         style = _validateTextStyle(style);
@@ -194,7 +191,7 @@ class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _textMetrics(str) {
-        const uic = this._uicContext;
+        const uic = this._uicBuffer.getContext('2d');
         uic.save();
         uic.font = this._cssFont;
         let tm = uic.measureText(str);
@@ -264,10 +261,10 @@ class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _calcTextBox() {
-        let c = this._uicContext;
-        c.save();
-        c.font = this._cssFont;
-        c.textBaseline = 'alphabetic';
+        const uic = this._uicBuffer.getContext('2d');
+        uic.save();
+        uic.font = this._cssFont;
+        uic.textBaseline = 'alphabetic';
         let ln = 0, maxW = 0, maxH = 0, tm;
         this._tLines.forEach(line => {
             tm = this._textMetrics(line.txt);
@@ -291,7 +288,7 @@ class CvsText extends CvsBufferedControl {
             }
         });
         maxH = tm ? this._tLines.length * tm.fHeight : 0;
-        c.restore();
+        uic.restore();
         return { boxW: maxW, boxH: maxH };
     }
     /**
@@ -300,7 +297,7 @@ class CvsText extends CvsBufferedControl {
      * @hidden
      */
     _renderTextArea(tcolor) {
-        const c = this._uicContext;
+        const uic = this._uicBuffer.getContext('2d');
         const [tx, ty, tw, th] = [...this._tArea];
         const [bw, bh] = [...this._tBox];
         let px = tx, py = ty;
@@ -320,17 +317,17 @@ class CvsText extends CvsBufferedControl {
                 py += (th - bh) / 2;
                 break;
         }
-        c.save();
-        c.beginPath();
-        c.rect(tx, ty, tw, th);
-        c.clip();
-        c.textBaseline = 'alphabetic';
-        c.font = this._cssFont;
-        c.fillStyle = tcolor;
+        uic.save();
+        uic.beginPath();
+        uic.rect(tx, ty, tw, th);
+        uic.clip();
+        uic.textBaseline = 'alphabetic';
+        uic.font = this._cssFont;
+        uic.fillStyle = tcolor;
         this._tLines.forEach(line => {
-            c.fillText(line.txt, line.x + px, line.y + py);
+            uic.fillText(line.txt, line.x + px, line.y + py);
         });
-        c.restore();
+        uic.restore();
     }
 }
 //# sourceMappingURL=text.js.map

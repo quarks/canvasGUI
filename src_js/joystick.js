@@ -64,7 +64,7 @@ class CvsJoystick extends CvsBufferedControl {
       * @param h height
       */
     constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 40, h || 40);
+        super(gui, name, x, y, w, h, true);
         this._size = Math.min(w, h);
         this._pr0 = 0.05 * this._size;
         this._pr1 = 0.40 * this._size;
@@ -199,6 +199,11 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */
     _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
@@ -212,11 +217,6 @@ class CvsJoystick extends CvsBufferedControl {
         const ROD = cs.C$(7);
         const MARKERS = cs.C$(8);
         const DEAD_ZONE = cs.T$(2);
-        // this._clearBuffers();
-        let uib = this._uicBuffer;
-        let uic = this._uicContext;
-        this._clearUiBuffer();
-        this._clearPickBuffer();
         uic.save();
         if (this._opaque) {
             uic.beginPath();
@@ -320,9 +320,12 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */
     _updatePickBuffer(tx, ty, tSize) {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.translate(this._w / 2, this._h / 2);
         pkc.fillStyle = c.cssColor;
@@ -333,5 +336,4 @@ class CvsJoystick extends CvsBufferedControl {
     }
     /** @hidden */ orient(dir) { return this.warn$('orient'); }
 }
-Object.assign(CvsJoystick.prototype, PICKABLE);
 //# sourceMappingURL=joystick.js.map

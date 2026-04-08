@@ -9,8 +9,8 @@ abstract class CvsPane extends CvsControl {
     /** @hidden */ protected _status: string;
     /** @hidden */ protected _timer: number;
     /** @hidden */ protected _cnrRad: number;
-    /** @hidden */ protected _depth: number;
-    /** @hidden */ protected _tabMinHeight: number;
+    /** @hidden */ protected _depth!: number;
+    /** @hidden */ protected _tabMinHeight!: number;
 
     // Deltas used in controlling opening and closing speeds
     /** @hidden */ static _dI = 50;  // Interval time (50)
@@ -21,7 +21,7 @@ abstract class CvsPane extends CvsControl {
 
     /** @hidden */
     constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number) {
-        super(gui, id, x, y, w, h);
+        super(gui, id, x, y, w, h, true);
         this._x = x;
         this._y = y;
         this._w = w;
@@ -34,7 +34,7 @@ abstract class CvsPane extends CvsControl {
 
     /** @hidden */ abstract _opening(): void;
     /** @hidden */ abstract _closing(): void;
-    /** @hidden */ abstract _updateLocation(a, b, c): void;
+    /** @hidden */ abstract _updateLocation(a: any, b: any, c: any): void;
 
     /**
      * Get the tab button.
@@ -63,11 +63,12 @@ abstract class CvsPane extends CvsControl {
 
     protected createTabButton(orient: string, corners: Array<number>) {
         if (this._children.length === 0) {
-            const tab = this._gui.button(`Tab ${CvsPane._TAB_ID++}`);
+            const tabid = `Tab ${CvsPane._TAB_ID++}`
+            const tab = this._gui.button(tabid, 0, 0, 80, this.HEIGHT);
             tab.corners(corners)
-                .orient(orient)
-                .text(tab.id)
-                .setAction(this._tabAction);
+            tab.orient(orient)
+            tab.text(tab.id)
+            tab.setAction(this._tabAction);
             this._gui.invalidateTabs();
             this.addChild(tab);
         }
@@ -268,7 +269,7 @@ abstract class CvsPane extends CvsControl {
 
 
     /** @hidden */
-    protected _tabAction(ta) {
+    protected _tabAction(ta: any) {
         // This method is called when the tab button is clicked. What 
         // happens next depends on the pane status
         let pane = ta.source._parent;
@@ -286,7 +287,7 @@ abstract class CvsPane extends CvsControl {
         }
     }
 
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -320,9 +321,9 @@ abstract class CvsPane extends CvsControl {
     }
 
     /** @hidden */
-    _draw(guiCtx, pkCtx) {
+    _draw(guiCtx: OffscreenCanvasRenderingContext2D, pkCtx: OffscreenCanvasRenderingContext2D) {
         let cs = (this.TAB.scheme() || this._gui.scheme());
-        const BACKGROUND = cs.C$(9, 176);
+        const BACKGROUND = cs.C$(9, 208);
         let c = this._gui.pickColor(this);
         guiCtx.save();
         guiCtx.translate(this._x, this._y);
@@ -341,17 +342,17 @@ abstract class CvsPane extends CvsControl {
     }
 
     // Hide these methods from typeDoc
-    /** @hidden */ orient(a) { return this.warn$('orient') }
-    /** @hidden */ parent(a, b, c) { return this.warn$('parent') }
+    /** @hidden */ orient(a: any) { return this.warn$('orient') }
+    /** @hidden */ parent(a: any, b: any, c: any) { return this.warn$('parent') }
     /** @hidden */ leaveParent() { return this.warn$('leaveParent') }
     /** @hidden */ transparent() { return this.warn$('tansparent') }
     /** @hidden */ opaque() { return this.warn$('opaque') }
-    /** @hidden */ tooltip(a) { return this.warn$('tooltip') }
-    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize') }
-    /** @hidden */ corners(a) { return this.warn$('corners') }
-    /** @hidden */ shrink(a, b) { return this.warn$('shrink') }
-    /** @hidden */ moveBy(a, b) { return this.warn$('moveBy') }
-    /** @hidden */ moveTo(a, b) { return this.warn$('moveTo') }
+    /** @hidden */ tooltip(a: any) { return this.warn$('tooltip') }
+    /** @hidden */ tipTextSize(a: any) { return this.warn$('tipTextSize') }
+    /** @hidden */ corners(a: any) { return this.warn$('corners') }
+    /** @hidden */ shrink(a: any, b: any) { return this.warn$('shrink') }
+    /** @hidden */ moveBy(a: any, b: any) { return this.warn$('moveBy') }
+    /** @hidden */ moveTo(a: any, b: any) { return this.warn$('moveTo') }
 
 }
 

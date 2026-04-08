@@ -4,24 +4,24 @@
  */
 class CvsTextIcon extends CvsText {
     /** @hidden */
-    constructor(gui, name, x, y, w, h) {
-        super(gui, name, x || 0, y || 0, w || 80, h || 16);
+    constructor(gui, name, x, y, w, h, pickable) {
+        super(gui, name, x, y, w, h, pickable);
+        /** @hidden */ this._ix = 0;
+        /** @hidden */ this._iy = 0;
+        /** @hidden */ this._icons = [];
         /** @hidden */ this._iAlignH = 'left';
         /** @hidden */ this._iAlignV = 'center';
         this._icon = undefined;
     }
     /**
-     * <p>Replaces the existing icons representing false / true states.</p>
-     * <p>The first parameter must be an array of 2 images [falseImage, trueImage]
-     * representing the state of the checkbox. It is recomended that the images
-     * the same size</p>
-     *
-     * If provided the last two paratmeters control the icon alignment within
-     * the control.</p>
+     * <p>Sets the icon and its alignment relative to any text in the
+     * control.</p>
+     * <p>Processing constants can also be used to define the icon
+     * alignment.</p>
      * @see iconAlign
-     * @param icon the icon to appear
-     * @param alignH horizontal position relative to the text.
-     * @param alignV vertical position within the control
+     * @param icon the icon to show
+     * @param alignH 'left', 'right' or 'center'
+     * @param alignV 'top', 'bottom' or 'center'
      * @returns this control or the current icon
      */
     icon(icon, alignH, alignV) {
@@ -94,7 +94,7 @@ class CvsTextIcon extends CvsText {
         else {
             const [iw, ih] = this._icon ? [this._icon.width, this._icon.height] : [0, 0];
             let ix = fx, iy = fy;
-            let textX, textW;
+            let textX = 0, textW = 0;
             switch (this._iAlignH) {
                 case "left":
                     ix = fx;

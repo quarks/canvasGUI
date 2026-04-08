@@ -20,9 +20,9 @@ class CvsOptionGroup {
      * @hidden 
      */
     _add(option: CvsOption) {
-        // If this option is selected then deselect all the existing options in group
+        // If option is selected then deselect all other options in group
         if (option.isSelected())
-            for (let opt of this._group) opt._deselect();
+            this._group.forEach(opt => opt._deselect());
         this._group.add(option);
     }
 
@@ -62,14 +62,14 @@ class CvsOptionGroup {
 class CvsOption extends CvsTextIcon {
 
     /** @hidden */ protected _selected: boolean;
-    /** @hidden */ protected _iconAlign: number;
-    /** @hidden */ protected _icon: cvsIcon;
-    /** @hidden */ protected _optGroup: CvsOptionGroup;
-    /** @hidden */ protected _iSize: number;
+    /** @hidden */ protected _iconAlign!: number;
+    /** @hidden */ protected _icon!: cvsIcon;
+    /** @hidden */ protected _optGroup: CvsOptionGroup | null;
+    /** @hidden */ protected _iSize!: number;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
-        super(gui, name, x || 0, y || 0, w || 100, h || 18);
+        super(gui, name, x, y, w, h, true);
         this._selected = false; // 0
         this._createDefaultIcons();
         this.invalidateBuffer();
@@ -87,30 +87,34 @@ class CvsOption extends CvsTextIcon {
         // False
         let ib = new OffscreenCanvas(s, s);
         let ic = ib.getContext('2d');
-        ic.clearRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.strokeStyle = FG;
-        ic.lineWidth = 2;
-        ic.beginPath();
-        ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
-        ic.fill();
-        ic.stroke();
+        if (ic) {
+            ic.clearRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.strokeStyle = FG;
+            ic.lineWidth = 2;
+            ic.beginPath();
+            ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
+            ic.fill();
+            ic.stroke();
+        }
         this._icons.push(ib);
         // True
         ib = new OffscreenCanvas(s, s);
         ic = ib.getContext('2d');
-        ic.clearRect(0, 0, s, s);
-        ic.fillStyle = BG;
-        ic.strokeStyle = FG;
-        ic.lineWidth = 2;
-        ic.beginPath();
-        ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
-        ic.fill();
-        ic.stroke();
-        ic.fillStyle = FG;
-        ic.beginPath();
-        ic.arc(ctr, ctr, r1, 0, 2 * Math.PI);
-        ic.fill();
+        if (ic) {
+            ic.clearRect(0, 0, s, s);
+            ic.fillStyle = BG;
+            ic.strokeStyle = FG;
+            ic.lineWidth = 2;
+            ic.beginPath();
+            ic.arc(ctr, ctr, r0, 0, 2 * Math.PI);
+            ic.fill();
+            ic.stroke();
+            ic.fillStyle = FG;
+            ic.beginPath();
+            ic.arc(ctr, ctr, r1, 0, 2 * Math.PI);
+            ic.fill();
+        }
         this._icons.push(ib);
         // Set icon to display
         this._icon = this._icons[Number(this._selected)];
@@ -118,8 +122,14 @@ class CvsOption extends CvsTextIcon {
     }
 
     /**
-     * <p>Sets the icon and its alignment relative to any text in 
-     * the control.</p>
+     * <p>Replaces the existing icons representing false / true states.</p>
+     * <p>The first parameter must be an array of 2 images [falseImage, trueImage]
+     * representing the state of the checkbox. It is recomended that the images
+     * the same size</p>
+     * 
+     * If provided the last two paratmeters control the icon alignment within
+     * the control. </p>
+     * 
      * <p>Processing constants are used to define the icon alignment.</p>
      * @param icons array of 2 icons [falseImage, trueImage]
      * @param alignH 'left', 'right' or 'center'
@@ -145,7 +155,7 @@ class CvsOption extends CvsTextIcon {
      * @param size 
      * @returns this control
      */
-    iconSize(size) {
+    iconSize(size: number) {
         if (!Number.isFinite(size))
             return this._iSize || this._gui._iSize;
         this._iSize = Math.ceil(size);
@@ -192,13 +202,16 @@ class CvsOption extends CvsTextIcon {
      * @returns this control
      */
     group(optGroupName: string) {
+        const og = this._gui.getOptionGroup(optGroupName);
+        // if (og)
+
         this._optGroup = this._gui.getOptionGroup(optGroupName);
         this._optGroup._add(this);
         return this;
     }
 
     /** @hidden */
-    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): CvsControl {
+    _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -239,6 +252,12 @@ class CvsOption extends CvsTextIcon {
     }
     /** @hidden */
     _updateControlVisual() { //  CvsCheckbox
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic) return;
+        this._clearBuffer(uib, uic);
+
+
         if (this._textInvalid)
             this._formatText();
         this._updateFaceElements();
@@ -251,10 +270,8 @@ class CvsOption extends CvsTextIcon {
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
 
-        const uic = this._uicContext;
         uic.save();
         uic.font = this._cssFont;
-        uic.clearRect(0, 0, this._w, this._h);
         // Background
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -284,9 +301,11 @@ class CvsOption extends CvsTextIcon {
 
     /** @hidden */
     _updatePickBuffer() {
-        let pkc = this._pkcContext;
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc) return;
+        this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        pkc.clearRect(0, 0, this._w, this._h);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -295,8 +314,7 @@ class CvsOption extends CvsTextIcon {
         pkc.restore();
     }
 
-    /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
+    /** @hidden */ icon(a: any, b: any, c: any) { return this.warn$('icon'); }
 
 }
 
-Object.assign(CvsOption.prototype, PICKABLE);

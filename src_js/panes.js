@@ -7,7 +7,7 @@
 class CvsPane extends CvsControl {
     /** @hidden */
     constructor(gui, id, x, y, w, h) {
-        super(gui, id, x, y, w, h);
+        super(gui, id, x, y, w, h, true);
         this._x = x;
         this._y = y;
         this._w = w;
@@ -42,11 +42,12 @@ class CvsPane extends CvsControl {
     }
     createTabButton(orient, corners) {
         if (this._children.length === 0) {
-            const tab = this._gui.button(`Tab ${CvsPane._TAB_ID++}`);
-            tab.corners(corners)
-                .orient(orient)
-                .text(tab.id)
-                .setAction(this._tabAction);
+            const tabid = `Tab ${CvsPane._TAB_ID++}`;
+            const tab = this._gui.button(tabid, 0, 0, 80, this.HEIGHT);
+            tab.corners(corners);
+            tab.orient(orient);
+            tab.text(tab.id);
+            tab.setAction(this._tabAction);
             this._gui.invalidateTabs();
             this.addChild(tab);
         }
@@ -274,7 +275,7 @@ class CvsPane extends CvsControl {
     /** @hidden */
     _draw(guiCtx, pkCtx) {
         let cs = (this.TAB.scheme() || this._gui.scheme());
-        const BACKGROUND = cs.C$(9, 176);
+        const BACKGROUND = cs.C$(9, 208);
         let c = this._gui.pickColor(this);
         guiCtx.save();
         guiCtx.translate(this._x, this._y);

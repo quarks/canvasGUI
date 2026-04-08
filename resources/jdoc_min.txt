@@ -1,5 +1,5 @@
  /**
- * @preserve canvasGUI    (c) Peter Lager  2025
+ * @preserve canvasGUI    (c) Peter Lager  2026
  * @license MIT
  * @version !!VERSION!!
  */
