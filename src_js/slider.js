@@ -1,6 +1,8 @@
 /**
- * <p>This class represents a horizontal slider with a draggable thumb to
- * define a value within user defined limits.</p>
+ * <h2>A slider with a draggable thumb</h2>
+ * <p>This control has a single thumb that can be dragged along a track. The
+ * thumb's position represents a value within user defined limits.</p>
+ *
  * <p>Major and minor tick marks can be added to the bar and supports
  * stick-to-ticks if wanted.</p>
  */

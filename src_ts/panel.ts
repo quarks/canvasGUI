@@ -1,6 +1,6 @@
 /**
- * <p>This class represents a draggable panel that can be used to hold other
- * controls.</p>
+ * <h2>A draggable rectangular panel that can be used to hold other 
+ * controls.</h2>
  * <p>On creation the panel -</p>
  * <ol>
  * <li>has an opaque background (this is required for dragging).</li>
@@ -8,8 +8,8 @@
  * <li>is constrained so the entire panel stays within the display area.</li>
  * </ol>
  * <p>If the background is transparent then the panel cannot be dragged. 
- * Panel movement can limited using the <code>draggable()</code> and 
- * <code>constrain()</code> methods.</p>
+ * Panel movement in the display can be restricted with the <code>draggable()</code>
+ * and <code>constrain()</code> methods.</p>
  * <p>It is recommended that the panel width and height should not exceed 
  * that of the display area (i.e. canvas).</p>
  */

@@ -48,8 +48,13 @@ class CvsOptionGroup {
  ##############################################################################
  */
 /**
- * This class represents an option button (aka radio button). These are usually
- * grouped together so that only one can be selected at a time.
+ * <h2>Clickable option button (a.k.a. radio button.</h2>
+ * <p>Multiple option buttons can be grouped together so that only one can be
+ * selected at any time. Clicking on one option button cancels the previous
+ * selection.</p>
+ * <p>The standard circular icon is provided by default but its size can be
+ * changed by the user.</p>
+ * <p>The user can also supply their own icons for this control.</p>
  */
 class CvsOption extends CvsTextIcon {
     /** @hidden */

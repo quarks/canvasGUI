@@ -1,4 +1,5 @@
 /**
+ * <h2>Aid to positioning and sizing of controls laid out in a grid</h2>
  * <p>This class represents a rectangular grid layout of cells that can be 
  * used to specify the position and size of canvasGUI controls. </p> 
  * <p>The grid layout enables the user to</p>

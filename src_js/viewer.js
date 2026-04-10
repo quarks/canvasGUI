@@ -1,11 +1,16 @@
 /**
- * <p>This control is used to scroll and zoom on an image.</p>
- * <p>When the mouse moves over the control scrollbars will appear (if needed)
- * inside the bottom and right-hand-side edges of the view. When the mouse is
- * near the centre a slider will appear which can be used to change the scale.</p>
+ * <h2>Displays a layered image the same size or larger than the view.</h2>
+ *
+ * <p><b>Scrolling:</b> if the image is larger than the control then it can
+ * panned by dragging the mouse on the image. Alternatively the scrollbars,
+ * which automatically appear when if needed, can be used to pane the image.</p>
+ * <p><b>Zooming:</b> requires the user to request a scaler when creating
+ * this control. When the mouse is near the centre a slider will appear
+ * which can be used to zoom in to and out of te image.</p>
  *
  * <p>This control also supports layers where multiple images can be layered
- * to make the final visual.</p>
+ * to make the final visual. Layers can be added, removed, hiiden and show
+ * on an individual basis</p>
  *
  */
 class CvsViewer extends CvsBufferedControl {

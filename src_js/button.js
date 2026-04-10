@@ -1,6 +1,7 @@
 /**
- * <p>This class is to create simple clickable buttons with text and/or icons
- * on its face.</p>
+ * <h2>Clickable button with text and/or icon</h2>
+ * <p>The button can be displayed with either text or icon or both on it's
+ * face. The text and icon alignment is configurable.</p>
  */
 class CvsButton extends CvsTextIcon {
     /** @hidden */

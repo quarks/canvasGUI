@@ -580,7 +580,7 @@ class GUI {
 
 
   /** @returns the canvas context type  */
-  // get contextType() { return this._canvas["hasContext"]() }
+  get contextType() { return this._canvas["hasContext"]() }
 
   /** @returns true gui is over a 3D canvas  */
   get is3D() { return this._is3D }

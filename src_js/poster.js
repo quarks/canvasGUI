@@ -11,18 +11,35 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _CvsPoster_taggedText, _CvsPoster_words, _CvsPoster_fonts, _CvsPoster_colors, _CvsPoster_wrapW, _CvsPoster_isetHorz, _CvsPoster_isetVert, _CvsPoster_icons, _CvsPoster_backStyle, _Poster_Icon_icon, _Poster_Icon_x, _Poster_Icon_y, _Poster_Line_words, _Poster_Line_align, _Poster_Line_lAscent, _Poster_Line_lHeight, _Poster_Line_gap, _Poster_Line_indent, _Poster_Line_wrapW, _Poster_Line_leading, _Poster_Para_tokens, _Poster_Para_align, _Poster_Para_gap, _Poster_Para_indent, _Poster_Para_wrapW, _Poster_Para_leading, _Poster_Ascii_ascii, _Poster_Ascii_x, _Poster_Ascii_y, _Poster_Ascii_w, _Poster_Ascii_h, _Poster_Ascii_a, _Poster_Ascii_cssFont, _Poster_Ascii_glyphStrokeWidth, _Poster_Ascii_glyphStroke, _Poster_Ascii_glyphFill, _Poster_Tag_id, _Poster_Tag_attrs, _Poster_State_font, _Poster_State_size, _Poster_State_style, _Poster_State_slant, _Poster_State_glyphStrokeWidth, _Poster_State_glyphStroke, _Poster_State_glyphFill, _Poster_Stack_stack;
 /**
- * <p>This control creates a text-based poster where the user has full control
- * over the font-face, text size, text sty</p>
+ * <h2>Similar to the label contol but with much greater controls over text
+ * rendering</h2>
+ * <p>Although it is possible to specify font, text size and style for the
+ * label control these are applied to the whole text. The poster control
+ * removes this restriction allowing the text attributes to be changed for
+ * any part of the text.</p>
+ * <p>Configurable attributes include
  * <ul>
- * <li><b>Font:</b> any logical or system font or any true-type-font (TTF)
- * loaded from a file. </li>
+ * <li><b>Font:</b> multiple fonts can be used within one poster control.
+ * Any logical or system font or any true-type-font (TTF) previously loaded
+ * from a file can be used.</li>
  * <li><b>Text size:</b></li>
  * <li><b>Text style:</b> normal, bold, thin, italic, oblique</li>
- * <li>Horizontal alignment:
+ * <li><b>Multiple paragraphs:</b> each having their own
+ * <ul>
+ * <li>left, right, center or justied text alignment</li>
+ * <li>leading (vetical gap) from previous paragraph</li>
+ * <li>left and right indents</li>
+ * <li>vertical line spacing (leading)</li>
+ * </ul>
+ * <li><b>Glyphs:</b> the fill and outline colors can be specified as well as
+ * the outine stroke weight.</li>
+ * <li><b>Icons:</b> multiple images positioned inside the poster control
+ * independantly of any text.</li>
+ * <li><b>Character entities:</b> virtually all HTML Character Entities can
+ * be embedded in the text.</li>
  *
- *
- *
- *
+ * <p>To achieve this the user must provide tagged-text in a similar style to
+ * that used in HTML documents.</p>
  *
  *
  */
@@ -112,8 +129,7 @@ class CvsPoster extends CvsBufferedControl {
      * <li>ft3 'fantasy'</li>
      * <li>ft4 'cursive'</li>
      * </ul>
-     * <p>This method allows the user to replace or append to any existing
-     * font(s).</p>
+     * <p>Add to or replace these fonts with a user defined font list.</p>
      *
      * @param fonts an array of one or more fonts.
      * @param replace if true existing fonts are replaced but if false (default)
@@ -143,8 +159,7 @@ class CvsPoster extends CvsBufferedControl {
      * <li>gf1 the poster's color scheme text color</li>
      * <li>gf2 the poster's color scheme opaque color</li>
      * </ul>
-     * <p>This method allows the user to replace or append to any existing
-     * color(s).</p>
+     * <p>Add to or replace these colors with a user defined color list.</p>
      *
      * @param colors a color or an array of CSS color definitions.
      * @param replace if true existing colors are replaced but if false (default)
@@ -205,9 +220,10 @@ class CvsPoster extends CvsBufferedControl {
      * @returns the list of tokens
      * @hidden
      */
+    //const tagPtn = /<[a-zA-Z0-9 .:]+>|\s+|[^&<> ]+/gu;
     _makeTokens() {
         function getChunks(tagtxt) {
-            const tagPtn = /<[a-zA-Z0-9 .:-]+>|\s+|[^&<> ]+/gu;
+            const tagPtn = /<[a-zA-Z0-9 .:-]+>|&\w+;|\s+|[^&<> ]+/gu;
             let ch = tagtxt.match(tagPtn);
             return ch ? ch.map(t => String(t)) : [];
         }
@@ -217,7 +233,7 @@ class CvsPoster extends CvsBufferedControl {
                 if (chunk.startsWith("<")) {
                     chunk = chunk.substring(1, chunk.length - 1);
                     chunk.split(/\s+/g)
-                        .forEach(m => tokens.push(new Poster_Tag(String(m), pw)));
+                        .forEach(ch => tokens.push(new Poster_Tag(String(ch), pw)));
                 }
                 else
                     tokens.push(new Poster_Ascii(chunk));

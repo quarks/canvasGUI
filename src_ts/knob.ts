@@ -1,8 +1,13 @@
 /**
+ * <h2>A simple turnable knob control</h2>
  * <p>This class represents a turnable knob with a surrounding status track
- * (optional). Three modes are available to rotate the knob.</p>
- * <p>Major and minor tick marks can be added to the status track and  
- * supports stick-to-ticks if wanted. </p>
+ * (optional). There are 3 modes available to rotate the knob they are :-</p>
+ * <p><code>'a'</code> : drag the mouse in a circular fashion round the knob 
+ * center.can move in any direction (360&deg;). This is the default value.<br>
+ * <code>'x'</code> : drag the mouse horizontally left or right.<br>
+ * <code>'y'</code> : drag the mouse vertically up and down./pr>
+ * <p>This control's appearance is highly configurable including major and 
+ * minor tick with optional stick-to-ticks functionality. </p>
  */
 class CvsKnob extends CvsSlider {
 
@@ -65,6 +70,7 @@ class CvsKnob extends CvsSlider {
      * @returns this control
      */
     mode(mode: string) {
+        mode = mode.toLowerCase();
         switch (mode) {
             case 'x': this._mode = CvsKnob.X_MODE; break;
             case 'y': this._mode = CvsKnob.Y_MODE; break;

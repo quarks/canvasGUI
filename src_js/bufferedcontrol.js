@@ -26,22 +26,25 @@ class CvsBufferedControl extends CvsControl {
         this._createBuffer(w, h);
         this.invalidateBuffer();
     }
+    /** @hidden */
+    _createBuffer(w, h) { }
     /**
-     * Create the UI buffer
+     * Create the UI buffer only
+     * @param w width
+     * @param h height
      * @hidden
      */
-    _createBuffer(w, h) {
-        this._uicBuffer = new OffscreenCanvas(w, h);
-        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
-        this._pkcBuffer = new OffscreenCanvas(w, h);
-        this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
-        this.invalidateBuffer();
-    }
     _createUIbuffer(w, h) {
         this._uicBuffer = new OffscreenCanvas(w, h);
         this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
         this.invalidateBuffer();
     }
+    /**
+     * Dreate both the UI and PK buffers
+     * @param w width
+     * @param h height
+     * @hidden
+     */
     _createUIandPKbuffer(w, h) {
         this._uicBuffer = new OffscreenCanvas(w, h);
         this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
@@ -49,6 +52,11 @@ class CvsBufferedControl extends CvsControl {
         this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
         this.invalidateBuffer();
     }
+    /**
+     * @param buff the buffer to clear
+     * @param ctx the buffers 2d context
+     * @hidden
+     */
     _clearBuffer(buff, ctx) {
         if (buff && ctx)
             ctx.clearRect(0, 0, buff.width, buff.height);

@@ -11,14 +11,21 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _CvsImage_offImg, _CvsImage_overImg, _CvsImage_maskImg;
 /**
- * <p>This class represents clickable image buttons.</p>
+ * <h2>Clickable image buttons.</h2>
  *
- * <p>The hit-zone is any non-transparent pixel in the off-state image or if
- * provided the mask-image.</p>
+ * <p>The over-button state occurs when the mouse is over the <b>hit-zone</b>
+ * and this is determined by the images provided when the control is
+ * created.</p>
+ * <p>The images are </p>
+ * <ol>
+ * <li> used when the mouse is not over the hit zone (required)</li>
+ * <li> used when the mouse is over the hit zone (optional)</li>
+ * <li> mask where non-transparent pixels define the hit-zone (optional)</li>
+ * </ol>
+ * <p>If a mask is not provided the non-transparent pixels in image (1)
+ * define the hit-zone.</p>
+ * @see {@link GUI.image }
  *
- * <p>The over-button state occurs when the mouse is in the hit-zone. When
- * this occurs the button face image will be displayed, or if not defined, a
- * simple a simple border highlight is used.</p>
  */
 class CvsImage extends CvsBufferedControl {
     /** @hidden */
@@ -145,11 +152,11 @@ class CvsImage extends CvsBufferedControl {
     }
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb.getContext('2d');
-        if (!pkc)
+        const pkc = pkb?.getContext('2d');
+        if (!pkb || !pkc)
             return;
         this._clearBuffer(pkb, pkc);
-        const [w, h] = [this._pkcBuffer.width, this._pkcBuffer.height];
+        const [w, h] = [pkb.width, pkb.height];
         const mask = __classPrivateFieldGet(this, _CvsImage_maskImg, "f");
         const cnrs = this.CNRS;
         pkc.save();

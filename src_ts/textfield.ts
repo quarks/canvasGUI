@@ -1,36 +1,39 @@
 
 /**
- * This class supports a single line text entry field.
+ * <h2>A control that supports text entered from the keyboard</h2>
  * 
- * The left/right arrow keys move the text-insertion-point within the 
+ * <p>The &larr; and &rarr; keys move the text-insertion-point within the 
  * text. Used in combination with the shift key it enables part or all 
  * of the text to be selected. The entire text can be selected with the
- * Ctrl+A or Cmd+A keys.
+ * Ctrl&nbsp;&oplus;A or Cmd&nbsp;&oplus;A keys.</p>
  * 
- * Selected text can be copied with the Ctrl+C or Cmd+C keys and pasted at
- * the current text-insertion-point with the Ctrl+V or Cmd+V keys. The 
- * Ctrl+X or Cmd+X keys will cut (and copy) the selected text.
+ * <p>Selected text can be copied with the Ctrl&nbsp;&oplus;C or 
+ * Cmd&nbsp;&oplus;C keys and pasted at the current text-insertion-point with
+ * the Ctrl&nbsp;&oplus;V or Cmd&nbsp;&oplus;V keys. The Ctrl&nbsp;&oplus;X 
+ * or Cmd&nbsp;&oplus;X keys will cut (and copy) the selected text.</p>
  * 
- * If no text is selected then the arrows keys can move off the current
+ * <p>If no text is selected then the arrows keys can move off the current
  * control to another. This only works if each textfield has a unique 
- * index number (&gt0;).
+ * index number (&gt0;).</p>
  * 
- * If the control has the index value 'idx' then the next control depends
- * on the arrow key pressed - <br>
- * left : idx - 1 <br>
- * right : idx + 1 <br>
- * up : idx - offset <br>
- * down : idx + offset <br>
+ * <p>If the control has the index value 'idx' then the next control depends
+ * on the arrow key pressed - </p>
+ * <pre>
+ * &larr;  idx - 1
+ * &rarr;  idx + 1 
+ * &uarr;  idx - offset 
+ * &darr;  idx + offset 
+ * </pre>
  * 
- * The offset value is set when initialising the idx value with the 
- * <code>index(idx, deltaIndex)</code> method.
+ * <p>The offset value is set when initialising the idx value with the 
+ * <code>index(idx, deltaIndex)</code> method.</p>
  * 
- * No other controls can be used while a textfield control is active. Pressing
- * 'Enter' or attempting to move to a non-existant textfield deactivates the 
- * current textfield.
+ * <p>No other controls can be used while a textfield control is active. 
+ * Pressing &crarr; (Enter / Return)or attempting to move to a non-existant 
+ * textfield deactivates the current textfield.</p>
  * 
- * The user can provide their own validation function which is checked when
- * the control is deativated. 
+ * <p>The user can provide their own validation function which is checked 
+ * when the textfield is deativated. </p>
  * 
  */
 class CvsTextField extends CvsText {

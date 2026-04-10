@@ -8,8 +8,8 @@ const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
 const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
 
 /** @hidden */
-const START_TIME = Date.now(),
-    MILLIS = function () { return Date.now() - START_TIME; }
+const START_TIME = Date.now();
+const MILLIS = function () { return Date.now() - START_TIME; }
 
 
 // =================================================================

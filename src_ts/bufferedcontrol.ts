@@ -30,28 +30,30 @@ abstract class CvsBufferedControl extends CvsControl {
         super(gui, id, x, y, w, h, pickable);
         this._createBuffer = pickable ? this._createUIandPKbuffer : this._createUIbuffer;
         this._createBuffer(w, h);
-
         this.invalidateBuffer();
     }
+
+    /** @hidden */
+    _createBuffer(w: number, h: number) { }
 
     /**
-     * Create the UI buffer
+     * Create the UI buffer only
+     * @param w width
+     * @param h height
      * @hidden
      */
-    _createBuffer(w: number, h: number) {
-        this._uicBuffer = new OffscreenCanvas(w, h);
-        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
-        this._pkcBuffer = new OffscreenCanvas(w, h);
-        this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
-        this.invalidateBuffer();
-    }
-
     _createUIbuffer(w: number, h: number) {
         this._uicBuffer = new OffscreenCanvas(w, h);
         this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
         this.invalidateBuffer();
     }
 
+    /**
+     * Dreate both the UI and PK buffers
+     * @param w width
+     * @param h height
+     * @hidden
+     */
     _createUIandPKbuffer(w: number, h: number) {
         this._uicBuffer = new OffscreenCanvas(w, h);
         this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
@@ -60,6 +62,11 @@ abstract class CvsBufferedControl extends CvsControl {
         this.invalidateBuffer();
     }
 
+    /**
+     * @param buff the buffer to clear
+     * @param ctx the buffers 2d context
+     * @hidden
+     */
     _clearBuffer(buff?: OffscreenCanvas, ctx?: OffscreenCanvasRenderingContext2D) {
         if (buff && ctx)
             ctx.clearRect(0, 0, buff.width, buff.height);

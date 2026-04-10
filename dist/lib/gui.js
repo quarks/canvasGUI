@@ -10,7 +10,8 @@ const DELTA_Z = 64, PANEL_Z = 2048, PANE_Z = 4096;
 /** @hidden */
 const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
 /** @hidden */
-const START_TIME = Date.now(), MILLIS = function () { return Date.now() - START_TIME; };
+const START_TIME = Date.now();
+const MILLIS = function () { return Date.now() - START_TIME; };
 // =================================================================
 // ====    Poster and text attributes
 const FONT_FAMILIES = function () {
@@ -984,7 +985,7 @@ class GUI {
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /** @returns the canvas context type  */
-    // get contextType() { return this._canvas["hasContext"]() }
+    get contextType() { return this._canvas["hasContext"](); }
     /** @returns true gui is over a 3D canvas  */
     get is3D() { return this._is3D; }
     /** @returns 'p5js' if using p5.js else returns 'JS' */
@@ -2101,11 +2102,10 @@ class OrientWest {
 }
 //# sourceMappingURL=orientations.js.map
 /**
+ * <h2>This is a placeholder for other controls (its children)</h2>
  *
- * <p>This control is a placeholder for other controls (its children). It has
- * a position but no visual representation.</p>
- *
- * <p>Its children will be shown relative to the pins xy position.</p>
+ * A pin has a position but no visual representation and its children will be
+ * shown relative to the pin's xy position.</p>
  */
 class CvsPin {
     constructor(gui, id, x, y) {
@@ -2392,15 +2392,9 @@ class CvsPin {
     }
 }
 //# sourceMappingURL=pin.js.map
-/*
-##############################################################################
- CvsControl
- The base class for controls and panes that don't require a graphics buffer.
- ##############################################################################
- */
 /**
- * <p>This class provides most of the core functionality for the canvasGUI
- * controls.</p>
+ * <p>This is the base class for controls and panes that don't require an
+ * offscreen buffer.</p>
  */
 class CvsControl extends CvsPin {
     /**
@@ -2729,22 +2723,25 @@ class CvsBufferedControl extends CvsControl {
         this._createBuffer(w, h);
         this.invalidateBuffer();
     }
+    /** @hidden */
+    _createBuffer(w, h) { }
     /**
-     * Create the UI buffer
+     * Create the UI buffer only
+     * @param w width
+     * @param h height
      * @hidden
      */
-    _createBuffer(w, h) {
-        this._uicBuffer = new OffscreenCanvas(w, h);
-        this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
-        this._pkcBuffer = new OffscreenCanvas(w, h);
-        this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
-        this.invalidateBuffer();
-    }
     _createUIbuffer(w, h) {
         this._uicBuffer = new OffscreenCanvas(w, h);
         this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
         this.invalidateBuffer();
     }
+    /**
+     * Dreate both the UI and PK buffers
+     * @param w width
+     * @param h height
+     * @hidden
+     */
     _createUIandPKbuffer(w, h) {
         this._uicBuffer = new OffscreenCanvas(w, h);
         this._uicBuffer.getContext('2d')?.clearRect(0, 0, w, h);
@@ -2752,6 +2749,11 @@ class CvsBufferedControl extends CvsControl {
         this._pkcBuffer.getContext('2d')?.clearRect(0, 0, w, h);
         this.invalidateBuffer();
     }
+    /**
+     * @param buff the buffer to clear
+     * @param ctx the buffers 2d context
+     * @hidden
+     */
     _clearBuffer(buff, ctx) {
         if (buff && ctx)
             ctx.clearRect(0, 0, buff.width, buff.height);
@@ -2841,14 +2843,21 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _CvsImage_offImg, _CvsImage_overImg, _CvsImage_maskImg;
 /**
- * <p>This class represents clickable image buttons.</p>
+ * <h2>Clickable image buttons.</h2>
  *
- * <p>The hit-zone is any non-transparent pixel in the off-state image or if
- * provided the mask-image.</p>
+ * <p>The over-button state occurs when the mouse is over the <b>hit-zone</b>
+ * and this is determined by the images provided when the control is
+ * created.</p>
+ * <p>The images are </p>
+ * <ol>
+ * <li> used when the mouse is not over the hit zone (required)</li>
+ * <li> used when the mouse is over the hit zone (optional)</li>
+ * <li> mask where non-transparent pixels define the hit-zone (optional)</li>
+ * </ol>
+ * <p>If a mask is not provided the non-transparent pixels in image (1)
+ * define the hit-zone.</p>
+ * @see {@link GUI.image }
  *
- * <p>The over-button state occurs when the mouse is in the hit-zone. When
- * this occurs the button face image will be displayed, or if not defined, a
- * simple a simple border highlight is used.</p>
  */
 class CvsImage extends CvsBufferedControl {
     /** @hidden */
@@ -2975,11 +2984,11 @@ class CvsImage extends CvsBufferedControl {
     }
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb.getContext('2d');
-        if (!pkc)
+        const pkc = pkb?.getContext('2d');
+        if (!pkb || !pkc)
             return;
         this._clearBuffer(pkb, pkc);
-        const [w, h] = [this._pkcBuffer.width, this._pkcBuffer.height];
+        const [w, h] = [pkb.width, pkb.height];
         const mask = __classPrivateFieldGet(this, _CvsImage_maskImg, "f");
         const cnrs = this.CNRS;
         pkc.save();
@@ -3026,8 +3035,10 @@ class CvsImage extends CvsBufferedControl {
 _CvsImage_offImg = new WeakMap(), _CvsImage_overImg = new WeakMap(), _CvsImage_maskImg = new WeakMap();
 //# sourceMappingURL=image.js.map
 /**
- * <p>This class represents a horizontal slider with a draggable thumb to
- * define a value within user defined limits.</p>
+ * <h2>A slider with a draggable thumb</h2>
+ * <p>This control has a single thumb that can be dragged along a track. The
+ * thumb's position represents a value within user defined limits.</p>
+ *
  * <p>Major and minor tick marks can be added to the bar and supports
  * stick-to-ticks if wanted.</p>
  */
@@ -3314,8 +3325,11 @@ class CvsSlider extends CvsBufferedControl {
 }
 //# sourceMappingURL=slider.js.map
 /**
- * <p>This class represents a slider with 2 draggable thumbs to
- * define a value within user defined limits.</p>
+ * <h2>A slider with two draggable thumbs</h2>
+ * <p>This control has 2 thumbs that can be dragged along a track. The
+ * thumbs' positions represent a low and high value both within user
+ * defined limits.</p>
+ *
  * <p>Major and minor tick marks can be added to the bar and supports
  * stick-to-ticks if wanted.</p>
  */
@@ -4027,7 +4041,9 @@ class CvsTextIcon extends CvsText {
 }
 //# sourceMappingURL=texticon.js.map
 /**
- * <p>Simple label with text and / or icon</p>
+ * <h2>A label defines a rectangular control with text and/or icon</h2>
+ * <p>The label can be displayed with either text or icon or both on it's
+ * face. The text and icon alignment is configurable.</p>
  */
 class CvsLabel extends CvsTextIcon {
     /** @hidden */
@@ -4075,8 +4091,9 @@ class CvsLabel extends CvsTextIcon {
 }
 //# sourceMappingURL=label.js.map
 /**
- * <p>This class is to create simple clickable buttons with text and/or icons
- * on its face.</p>
+ * <h2>Clickable button with text and/or icon</h2>
+ * <p>The button can be displayed with either text or icon or both on it's
+ * face. The text and icon alignment is configurable.</p>
  */
 class CvsButton extends CvsTextIcon {
     /** @hidden */
@@ -4503,8 +4520,13 @@ class CvsOptionGroup {
  ##############################################################################
  */
 /**
- * This class represents an option button (aka radio button). These are usually
- * grouped together so that only one can be selected at a time.
+ * <h2>Clickable option button (a.k.a. radio button.</h2>
+ * <p>Multiple option buttons can be grouped together so that only one can be
+ * selected at any time. Clicking on one option button cancels the previous
+ * selection.</p>
+ * <p>The standard circular icon is provided by default but its size can be
+ * changed by the user.</p>
+ * <p>The user can also supply their own icons for this control.</p>
  */
 class CvsOption extends CvsTextIcon {
     /** @hidden */
@@ -4744,7 +4766,12 @@ class CvsOption extends CvsTextIcon {
 }
 //# sourceMappingURL=option.js.map
 /**
- * This class supports simple true-false checkbox
+ * <h2>Clickable 2 state (true / false) button.</h2>
+ * <p>The button has optional text and its state can be flipped between true
+ * and false by clicking it's face.</p>
+ * <p>The standard tick-box icon is provided by default but its size can be
+ * changed by the user.</p>
+ * <p>The user can also supply their own icons for this control.</p>
  */
 class CvsCheckbox extends CvsTextIcon {
     /** @hidden */
@@ -4964,13 +4991,18 @@ class CvsCheckbox extends CvsTextIcon {
 }
 //# sourceMappingURL=checkbox.js.map
 /**
- * <p>This control is used to scroll and zoom on an image.</p>
- * <p>When the mouse moves over the control scrollbars will appear (if needed)
- * inside the bottom and right-hand-side edges of the view. When the mouse is
- * near the centre a slider will appear which can be used to change the scale.</p>
+ * <h2>Displays a layered image the same size or larger than the view.</h2>
+ *
+ * <p><b>Scrolling:</b> if the image is larger than the control then it can
+ * panned by dragging the mouse on the image. Alternatively the scrollbars,
+ * which automatically appear when if needed, can be used to pane the image.</p>
+ * <p><b>Zooming:</b> requires the user to request a scaler when creating
+ * this control. When the mouse is near the centre a slider will appear
+ * which can be used to zoom in to and out of te image.</p>
  *
  * <p>This control also supports layers where multiple images can be layered
- * to make the final visual.</p>
+ * to make the final visual. Layers can be added, removed, hiiden and show
+ * on an individual basis</p>
  *
  */
 class CvsViewer extends CvsBufferedControl {
@@ -5458,37 +5490,40 @@ class CvsViewer extends CvsBufferedControl {
 }
 //# sourceMappingURL=viewer.js.map
 /**
- * This class supports a single line text entry field.
+ * <h2>A control that supports text entered from the keyboard</h2>
  *
- * The left/right arrow keys move the text-insertion-point within the
+ * <p>The &larr; and &rarr; keys move the text-insertion-point within the
  * text. Used in combination with the shift key it enables part or all
  * of the text to be selected. The entire text can be selected with the
- * Ctrl+A or Cmd+A keys.
+ * Ctrl&nbsp;&oplus;A or Cmd&nbsp;&oplus;A keys.</p>
  *
- * Selected text can be copied with the Ctrl+C or Cmd+C keys and pasted at
- * the current text-insertion-point with the Ctrl+V or Cmd+V keys. The
- * Ctrl+X or Cmd+X keys will cut (and copy) the selected text.
+ * <p>Selected text can be copied with the Ctrl&nbsp;&oplus;C or
+ * Cmd&nbsp;&oplus;C keys and pasted at the current text-insertion-point with
+ * the Ctrl&nbsp;&oplus;V or Cmd&nbsp;&oplus;V keys. The Ctrl&nbsp;&oplus;X
+ * or Cmd&nbsp;&oplus;X keys will cut (and copy) the selected text.</p>
  *
- * If no text is selected then the arrows keys can move off the current
+ * <p>If no text is selected then the arrows keys can move off the current
  * control to another. This only works if each textfield has a unique
- * index number (&gt0;).
+ * index number (&gt0;).</p>
  *
- * If the control has the index value 'idx' then the next control depends
- * on the arrow key pressed - <br>
- * left : idx - 1 <br>
- * right : idx + 1 <br>
- * up : idx - offset <br>
- * down : idx + offset <br>
+ * <p>If the control has the index value 'idx' then the next control depends
+ * on the arrow key pressed - </p>
+ * <pre>
+ * &larr;  idx - 1
+ * &rarr;  idx + 1
+ * &uarr;  idx - offset
+ * &darr;  idx + offset
+ * </pre>
  *
- * The offset value is set when initialising the idx value with the
- * <code>index(idx, deltaIndex)</code> method.
+ * <p>The offset value is set when initialising the idx value with the
+ * <code>index(idx, deltaIndex)</code> method.</p>
  *
- * No other controls can be used while a textfield control is active. Pressing
- * 'Enter' or attempting to move to a non-existant textfield deactivates the
- * current textfield.
+ * <p>No other controls can be used while a textfield control is active.
+ * Pressing &crarr; (Enter / Return)or attempting to move to a non-existant
+ * textfield deactivates the current textfield.</p>
  *
- * The user can provide their own validation function which is checked when
- * the control is deativated.
+ * <p>The user can provide their own validation function which is checked
+ * when the textfield is deativated. </p>
  *
  */
 class CvsTextField extends CvsText {
@@ -5969,9 +6004,10 @@ class CvsTextField extends CvsText {
 }
 //# sourceMappingURL=textfield.js.map
 /**
+ * <h2>A multi-mode Joystick control</h2>
  * <p>This class simulates a multi-mode joystick. Each of the three possible
  * modes apply different constraints to the range of movement allowed they
- * are -.</p>
+ * are -</p>
  * <p><code>'X0'</code> : can move in any direction (360&deg;). This is the default value.<br>
  * <code>'X4'</code> : constrained to the 4 main compass directions
  * (N, E, S, W).<br>
@@ -6308,10 +6344,15 @@ class CvsJoystick extends CvsBufferedControl {
 }
 //# sourceMappingURL=joystick.js.map
 /**
+ * <h2>A simple turnable knob control</h2>
  * <p>This class represents a turnable knob with a surrounding status track
- * (optional). Three modes are available to rotate the knob.</p>
- * <p>Major and minor tick marks can be added to the status track and
- * supports stick-to-ticks if wanted. </p>
+ * (optional). There are 3 modes available to rotate the knob they are :-</p>
+ * <p><code>'a'</code> : drag the mouse in a circular fashion round the knob
+ * center.can move in any direction (360&deg;). This is the default value.<br>
+ * <code>'x'</code> : drag the mouse horizontally left or right.<br>
+ * <code>'y'</code> : drag the mouse vertically up and down./pr>
+ * <p>This control's appearance is highly configurable including major and
+ * minor tick with optional stick-to-ticks functionality. </p>
  */
 class CvsKnob extends CvsSlider {
     /**
@@ -6354,6 +6395,7 @@ class CvsKnob extends CvsSlider {
      * @returns this control
      */
     mode(mode) {
+        mode = mode.toLowerCase();
         switch (mode) {
             case 'x':
                 this._mode = CvsKnob.X_MODE;
@@ -6669,8 +6711,8 @@ class CvsKnob extends CvsSlider {
 /** @hidden */ CvsKnob.A_MODE = 3;
 //# sourceMappingURL=knob.js.map
 /**
- * <p>This class represents a draggable panel that can be used to hold other
- * controls.</p>
+ * <h2>A draggable rectangular panel that can be used to hold other
+ * controls.</h2>
  * <p>On creation the panel -</p>
  * <ol>
  * <li>has an opaque background (this is required for dragging).</li>
@@ -6678,8 +6720,8 @@ class CvsKnob extends CvsSlider {
  * <li>is constrained so the entire panel stays within the display area.</li>
  * </ol>
  * <p>If the background is transparent then the panel cannot be dragged.
- * Panel movement can limited using the <code>draggable()</code> and
- * <code>constrain()</code> methods.</p>
+ * Panel movement in the display can be restricted with the <code>draggable()</code>
+ * and <code>constrain()</code> methods.</p>
  * <p>It is recommended that the panel width and height should not exceed
  * that of the display area (i.e. canvas).</p>
  */
@@ -6844,6 +6886,19 @@ class CvsPanel extends CvsBufferedControl {
  CvsPane
  This is the base class side panes
  ##############################################################################
+ */
+/**
+ * <h2>An offscreen placeholder for other controls</h>
+ * <p>Panes are controls that can slide into and out the display area along
+ * with any other controls placed on them.</p>
+ * <p>Panes are <i>attached</i> to one of the 4 display sides with only a tab
+ * visible. Clicking on the tab will cause the pane to slide into the display
+ * area. Clicking on the pane background or on it's tab will close the
+ * pane.</p>
+ * <p>Only one pane can be open at a time, so opening a second pane will close
+ * any open pane.</p>
+ * <p>This control is useful for freeing up the dsplay area for other
+ * purposes.</p>
  */
 class CvsPane extends CvsControl {
     /** @hidden */
@@ -7330,18 +7385,35 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _CvsPoster_taggedText, _CvsPoster_words, _CvsPoster_fonts, _CvsPoster_colors, _CvsPoster_wrapW, _CvsPoster_isetHorz, _CvsPoster_isetVert, _CvsPoster_icons, _CvsPoster_backStyle, _Poster_Icon_icon, _Poster_Icon_x, _Poster_Icon_y, _Poster_Line_words, _Poster_Line_align, _Poster_Line_lAscent, _Poster_Line_lHeight, _Poster_Line_gap, _Poster_Line_indent, _Poster_Line_wrapW, _Poster_Line_leading, _Poster_Para_tokens, _Poster_Para_align, _Poster_Para_gap, _Poster_Para_indent, _Poster_Para_wrapW, _Poster_Para_leading, _Poster_Ascii_ascii, _Poster_Ascii_x, _Poster_Ascii_y, _Poster_Ascii_w, _Poster_Ascii_h, _Poster_Ascii_a, _Poster_Ascii_cssFont, _Poster_Ascii_glyphStrokeWidth, _Poster_Ascii_glyphStroke, _Poster_Ascii_glyphFill, _Poster_Tag_id, _Poster_Tag_attrs, _Poster_State_font, _Poster_State_size, _Poster_State_style, _Poster_State_slant, _Poster_State_glyphStrokeWidth, _Poster_State_glyphStroke, _Poster_State_glyphFill, _Poster_Stack_stack;
 /**
- * <p>This control creates a text-based poster where the user has full control
- * over the font-face, text size, text sty</p>
+ * <h2>Similar to the label contol but with much greater controls over text
+ * rendering</h2>
+ * <p>Although it is possible to specify font, text size and style for the
+ * label control these are applied to the whole text. The poster control
+ * removes this restriction allowing the text attributes to be changed for
+ * any part of the text.</p>
+ * <p>Configurable attributes include
  * <ul>
- * <li><b>Font:</b> any logical or system font or any true-type-font (TTF)
- * loaded from a file. </li>
+ * <li><b>Font:</b> multiple fonts can be used within one poster control.
+ * Any logical or system font or any true-type-font (TTF) previously loaded
+ * from a file can be used.</li>
  * <li><b>Text size:</b></li>
  * <li><b>Text style:</b> normal, bold, thin, italic, oblique</li>
- * <li>Horizontal alignment:
+ * <li><b>Multiple paragraphs:</b> each having their own
+ * <ul>
+ * <li>left, right, center or justied text alignment</li>
+ * <li>leading (vetical gap) from previous paragraph</li>
+ * <li>left and right indents</li>
+ * <li>vertical line spacing (leading)</li>
+ * </ul>
+ * <li><b>Glyphs:</b> the fill and outline colors can be specified as well as
+ * the outine stroke weight.</li>
+ * <li><b>Icons:</b> multiple images positioned inside the poster control
+ * independantly of any text.</li>
+ * <li><b>Character entities:</b> virtually all HTML Character Entities can
+ * be embedded in the text.</li>
  *
- *
- *
- *
+ * <p>To achieve this the user must provide tagged-text in a similar style to
+ * that used in HTML documents.</p>
  *
  *
  */
@@ -7431,8 +7503,7 @@ class CvsPoster extends CvsBufferedControl {
      * <li>ft3 'fantasy'</li>
      * <li>ft4 'cursive'</li>
      * </ul>
-     * <p>This method allows the user to replace or append to any existing
-     * font(s).</p>
+     * <p>Add to or replace these fonts with a user defined font list.</p>
      *
      * @param fonts an array of one or more fonts.
      * @param replace if true existing fonts are replaced but if false (default)
@@ -7462,8 +7533,7 @@ class CvsPoster extends CvsBufferedControl {
      * <li>gf1 the poster's color scheme text color</li>
      * <li>gf2 the poster's color scheme opaque color</li>
      * </ul>
-     * <p>This method allows the user to replace or append to any existing
-     * color(s).</p>
+     * <p>Add to or replace these colors with a user defined color list.</p>
      *
      * @param colors a color or an array of CSS color definitions.
      * @param replace if true existing colors are replaced but if false (default)
@@ -7524,9 +7594,10 @@ class CvsPoster extends CvsBufferedControl {
      * @returns the list of tokens
      * @hidden
      */
+    //const tagPtn = /<[a-zA-Z0-9 .:]+>|\s+|[^&<> ]+/gu;
     _makeTokens() {
         function getChunks(tagtxt) {
-            const tagPtn = /<[a-zA-Z0-9 .:-]+>|\s+|[^&<> ]+/gu;
+            const tagPtn = /<[a-zA-Z0-9 .:-]+>|&\w+;|\s+|[^&<> ]+/gu;
             let ch = tagtxt.match(tagPtn);
             return ch ? ch.map(t => String(t)) : [];
         }
@@ -7536,7 +7607,7 @@ class CvsPoster extends CvsBufferedControl {
                 if (chunk.startsWith("<")) {
                     chunk = chunk.substring(1, chunk.length - 1);
                     chunk.split(/\s+/g)
-                        .forEach(m => tokens.push(new Poster_Tag(String(m), pw)));
+                        .forEach(ch => tokens.push(new Poster_Tag(String(ch), pw)));
                 }
                 else
                     tokens.push(new Poster_Ascii(chunk));
@@ -8044,6 +8115,7 @@ class Poster_Stack {
 _Poster_Stack_stack = new WeakMap();
 //# sourceMappingURL=poster.js.map
 /**
+ * <h2>Aid to positioning and sizing of controls laid out in a grid</h2>
  * <p>This class represents a rectangular grid layout of cells that can be
  * used to specify the position and size of canvasGUI controls. </p>
  * <p>The grid layout enables the user to</p>

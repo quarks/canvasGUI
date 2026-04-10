@@ -1,7 +1,8 @@
 /**
+ * <h2>A multi-mode Joystick control</h2>
  * <p>This class simulates a multi-mode joystick. Each of the three possible
  * modes apply different constraints to the range of movement allowed they
- * are -.</p>
+ * are -</p>
  * <p><code>'X0'</code> : can move in any direction (360&deg;). This is the default value.<br>
  * <code>'X4'</code> : constrained to the 4 main compass directions
  * (N, E, S, W).<br>

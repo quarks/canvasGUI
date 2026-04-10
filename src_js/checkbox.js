@@ -1,5 +1,10 @@
 /**
- * This class supports simple true-false checkbox
+ * <h2>Clickable 2 state (true / false) button.</h2>
+ * <p>The button has optional text and its state can be flipped between true
+ * and false by clicking it's face.</p>
+ * <p>The standard tick-box icon is provided by default but its size can be
+ * changed by the user.</p>
+ * <p>The user can also supply their own icons for this control.</p>
  */
 class CvsCheckbox extends CvsTextIcon {
     /** @hidden */

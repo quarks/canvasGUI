@@ -4,6 +4,19 @@
  This is the base class side panes
  ##############################################################################
  */
+/**
+ * <h2>An offscreen placeholder for other controls</h>
+ * <p>Panes are controls that can slide into and out the display area along
+ * with any other controls placed on them.</p>
+ * <p>Panes are <i>attached</i> to one of the 4 display sides with only a tab
+ * visible. Clicking on the tab will cause the pane to slide into the display
+ * area. Clicking on the pane background or on it's tab will close the
+ * pane.</p>
+ * <p>Only one pane can be open at a time, so opening a second pane will close
+ * any open pane.</p>
+ * <p>This control is useful for freeing up the dsplay area for other
+ * purposes.</p>
+ */
 class CvsPane extends CvsControl {
     /** @hidden */
     constructor(gui, id, x, y, w, h) {

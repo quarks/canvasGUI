@@ -1,12 +1,6 @@
-/*
-##############################################################################
- CvsControl
- The base class for controls and panes that don't require a graphics buffer.
- ##############################################################################
- */
 /**
- * <p>This class provides most of the core functionality for the canvasGUI
- * controls.</p>
+ * <p>This is the base class for controls and panes that don't require an
+ * offscreen buffer.</p>
  */
 class CvsControl extends CvsPin {
     /**

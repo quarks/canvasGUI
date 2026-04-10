@@ -1,5 +1,7 @@
 /**
- * <p>Simple label with text and / or icon</p>
+ * <h2>A label defines a rectangular control with text and/or icon</h2>
+ * <p>The label can be displayed with either text or icon or both on it's
+ * face. The text and icon alignment is configurable.</p>
  */
 class CvsLabel extends CvsTextIcon {
     /** @hidden */

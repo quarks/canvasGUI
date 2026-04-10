@@ -1,9 +1,8 @@
 /**
+ * <h2>This is a placeholder for other controls (its children)</h2>
  *
- * <p>This control is a placeholder for other controls (its children). It has
- * a position but no visual representation.</p>
- *
- * <p>Its children will be shown relative to the pins xy position.</p>
+ * A pin has a position but no visual representation and its children will be
+ * shown relative to the pin's xy position.</p>
  */
 class CvsPin {
     constructor(gui, id, x, y) {
