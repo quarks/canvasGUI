@@ -133,7 +133,8 @@ class CvsTextField extends CvsText {
     /**
      * Set the validation function to be used for this control.
      *
-     * The function is created by the user and should return an array of
+     * The function is created by the user and should accept a single string
+     * parameter, the text to be validated and return an array of
      * two elements e.g. <code>[valid, valid-text]</code>
      *
      * <code>valid</code> is a boolean indicating if the text entered is valid and<br>
@@ -141,7 +142,7 @@ class CvsTextField extends CvsText {
      *
      * For instance a textfield used for getting a persons name will be valid
      * if there are 2 or more words and the valid-text will be the name
-     * but with the first letter of each word being capatilised.
+     * but with the first letter of each word being capitalised.
      *
      * @param vfunc the validation function
      * @returns this control

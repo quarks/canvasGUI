@@ -221,5 +221,6 @@ class CvsCheckbox extends CvsTextIcon {
         pkc.restore();
     }
     /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
+    /** @hidden */ noIcon() { return this.warn$('noIcon'); }
 }
 //# sourceMappingURL=checkbox.js.map

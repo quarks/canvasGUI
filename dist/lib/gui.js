@@ -162,6 +162,8 @@ const _validateTextStyle = function (style) {
 };
 /** @hidden */
 const ISET_H = 3, ISET_V = 2, GUTTER = 3;
+// =================================================================
+// ====    p5js utility functions
 /**
  * Used to convert p5js image objects to one that can be used
  * directly in JS.
@@ -263,29 +265,6 @@ const _map = function (n, low1, high1, low2, high2, keepInRange = false) {
         return _constrain(newval, low2, high2);
     else
         return _constrain(newval, high2, low2);
-};
-// =================================================================
-// ====    Development utilities
-/** @hidden */
-const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
-// Source - https://stackoverflow.com/a/26983095
-// Posted by user1693593, modified by community. 
-// See post 'Timeline' for change history
-// Retrieved 2026-02-06, License - CC BY-SA 3.0
-// Modified by Quark for this project.
-// Store original code 
-HTMLCanvasElement.prototype["_getContext"] =
-    HTMLCanvasElement.prototype.getContext;
-// Store context type 
-HTMLCanvasElement.prototype["_contextType"] = '';
-// Register getContext wrapper method 
-HTMLCanvasElement.prototype.getContext = function (type) {
-    this["_contextType"] = type;
-    return this["_getContext"](type);
-};
-// Return the context type used 
-HTMLCanvasElement.prototype["hasContext"] = function () {
-    return this["_contextType"];
 };
 // =================================================================
 // ====    HTML Character Entities
@@ -482,6 +461,34 @@ const CHAR_ENTITIES = function () {
 const replaceEntities = function (str) {
     const ptn = /(&\w+;)/gu;
     return str.replace(ptn, m => CHAR_ENTITIES.get(m) || m);
+};
+// =================================================================
+// ====    Development code and utilities
+/** @hidden */
+const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
+/*
+This modifies the HTMLCanvasElement protoype so that it remembers the context
+type '2d' or 'webgl2' used with the getContext(...) method.
+
+Taken from:
+    Source - https://stackoverflow.com/a/26983095
+    Retrieved 2026-02-06, License - CC BY-SA 3.0
+and then modified by Quark for this project.
+*/
+// Store the original 'getContext' function  
+HTMLCanvasElement.prototype["_getContext"] =
+    HTMLCanvasElement.prototype.getContext;
+// Field to store the requested context type 
+HTMLCanvasElement.prototype["_contextType"] = '';
+// Create new 'getContext' method that stores the context type
+// before calling the original function getContext wrapper method 
+HTMLCanvasElement.prototype.getContext = function (type) {
+    this["_contextType"] = type;
+    return this["_getContext"](type);
+};
+// Retrieve the context type used when creating the context
+HTMLCanvasElement.prototype["hasContext"] = function () {
+    return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
 const CANVAS_GUI_VERSION = '3.0.0';
@@ -956,14 +963,16 @@ class GUI {
      * 'east' or 'west'.
      *
      * The pane will fill the whole width/height of the canvas depending on its
-     * position. The user controls how far the pane extends into the canvas when
-     * open.
+     * position. The user controls how far the pane extends into the canvas
+     * when open.
      * @param id unique id for this control
      * @param location the pane position ('north', 'south', 'east' or 'west')
      * @param depth the maximum depth the pane expands into the canvas
+     * @param text optional text for the tab button
+     * @param icon optional icon for the tab button
      * @returns a side pane
      */
-    pane(id, location, depth) {
+    pane(id, location, depth, text, icon) {
         let ctrl;
         depth = Math.round(depth);
         switch (location) {
@@ -979,6 +988,10 @@ class GUI {
             case 'east':
             default: ctrl = new CvsPaneEast(this, id, depth);
         }
+        if (text)
+            ctrl.text(text);
+        if (icon)
+            ctrl.icon(icon);
         return ctrl;
     }
     // ######           End of control factory methods             ######
@@ -2673,6 +2686,21 @@ class CvsControl extends CvsPin {
     orientation() {
         return this._orientation;
     }
+    config(cfg) {
+        let ctrl = this;
+        if (typeof cfg === 'object') {
+            Object.keys(cfg).forEach(p => {
+                if (typeof ctrl[p] === 'function') {
+                    Array.isArray(cfg[p])
+                        ? ctrl[p].call(this, ...cfg[p])
+                        : ctrl[p].call(this, cfg[p]);
+                }
+                else {
+                    this.warn$(p);
+                }
+            });
+        }
+    }
     /** @hidden */
     _updateControlVisual() { }
     /** @hidden */
@@ -4018,7 +4046,7 @@ class CvsTextIcon extends CvsText {
                         textW = fw - iw - GUTTER;
                     }
                     else {
-                        ix = (fw - iw) / 2;
+                        ix = fx + (fw - iw) / 2;
                     }
                     break;
             }
@@ -4763,6 +4791,7 @@ class CvsOption extends CvsTextIcon {
         pkc.restore();
     }
     /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
+    /** @hidden */ noIcon() { return this.warn$('noIcon'); }
 }
 //# sourceMappingURL=option.js.map
 /**
@@ -4988,6 +5017,7 @@ class CvsCheckbox extends CvsTextIcon {
         pkc.restore();
     }
     /** @hidden */ icon(a, b, c) { return this.warn$('icon'); }
+    /** @hidden */ noIcon() { return this.warn$('noIcon'); }
 }
 //# sourceMappingURL=checkbox.js.map
 /**
@@ -5624,7 +5654,8 @@ class CvsTextField extends CvsText {
     /**
      * Set the validation function to be used for this control.
      *
-     * The function is created by the user and should return an array of
+     * The function is created by the user and should accept a single string
+     * parameter, the text to be validated and return an array of
      * two elements e.g. <code>[valid, valid-text]</code>
      *
      * <code>valid</code> is a boolean indicating if the text entered is valid and<br>
@@ -5632,7 +5663,7 @@ class CvsTextField extends CvsText {
      *
      * For instance a textfield used for getting a persons name will be valid
      * if there are 2 or more words and the valid-text will be the name
-     * but with the first letter of each word being capatilised.
+     * but with the first letter of each word being capitalised.
      *
      * @param vfunc the validation function
      * @returns this control
@@ -6888,7 +6919,7 @@ class CvsPanel extends CvsBufferedControl {
  ##############################################################################
  */
 /**
- * <h2>An offscreen placeholder for other controls</h>
+ * <h2>An offscreen placeholder for other controls</h2>
  * <p>Panes are controls that can slide into and out the display area along
  * with any other controls placed on them.</p>
  * <p>Panes are <i>attached</i> to one of the 4 display sides with only a tab
@@ -6904,10 +6935,6 @@ class CvsPane extends CvsControl {
     /** @hidden */
     constructor(gui, id, x, y, w, h) {
         super(gui, id, x, y, w, h, true);
-        this._x = x;
-        this._y = y;
-        this._w = w;
-        this._h = h;
         this._cnrRad = 8;
         this._status = 'closed';
         this._timer = 0;

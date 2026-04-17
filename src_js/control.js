@@ -279,6 +279,21 @@ class CvsControl extends CvsPin {
     orientation() {
         return this._orientation;
     }
+    config(cfg) {
+        let ctrl = this;
+        if (typeof cfg === 'object') {
+            Object.keys(cfg).forEach(p => {
+                if (typeof ctrl[p] === 'function') {
+                    Array.isArray(cfg[p])
+                        ? ctrl[p].call(this, ...cfg[p])
+                        : ctrl[p].call(this, cfg[p]);
+                }
+                else {
+                    this.warn$(p);
+                }
+            });
+        }
+    }
     /** @hidden */
     _updateControlVisual() { }
     /** @hidden */

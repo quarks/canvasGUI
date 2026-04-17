@@ -6,7 +6,7 @@
  */
 
 /**
- * <h2>An offscreen placeholder for other controls</h>
+ * <h2>An offscreen placeholder for other controls</h2>
  * <p>Panes are controls that can slide into and out the display area along
  * with any other controls placed on them.</p>
  * <p>Panes are <i>attached</i> to one of the 4 display sides with only a tab 
@@ -36,10 +36,6 @@ abstract class CvsPane extends CvsControl {
     /** @hidden */
     constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number) {
         super(gui, id, x, y, w, h, true);
-        this._x = x;
-        this._y = y;
-        this._w = w;
-        this._h = h;
         this._cnrRad = 8;
         this._status = 'closed';
         this._timer = 0;
@@ -87,7 +83,6 @@ abstract class CvsPane extends CvsControl {
             this.addChild(tab);
         }
     }
-
 
     /**
      * <p>Get the 'depth' the pane will intrude into the canvas when open.</p>
@@ -241,8 +236,6 @@ abstract class CvsPane extends CvsControl {
         return this;
     }
 
-
-
     /**
      * <p>Enables tab opening / closure</p>
      * @returns this control
@@ -280,7 +273,6 @@ abstract class CvsPane extends CvsControl {
         this.TAB.show();
         return this;
     }
-
 
     /** @hidden */
     protected _tabAction(ta: any) {

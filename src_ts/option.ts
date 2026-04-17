@@ -320,6 +320,6 @@ class CvsOption extends CvsTextIcon {
     }
 
     /** @hidden */ icon(a: any, b: any, c: any) { return this.warn$('icon'); }
-
+    /** @hidden */ noIcon() { return this.warn$('noIcon'); }
 }
 

@@ -113,7 +113,7 @@ class CvsTextIcon extends CvsText {
                         textW = fw - iw - GUTTER;
                     }
                     else {
-                        ix = (fw - iw) / 2;
+                        ix = fx + (fw - iw) / 2;
                     }
                     break;
             }

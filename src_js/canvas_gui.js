@@ -470,14 +470,16 @@ class GUI {
      * 'east' or 'west'.
      *
      * The pane will fill the whole width/height of the canvas depending on its
-     * position. The user controls how far the pane extends into the canvas when
-     * open.
+     * position. The user controls how far the pane extends into the canvas
+     * when open.
      * @param id unique id for this control
      * @param location the pane position ('north', 'south', 'east' or 'west')
      * @param depth the maximum depth the pane expands into the canvas
+     * @param text optional text for the tab button
+     * @param icon optional icon for the tab button
      * @returns a side pane
      */
-    pane(id, location, depth) {
+    pane(id, location, depth, text, icon) {
         let ctrl;
         depth = Math.round(depth);
         switch (location) {
@@ -493,6 +495,10 @@ class GUI {
             case 'east':
             default: ctrl = new CvsPaneEast(this, id, depth);
         }
+        if (text)
+            ctrl.text(text);
+        if (icon)
+            ctrl.icon(icon);
         return ctrl;
     }
     // ######           End of control factory methods             ######

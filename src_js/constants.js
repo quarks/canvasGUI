@@ -157,6 +157,8 @@ const _validateTextStyle = function (style) {
 };
 /** @hidden */
 const ISET_H = 3, ISET_V = 2, GUTTER = 3;
+// =================================================================
+// ====    p5js utility functions
 /**
  * Used to convert p5js image objects to one that can be used
  * directly in JS.
@@ -258,29 +260,6 @@ const _map = function (n, low1, high1, low2, high2, keepInRange = false) {
         return _constrain(newval, low2, high2);
     else
         return _constrain(newval, high2, low2);
-};
-// =================================================================
-// ====    Development utilities
-/** @hidden */
-const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
-// Source - https://stackoverflow.com/a/26983095
-// Posted by user1693593, modified by community. 
-// See post 'Timeline' for change history
-// Retrieved 2026-02-06, License - CC BY-SA 3.0
-// Modified by Quark for this project.
-// Store original code 
-HTMLCanvasElement.prototype["_getContext"] =
-    HTMLCanvasElement.prototype.getContext;
-// Store context type 
-HTMLCanvasElement.prototype["_contextType"] = '';
-// Register getContext wrapper method 
-HTMLCanvasElement.prototype.getContext = function (type) {
-    this["_contextType"] = type;
-    return this["_getContext"](type);
-};
-// Return the context type used 
-HTMLCanvasElement.prototype["hasContext"] = function () {
-    return this["_contextType"];
 };
 // =================================================================
 // ====    HTML Character Entities
@@ -477,5 +456,33 @@ const CHAR_ENTITIES = function () {
 const replaceEntities = function (str) {
     const ptn = /(&\w+;)/gu;
     return str.replace(ptn, m => CHAR_ENTITIES.get(m) || m);
+};
+// =================================================================
+// ====    Development code and utilities
+/** @hidden */
+const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] = [console.log, console.warn, console.error, console.assert, console.clear];
+/*
+This modifies the HTMLCanvasElement protoype so that it remembers the context
+type '2d' or 'webgl2' used with the getContext(...) method.
+
+Taken from:
+    Source - https://stackoverflow.com/a/26983095
+    Retrieved 2026-02-06, License - CC BY-SA 3.0
+and then modified by Quark for this project.
+*/
+// Store the original 'getContext' function  
+HTMLCanvasElement.prototype["_getContext"] =
+    HTMLCanvasElement.prototype.getContext;
+// Field to store the requested context type 
+HTMLCanvasElement.prototype["_contextType"] = '';
+// Create new 'getContext' method that stores the context type
+// before calling the original function getContext wrapper method 
+HTMLCanvasElement.prototype.getContext = function (type) {
+    this["_contextType"] = type;
+    return this["_getContext"](type);
+};
+// Retrieve the context type used when creating the context
+HTMLCanvasElement.prototype["hasContext"] = function () {
+    return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
