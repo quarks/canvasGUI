@@ -279,8 +279,27 @@ class CvsControl extends CvsPin {
     orientation() {
         return this._orientation;
     }
+    /**
+     * <p>Execute one or more configuration methods on this control.</p>
+     * <p>The parameter is a user defined object where each field is the
+     * name of a configuration method and its value is the method's
+     * parameter(s). Multiple parameters should be in an array and use
+     * 'undefined' if the method expects no parameters.</p>
+     * <p>This object will change the color scheme, text size and alignment,
+     * it will also make sure it is visible.</p>
+     * <pre>
+     * { scheme : 'red', textSize : 12, textAlign: ['left', 'top'], show : undefined }
+     * </pre>
+     * If the field name does not exist or not a valid function of this
+     * control it will be silently ignored.</p>
+     * <p>There is <em>no error checking</em> on the parameters, it is up to
+     * the user to ensure they are valid for the control method.</p>
+     *
+     * @param cfg the configuration object
+     * @returns this control
+     */
     config(cfg) {
-        let ctrl = this;
+        const ctrl = this;
         if (typeof cfg === 'object') {
             Object.keys(cfg).forEach(p => {
                 if (typeof ctrl[p] === 'function') {
@@ -288,11 +307,9 @@ class CvsControl extends CvsPin {
                         ? ctrl[p].call(this, ...cfg[p])
                         : ctrl[p].call(this, cfg[p]);
                 }
-                else {
-                    this.warn$(p);
-                }
             });
         }
+        return this;
     }
     /** @hidden */
     _updateControlVisual() { }

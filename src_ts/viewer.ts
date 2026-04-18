@@ -47,7 +47,6 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */ protected _pmy!: number;
     /** @hidden */ protected _pkBox!: Array<number>;
 
-
     /** @hidden */ protected _value!: number;
     /** @hidden */ protected _used!: number;
 
@@ -341,9 +340,14 @@ class CvsViewer extends CvsBufferedControl {
 
     /** @hidden */
     _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
-        let absPos = this.getAbsXY();
-        let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
-        this.over = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
+        const absPos = this.getAbsXY();
+        const [mx, my] = [x - absPos.x, y - absPos.y];
+        // Over this control, scrollbar or scaler?
+        this.over = Boolean(over.control === this
+            || over.control === this._scrH
+            || over.control === this._scrV
+            || (this._scaler && over.control === this._scaler)
+        );
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -392,6 +396,7 @@ class CvsViewer extends CvsBufferedControl {
                     this._scrV.show();
                 }
                 else {
+                    CLOG(`Mouse off hide scrollbars ${Date.now() % 10000}`)
                     this._scrH.hide();
                     this._scrV.hide();
                 }
@@ -498,8 +503,9 @@ class CvsViewer extends CvsBufferedControl {
     }
 
     /** 
-     * <p>the 'a' parameters represent the image size i.e. [0, 0, image_width, imgaeHeight]
-     * and 'b' the view area taking into account scaling.</p>
+     * <p>the 'a' parameters represent the image size 
+     * i.e. [0, 0, image_width, imgaeHeight] and 'b' the view 
+     * area taking into account scaling.</p>
      * @hidden 
      */
     _overlap(ax0: number, ay0: number, ax1: number, ay1: number,

@@ -1653,7 +1653,8 @@ class GUI {
      * <p>This will create a new color scheme from an existing one. The returned
      * scheme is a deep-copy of the source scheme and should be edited before
      * adding it to the GUI with  the addScheme(...) method. The name of the
-     * new scheme is specified in the first parameter and cannot be changed later.</p>
+     * new scheme is specified in the first parameter and cannot be changed
+     * later.</p>
      * <p>The method will fail if -</p>
      * <ul>
      * <li>either parameter is not a string of length &gt;0, or</li>
@@ -1678,8 +1679,8 @@ class GUI {
         return new UserColorScheme(userName, srcScheme);
     }
     /**
-     * <p>Adds a new color scheme to those already available. It does not replace an
-     * existing scheme.</p>
+     * <p>Adds a new color scheme to those already available. It does not
+     * replace an existing scheme.</p>
      * @param scheme  the color scheme
      * @returns this gui instance
      */
@@ -1705,7 +1706,7 @@ class GUI {
         x *= this._pr;
         y *= this._pr;
         const pkb = this._pkBuffer;
-        const result = { control: null, part: -1 };
+        const result = { control: undefined, part: -1 };
         if (x >= 0 && x < pkb.width && y >= 0 && y < pkb.height) {
             const rgb = this.getPickColor(x, y);
             const ctl_col = rgb & this._COLOR_MASK;
@@ -1777,8 +1778,8 @@ GUI.VERSION = '3.0.0';
  * <p><b><em>This function must be used when creating a GUI.</em></b></p>
  *
  * <p>If no 'id' is passed to the function canvasGUI will generate a random
- * 'id'. If there is a pre-exisiting gui with the id provided it will be returned
- * instead of creating a new one.</p>
+ * 'id'. If there is a pre-exisiting gui with the id provided it will be
+ * returned instead of creating a new one.</p>
  *
  * <p>The second parameter must be the one of the following :</p>
  * <ul>
@@ -2686,8 +2687,27 @@ class CvsControl extends CvsPin {
     orientation() {
         return this._orientation;
     }
+    /**
+     * <p>Execute one or more configuration methods on this control.</p>
+     * <p>The parameter is a user defined object where each field is the
+     * name of a configuration method and its value is the method's
+     * parameter(s). Multiple parameters should be in an array and use
+     * 'undefined' if the method expects no parameters.</p>
+     * <p>This object will change the color scheme, text size and alignment,
+     * it will also make sure it is visible.</p>
+     * <pre>
+     * { scheme : 'red', textSize : 12, textAlign: ['left', 'top'], show : undefined }
+     * </pre>
+     * If the field name does not exist or not a valid function of this
+     * control it will be silently ignored.</p>
+     * <p>There is <em>no error checking</em> on the parameters, it is up to
+     * the user to ensure they are valid for the control method.</p>
+     *
+     * @param cfg the configuration object
+     * @returns this control
+     */
     config(cfg) {
-        let ctrl = this;
+        const ctrl = this;
         if (typeof cfg === 'object') {
             Object.keys(cfg).forEach(p => {
                 if (typeof ctrl[p] === 'function') {
@@ -2695,11 +2715,9 @@ class CvsControl extends CvsPin {
                         ? ctrl[p].call(this, ...cfg[p])
                         : ctrl[p].call(this, cfg[p]);
                 }
-                else {
-                    this.warn$(p);
-                }
             });
         }
+        return this;
     }
     /** @hidden */
     _updateControlVisual() { }
@@ -5320,9 +5338,13 @@ class CvsViewer extends CvsBufferedControl {
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
-        let absPos = this.getAbsXY();
-        let [mx, my, cw, ch] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
-        this.over = (mx >= 0 && mx <= cw && my >= 0 && my <= ch);
+        const absPos = this.getAbsXY();
+        const [mx, my] = [x - absPos.x, y - absPos.y];
+        // Over this control, scrollbar or scaler?
+        this.over = Boolean(over.control === this
+            || over.control === this._scrH
+            || over.control === this._scrV
+            || (this._scaler && over.control === this._scaler));
         switch (e.type) {
             case 'mousedown':
             case 'touchstart':
@@ -5371,6 +5393,7 @@ class CvsViewer extends CvsBufferedControl {
                     this._scrV.show();
                 }
                 else {
+                    CLOG(`Mouse off hide scrollbars ${Date.now() % 10000}`);
                     this._scrH.hide();
                     this._scrV.hide();
                 }
@@ -5476,8 +5499,9 @@ class CvsViewer extends CvsBufferedControl {
         pkc.restore();
     }
     /**
-     * <p>the 'a' parameters represent the image size i.e. [0, 0, image_width, imgaeHeight]
-     * and 'b' the view area taking into account scaling.</p>
+     * <p>the 'a' parameters represent the image size
+     * i.e. [0, 0, image_width, imgaeHeight] and 'b' the view
+     * area taking into account scaling.</p>
      * @hidden
      */
     _overlap(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1) {

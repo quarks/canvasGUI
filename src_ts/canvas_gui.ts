@@ -785,7 +785,8 @@ class GUI {
       if (this._prevOver) this._prevOver.over = false;
     }
     // Ignore mouse / touch events while we have an active textfield
-    if (this._activeCtrl instanceof CvsTextField) return;
+    if (this._activeCtrl instanceof CvsTextField)
+      return;
     const over = this.getPicked(x, y);
     this._currOver = over.control;
     // Determine if we have entered current over control
@@ -1278,7 +1279,8 @@ class GUI {
    * <p>This will create a new color scheme from an existing one. The returned 
    * scheme is a deep-copy of the source scheme and should be edited before 
    * adding it to the GUI with  the addScheme(...) method. The name of the 
-   * new scheme is specified in the first parameter and cannot be changed later.</p>
+   * new scheme is specified in the first parameter and cannot be changed 
+   * later.</p>
    * <p>The method will fail if -</p>
    * <ul>
    * <li>either parameter is not a string of length &gt;0, or</li>
@@ -1304,8 +1306,8 @@ class GUI {
   }
 
   /**
-   * <p>Adds a new color scheme to those already available. It does not replace an
-   * existing scheme.</p>
+   * <p>Adds a new color scheme to those already available. It does not 
+   * replace an existing scheme.</p>
    * @param scheme  the color scheme
    * @returns this gui instance
    */
@@ -1331,7 +1333,7 @@ class GUI {
   getPicked(x: number, y: number) {
     x *= this._pr; y *= this._pr;
     const pkb = this._pkBuffer;
-    const result = { control: null, part: -1 };
+    const result = { control: undefined, part: -1 };
     if (x >= 0 && x < pkb.width && y >= 0 && y < pkb.height) {
       const rgb = this.getPickColor(x, y);
       const ctl_col = rgb & this._COLOR_MASK;
@@ -1372,7 +1374,7 @@ class GUI {
   }
 
   /**
-   * <p>After V2.0 this method was marked as private and should not be used.</p> 
+   * <p>After V2.0 this method was marked as private and should not be used.</p>
    * <p>The global method <code>createGUI(...)</code> method <b><i>must</i></b>
    * be used instead.</p>
    * 
@@ -1401,8 +1403,8 @@ class GUI {
  * <p><b><em>This function must be used when creating a GUI.</em></b></p>
  * 
  * <p>If no 'id' is passed to the function canvasGUI will generate a random 
- * 'id'. If there is a pre-exisiting gui with the id provided it will be returned
- * instead of creating a new one.</p>
+ * 'id'. If there is a pre-exisiting gui with the id provided it will be 
+ * returned instead of creating a new one.</p>
  * 
  * <p>The second parameter must be the one of the following :</p>
  * <ul>
