@@ -1,0 +1,23 @@
+<pc push ft35 fs32 gf0 gs1 gsw1.75>canvasGUI<pop>3 
+<pj:::1 n ft5 fs18>
+This is the <b>poster control<n> which gives 
+the user greater flexibility over text layout and font styles.
+<pj:::1>The text below was posted by "<push ft21>www.wix.com<pop>" 
+and dicusses web-safe-fonts. This sketch will allow you to 
+experiment formatting this text.
+<pc>---------------------------------------------------
+<pl> 
+Web-safe fonts are fonts widely supported across various 
+operating systems and browsers. Important for consistent 
+and reliable display, they make sure a website appears as 
+intended on different devices. Common examples include 
+Arial, Helvetica and Times New Roman, minimizing the risk 
+of font rendering issues, such as slower website load times 
+and enhancing the site's accessibility and usability.
+<pl>
+Like all other types of fonts, web-safe fonts are categorized 
+according to their generic font families. A generic font 
+family is a category or classification of fonts that share 
+common characteristics or design elements. There are five 
+generic font families: serif, sans-serif, monospace, cursive 
+and fantasy.

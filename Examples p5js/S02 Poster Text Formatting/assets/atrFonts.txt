@@ -1,0 +1,35 @@
+0, 0, 2, Serif
+1, 0, 1, Bodoni Poster 
+1, 1, 1, Linotype Didot
+2, 0, 1, American Typewriter 
+2, 1, 1, Georgia 
+3, 0, 1, Times New Roman 
+3, 1, 1, Garamond 
+4, 0, 1, Rockwell 
+4, 1, 1, Palatino
+5, 0, 2, Sans-Serif
+6, 0, 1, Helvetica 
+6, 1, 1, Arial 
+7, 0, 1, Segoe Ui 
+7, 1, 1, Trebuchet MS 
+8, 0, 1, Verdana 
+8, 1, 1, Century Gothic 
+9, 0, 1, Tahoma 
+9, 1, 1, DejaVu Sans
+10, 0, 1, Calibri 
+10, 1, 1, Candara 
+11, 0, 1, Lucida Sans Unicode 
+12, 0, 2, Monospace
+13, 0, 1, Andale Mono  
+13, 1, 1, Monaco 
+14, 0, 1, Lucida Console 
+14, 1, 1, Courier New 
+15, 0, 2, Fantasy
+16, 0, 1, Luminari 
+16, 1, 1, Trattatello 
+17, 0, 1, Copperplate 
+17, 1, 1, Playbill
+18, 0, 1, Papyrus 
+18, 0, 2, Cursive
+19, 0, 1, Brush Script MT
+19, 1, 1, Bradley Hand

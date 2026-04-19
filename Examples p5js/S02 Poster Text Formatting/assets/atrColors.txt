@@ -1,0 +1,14 @@
+red
+rgb(218 95 28)
+rgb(252 185 77)
+goldenrod
+rgb(170 108 24)
+limegreen
+rgb(135 155 66)
+green
+rgb(56 135 157)
+navy
+
+
+
+

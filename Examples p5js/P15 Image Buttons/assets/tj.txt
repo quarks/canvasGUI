@@ -1,0 +1,3 @@
+<pc fs24 b ft0>Tom &amp; Jerry
+<pj t fs18>The 'off' and 'over' images have no transparent pixels 
+so the hit zone is defined by the opaque pixels in the mask image.

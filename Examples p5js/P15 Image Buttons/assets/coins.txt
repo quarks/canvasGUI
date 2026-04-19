@@ -1,0 +1,4 @@
+<pc fs24 b ft0>Gold Doubloons
+<pj t fs18>Both the 'off' and 'over' images have transparent pixels. Since 
+there is no mask image the hit zone is defined by the opaque pixels in 
+the 'off' image.

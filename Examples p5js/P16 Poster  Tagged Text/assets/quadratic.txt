@@ -1,0 +1,9 @@
+<pc4 ft0 fs22 b>Solving a Quadratic Equation 
+<pl8:::2 fs14 n>Given the equation <ft1>a.x&sup2; + b.x + c = 0
+<ft1> then the solutions are calculated using the equation 
+<pl6:30 ft2>x = -b &plusmn; &radic;(b&sup2;- 4.a.c)/(2.a)
+<pl10:::2 ft1>Depending on the value of <ft2>(b&sup2;- 4.a.c) 
+<ft1>there are three possible outcomes they are &rarr;
+<pl4:20 ft2>=0<ft1>  a single real number solution for <ft2>x
+<pl4:20>&gt;0<ft1>  two real number solutions for <ft2>x
+<pl4:20>&lt;0<ft1>  two complex number solutions for <ft2>x

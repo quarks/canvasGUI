@@ -1,0 +1,9 @@
+<pc ft5 b fs70 gf4>WANTED 
+<pc-20 fs36>DEAD<push fs24> or <pop>ALIVE
+<pc210 fs44>BILLY<push fs36> the <pop>KID
+<pc fs26>WILLIAM BONNY
+<pc40 fs44>$5,000 REWARD
+<pl:58 bi ft2 fs12>notify
+<pl8:80 fs20>M<push fs16>arshall <pop>
+P<push fs16>at <pop>
+G<push fs16>arrett<pop>

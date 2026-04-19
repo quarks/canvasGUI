@@ -1,0 +1,4 @@
+<pc fs24 b ft0>Santa Claus
+<pj t fs18>This button has a single image for the 'off' button status so the 
+hit zone is defined by its opaque pixels. When the mouse is over the hit zone 
+the button will have a border highliget because there is no 'over' image.

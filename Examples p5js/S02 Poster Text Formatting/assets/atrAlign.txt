@@ -1,0 +1,4 @@
+pl, 1, 0, Left
+pr, 1, 1, Right
+pc, 2, 0, Center
+pj, 2, 1, Justified

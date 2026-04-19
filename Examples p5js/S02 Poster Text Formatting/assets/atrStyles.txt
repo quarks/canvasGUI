@@ -1,0 +1,8 @@
+n, 1, 0, Normal
+t, 1, 1, Thin
+b, 2, 0, Bold
+i, 2, 1, Italic
+bi, 3, 0, Bold Italic
+ti, 3, 1, Thin Italic
+ol, 4, 0, Oblique Left
+or, 4, 1, Oblique Right
