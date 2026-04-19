@@ -17,7 +17,7 @@ leads to an iterative process of editing the controls size and position which
 is very time consuming and frustrating. 
 
 The grid layout allows you to define an imaginary grid and place the controls
-in it. By changing the grid lauout parameters all controls are repostioned 
+in it. By changing the grid layout parameters all controls are repostioned 
 and resized accordingly. The layout calculates the initial size and position
 of the controls when they are first created and cannot be used to alter the
 control grid appearance later.
