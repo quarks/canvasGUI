@@ -1,11 +1,7 @@
+/.vscode
 /node_modules
 /tests
 /fonts
 /notes
 /sketches
-/libraries
-/V1_tests
-/V2_after_tests
-/V2_tests
-/V2_Reference_examples
 /V3_tests

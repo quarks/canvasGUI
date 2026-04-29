@@ -32,7 +32,7 @@ abstract class CvsControl extends CvsPin {
      * method is used to define the event handler actions.</p> 
      * @hidden
      */
-    action: Function = function () { };
+    // action: Function = function () { };
 
     /**
      * CvsControl class
@@ -166,13 +166,13 @@ abstract class CvsControl extends CvsPin {
      * @param event_handler  the function to handle this control's events.
      * @returns this control
      */
-    setAction(event_handler: Function) {
-        if (typeof event_handler === 'function')
-            this.action = event_handler;
-        else
-            console.error(`The action for '$(this._id)' must be a function definition`);
-        return this;
-    }
+    // setAction(event_handler: Function) {
+    //     if (typeof event_handler === 'function')
+    //         this.action = event_handler;
+    //     else
+    //         console.error(`The action for '$(this._id)' must be a function definition`);
+    //     return this;
+    // }
 
     /**
      * <p>Sets this controls display orientation to one of the four cardinal 

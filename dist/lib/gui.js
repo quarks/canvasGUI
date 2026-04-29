@@ -2130,6 +2130,13 @@ class CvsPin {
         /** @hidden */ this._visible = false;
         /** @hidden */ this._enabled = false;
         /** @hidden */ this._bufferInvalid = true;
+        /**
+         * <p>The event handler for this control. Although it is permitted to set this
+         * property directly it is recommended that the <code>setAction(...)</code>
+         * method is used to define the event handler actions.</p>
+         * @hidden
+         */
+        this.action = function () { };
         this._gui = gui;
         this._id = id;
         this._x = Math.round(x);
@@ -2181,6 +2188,25 @@ class CvsPin {
      * @hidden
      */
     get bufferStatus() { return { ui: false, pk: false }; }
+    /**
+     * <p>This sets the event handler to be used when this control fires
+     * an event. The parameter can take one of three forms:</p>
+     * <ol>
+     * <li>Arrow function definition</li>
+     * <li>Anonymous function definition</li>
+     * <li>Named function declaration</li>
+     * </ol>
+     *
+     * @param event_handler  the function to handle this control's events.
+     * @returns this control
+     */
+    setAction(event_handler) {
+        if (typeof event_handler === 'function')
+            this.action = event_handler;
+        else
+            console.error(`The action for '$(this._id)' must be a function definition`);
+        return this;
+    }
     /**
      * Move this control to an absolute position.
      * @param x horizontal position
@@ -2412,6 +2438,13 @@ class CvsPin {
  */
 class CvsControl extends CvsPin {
     /**
+     * <p>The event handler for this control. Although it is permitted to set this
+     * property directly it is recommended that the <code>setAction(...)</code>
+     * method is used to define the event handler actions.</p>
+     * @hidden
+     */
+    // action: Function = function () { };
+    /**
      * CvsControl class
      * @hidden
      * @param gui
@@ -2431,13 +2464,6 @@ class CvsControl extends CvsPin {
         /** @hidden */ this._clickAllowed = false;
         /** @hidden */ this._opaque = true;
         /** @hidden */ this._tooltip = undefined;
-        /**
-         * <p>The event handler for this control. Although it is permitted to set this
-         * property directly it is recommended that the <code>setAction(...)</code>
-         * method is used to define the event handler actions.</p>
-         * @hidden
-         */
-        this.action = function () { };
         this._w = Math.round(w);
         this._h = Math.round(h);
         this._visible = true;
@@ -2547,13 +2573,13 @@ class CvsControl extends CvsPin {
      * @param event_handler  the function to handle this control's events.
      * @returns this control
      */
-    setAction(event_handler) {
-        if (typeof event_handler === 'function')
-            this.action = event_handler;
-        else
-            console.error(`The action for '$(this._id)' must be a function definition`);
-        return this;
-    }
+    // setAction(event_handler: Function) {
+    //     if (typeof event_handler === 'function')
+    //         this.action = event_handler;
+    //     else
+    //         console.error(`The action for '$(this._id)' must be a function definition`);
+    //     return this;
+    // }
     /**
      * <p>Sets this controls display orientation to one of the four cardinal
      * compass points. An invalid parameter will set the orientation to 'east'

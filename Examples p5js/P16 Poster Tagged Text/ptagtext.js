@@ -14,8 +14,8 @@ async function setup() {
     poster = gui.poster('box1', 60, 30, 360, 240)
         .scheme('yellow')
         .opaque(128)
-        .text(txt)
         .corners(10)
+        .text(txt);
 
     ABOUT(gui, 'Tagged Text with Character Entities');
 }
