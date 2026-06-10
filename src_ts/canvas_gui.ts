@@ -80,9 +80,7 @@ class GUI {
   /** @hidden */ public _repeat_time: number = TT_REPEAT_TIME;
 
   /** @hidden */ protected _uiBuffer!: OffscreenCanvas;
-  // /** @hidden */ protected _uiContext?: OffscreenCanvasRenderingContext2D | null;
   /** @hidden */ protected _pkBuffer!: OffscreenCanvas;
-  // /** @hidden */ protected _pkContext?: OffscreenCanvasRenderingContext2D | null;
 
   // The number of permitted colors per object (must be a power of 2)
   // An object can use any color value from NEXT_COLOR to
@@ -91,7 +89,7 @@ class GUI {
   /** @hidden */ protected _PART_MASK: number;
   /** @hidden */ protected _COLOR_MASK: number;
   // The next base color to be assigned when an object is registered
-  /** @hidden */ protected _NEXT_COLOR: number; // this._COLOR_STEP;
+  /** @hidden */ protected _NEXT_COLOR: number;
   /** @hidden */ protected _color2control = new Map(); // Map the base pick color to the object
   /** @hidden */ protected _control2color = new Map(); // Find the colour for a given object
 
@@ -107,11 +105,13 @@ class GUI {
 
   /** 
    * Create a GUI object to create and manage the GUI controls for
-   * an HTML canvas.
+   * an HTML canvas element.
    * 
    * @hidden
-   * @param p5c the renderer
-   * @param p the sketch instance
+   * @param id unique string identifier for this gui
+   * @param canvas the HTML canvas element to use for this gui
+   * @param pixelRatio the device pixel ratio renderer
+   * @param mode either 'p5js' or 'JS' 
    */
   public constructor(id: string, canvas: HTMLCanvasElement, pixelRatio: number, mode: string) {
     this._uid = id;
@@ -413,7 +413,6 @@ class GUI {
     return new CvsRanger(this, id, x, y, w, h);
   }
 
-
   /**
    * Create a single line text input control
    * @param id unique id for this control
@@ -608,6 +607,16 @@ class GUI {
 
   /** @returns the display height   */
   get canvasHeight() { return this._canvas.height / this._pr; }
+
+  /** @returns true if the mouse is over a UI responsive control or if a 
+   * control is active.
+   */
+  get isBusy() { return Boolean(this._currOver || this._activeCtrl) }
+
+  /** @returns true if there is no active control and the mouse is not over 
+   * any UI responsive control or if a control is active. 
+   */
+  get isIdle() { return !Boolean(this._currOver || this._activeCtrl) }
 
   /**
    * Get a grid layout for a given pixel position and size in the display area.
@@ -883,13 +892,13 @@ class GUI {
    * @param control the object to add
    * @hidden
    */
-  register(control: CvsBufferedControl) {
-    if (control && !this._control2color.has(control)) {
-      this._control2color.set(control, this._NEXT_COLOR);
-      this._color2control.set(this._NEXT_COLOR, control);
-      this._NEXT_COLOR += this._COLOR_STEP;
-    }
-  }
+  // register(control: CvsBufferedControl) {
+  //   if (control && !this._control2color.has(control)) {
+  //     this._control2color.set(control, this._NEXT_COLOR);
+  //     this._color2control.set(this._NEXT_COLOR, control);
+  //     this._NEXT_COLOR += this._COLOR_STEP;
+  //   }
+  // }
 
   /**
    * Sorts the controls so that they are rendered in order of their z

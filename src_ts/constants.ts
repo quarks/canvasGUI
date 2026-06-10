@@ -57,7 +57,7 @@ const TAGS = function () {
  * @type {*}
  * @hidden
  */
-const cssFont$ = function (fontface: string, size: number, style: string, slant = 14) {
+const cssFont$ = function (fontface: string, size: number, style = 'normal', slant = 14) {
     let s = 'normal', w = 400;
     switch (style) {
         case "bold": w = 600; break;
@@ -491,7 +491,6 @@ const [CLOG, CWARN, CERROR, CASSERT, CCLEAR] =
 
 /** @hidden */
 type cvsIcon = HTMLCanvasElement | OffscreenCanvas;
-
 
 /*
 This modifies the HTMLCanvasElement protoype so that it remembers the context

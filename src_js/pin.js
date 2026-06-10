@@ -47,6 +47,13 @@ class CvsPin {
     /** @hidden */
     set z(v) { this._z = v; }
     /**
+     * <p>Get an array of the children for this control.</p>
+     *
+     * @readonly
+     * @type {Array<any>}
+     */
+    get children() { return Array.from(this._children); }
+    /**
      * <p>This is true if the control can respond to UI events else false.</p>
      * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
      */
@@ -56,16 +63,6 @@ class CvsPin {
      * <p>Use <code>hide()</code> and <code>show()</code> to set visibility.</p>
      */
     get isVisible() { return this._visible; }
-    // /**
-    //  * <p>Sets the visibility of this control.</p>
-    //  * <p>It is an alternative to using show and hide.</p>
-    //  */
-    // set visible(v) { this._visible = v }
-    // /**
-    //  * <p>Gets the visibility of this control.</p>
-    //  * <p>It is an alternative to using isVisible.</p>
-    //  */
-    // get visible() { return this._visible }
     /**
      * Test function to show existing puffers
      * @hidden
@@ -208,6 +205,22 @@ class CvsPin {
      */
     getParent() {
         return this._parent;
+    }
+    /**
+     * <p>Perform a sort of this control's chidren using a user defined
+     * sort function provided.</p>
+     * The value returned by the sort function should be</p>
+     * <ul>
+     * <li>&lt;0 if a should appear before b</li>
+     * <li>&gt;0 if b should appear before a and </li>
+     * <li>=0 if the two values are equivalent or their order irrelevant</li>
+     * </ul>
+     *
+     * @param orderby sort function
+     */
+    sortChildren(orderby) {
+        if (orderby)
+            this._children.sort(orderby);
     }
     /**
      * <p>Enables this control and all its children.</p>

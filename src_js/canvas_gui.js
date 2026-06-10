@@ -24,11 +24,13 @@ const CANVAS_GUI_VERSION = '!!VERSION!!';
 class GUI {
     /**
      * Create a GUI object to create and manage the GUI controls for
-     * an HTML canvas.
+     * an HTML canvas element.
      *
      * @hidden
-     * @param p5c the renderer
-     * @param p the sketch instance
+     * @param id unique string identifier for this gui
+     * @param canvas the HTML canvas element to use for this gui
+     * @param pixelRatio the device pixel ratio renderer
+     * @param mode either 'p5js' or 'JS'
      */
     constructor(id, canvas, pixelRatio, mode) {
         // Prevent duplicate event handlers
@@ -522,6 +524,14 @@ class GUI {
     get canvasWidth() { return this._canvas.width / this._pr; }
     /** @returns the display height   */
     get canvasHeight() { return this._canvas.height / this._pr; }
+    /** @returns true if the mouse is over a UI responsive control or if a
+     * control is active.
+     */
+    get isBusy() { return Boolean(this._currOver || this._activeCtrl); }
+    /** @returns true if there is no active control and the mouse is not over
+     * any UI responsive control or if a control is active.
+     */
+    get isIdle() { return !Boolean(this._currOver || this._activeCtrl); }
     /**
      * Get a grid layout for a given pixel position and size in the display area.
      * Initially the grid repreents a single cell but the number and size of
@@ -772,13 +782,13 @@ class GUI {
      * @param control the object to add
      * @hidden
      */
-    register(control) {
-        if (control && !this._control2color.has(control)) {
-            this._control2color.set(control, this._NEXT_COLOR);
-            this._color2control.set(this._NEXT_COLOR, control);
-            this._NEXT_COLOR += this._COLOR_STEP;
-        }
-    }
+    // register(control: CvsBufferedControl) {
+    //   if (control && !this._control2color.has(control)) {
+    //     this._control2color.set(control, this._NEXT_COLOR);
+    //     this._color2control.set(this._NEXT_COLOR, control);
+    //     this._NEXT_COLOR += this._COLOR_STEP;
+    //   }
+    // }
     /**
      * Sorts the controls so that they are rendered in order of their z
      * value (low z --> high z).

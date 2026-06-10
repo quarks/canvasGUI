@@ -1,7 +1,7 @@
  /**
  * @preserve canvasGUI    (c) Peter Lager  2026
  * @license MIT
- * @version 3.0.0
+ * @version 3.0.1
  */
 // =================================================================
 // ====    canvasGUI control variables
@@ -53,7 +53,7 @@ const TAGS = function () {
  * @type {*}
  * @hidden
  */
-const cssFont$ = function (fontface, size, style, slant = 14) {
+const cssFont$ = function (fontface, size, style = 'normal', slant = 14) {
     let s = 'normal', w = 400;
     switch (style) {
         case "bold":
@@ -491,7 +491,7 @@ HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
-const CANVAS_GUI_VERSION = '3.0.0';
+const CANVAS_GUI_VERSION = '3.0.1';
 /**
  * <h2>Core class for the canvasGUI library </h2>
  *
@@ -517,11 +517,13 @@ const CANVAS_GUI_VERSION = '3.0.0';
 class GUI {
     /**
      * Create a GUI object to create and manage the GUI controls for
-     * an HTML canvas.
+     * an HTML canvas element.
      *
      * @hidden
-     * @param p5c the renderer
-     * @param p the sketch instance
+     * @param id unique string identifier for this gui
+     * @param canvas the HTML canvas element to use for this gui
+     * @param pixelRatio the device pixel ratio renderer
+     * @param mode either 'p5js' or 'JS'
      */
     constructor(id, canvas, pixelRatio, mode) {
         // Prevent duplicate event handlers
@@ -1015,6 +1017,14 @@ class GUI {
     get canvasWidth() { return this._canvas.width / this._pr; }
     /** @returns the display height   */
     get canvasHeight() { return this._canvas.height / this._pr; }
+    /** @returns true if the mouse is over a UI responsive control or if a
+     * control is active.
+     */
+    get isBusy() { return Boolean(this._currOver || this._activeCtrl); }
+    /** @returns true if there is no active control and the mouse is not over
+     * any UI responsive control or if a control is active.
+     */
+    get isIdle() { return !Boolean(this._currOver || this._activeCtrl); }
     /**
      * Get a grid layout for a given pixel position and size in the display area.
      * Initially the grid repreents a single cell but the number and size of
@@ -1265,13 +1275,13 @@ class GUI {
      * @param control the object to add
      * @hidden
      */
-    register(control) {
-        if (control && !this._control2color.has(control)) {
-            this._control2color.set(control, this._NEXT_COLOR);
-            this._color2control.set(this._NEXT_COLOR, control);
-            this._NEXT_COLOR += this._COLOR_STEP;
-        }
-    }
+    // register(control: CvsBufferedControl) {
+    //   if (control && !this._control2color.has(control)) {
+    //     this._control2color.set(control, this._NEXT_COLOR);
+    //     this._color2control.set(this._NEXT_COLOR, control);
+    //     this._NEXT_COLOR += this._COLOR_STEP;
+    //   }
+    // }
     /**
      * Sorts the controls so that they are rendered in order of their z
      * value (low z --> high z).
@@ -1766,7 +1776,7 @@ class GUI {
     }
 }
 /** canvasGUI version */
-GUI.VERSION = '3.0.0';
+GUI.VERSION = '3.0.1';
 // Remember all GUIs created are accessible using gui's unique string
 // identifier.
 /** @hidden */ GUI._guis = new Map();
@@ -2164,6 +2174,13 @@ class CvsPin {
     /** @hidden */
     set z(v) { this._z = v; }
     /**
+     * <p>Get an array of the children for this control.</p>
+     *
+     * @readonly
+     * @type {Array<any>}
+     */
+    get children() { return Array.from(this._children); }
+    /**
      * <p>This is true if the control can respond to UI events else false.</p>
      * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
      */
@@ -2173,16 +2190,6 @@ class CvsPin {
      * <p>Use <code>hide()</code> and <code>show()</code> to set visibility.</p>
      */
     get isVisible() { return this._visible; }
-    // /**
-    //  * <p>Sets the visibility of this control.</p>
-    //  * <p>It is an alternative to using show and hide.</p>
-    //  */
-    // set visible(v) { this._visible = v }
-    // /**
-    //  * <p>Gets the visibility of this control.</p>
-    //  * <p>It is an alternative to using isVisible.</p>
-    //  */
-    // get visible() { return this._visible }
     /**
      * Test function to show existing puffers
      * @hidden
@@ -2325,6 +2332,22 @@ class CvsPin {
      */
     getParent() {
         return this._parent;
+    }
+    /**
+     * <p>Perform a sort of this control's chidren using a user defined
+     * sort function provided.</p>
+     * The value returned by the sort function should be</p>
+     * <ul>
+     * <li>&lt;0 if a should appear before b</li>
+     * <li>&gt;0 if b should appear before a and </li>
+     * <li>=0 if the two values are equivalent or their order irrelevant</li>
+     * </ul>
+     *
+     * @param orderby sort function
+     */
+    sortChildren(orderby) {
+        if (orderby)
+            this._children.sort(orderby);
     }
     /**
      * <p>Enables this control and all its children.</p>

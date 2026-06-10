@@ -1,10 +1,4 @@
 /**
- * 2D position
- * @hidden
- */
-interface __Position { x: number; y: number; }
-
-/**
  * <h2>This is a placeholder for other controls (its children)</h2>
  * 
  * A pin has a position but no visual representation and its children will be
@@ -16,7 +10,6 @@ class CvsPin {
     /** @hidden */ protected _id: string;
     /** @hidden */ protected _children: Array<any> = [];
     /** @hidden */ protected _parent: any;
-
 
     /** @hidden */ protected _x: number = 0;
     /** @hidden */ protected _y: number = 0;
@@ -36,53 +29,53 @@ class CvsPin {
     }
 
     /** The unique identifier for this control.   */
-    get id() { return this._id; }
+    get id() { return this._id }
 
     /** 
      * The type name for this control.<br>
      * (type name = class name without the <code>Cvs</code> prefix)
      */
-    get type() { return this.constructor.name.substring(3); };
+    get type() { return this.constructor.name.substring(3) };
 
     /** @hidden */
-    get x() { return this._x; }
+    get x() { return this._x }
     /** @hidden */
-    set x(v) { this._x = Math.round(v); }
+    set x(v) { this._x = Math.round(v) }
 
     /** @hidden */
     get y() { return this._y; }
     /** @hidden */
-    set y(v) { this._y = Math.round(v); }
+    set y(v) { this._y = Math.round(v) }
 
     /** @hidden */
     get z() { return this._z; }
     /** @hidden */
     set z(v) { this._z = v; }
 
+
+
+    /**
+     * <p>Get an array of the child controls.</p>
+     * <p>Removing, adding or changing the order of the elements in this 
+     * array is ignored by canvasGUI so will not affect the GUI.</p>
+     *
+     * @readonly
+     * @type {Array<any>}
+     */
+    get children() { return Array.from(this._children) }
+
     /**
      * <p>This is true if the control can respond to UI events else false.</p>
-     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
+     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and 
+     * disable it.</p>
      */
-    get isEnabled() { return this._enabled; }
+    get isEnabled() { return this._enabled }
 
     /** 
      * <p>This is true if the control is visible else false.</p>
      * <p>Use <code>hide()</code> and <code>show()</code> to set visibility.</p>
      */
-    get isVisible() { return this._visible; }
-
-    // /**
-    //  * <p>Sets the visibility of this control.</p>
-    //  * <p>It is an alternative to using show and hide.</p>
-    //  */
-    // set visible(v) { this._visible = v }
-
-    // /**
-    //  * <p>Gets the visibility of this control.</p>
-    //  * <p>It is an alternative to using isVisible.</p>
-    //  */
-    // get visible() { return this._visible }
-
+    get isVisible() { return this._visible }
 
     /**
      * Test function to show existing puffers
@@ -148,7 +141,7 @@ class CvsPin {
      * @returns the actual position in the canvas
      * @hidden
      */
-    getAbsXY(): __Position {
+    getAbsXY(): { x: number; y: number; } {
         if (!this._parent) {
             return { x: this._x, y: this._y };
         } else {
@@ -240,6 +233,22 @@ class CvsPin {
      */
     getParent() {
         return this._parent;
+    }
+
+    /**
+     * <p>Perform a sort of this control's chidren using a user defined 
+     * sort function provided.</p>
+     * The value returned by the sort function should be</p>
+     * <ul>
+     * <li>&lt;0 if a should appear before b</li>
+     * <li>&gt;0 if b should appear before a and </li>
+     * <li>=0 if the two values are equivalent or their order irrelevant</li>
+     * </ul>
+     * 
+     * @param orderby sort function
+     */
+    sortChildren(orderby: (a: any, b: any) => number) {
+        if (orderby) this._children.sort(orderby);
     }
 
     /**

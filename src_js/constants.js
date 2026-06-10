@@ -48,7 +48,7 @@ const TAGS = function () {
  * @type {*}
  * @hidden
  */
-const cssFont$ = function (fontface, size, style, slant = 14) {
+const cssFont$ = function (fontface, size, style = 'normal', slant = 14) {
     let s = 'normal', w = 400;
     switch (style) {
         case "bold":
