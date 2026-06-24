@@ -6,12 +6,12 @@ class CvsTextIcon extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h, pickable) {
         super(gui, name, x, y, w, h, pickable);
-        /** @hidden */ this._ix = 0;
-        /** @hidden */ this._iy = 0;
-        /** @hidden */ this._icons = [];
-        /** @hidden */ this._iAlignH = 'left';
-        /** @hidden */ this._iAlignV = 'center';
         this._icon = undefined;
+        this._ix = 0;
+        this._iy = 0;
+        this._icons = [];
+        this._iAlignH = 'left';
+        this._iAlignV = 'center';
     }
     /**
      * <p>Sets the icon and its alignment relative to any text in the

@@ -25,10 +25,10 @@ class CvsPanel extends CvsBufferedControl {
      */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h, true);
-        /** @hidden */ this._canDragX = true;
-        /** @hidden */ this._canDragY = true;
-        /** @hidden */ this._constrainX = true;
-        /** @hidden */ this._constrainY = true;
+        this._canDragX = true;
+        this._canDragY = true;
+        this._constrainX = true;
+        this._constrainY = true;
         this._opaque = true;
         this._z = PANEL_Z;
     }

@@ -11,20 +11,26 @@ class CvsPin {
     /** @hidden */ protected _children: Array<any> = [];
     /** @hidden */ protected _parent: any;
 
-    /** @hidden */ protected _x: number = 0;
-    /** @hidden */ protected _y: number = 0;
-    /** @hidden */ protected _z: number = 0;
 
-    /** @hidden */ protected _visible: boolean = false;
-    /** @hidden */ protected _enabled: boolean = false;
+    /** @hidden */ protected _x: number;
+    /** @hidden */ protected _y: number;
+    /** @hidden */ protected _z: number;
 
-    /** @hidden */ protected _bufferInvalid: boolean = true;
+    /** @hidden */ protected _visible: boolean;
+    /** @hidden */ protected _enabled: boolean;
+
+    /** @hidden */ protected _bufferInvalid: boolean;
 
     constructor(gui: GUI, id: string, x: number, y: number) {
         this._gui = gui;
         this._id = id;
+        // this._children = [];
         this._x = Math.round(x);
         this._y = Math.round(y);
+        this._z = 0;
+        this._visible = false;
+        this._enabled = false;
+        this._bufferInvalid = true;
         this._gui.registerID(this);
     }
 

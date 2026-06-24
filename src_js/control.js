@@ -4,13 +4,6 @@
  */
 class CvsControl extends CvsPin {
     /**
-     * <p>The event handler for this control. Although it is permitted to set this
-     * property directly it is recommended that the <code>setAction(...)</code>
-     * method is used to define the event handler actions.</p>
-     * @hidden
-     */
-    // action: Function = function () { };
-    /**
      * CvsControl class
      * @hidden
      * @param gui
@@ -20,18 +13,16 @@ class CvsControl extends CvsPin {
      * @param w width
      * @param h height
      */
-    constructor(gui, id, x, y, w, h, pickable) {
+    constructor(gui, id, x, y, w = 0, h = 0, pickable = false) {
         super(gui, id, x, y);
-        /** @hidden */ this._w = 0;
-        /** @hidden */ this._h = 0;
-        /** @hidden */ this._isOver = false;
-        /** @hidden */ this._active = false;
-        /** @hidden */ this._alpha = 255;
-        /** @hidden */ this._clickAllowed = false;
-        /** @hidden */ this._opaque = true;
-        /** @hidden */ this._tooltip = undefined;
         this._w = Math.round(w);
         this._h = Math.round(h);
+        this._isOver = false;
+        this._active = false;
+        this._alpha = 255;
+        this._clickAllowed = false;
+        this._opaque = true;
+        this._tooltip = undefined;
         this._visible = true;
         this._enabled = true;
         this._scheme = undefined;
@@ -127,25 +118,6 @@ class CvsControl extends CvsPin {
         }
         return this;
     }
-    /**
-     * <p>This sets the event handler to be used when this control fires
-     * an event. The parameter can take one of three forms:</p>
-     * <ol>
-     * <li>Arrow function definition</li>
-     * <li>Anonymous function definition</li>
-     * <li>Named function declaration</li>
-     * </ol>
-     *
-     * @param event_handler  the function to handle this control's events.
-     * @returns this control
-     */
-    // setAction(event_handler: Function) {
-    //     if (typeof event_handler === 'function')
-    //         this.action = event_handler;
-    //     else
-    //         console.error(`The action for '$(this._id)' must be a function definition`);
-    //     return this;
-    // }
     /**
      * <p>Sets this controls display orientation to one of the four cardinal
      * compass points. An invalid parameter will set the orientation to 'east'
@@ -317,12 +289,6 @@ class CvsControl extends CvsPin {
     _doEvent(e, x = 0, y = 0, over, enter) { return this; }
     /** @hidden */
     _doKeyEvent(e) { return this; }
-    /**
-     * @param uic ui overlay buffer drawing context
-     * @param pkc picker buffer drawing context
-     * @hidden
-     */
-    _draw(uic, pkc) { }
 }
 /** @hidden */
 CvsControl.NORTH = new OrientNorth();

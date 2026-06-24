@@ -216,6 +216,9 @@ const cvsGuiColor = function (color) {
 };
 // =================================================================
 // ====    General utility functions
+const _neq = function (a, b, epsilon = 1e-6) {
+    return Math.abs(a - b) > epsilon;
+};
 /** @hidden */
 const _xor = function (a, b) {
     return (a || b) && !(a && b);

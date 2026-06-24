@@ -9,8 +9,8 @@
  */
 class CvsRanger extends CvsSlider {
 
-    /** @hidden */ protected _t: Array<number> = [0.25, 0.75];
-    /** @hidden */ protected _tIdx: number = -1;
+    /** @hidden */ protected _t: Array<number>;
+    /** @hidden */ protected _tIdx: number;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {

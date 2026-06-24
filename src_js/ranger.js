@@ -11,8 +11,6 @@ class CvsRanger extends CvsSlider {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h);
-        /** @hidden */ this._t = [0.25, 0.75];
-        /** @hidden */ this._tIdx = -1;
         this._t = [0.25, 0.75];
         this._tIdx = -1;
         this._limit0 = 0;

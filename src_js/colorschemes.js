@@ -5,17 +5,12 @@
 class ColorScheme {
     /** @hidden */
     constructor(name = 'color scheme name') {
-        /** @hidden */
-        this._colors = [];
-        /** @hidden */
-        this._greys = [];
-        /** @hidden */
-        this._tints = [];
-        /** @hidden */
-        this._name = 'color scheme name';
-        /**@hidden */
-        this._original = true;
         this._name = name;
+        this._colors = [];
+        this._greys = [];
+        this._tints = [];
+        this._name = 'color scheme name';
+        this._original = true;
         this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
     }

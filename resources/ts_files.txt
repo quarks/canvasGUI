@@ -13,7 +13,8 @@ texticon.ts
 label.ts
 button.ts
 tooltip.ts
-scroller.ts
+scrollbar.ts
+scrollpad.ts
 option.ts
 checkbox.ts
 viewer.ts

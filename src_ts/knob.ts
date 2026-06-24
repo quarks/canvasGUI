@@ -25,8 +25,8 @@ class CvsKnob extends CvsSlider {
     /** @hidden */ protected _gRad: number;
     /** @hidden */ protected _tw: number;
     // Mouse / touch mode
-    /** @hidden */ protected _mode = CvsKnob.X_MODE;
-    /** @hidden */ protected _sensitivity = 0.005;
+    /** @hidden */ protected _mode: number;
+    /** @hidden */ protected _sensitivity: number;
     // Previus position and angle
     /** @hidden */ protected _prevX!: number;
     /** @hidden */ protected _prevY!: number;
@@ -44,6 +44,8 @@ class CvsKnob extends CvsSlider {
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x, y, w, h);
         this._size = Math.min(w, h);
+        this._mode = CvsKnob.X_MODE;
+        this._sensitivity = 0.005;
         this._turnArc = 2 * Math.PI;   // Full turn of 360 degrees
         this._gapPos = 0.5 * Math.PI;  // South
         this._tw = 0;

@@ -40,18 +40,24 @@ class CvsTextField extends CvsText {
 
     /** @hidden */ protected _nextActive: any;
     /** @hidden */ protected _linkIndex: number | undefined;
-    /** @hidden */ protected _linkOffset = 0;
-    /** @hidden */ protected _prevCsrIdx = 0;
-    /** @hidden */ protected _currCsrIdx = 0;
-    /** @hidden */ protected _line: string = '';
-    /** @hidden */ protected _cursorOn = false;
+    /** @hidden */ protected _linkOffset: number;
+    /** @hidden */ protected _prevCsrIdx: number;
+    /** @hidden */ protected _currCsrIdx: number;
+    /** @hidden */ protected _line: string;
+    /** @hidden */ protected _cursorOn;
     /** @hidden */ protected _validation: Function | undefined;
-    /** @hidden */ protected _inputInvalid: boolean = false;
+    /** @hidden */ protected _inputInvalid: boolean;
 
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x, y, w, h, true);
+        this._linkOffset = 0;
+        this._prevCsrIdx = 0;
+        this._currCsrIdx = 0;
+        this._line = '';
+        this._cursorOn = false;
+        this._inputInvalid = false;
         this.textAlign("left", "top");
         this.invalidateBuffer();
     }

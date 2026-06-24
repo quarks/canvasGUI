@@ -7,12 +7,6 @@
 class CvsPin {
     constructor(gui, id, x, y) {
         /** @hidden */ this._children = [];
-        /** @hidden */ this._x = 0;
-        /** @hidden */ this._y = 0;
-        /** @hidden */ this._z = 0;
-        /** @hidden */ this._visible = false;
-        /** @hidden */ this._enabled = false;
-        /** @hidden */ this._bufferInvalid = true;
         /**
          * <p>The event handler for this control. Although it is permitted to set this
          * property directly it is recommended that the <code>setAction(...)</code>
@@ -22,8 +16,13 @@ class CvsPin {
         this.action = function () { };
         this._gui = gui;
         this._id = id;
+        // this._children = [];
         this._x = Math.round(x);
         this._y = Math.round(y);
+        this._z = 0;
+        this._visible = false;
+        this._enabled = false;
+        this._bufferInvalid = true;
         this._gui.registerID(this);
     }
     /** The unique identifier for this control.   */
@@ -47,7 +46,9 @@ class CvsPin {
     /** @hidden */
     set z(v) { this._z = v; }
     /**
-     * <p>Get an array of the children for this control.</p>
+     * <p>Get an array of the child controls.</p>
+     * <p>Removing, adding or changing the order of the elements in this
+     * array is ignored by canvasGUI so will not affect the GUI.</p>
      *
      * @readonly
      * @type {Array<any>}
@@ -55,7 +56,8 @@ class CvsPin {
     get children() { return Array.from(this._children); }
     /**
      * <p>This is true if the control can respond to UI events else false.</p>
-     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
+     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and
+     * disable it.</p>
      */
     get isEnabled() { return this._enabled; }
     /**

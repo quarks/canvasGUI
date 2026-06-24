@@ -39,12 +39,12 @@ class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h, true);
-        /** @hidden */ this._linkOffset = 0;
-        /** @hidden */ this._prevCsrIdx = 0;
-        /** @hidden */ this._currCsrIdx = 0;
-        /** @hidden */ this._line = '';
-        /** @hidden */ this._cursorOn = false;
-        /** @hidden */ this._inputInvalid = false;
+        this._linkOffset = 0;
+        this._prevCsrIdx = 0;
+        this._currCsrIdx = 0;
+        this._line = '';
+        this._cursorOn = false;
+        this._inputInvalid = false;
         this.textAlign("left", "top");
         this.invalidateBuffer();
     }

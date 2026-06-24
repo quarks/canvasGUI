@@ -1,15 +1,3 @@
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
-    if (kind === "m") throw new TypeError("Private method is not writable");
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-};
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var _CvsImage_offImg, _CvsImage_overImg, _CvsImage_maskImg;
 /**
  * <h2>Clickable image buttons.</h2>
  *
@@ -33,35 +21,32 @@ class CvsImage extends CvsBufferedControl {
         let images = Array.isArray(faceImages) ? faceImages : [faceImages];
         let [w, h] = [images[0].width, images[0].height];
         super(gui, name, x, y, w, h, true);
-        _CvsImage_offImg.set(this, void 0);
-        _CvsImage_overImg.set(this, void 0);
-        _CvsImage_maskImg.set(this, void 0);
-        __classPrivateFieldSet(this, _CvsImage_offImg, cvsGuiCanvas(images[0]), "f");
-        __classPrivateFieldSet(this, _CvsImage_overImg, cvsGuiCanvas(images[1]), "f");
-        __classPrivateFieldSet(this, _CvsImage_maskImg, cvsGuiCanvas(mask), "f");
-        this._uicBuffer.getContext('2d')?.drawImage(__classPrivateFieldGet(this, _CvsImage_offImg, "f"), 0, 0, w, h, 0, 0, w, h);
+        this._offImg = cvsGuiCanvas(images[0]);
+        this._overImg = cvsGuiCanvas(images[1]);
+        this._maskImg = cvsGuiCanvas(mask);
+        this._uicBuffer.getContext('2d')?.drawImage(this._offImg, 0, 0, w, h, 0, 0, w, h);
         this.invalidateBuffer();
     }
     /** @hidden */
     _makePickImage() {
         let pickCol = this._gui.pickColor(this);
-        let [w, h] = [__classPrivateFieldGet(this, _CvsImage_offImg, "f").width, __classPrivateFieldGet(this, _CvsImage_offImg, "f").height];
+        let [w, h] = [this._offImg.width, this._offImg.height];
         let p_rgb = [pickCol.r, pickCol.g, pickCol.b, 255];
         // Source color byte data array from either the off-image or
         // the mask if it exists.
         let srcData;
-        if (__classPrivateFieldGet(this, _CvsImage_maskImg, "f")) {
+        if (this._maskImg) {
             const cvs = new OffscreenCanvas(w, h);
             const ctx = cvs.getContext('2d');
-            ctx?.drawImage(__classPrivateFieldGet(this, _CvsImage_maskImg, "f"), 0, 0, w, h, 0, 0, w, h);
+            ctx?.drawImage(this._maskImg, 0, 0, w, h, 0, 0, w, h);
             srcData = ctx?.getImageData(0, 0, w, h).data;
         }
         else {
             srcData = this._uicBuffer.getContext('2d')?.getImageData(0, 0, w, h).data;
         }
         // Create the pick image and clear context
-        __classPrivateFieldSet(this, _CvsImage_maskImg, new OffscreenCanvas(w, h), "f");
-        let pkCtx = __classPrivateFieldGet(this, _CvsImage_maskImg, "f").getContext('2d');
+        this._maskImg = new OffscreenCanvas(w, h);
+        let pkCtx = this._maskImg.getContext('2d');
         pkCtx?.clearRect(0, 0, w, h);
         // Create the dest color byte data array
         if (srcData) {
@@ -95,10 +80,10 @@ class CvsImage extends CvsBufferedControl {
         h = Math.round(h);
         if (Number.isNaN(w) || Number.isNaN(h) || (w == this._w && h == this._h))
             return this;
-        const aspect = __classPrivateFieldGet(this, _CvsImage_offImg, "f").width / __classPrivateFieldGet(this, _CvsImage_offImg, "f").height;
+        const aspect = this._offImg.width / this._offImg.height;
         if (w == 0 && h == 0) {
-            w = __classPrivateFieldGet(this, _CvsImage_offImg, "f").width;
-            h = __classPrivateFieldGet(this, _CvsImage_offImg, "f").height;
+            w = this._offImg.width;
+            h = this._offImg.height;
         }
         else if (w == 0 && h > 0)
             w = Math.ceil(h * aspect);
@@ -132,12 +117,12 @@ class CvsImage extends CvsBufferedControl {
             uic.fillRect(0, 0, w, h);
         }
         const highlight = (this.isActive || this.over);
-        const icon = highlight && __classPrivateFieldGet(this, _CvsImage_overImg, "f") ? __classPrivateFieldGet(this, _CvsImage_overImg, "f") : __classPrivateFieldGet(this, _CvsImage_offImg, "f");
+        const icon = highlight && this._overImg ? this._overImg : this._offImg;
         uic.drawImage(icon, 0, 0, icon.width, icon.height, 0, 0, w, h);
         uic.restore();
         // End of clipped region
         // Mouse over and no over-image then add border highlight
-        if (highlight && !__classPrivateFieldGet(this, _CvsImage_overImg, "f")) {
+        if (highlight && !this._overImg) {
             uic.strokeStyle = HIGHLIGHT;
             uic.lineWidth = 2;
             uic.beginPath();
@@ -157,7 +142,7 @@ class CvsImage extends CvsBufferedControl {
             return;
         this._clearBuffer(pkb, pkc);
         const [w, h] = [pkb.width, pkb.height];
-        const mask = __classPrivateFieldGet(this, _CvsImage_maskImg, "f");
+        const mask = this._maskImg;
         const cnrs = this.CNRS;
         pkc.save();
         pkc.beginPath();
@@ -200,5 +185,4 @@ class CvsImage extends CvsBufferedControl {
         return this.isActive ? this : null;
     }
 }
-_CvsImage_offImg = new WeakMap(), _CvsImage_overImg = new WeakMap(), _CvsImage_maskImg = new WeakMap();
 //# sourceMappingURL=image.js.map

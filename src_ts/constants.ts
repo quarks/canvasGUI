@@ -15,7 +15,6 @@ const MILLIS = function () { return Date.now() - START_TIME; }
 // =================================================================
 // ====    Poster and text attributes
 
-
 const FONT_FAMILIES = function () {
     return Array.of('serif', 'sans-serif', 'monospace', 'fantasy', 'cursive');
 }
@@ -221,6 +220,10 @@ const cvsGuiColor = function (color: any): string {
 
 // =================================================================
 // ====    General utility functions
+
+const _neq = function (a: number, b: number, epsilon = 1e-6): boolean {
+    return Math.abs(a - b) > epsilon;
+}
 
 /** @hidden */
 const _xor = function (a: boolean, b: boolean): boolean {
@@ -520,3 +523,28 @@ HTMLCanvasElement.prototype.getContext = function (type) {
 HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };
+
+/**
+ * Defines an overlap between 2 rectangles
+ * @hidden
+ */
+interface __Overlap {
+    left: number; right: number;
+    top: number, bottom: number,
+    width: number; height: number;
+    usedH: number, usedV: number;
+}
+
+/** 
+ * Defines the requirements for a view control scrollers.
+ * @hidden 
+ */
+interface __ViewScroller {
+    isSameControl(over_ctrl: any): boolean;
+    getValue(): Array<number>;
+    setValue(hValue: number, vValue: number): void;
+    getUsed(): Array<number>;
+    setUsed(hValue: number, vValue: number): void;
+    show(): void;
+    hide(): void;
+}

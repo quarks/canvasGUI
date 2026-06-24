@@ -11,16 +11,28 @@ interface __Line { txt: string, x: number, y: number, w: number }
  */
 abstract class CvsText extends CvsBufferedControl {
 
-    /** @hidden */ protected _tLines: Array<__Line> = [];
-    /** @hidden */ protected _tBox: Array<number> = [0, 0];
-    /** @hidden */ protected _tAlignH = "center";
-    /** @hidden */ protected _tAlignV = "center";
+    /** @hidden */ protected _tLines: Array<__Line>;
+    /** @hidden */ protected _tBox: Array<number>;
+    /** @hidden */ protected _tAlignH: string;
+    /** @hidden */ protected _tAlignV: string;
     /** @hidden */ protected _tFace: any;
     /** @hidden */ protected _tSize: any;
     /** @hidden */ protected _tStyle: any;
-    /** @hidden */ protected _tSlant = 14;
-    /** @hidden */ protected _tArea: Array<number> = [];
+    /** @hidden */ protected _tSlant: number;
+    /** @hidden */ protected _tArea: Array<number>;
     /** @hidden */ protected _fitWH: any;
+
+    /** @hidden */
+    constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number, pickable: boolean) {
+        super(gui, name, x, y, w, h, pickable);
+        this._tLines = [];
+        this._tBox = [0, 0];
+        this._tAlignH = "center";
+        this._tAlignV = "center";
+        this._tSlant = 14;
+        this._tArea = [];
+        this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
+    }
 
     /** @hidden */
     get T_SIZE(): number { return this._tSize || this._gui._tSize }
@@ -28,12 +40,6 @@ abstract class CvsText extends CvsBufferedControl {
     get T_FACE(): string { return this._tFace || this._gui._tFace }
     /** @hidden */
     get T_STYLE(): string { return this._tStyle || this._gui._tStyle }
-
-    /** @hidden */
-    constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number, pickable: boolean) {
-        super(gui, name, x, y, w, h, pickable);
-        this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
-    }
 
     /**
      * <p>Gets or sets the current text.</p>

@@ -33,31 +33,39 @@
  */
 class CvsPoster extends CvsBufferedControl {
 
-    /** @hidden */ #taggedText: string = '';
-    /** @hidden */ #words: Array<Poster_Ascii> = [];
-    /** @hidden */ #fonts: Array<string> = FONT_FAMILIES();
-    /** @hidden */ #colors: Array<string> = new Array(3);
-    /** @hidden */ #wrapW: number;
-    /** @hidden */ #isetHorz = 3;
-    /** @hidden */ #isetVert = 2;
-    /** @hidden */ #icons: Array<Poster_Icon> = [];
-    /** @hidden */ #backStyle = 2;
+    /** @hidden */ protected _taggedText: string;
+    /** @hidden */ protected _words: Array<Poster_Ascii>;
+    /** @hidden */ protected _fonts: Array<string>;
+    /** @hidden */ protected _colors: Array<string>;
+    /** @hidden */ protected _wrapW: number;
+    /** @hidden */ protected _isetHorz: number;
+    /** @hidden */ protected _isetVert: number;
+    /** @hidden */ protected _icons: Array<Poster_Icon>;
+    /** @hidden */ protected _backStyle: number;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x, y, w, h, false);
-        this.#wrapW = this._w - 2 * this.#isetHorz;
-        this.#colors[0] = 'transparent';
-        this.#colors[1] = this.SCHEME.C$(8);
-        this.#colors[2] = this.SCHEME.C$(3, this._alpha);
+        this._taggedText = '';
+        this._words = [];
+        this._fonts = FONT_FAMILIES();
+        this._isetHorz = 3;
+        this._isetVert = 2;
+        this._wrapW = this._w - 2 * this._isetHorz;
+        this._icons = [];
+        this._backStyle = 2;
+        this._colors = new Array(3);
+        this._colors[0] = 'transparent';
+        this._colors[1] = this.SCHEME.C$(8);
+        this._colors[2] = this.SCHEME.C$(3, this._alpha);
         this.invalidateBuffer();
     }
 
     /** Get the number of fonts in this poster */
-    get fontCount() { return this.#fonts.length }
+    get fontCount() { return this._fonts.length }
 
     /** Get the number of colors in this poster */
-    get colorCount() { return this.#colors.length }
+    get colorCount() { return this._colors.length }
 
     /**
      * <p>If the name of a valid color scheme is provided then it will used
@@ -72,8 +80,8 @@ class CvsPoster extends CvsBufferedControl {
     scheme(name?: string, cascade?: boolean): ColorScheme | CvsControl {
         if (name) {  // setter
             super.scheme(name, false);
-            this.#colors[1] = this.SCHEME.C$(8);
-            this.#colors[2] = this.SCHEME.C$(3, this._alpha);
+            this._colors[1] = this.SCHEME.C$(8);
+            this._colors[2] = this.SCHEME.C$(3, this._alpha);
             return this;
         }
         return this._scheme;
@@ -91,7 +99,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     text(text: string | Array<string>, separator = '') {
-        this.#taggedText = Array.isArray(text) ? text.join(separator) : text;
+        this._taggedText = Array.isArray(text) ? text.join(separator) : text;
         this.invalidateText();
         return this;
     }
@@ -104,7 +112,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     icon(icon: cvsIcon, x = 0, y = 0) {
-        this.#icons.push(new Poster_Icon(icon, x, y));
+        this._icons.push(new Poster_Icon(icon, x, y));
         return this;
     }
 
@@ -113,7 +121,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     removeIcons() {
-        this.#icons = [];
+        this._icons = [];
         return this;
     }
 
@@ -140,14 +148,14 @@ class CvsPoster extends CvsBufferedControl {
             let fontList = data.map(ff => cvsGuiFont(ff));
             if (fontList.length > 0) {
                 if (replace)
-                    this.#fonts = fontList;
+                    this._fonts = fontList;
                 else
-                    this.#fonts = this.#fonts.concat(...fontList);
+                    this._fonts = this._fonts.concat(...fontList);
                 this.invalidateText();
             }
             return this;
         }
-        return Array.from(this.#fonts);
+        return Array.from(this._fonts);
     }
 
     /**
@@ -171,14 +179,14 @@ class CvsPoster extends CvsBufferedControl {
             let colorList: string[] = data.map(ff => cvsGuiColor(ff));
             if (colorList.length > 0) {
                 if (replace)
-                    this.#colors = colorList;
+                    this._colors = colorList;
                 else
-                    this.#colors = this.#colors.concat(...colorList);
+                    this._colors = this._colors.concat(...colorList);
                 this.invalidateBuffer();
             }
             return this;
         }
-        return Array.from(this.#colors);
+        return Array.from(this._colors);
     }
 
     /**
@@ -193,7 +201,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     background(index = 2) {
-        this.#backStyle = index % this.#colors.length;
+        this._backStyle = index % this._colors.length;
         return this;
     }
 
@@ -204,9 +212,9 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control;
      */
     margins(mgnX = 0, mgnY = mgnX) {
-        this.#isetHorz = mgnX;
-        this.#isetVert = mgnY;
-        this.#wrapW = this._w - 2 * mgnX;
+        this._isetHorz = mgnX;
+        this._isetVert = mgnY;
+        this._wrapW = this._w - 2 * mgnX;
         this.invalidateText();
         return this;
     }
@@ -215,7 +223,7 @@ class CvsPoster extends CvsBufferedControl {
      * The maximum line length (pixels) possible. The length depends on the 
      * poster width and the horizontal margins. 
      */
-    get wrapWidth() { return this.#wrapW }
+    get wrapWidth() { return this._wrapW }
 
     /**
      * Parses the raw text into tokens (Tag and Ascii objects)
@@ -245,8 +253,8 @@ class CvsPoster extends CvsBufferedControl {
             return tokens;
         }
 
-        const chunks = getChunks(this.#taggedText);
-        const tokens = getTokens(chunks, this.#wrapW);
+        const chunks = getChunks(this._taggedText);
+        const tokens = getTokens(chunks, this._wrapW);
         return tokens;
     }
 
@@ -255,7 +263,7 @@ class CvsPoster extends CvsBufferedControl {
         const paras: Array<Poster_Para> = [];
         let para: Poster_Para;
         if (!tokens[0].isParaTag)
-            paras.push(para = new Poster_Para('pc', 0, 0, this.#wrapW, 0));
+            paras.push(para = new Poster_Para('pc', 0, 0, this._wrapW, 0));
         tokens.forEach(tkn => {
             if (tkn.isParaTag)
                 paras.push(para = new Poster_Para(tkn.id, tkn.value, tkn.indent, tkn.wrapW, tkn.leading));
@@ -294,7 +302,7 @@ class CvsPoster extends CvsBufferedControl {
                             state.size = tkn.value;
                             break;
                         case 'ft':
-                            state.font = this.#fonts[tkn.value % this.#fonts.length];
+                            state.font = this._fonts[tkn.value % this._fonts.length];
                             break;
                         case 'gsw':
                             state.strokeWidth = tkn.value;
@@ -378,7 +386,7 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */
     _positionWords(lines: any[]) {
         const words: any[] = [];
-        let py = lines[0].ascent + 2 * this.#isetVert;
+        let py = lines[0].ascent + 2 * this._isetVert;
         lines.forEach(line => {
             const ww = line.wrapW;
             const px = line.indent;
@@ -399,7 +407,7 @@ class CvsPoster extends CvsBufferedControl {
                     if (line.nbrWords >= 2 && line.length / ww > 0.75)
                         dx = (ww - line.length) / (line.nbrWords - 1);
             }
-            sx += this.#isetHorz;
+            sx += this._isetHorz;
             for (let i = 0; i < line.nbrWords; i++) {
                 line.words[i].x += sx + i * dx;
                 line.words[i].y = py;
@@ -417,7 +425,7 @@ class CvsPoster extends CvsBufferedControl {
         this._applyTextAttributes(paras);
         this._measureText(paras);
         const lines = this._splitIntoLines(paras);
-        this.#words = this._positionWords(lines);
+        this._words = this._positionWords(lines);
         this._textInvalid = false;
     }
 
@@ -432,12 +440,12 @@ class CvsPoster extends CvsBufferedControl {
             this._formatText();
         const cs = this.SCHEME;
         // Color scheme fore and opaque colors
-        this.#colors[1] = cs.C$(8);
-        this.#colors[2] = cs.C$(3, this._alpha);
-        const OPAQUE = this.#colors[this.#backStyle];
+        this._colors[1] = cs.C$(8);
+        this._colors[2] = cs.C$(3, this._alpha);
+        const OPAQUE = this._colors[this._backStyle];
         const cnrs = this.CNRS;
 
-        if (this._opaque && this.#backStyle != 0) {
+        if (this._opaque && this._backStyle != 0) {
             uic.save();
             uic.fillStyle = OPAQUE;
             uic.beginPath();
@@ -447,20 +455,20 @@ class CvsPoster extends CvsBufferedControl {
         }
 
         // Display icons
-        this.#icons.forEach(i => uic.drawImage(i.icon, i.x, i.y));
+        this._icons.forEach(i => uic.drawImage(i.icon, i.x, i.y));
 
         uic.textBaseline = 'alphabetic';
-        this.#words.forEach(word => {
+        this._words.forEach(word => {
             uic.font = word.cssFont;
-            const fill = this.#colors[word.fill % this.#colors.length];
+            const fill = this._colors[word.fill % this._colors.length];
             if (fill !== 'transparent') {
-                uic.fillStyle = fill;  //this.#colors[word.fill % this.#colors.length];
+                uic.fillStyle = fill;
                 uic.fillText(word.ascii, word.x, word.y);
             }
-            const stroke = this.#colors[word.stroke % this.#colors.length];
+            const stroke = this._colors[word.stroke % this._colors.length];
             if (stroke !== 'transparent') {
                 uic.lineWidth = word.strokeWidth;
-                uic.strokeStyle = stroke;  //this.#colors[word.stroke % this.#colors.length];
+                uic.strokeStyle = stroke;
                 uic.strokeText(word.ascii, word.x, word.y);
             }
         });
@@ -476,82 +484,79 @@ class CvsPoster extends CvsBufferedControl {
 
 } // End of CvsPoster class
 
-
-
-
 // ##################################################################
 //        Supporting classes for formating text & icons
 // ##################################################################
 class Poster_Icon {
-    #icon: cvsIcon;
-    #x: number;
-    #y: number;
+    _icon: cvsIcon;
+    _x: number;
+    _y: number;
 
     constructor(icon: cvsIcon, x = 0, y = 0) {
-        this.#icon = cvsGuiCanvas(icon);
-        this.#x = x;
-        this.#y = y;
+        this._icon = cvsGuiCanvas(icon);
+        this._x = x;
+        this._y = y;
     }
 
-    get icon() { return this.#icon }
-    get x() { return this.#x }
-    get y() { return this.#y }
+    get icon() { return this._icon }
+    get x() { return this._x }
+    get y() { return this._y }
 }
 
 /** @hidden */
 class Poster_Line {
-    #words: any[] = [];
-    #align: string;
-    #lAscent: number = 0;
-    #lHeight: number = 0;
-    #gap: number = 0;
-    #indent: number = 0;
-    #wrapW: number = 0;
-    #leading = 0;
+    _words: any[] = [];
+    _align: string;
+    _lAscent: number = 0;
+    _lHeight: number = 0;
+    _gap: number = 0;
+    _indent: number = 0;
+    _wrapW: number = 0;
+    _leading = 0;
 
     constructor(gap: number, para: Poster_Para) {
-        this.#gap = gap;
-        this.#align = para.align;
-        this.#indent = para.indent;
-        this.#wrapW = para.wrapW;
-        this.#leading = para.leading;
+        this._gap = gap;
+        this._align = para.align;
+        this._indent = para.indent;
+        this._wrapW = para.wrapW;
+        this._leading = para.leading;
     }
 
-    get words() { return this.#words };
+    get words() { return this._words };
 
-    get nbrWords() { return this.#words.length };
+    get nbrWords() { return this._words.length };
 
-    set align(a) { this.#align = a };
-    get align() { return this.#align };
+    set align(a) { this._align = a };
+    get align() { return this._align };
 
-    set gap(n) { this.#gap = n };
-    get gap() { return this.#gap };
+    set gap(n) { this._gap = n };
+    get gap() { return this._gap };
 
-    set indent(n) { this.#indent = n };
-    get indent() { return this.#indent };
+    set indent(n) { this._indent = n };
+    get indent() { return this._indent };
 
-    set wrapW(n) { this.#wrapW = n };
-    get wrapW() { return this.#wrapW };
+    set wrapW(n) { this._wrapW = n };
+    get wrapW() { return this._wrapW };
 
-    set ascent(a) { this.#lAscent = a };
-    get ascent() { return this.#lAscent };
+    set ascent(a) { this._lAscent = a };
+    get ascent() { return this._lAscent };
 
-    set height(h) { this.#lHeight = h };
-    get height() { return this.#lHeight };
+    set height(h) { this._lHeight = h };
+    get height() { return this._lHeight };
 
-    set leading(ld) { this.#leading = ld }
-    get leading() { return this.#leading }
+    set leading(ld) { this._leading = ld }
+    get leading() { return this._leading }
 
     get length() {
-        if (this.#words.length > 0) {
-            let word = this.#words[this.#words.length - 1];
+        if (this._words.length > 0) {
+            let word = this._words[this._words.length - 1];
             return word.x + word.width;
         }
         else
             return 0;
     }
 
-    addWord(word: any) { this.#words.push(word); }
+    addWord(word: any) { this._words.push(word); }
 
     toString() {
         const [aln, indent, wrapW, asc, hgt, len] = [this.align, this.indent, this.wrapW,
@@ -563,32 +568,32 @@ class Poster_Line {
 
 /** @hidden */
 class Poster_Para {
-    #tokens: Array<object> = [];
-    #align = 'center';
-    #gap = 0;
-    #indent = 0;
-    #wrapW = 0;
-    #leading = 0;
+    _tokens: Array<object> = [];
+    _align = 'center';
+    _gap = 0;
+    _indent = 0;
+    _wrapW = 0;
+    _leading = 0;
 
     constructor(tagId = 'pc', gap: number, indent: number, wrapW: number, leading: number) {
-        this.#align = TAGS.get(tagId);
-        this.#gap = gap;
-        this.#indent = indent;
-        this.#wrapW = wrapW;
-        this.#leading = leading;
+        this._align = TAGS.get(tagId);
+        this._gap = gap;
+        this._indent = indent;
+        this._wrapW = wrapW;
+        this._leading = leading;
     }
 
-    get tokens() { return this.#tokens }
-    set tokens(v) { this.#tokens = v }
+    get tokens() { return this._tokens }
+    set tokens(v) { this._tokens = v }
 
-    get align() { return this.#align }
-    get gap() { return this.#gap }
-    get indent() { return this.#indent }
-    get wrapW() { return this.#wrapW }
-    get leading() { return this.#leading }
+    get align() { return this._align }
+    get gap() { return this._gap }
+    get indent() { return this._indent }
+    get wrapW() { return this._wrapW }
+    get leading() { return this._leading }
 
     toString() {
-        return `PARAGRAPH (${this.#align})   Gap: ${this.gap}   `
+        return `PARAGRAPH (${this._align})   Gap: ${this.gap}   `
             + `Indent: ${this.indent}   wrapW: ${this.wrapW}    `
             + `leading: ${this.leading}`
     }
@@ -596,50 +601,50 @@ class Poster_Para {
 
 /** @hidden */
 class Poster_Ascii {
-    #ascii = '';
-    #x = 0;
-    #y = 0;
-    #w = 0;
-    #h = 0;
-    #a = 0;
+    _ascii = '';
+    _x = 0;
+    _y = 0;
+    _w = 0;
+    _h = 0;
+    _a = 0;
 
-    #cssFont: string;
-    #glyphStrokeWidth = 0;
-    #glyphStroke = 0;
-    #glyphFill = 0;
+    _cssFont: string;
+    _glyphStrokeWidth = 0;
+    _glyphStroke = 0;
+    _glyphFill = 0;
 
-    get x() { return this.#x };
-    set x(n) { this.#x = n };
-    get y() { return this.#y };
-    set y(n) { this.#y = n };
+    get x() { return this._x };
+    set x(n) { this._x = n };
+    get y() { return this._y };
+    set y(n) { this._y = n };
 
-    get width() { return this.#w };
-    set width(n) { this.#w = n };
-    get height() { return this.#h };
-    set height(n) { this.#h = n };
-    get ascent() { return this.#a };
-    set ascent(n) { this.#a = n };
+    get width() { return this._w };
+    set width(n) { this._w = n };
+    get height() { return this._h };
+    set height(n) { this._h = n };
+    get ascent() { return this._a };
+    set ascent(n) { this._a = n };
 
-    get ascii() { return this.#ascii }
+    get ascii() { return this._ascii }
     get isAscii() { return !this.ascii.startsWith(' ') }
     get isSpace() { return this.ascii.startsWith(' ') }
 
-    get cssFont() { return this.#cssFont };
-    set cssFont(v) { this.#cssFont = v };
+    get cssFont() { return this._cssFont };
+    set cssFont(v) { this._cssFont = v };
 
-    get strokeWidth() { return this.#glyphStrokeWidth }
-    set strokeWidth(v) { this.#glyphStrokeWidth = v }
+    get strokeWidth() { return this._glyphStrokeWidth }
+    set strokeWidth(v) { this._glyphStrokeWidth = v }
 
-    get stroke() { return this.#glyphStroke }
-    set stroke(v) { this.#glyphStroke = v }
+    get stroke() { return this._glyphStroke }
+    set stroke(v) { this._glyphStroke = v }
 
-    get fill() { return this.#glyphFill }
-    set fill(v) { this.#glyphFill = v }
+    get fill() { return this._glyphFill }
+    set fill(v) { this._glyphFill = v }
 
     constructor(chunk: string) {
-        this.#cssFont = this.cssFont;
+        this._cssFont = this.cssFont;
         const ptn = /(&\w+;)/gu;
-        this.#ascii = chunk.replace(ptn, m => CHAR_ENTITIES.get(m) || m);
+        this._ascii = chunk.replace(ptn, m => CHAR_ENTITIES.get(m) || m);
     }
 
     applyState(state: Poster_State) {
@@ -662,12 +667,12 @@ class Poster_Ascii {
 
 /** @hidden */
 class Poster_Tag {
-    #id = '';
-    #attrs: any[] = [];
+    _id = '';
+    _attrs: any[] = [];
 
     constructor(tag: string, line_length: number) {
         let m = tag.match(/[a-z]+|\S+/g);
-        this.#id = m ? String(m.shift()) : '?';
+        this._id = m ? String(m.shift()) : '?';
         let tagParts = m ? m.shift()?.split(/:{1}/) : undefined;
         let attrs: any[] = !tagParts ? [0, 0, 0, 0] : tagParts.map(x => Number(x));
         attrs = attrs.concat([0, 0, 0, 0]);
@@ -686,19 +691,19 @@ class Poster_Tag {
                 attrs[2] = line_length - attrs[1];
             }
         }
-        this.#attrs = attrs;
+        this._attrs = attrs;
     }
 
-    get id() { return this.#id }
-    get value() { return this.#attrs[0] }
-    get indent() { return this.#attrs[1] }
-    get wrapW() { return this.#attrs[2] }
-    get leading() { return this.#attrs[3] }
+    get id() { return this._id }
+    get value() { return this._attrs[0] }
+    get indent() { return this._attrs[1] }
+    get wrapW() { return this._attrs[2] }
+    get leading() { return this._attrs[3] }
 
-    get isParaTag() { return Boolean(this.#id.match(/^p[lrcj]/)) }
+    get isParaTag() { return Boolean(this._id.match(/^p[lrcj]/)) }
 
     toString() {
-        let s = `TAG id: "${this.#id}" (para tag? ${this.isParaTag})  `;
+        let s = `TAG id: "${this._id}" (para tag? ${this.isParaTag})  `;
         s += `Value: ${this.value}   Indent: ${this.indent}   Line length: ${this.wrapW}  Leading: ${this.leading}`
         return s;
     }
@@ -706,39 +711,39 @@ class Poster_Tag {
 
 /** @hidden */
 class Poster_State {
-    #font = 'sans-serif';
-    #size = 20;
-    #style = 'normal';
-    #slant = 14;
-    #glyphStrokeWidth = 0;
-    #glyphStroke = 0;
-    #glyphFill = 1;
+    _font = 'sans-serif';
+    _size = 20;
+    _style = 'normal';
+    _slant = 14;
+    _glyphStrokeWidth = 0;
+    _glyphStroke = 0;
+    _glyphFill = 1;
 
     constructor() { }
 
-    get font() { return this.#font }
-    set font(v) { this.#font = v }
+    get font() { return this._font }
+    set font(v) { this._font = v }
 
-    get size() { return this.#size }
-    set size(v) { this.#size = v }
+    get size() { return this._size }
+    set size(v) { this._size = v }
 
-    get style() { return this.#style }
-    set style(v) { this.#style = v }
+    get style() { return this._style }
+    set style(v) { this._style = v }
 
-    get slant() { return this.#slant }
-    set slant(v) { this.#slant = v }
+    get slant() { return this._slant }
+    set slant(v) { this._slant = v }
 
-    get strokeWidth() { return this.#glyphStrokeWidth }
-    set strokeWidth(v) { this.#glyphStrokeWidth = v }
+    get strokeWidth() { return this._glyphStrokeWidth }
+    set strokeWidth(v) { this._glyphStrokeWidth = v }
 
-    get stroke() { return this.#glyphStroke }
-    set stroke(v) { this.#glyphStroke = v }
+    get stroke() { return this._glyphStroke }
+    set stroke(v) { this._glyphStroke = v }
 
-    get fill() { return this.#glyphFill }
-    set fill(v) { this.#glyphFill = v }
+    get fill() { return this._glyphFill }
+    set fill(v) { this._glyphFill = v }
 
     get cssFont() {
-        return cssFont$(this.#font, this.#size, this.#style, this.#slant);
+        return cssFont$(this._font, this._size, this._style, this._slant);
     }
 
     clone(): Poster_State {
@@ -765,18 +770,18 @@ class Poster_State {
 
 /** @hidden */
 class Poster_Stack {
-    #stack: Poster_State[] = [];
+    _stack: Poster_State[] = [];
 
     constructor() { }
 
     push(state: Poster_State) {
-        this.#stack.push(state.clone());
+        this._stack.push(state.clone());
     }
 
     pop(): Poster_State | undefined {
-        if (this.#stack.length > 1)
-            return this.#stack.pop();
+        if (this._stack.length > 1)
+            return this._stack.pop();
         else
-            return this.#stack[0].clone();
+            return this._stack[0].clone();
     }
 }

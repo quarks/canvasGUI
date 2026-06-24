@@ -42,6 +42,12 @@ class CvsSlider extends CvsBufferedControl {
         this.weight(8);
     }
 
+    /** the lowest value in control's range */
+    get lowLimit() { return Math.min(this._limit0, this._limit1) }
+
+    /** the highest value in control's range */
+    get highLimit() { return Math.max(this._limit0, this._limit1) }
+
     /**
      * Set the lower and upper limits for the slider
      *

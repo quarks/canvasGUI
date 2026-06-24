@@ -4,7 +4,7 @@ export { CvsPin, CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest }
 export { CvsControl, CvsBufferedControl, CvsText, CvsTextIcon, CvsImage };
 export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
 export { CvsTextField, CvsJoystick, CvsKnob, CvsPanel, CvsPoster, CvsViewer };
-export { CvsScroller, CvsTooltip, CvsOptionGroup };
+export { CvsScrollbar, CvsScrollpad, CvsTooltip, CvsOptionGroup };
 export { GridLayout};
 
 

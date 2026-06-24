@@ -5,16 +5,21 @@
 abstract class CvsTextIcon extends CvsText {
 
     /** @hidden */ protected _icon: cvsIcon | undefined;
-    /** @hidden */ protected _ix: number = 0;
-    /** @hidden */ protected _iy: number = 0;
-    /** @hidden */ protected _icons: Array<cvsIcon> = [];
-    /** @hidden */ protected _iAlignH = 'left';
-    /** @hidden */ protected _iAlignV = 'center';
+    /** @hidden */ protected _ix: number;
+    /** @hidden */ protected _iy: number;
+    /** @hidden */ protected _icons: Array<cvsIcon>;
+    /** @hidden */ protected _iAlignH: string;
+    /** @hidden */ protected _iAlignV: string;
 
     /** @hidden */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number, pickable: boolean) {
         super(gui, name, x, y, w, h, pickable);
         this._icon = undefined;
+        this._ix = 0;
+        this._iy = 0;
+        this._icons = [];
+        this._iAlignH = 'left';
+        this._iAlignV = 'center';
     }
 
 

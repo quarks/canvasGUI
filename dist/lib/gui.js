@@ -1,7 +1,7 @@
  /**
  * @preserve canvasGUI    (c) Peter Lager  2026
  * @license MIT
- * @version 3.0.1
+ * @version 3.1.0
  */
 // =================================================================
 // ====    canvasGUI control variables
@@ -221,6 +221,9 @@ const cvsGuiColor = function (color) {
 };
 // =================================================================
 // ====    General utility functions
+const _neq = function (a, b, epsilon = 1e-6) {
+    return Math.abs(a - b) > epsilon;
+};
 /** @hidden */
 const _xor = function (a, b) {
     return (a || b) && !(a && b);
@@ -491,7 +494,7 @@ HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
-const CANVAS_GUI_VERSION = '3.0.1';
+const CANVAS_GUI_VERSION = '3.1.0';
 /**
  * <h2>Core class for the canvasGUI library </h2>
  *
@@ -903,16 +906,23 @@ class GUI {
         return new CvsPanel(this, id, x, y, w, h);
     }
     /**
-     * Create a viewer control
+     * <p>Create a viewer control.</p>
+     * <p>If the last parameter <code>padSize</code> =0 or is not provided then
+     * horizontal and vertical scrollbars are provided to scroll through the
+     * image. If it is in the range &gt;0 and &lt;1 then a single scrollpad
+     * is provided instead. The size of the pad is based on padSize and is
+     * proprotional to the size of the viewer.</p>
+     *
      * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
      * @param w width
      * @param h height
+     * @param padSize if &gt;0 and &le;1 a scrollpad is created
      * @returns an image viewer
      */
-    viewer(id, x, y, w, h) {
-        return new CvsViewer(this, id, x, y, w, h);
+    viewer(id, x, y, w, h, padSize = 0) {
+        return new CvsViewer(this, id, x, y, w, h, padSize);
     }
     /**
      * Create a joystick control
@@ -948,8 +958,21 @@ class GUI {
      * @returns scroller control
      * @hidden
      */
-    __scroller(id, x, y, w, h) {
-        return new CvsScroller(this, id, x, y, w, h);
+    __scrollbar(id, x, y, w, h) {
+        return new CvsScrollbar(this, id, x, y, w, h);
+    }
+    /**
+     * Create a scrollpad control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns scroller control
+     * @hidden
+     */
+    __scrollpad(id, x, y, w, h) {
+        return new CvsScrollpad(this, id, x, y, w, h);
     }
     /**
      * Description placeholder
@@ -1271,18 +1294,6 @@ class GUI {
         }
     }
     /**
-     * Add an object so it can be detected using this pick buffer.
-     * @param control the object to add
-     * @hidden
-     */
-    // register(control: CvsBufferedControl) {
-    //   if (control && !this._control2color.has(control)) {
-    //     this._control2color.set(control, this._NEXT_COLOR);
-    //     this._color2control.set(this._NEXT_COLOR, control);
-    //     this._NEXT_COLOR += this._COLOR_STEP;
-    //   }
-    // }
-    /**
      * Sorts the controls so that they are rendered in order of their z
      * value (low z --> high z).
      * @hidden
@@ -1363,6 +1374,16 @@ class GUI {
             CLOG(`${id}    ui: ${uic}     pk: ${pkc}     pickable:${pickable}`);
         }
         CLOG('-----------------------------------------------------------------');
+    }
+    /** @hiddent */
+    listKids(ctrl) {
+        function add(ctrl, tab) {
+            result += `${tab}${ctrl.id}  ${ctrl.isVisible ? '+' : '-'}\n`;
+            ctrl.children.forEach(kid => add(kid, tab + '    '));
+        }
+        let result = '';
+        add(ctrl, '  ');
+        CLOG(result);
     }
     /**
      * <p>Gets the option group associated with a given name. If the group
@@ -1776,7 +1797,7 @@ class GUI {
     }
 }
 /** canvasGUI version */
-GUI.VERSION = '3.0.1';
+GUI.VERSION = '3.1.0';
 // Remember all GUIs created are accessible using gui's unique string
 // identifier.
 /** @hidden */ GUI._guis = new Map();
@@ -1846,17 +1867,12 @@ const getGUI = function (id) {
 class ColorScheme {
     /** @hidden */
     constructor(name = 'color scheme name') {
-        /** @hidden */
-        this._colors = [];
-        /** @hidden */
-        this._greys = [];
-        /** @hidden */
-        this._tints = [];
-        /** @hidden */
-        this._name = 'color scheme name';
-        /**@hidden */
-        this._original = true;
         this._name = name;
+        this._colors = [];
+        this._greys = [];
+        this._tints = [];
+        this._name = 'color scheme name';
+        this._original = true;
         this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
     }
@@ -2134,12 +2150,6 @@ class OrientWest {
 class CvsPin {
     constructor(gui, id, x, y) {
         /** @hidden */ this._children = [];
-        /** @hidden */ this._x = 0;
-        /** @hidden */ this._y = 0;
-        /** @hidden */ this._z = 0;
-        /** @hidden */ this._visible = false;
-        /** @hidden */ this._enabled = false;
-        /** @hidden */ this._bufferInvalid = true;
         /**
          * <p>The event handler for this control. Although it is permitted to set this
          * property directly it is recommended that the <code>setAction(...)</code>
@@ -2149,8 +2159,13 @@ class CvsPin {
         this.action = function () { };
         this._gui = gui;
         this._id = id;
+        // this._children = [];
         this._x = Math.round(x);
         this._y = Math.round(y);
+        this._z = 0;
+        this._visible = false;
+        this._enabled = false;
+        this._bufferInvalid = true;
         this._gui.registerID(this);
     }
     /** The unique identifier for this control.   */
@@ -2174,7 +2189,9 @@ class CvsPin {
     /** @hidden */
     set z(v) { this._z = v; }
     /**
-     * <p>Get an array of the children for this control.</p>
+     * <p>Get an array of the child controls.</p>
+     * <p>Removing, adding or changing the order of the elements in this
+     * array is ignored by canvasGUI so will not affect the GUI.</p>
      *
      * @readonly
      * @type {Array<any>}
@@ -2182,7 +2199,8 @@ class CvsPin {
     get children() { return Array.from(this._children); }
     /**
      * <p>This is true if the control can respond to UI events else false.</p>
-     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and disable it.</p>
+     * <p>Use <code>enable()</code> and <code>disable()</code> to enable and
+     * disable it.</p>
      */
     get isEnabled() { return this._enabled; }
     /**
@@ -2461,13 +2479,6 @@ class CvsPin {
  */
 class CvsControl extends CvsPin {
     /**
-     * <p>The event handler for this control. Although it is permitted to set this
-     * property directly it is recommended that the <code>setAction(...)</code>
-     * method is used to define the event handler actions.</p>
-     * @hidden
-     */
-    // action: Function = function () { };
-    /**
      * CvsControl class
      * @hidden
      * @param gui
@@ -2477,18 +2488,16 @@ class CvsControl extends CvsPin {
      * @param w width
      * @param h height
      */
-    constructor(gui, id, x, y, w, h, pickable) {
+    constructor(gui, id, x, y, w = 0, h = 0, pickable = false) {
         super(gui, id, x, y);
-        /** @hidden */ this._w = 0;
-        /** @hidden */ this._h = 0;
-        /** @hidden */ this._isOver = false;
-        /** @hidden */ this._active = false;
-        /** @hidden */ this._alpha = 255;
-        /** @hidden */ this._clickAllowed = false;
-        /** @hidden */ this._opaque = true;
-        /** @hidden */ this._tooltip = undefined;
         this._w = Math.round(w);
         this._h = Math.round(h);
+        this._isOver = false;
+        this._active = false;
+        this._alpha = 255;
+        this._clickAllowed = false;
+        this._opaque = true;
+        this._tooltip = undefined;
         this._visible = true;
         this._enabled = true;
         this._scheme = undefined;
@@ -2584,25 +2593,6 @@ class CvsControl extends CvsPin {
         }
         return this;
     }
-    /**
-     * <p>This sets the event handler to be used when this control fires
-     * an event. The parameter can take one of three forms:</p>
-     * <ol>
-     * <li>Arrow function definition</li>
-     * <li>Anonymous function definition</li>
-     * <li>Named function declaration</li>
-     * </ol>
-     *
-     * @param event_handler  the function to handle this control's events.
-     * @returns this control
-     */
-    // setAction(event_handler: Function) {
-    //     if (typeof event_handler === 'function')
-    //         this.action = event_handler;
-    //     else
-    //         console.error(`The action for '$(this._id)' must be a function definition`);
-    //     return this;
-    // }
     /**
      * <p>Sets this controls display orientation to one of the four cardinal
      * compass points. An invalid parameter will set the orientation to 'east'
@@ -2774,12 +2764,6 @@ class CvsControl extends CvsPin {
     _doEvent(e, x = 0, y = 0, over, enter) { return this; }
     /** @hidden */
     _doKeyEvent(e) { return this; }
-    /**
-     * @param uic ui overlay buffer drawing context
-     * @param pkc picker buffer drawing context
-     * @hidden
-     */
-    _draw(uic, pkc) { }
 }
 /** @hidden */
 CvsControl.NORTH = new OrientNorth();
@@ -2813,7 +2797,7 @@ class CvsBufferedControl extends CvsControl {
      */
     constructor(gui, id, x, y, w, h, pickable = false) {
         super(gui, id, x, y, w, h, pickable);
-        /** @hidden */ this._textInvalid = false;
+        this._textInvalid = false;
         this._createBuffer = pickable ? this._createUIandPKbuffer : this._createUIbuffer;
         this._createBuffer(w, h);
         this.invalidateBuffer();
@@ -2903,9 +2887,10 @@ class CvsBufferedControl extends CvsControl {
             }
         }
         // Display children
-        for (let c of this._children)
+        for (let c of this._children) {
             if (c._visible)
                 c._draw(guiCtx, pkCtx);
+        }
         guiCtx.restore();
     }
     /** @hidden */
@@ -2925,18 +2910,6 @@ class CvsBufferedControl extends CvsControl {
     }
 }
 //# sourceMappingURL=bufferedcontrol.js.map
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
-    if (kind === "m") throw new TypeError("Private method is not writable");
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-};
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var _CvsImage_offImg, _CvsImage_overImg, _CvsImage_maskImg;
 /**
  * <h2>Clickable image buttons.</h2>
  *
@@ -2960,35 +2933,32 @@ class CvsImage extends CvsBufferedControl {
         let images = Array.isArray(faceImages) ? faceImages : [faceImages];
         let [w, h] = [images[0].width, images[0].height];
         super(gui, name, x, y, w, h, true);
-        _CvsImage_offImg.set(this, void 0);
-        _CvsImage_overImg.set(this, void 0);
-        _CvsImage_maskImg.set(this, void 0);
-        __classPrivateFieldSet(this, _CvsImage_offImg, cvsGuiCanvas(images[0]), "f");
-        __classPrivateFieldSet(this, _CvsImage_overImg, cvsGuiCanvas(images[1]), "f");
-        __classPrivateFieldSet(this, _CvsImage_maskImg, cvsGuiCanvas(mask), "f");
-        this._uicBuffer.getContext('2d')?.drawImage(__classPrivateFieldGet(this, _CvsImage_offImg, "f"), 0, 0, w, h, 0, 0, w, h);
+        this._offImg = cvsGuiCanvas(images[0]);
+        this._overImg = cvsGuiCanvas(images[1]);
+        this._maskImg = cvsGuiCanvas(mask);
+        this._uicBuffer.getContext('2d')?.drawImage(this._offImg, 0, 0, w, h, 0, 0, w, h);
         this.invalidateBuffer();
     }
     /** @hidden */
     _makePickImage() {
         let pickCol = this._gui.pickColor(this);
-        let [w, h] = [__classPrivateFieldGet(this, _CvsImage_offImg, "f").width, __classPrivateFieldGet(this, _CvsImage_offImg, "f").height];
+        let [w, h] = [this._offImg.width, this._offImg.height];
         let p_rgb = [pickCol.r, pickCol.g, pickCol.b, 255];
         // Source color byte data array from either the off-image or
         // the mask if it exists.
         let srcData;
-        if (__classPrivateFieldGet(this, _CvsImage_maskImg, "f")) {
+        if (this._maskImg) {
             const cvs = new OffscreenCanvas(w, h);
             const ctx = cvs.getContext('2d');
-            ctx?.drawImage(__classPrivateFieldGet(this, _CvsImage_maskImg, "f"), 0, 0, w, h, 0, 0, w, h);
+            ctx?.drawImage(this._maskImg, 0, 0, w, h, 0, 0, w, h);
             srcData = ctx?.getImageData(0, 0, w, h).data;
         }
         else {
             srcData = this._uicBuffer.getContext('2d')?.getImageData(0, 0, w, h).data;
         }
         // Create the pick image and clear context
-        __classPrivateFieldSet(this, _CvsImage_maskImg, new OffscreenCanvas(w, h), "f");
-        let pkCtx = __classPrivateFieldGet(this, _CvsImage_maskImg, "f").getContext('2d');
+        this._maskImg = new OffscreenCanvas(w, h);
+        let pkCtx = this._maskImg.getContext('2d');
         pkCtx?.clearRect(0, 0, w, h);
         // Create the dest color byte data array
         if (srcData) {
@@ -3022,10 +2992,10 @@ class CvsImage extends CvsBufferedControl {
         h = Math.round(h);
         if (Number.isNaN(w) || Number.isNaN(h) || (w == this._w && h == this._h))
             return this;
-        const aspect = __classPrivateFieldGet(this, _CvsImage_offImg, "f").width / __classPrivateFieldGet(this, _CvsImage_offImg, "f").height;
+        const aspect = this._offImg.width / this._offImg.height;
         if (w == 0 && h == 0) {
-            w = __classPrivateFieldGet(this, _CvsImage_offImg, "f").width;
-            h = __classPrivateFieldGet(this, _CvsImage_offImg, "f").height;
+            w = this._offImg.width;
+            h = this._offImg.height;
         }
         else if (w == 0 && h > 0)
             w = Math.ceil(h * aspect);
@@ -3059,12 +3029,12 @@ class CvsImage extends CvsBufferedControl {
             uic.fillRect(0, 0, w, h);
         }
         const highlight = (this.isActive || this.over);
-        const icon = highlight && __classPrivateFieldGet(this, _CvsImage_overImg, "f") ? __classPrivateFieldGet(this, _CvsImage_overImg, "f") : __classPrivateFieldGet(this, _CvsImage_offImg, "f");
+        const icon = highlight && this._overImg ? this._overImg : this._offImg;
         uic.drawImage(icon, 0, 0, icon.width, icon.height, 0, 0, w, h);
         uic.restore();
         // End of clipped region
         // Mouse over and no over-image then add border highlight
-        if (highlight && !__classPrivateFieldGet(this, _CvsImage_overImg, "f")) {
+        if (highlight && !this._overImg) {
             uic.strokeStyle = HIGHLIGHT;
             uic.lineWidth = 2;
             uic.beginPath();
@@ -3084,7 +3054,7 @@ class CvsImage extends CvsBufferedControl {
             return;
         this._clearBuffer(pkb, pkc);
         const [w, h] = [pkb.width, pkb.height];
-        const mask = __classPrivateFieldGet(this, _CvsImage_maskImg, "f");
+        const mask = this._maskImg;
         const cnrs = this.CNRS;
         pkc.save();
         pkc.beginPath();
@@ -3127,7 +3097,6 @@ class CvsImage extends CvsBufferedControl {
         return this.isActive ? this : null;
     }
 }
-_CvsImage_offImg = new WeakMap(), _CvsImage_overImg = new WeakMap(), _CvsImage_maskImg = new WeakMap();
 //# sourceMappingURL=image.js.map
 /**
  * <h2>A slider with a draggable thumb</h2>
@@ -3159,6 +3128,10 @@ class CvsSlider extends CvsBufferedControl {
         // Set track weight (thickness) and calculate related fields
         this.weight(8);
     }
+    /** the lowest value in control's range */
+    get lowLimit() { return Math.min(this._limit0, this._limit1); }
+    /** the highest value in control's range */
+    get highLimit() { return Math.max(this._limit0, this._limit1); }
     /**
      * Set the lower and upper limits for the slider
      *
@@ -3432,8 +3405,6 @@ class CvsRanger extends CvsSlider {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h);
-        /** @hidden */ this._t = [0.25, 0.75];
-        /** @hidden */ this._tIdx = -1;
         this._t = [0.25, 0.75];
         this._tIdx = -1;
         this._limit0 = 0;
@@ -3672,22 +3643,22 @@ class CvsRanger extends CvsSlider {
  */
 class CvsText extends CvsBufferedControl {
     /** @hidden */
+    constructor(gui, name, x, y, w, h, pickable) {
+        super(gui, name, x, y, w, h, pickable);
+        this._tLines = [];
+        this._tBox = [0, 0];
+        this._tAlignH = "center";
+        this._tAlignV = "center";
+        this._tSlant = 14;
+        this._tArea = [];
+        this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
+    }
+    /** @hidden */
     get T_SIZE() { return this._tSize || this._gui._tSize; }
     /** @hidden */
     get T_FACE() { return this._tFace || this._gui._tFace; }
     /** @hidden */
     get T_STYLE() { return this._tStyle || this._gui._tStyle; }
-    /** @hidden */
-    constructor(gui, name, x, y, w, h, pickable) {
-        super(gui, name, x, y, w, h, pickable);
-        /** @hidden */ this._tLines = [];
-        /** @hidden */ this._tBox = [0, 0];
-        /** @hidden */ this._tAlignH = "center";
-        /** @hidden */ this._tAlignV = "center";
-        /** @hidden */ this._tSlant = 14;
-        /** @hidden */ this._tArea = [];
-        this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
-    }
     /**
      * <p>Gets or sets the current text.</p>
      * <p>Processing constants are used to define the alignment.</p>
@@ -4006,12 +3977,12 @@ class CvsTextIcon extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h, pickable) {
         super(gui, name, x, y, w, h, pickable);
-        /** @hidden */ this._ix = 0;
-        /** @hidden */ this._iy = 0;
-        /** @hidden */ this._icons = [];
-        /** @hidden */ this._iAlignH = 'left';
-        /** @hidden */ this._iAlignV = 'center';
         this._icon = undefined;
+        this._ix = 0;
+        this._iy = 0;
+        this._icons = [];
+        this._iAlignH = 'left';
+        this._iAlignV = 'center';
     }
     /**
      * <p>Sets the icon and its alignment relative to any text in the
@@ -4394,49 +4365,34 @@ class CvsTooltip extends CvsText {
  * display area.</p>
  * @hidden
  */
-class CvsScroller extends CvsBufferedControl {
+class CvsScrollbar extends CvsBufferedControl {
     /** @hidden */
     constructor(gui, name, x = 0, y = 0, w = 100, h = 20) {
         super(gui, name, x, y, w, h, true);
-        // All values are in the range 0-1
-        /** @hidden */ this._value = 0.5;
-        /** @hidden */ this._dvalue = 0.5;
-        /** @hidden */ this._used = 0.1;
-        /** @hidden */ this._s_value = 0.5;
-        /** @hidden */ this._s_dvalue = 0.5;
-        /** @hidden */ this._s_mx = 0.5;
-        /** @hidden */ this._minV = this._used / 2;
-        /** @hidden */ this._maxV = 1 - this._used / 2;
-        /** @hidden */ this._inset = 2;
-        /** @hidden */ this._trackHeight = 8;
-        /** @hidden */ this._thumbHeight = 12;
-        /** @hidden */ this._minThumbWidth = 10;
+        this._value = 0.5;
+        this._dvalue = 0.5;
+        this._used = 0.1;
+        this._s_value = 0.5;
+        this._s_mx = 0;
+        this._inset = 2;
         this._trackWidth = w - 2 * this._inset;
-        this._opaque = false;
+        this._trackHeight = 8;
+        this._thumbHeight = 12;
+        this._minThumbWidth = 10;
         this._corners = [4, 4, 4, 4];
+        this._opaque = false;
+        this.invalidateBuffer();
     }
-    /**
-     * Update the scroller from an external source.
-     *
-     * @param value The scroller position (0-1)
-     * @param used The amount 'used' by the source
-     * @hidden
-     */
-    update(value, used) {
-        // If a used value is available then use it
-        if (used && Number.isFinite(used) && used !== this._used) {
-            this._used = used;
-            this._minV = this._used / 2;
-            this._maxV = 1 - this._used / 2;
-            this.invalidateBuffer();
-        }
-        if (value && Number.isFinite(value) && value !== this._value) {
+    /** @hidden */
+    getValue() {
+        return this._value;
+    }
+    /** @hidden */
+    setValue(value) {
+        if (Number.isFinite(value) && value !== this._value) {
             value = _constrain(value, 0, 1);
-            let dv = value, u2 = this._used / 2;
-            if (value < u2)
-                dv = u2;
-            else if (value > 1 - u2)
-                dv = 1 - u2;
+            let u2 = this._used / 2;
+            let dv = _constrain(value, u2, 1 - u2);
             if (this._value != value || this._dvalue != dv) {
                 this._value = value;
                 this._dvalue = dv;
@@ -4445,12 +4401,29 @@ class CvsScroller extends CvsBufferedControl {
         }
     }
     /** @hidden */
-    getValue() {
-        return this._value;
-    }
-    /** @hidden */
     getUsed() {
         return this._used;
+    }
+    /** @hidden */
+    setUsed(used) {
+        if (Number.isFinite(used) && used !== this._used) {
+            this._used = used;
+            this.invalidateBuffer();
+        }
+    }
+    /**
+    * <p>Get the action info object to be sent to the user-defined action
+    * function.</p>
+    * @param event the JS avent if any
+    * @param final true if the thumb has been released
+    * @returns the current status
+    */
+    actionInfo(event = undefined, final = false) {
+        return {
+            source: this, event: event,
+            value: this._value, used: this._used,
+            final: final
+        };
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
@@ -4469,7 +4442,7 @@ class CvsScroller extends CvsBufferedControl {
             case 'mouseout':
             case 'mouseup':
             case 'touchend':
-                this.action({ source: this, event: e, value: this._value, used: this._used, final: true });
+                this.action(this.actionInfo(e, true));
                 this._active = false;
                 this.over = false;
                 break;
@@ -4478,8 +4451,8 @@ class CvsScroller extends CvsBufferedControl {
                 if (this.isActive) {
                     let newValue = this._s_value + (mx - this._s_mx) / tw;
                     if (newValue - halfUsed >= 0 && newValue + halfUsed <= 1) {
-                        this.update(newValue);
-                        this.action({ source: this, event: e, value: this._value, used: this._used, final: false });
+                        this.setValue(newValue);
+                        this.action(this.actionInfo(e, true));
                     }
                 }
                 this.over = (this == over.control);
@@ -4507,7 +4480,7 @@ class CvsScroller extends CvsBufferedControl {
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(5);
         let [w, h, inset, used] = [this._w, this._h, this._inset, this._used];
-        let [tx0, tx1] = [inset, w - inset];
+        // let [tx0, tx1] = [inset, w - inset];
         let [tw, th] = [this._trackWidth, this._trackHeight];
         let tbW = Math.max(used * tw, this._minThumbWidth);
         let tbH = this._thumbHeight;
@@ -4516,11 +4489,11 @@ class CvsScroller extends CvsBufferedControl {
         if (this._opaque) { // Background
             uic.fillStyle = OPAQUE;
             uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.roundRect(0, 0, w, h, cnrs);
             uic.fill();
         }
         // Now translate to track left edge - track centre
-        uic.translate(inset, this._h / 2);
+        uic.translate(inset, h / 2);
         // draw track
         uic.fillStyle = UNUSED_TRACK;
         uic.strokeStyle = BORDER;
@@ -4529,9 +4502,8 @@ class CvsScroller extends CvsBufferedControl {
         uic.strokeRect(0, -th / 2, tw, th);
         // Draw thumb
         uic.fillStyle = THUMB;
-        // uic.noStroke();
         if (this.isActive || this.over) {
-            uic.lineWidth = 2;
+            uic.lineWidth = 2.5;
             uic.strokeStyle = HIGHLIGHT;
         }
         uic.beginPath();
@@ -4564,7 +4536,207 @@ class CvsScroller extends CvsBufferedControl {
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
     /** @hidden */ corners(c) { return this.warn$('corners'); }
 }
-//# sourceMappingURL=scroller.js.map
+//# sourceMappingURL=scrollbar.js.map
+class CvsScrollpad extends CvsBufferedControl {
+    /** @hidden */
+    constructor(gui, name, x = 0, y = 0, w = 80, h = 80) {
+        super(gui, name, x, y, w, h, true);
+        this._value = [0.5, 0.5];
+        this._dvalue = [0.5, 0.5];
+        this._used = [0.1, 0.1];
+        this._s_value = [0.5, 0.5];
+        this._s_mx = 0.5;
+        this._s_my = 0.5;
+        this._minThumbSize = 12;
+        this._corners = [4, 4, 4, 4];
+        this._inset = 5;
+        this._padW = w - 2 * this._inset;
+        this._padH = h - 2 * this._inset;
+        this._opaque = false;
+        this.invalidateBuffer();
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        if (!uic)
+            return;
+        this._clearBuffer(uib, uic);
+        let cs = this.SCHEME;
+        let cnrs = this.CNRS;
+        const OPAQUE = cs.C$(3);
+        const BORDER = cs.G$(8);
+        const UNUSED_TRACK = cs.G$(3);
+        const HIGHLIGHT = cs.C$(9);
+        const THUMB = cs.C$(5);
+        const [w, h, inset] = [this._w, this._h, this._inset];
+        const [padW, padH] = [this._padW, this._padH];
+        const [value, used] = [this._value, this._used];
+        uic.save();
+        if (this._opaque) { // Background
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, w, h, cnrs);
+            uic.fill();
+        }
+        // Thumb paddock
+        uic.fillStyle = UNUSED_TRACK;
+        uic.strokeStyle = BORDER;
+        uic.lineWidth = 1;
+        uic.beginPath();
+        uic.roundRect(inset, inset, padW, padH, cnrs);
+        uic.fill();
+        uic.stroke();
+        // Draw thumb
+        uic.save();
+        const tw = 2 + Math.max(this._minThumbSize, padW * used[0]);
+        const th = 2 + Math.max(this._minThumbSize, padH * used[1]);
+        const tx = padW * value[0];
+        const ty = padH * value[1];
+        uic.translate(inset + tx, inset + ty);
+        uic.fillStyle = THUMB;
+        uic.strokeStyle = BORDER;
+        uic.lineWidth = 1;
+        if (this.isActive || this.over) {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2.5;
+        }
+        uic.beginPath();
+        uic.roundRect(-tw / 2, -th / 2, tw, th, [4, 4, 4, 4]);
+        uic.fill();
+        uic.stroke();
+        uic.restore();
+        if (!this._enabled)
+            this._disable_highlight(cs, 0, 0, w, h);
+        this._updateScrollerPickBuffer(inset, tx, ty, tw, th);
+        uic.restore();
+        // last line in this method should be
+        this._bufferInvalid = false;
+    }
+    /** @hidden */
+    _updateScrollerPickBuffer(inset, tx, ty, tw, th) {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb?.getContext('2d');
+        if (!pkc)
+            return;
+        this._clearBuffer(pkb, pkc);
+        let c = this._gui.pickColor(this);
+        pkc.save();
+        pkc.fillStyle = c.cssColor;
+        pkc.translate(inset + tx, inset + ty);
+        pkc.beginPath();
+        pkc.roundRect(-tw / 2, -th / 2, tw, th, [4, 4, 4, 4]);
+        pkc.fill();
+        pkc.restore();
+    }
+    /** @hidden */
+    isSameControl(ctrl) {
+        return this === ctrl;
+    }
+    /** @hidden */
+    getValue() {
+        return Array.from(this._value);
+    }
+    /** @hidden */
+    getUsed() {
+        return Array.from(this._used);
+    }
+    /** @hidden */
+    setValue(hValue = this._value[0], vValue = this._value[1]) {
+        function changeValue(sp, idx, v) {
+            if (Number.isFinite(v) && v !== sp._value[idx]) {
+                v = _constrain(v, 0, 1);
+                let u2 = sp._used[idx] / 2;
+                let dv = _constrain(v, u2, 1 - u2);
+                if (sp._dvalue[idx] != dv) {
+                    sp._value[idx] = v;
+                    sp._dvalue[idx] = dv;
+                    sp.invalidateBuffer();
+                }
+            }
+        }
+        changeValue(this, 0, hValue);
+        changeValue(this, 1, vValue);
+    }
+    /** @hidden */
+    setUsed(hValue = this._used[0], vValue = this._used[1]) {
+        if (hValue != this._used[0] || vValue != this._used[1]) {
+            this._used[0] = hValue;
+            this._used[1] = vValue;
+            this.invalidateBuffer();
+            this.setValue();
+        }
+    }
+    /**
+     * <p>Get the action info object to be sent to the user-defined action
+     * function.</p>
+     * @param event the JS avent if any
+     * @param final true if the thumb has been released
+     * @returns the current status
+     */
+    actionInfo(event = undefined, final = false) {
+        return {
+            source: this, event: event,
+            value: Array.from(this._value), used: Array.from(this._used),
+            final: final
+        };
+    }
+    /** @hidden */
+    _doEvent(e, x = 0, y = 0, over, enter) {
+        let [mx, my, w, h] = [x - this.x, y - this.y, this.w, this.h];
+        let [padW, padH] = [this._padW, this._padH];
+        let halfInset = this._inset / 2;
+        let [halfUsedH, halfUsedV] = [this._used[0] / 2, this._used[1] / 2];
+        let [svalueH, svalueV] = [this._s_value[0], this._s_value[1]];
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                if (over.part == 0) { // Thumb
+                    this._active = true;
+                    this._s_value = Array.from(this._value);
+                    this._s_mx = mx;
+                    this._s_my = my;
+                    this.over = true;
+                }
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                this.action(this.actionInfo(e, true));
+                this._active = false;
+                this.over = false;
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                if (this.isActive) {
+                    let newValueX = svalueH + (mx - this._s_mx) / padW;
+                    newValueX = (newValueX + halfInset - halfUsedH >= 0 && newValueX - halfInset + halfUsedH <= 1)
+                        ? newValueX : undefined;
+                    let newValueY = svalueV + (my - this._s_my) / padH;
+                    newValueY = (newValueY + halfInset - halfUsedV >= 0 && newValueY - halfInset + halfUsedV <= 1)
+                        ? newValueY : undefined;
+                    if (newValueX || newValueY) {
+                        this.setValue(newValueX, newValueY);
+                        this.action(this.actionInfo(e, false));
+                    }
+                }
+                this.over = (this == over.control);
+                this.invalidateBuffer();
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+        return this.isActive ? this : null;
+    }
+    // Hide these methods from typeDoc
+    /** @hidden */ orient(dir) { return this.warn$('orient'); }
+    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
+    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
+    /** @hidden */ corners(c) { return this.warn$('corners'); }
+}
+//# sourceMappingURL=scrollpad.js.map
 /**
  * <p>The option group manages a group of option buttons where only one can
  * be selected at any time.</p>
@@ -5088,52 +5260,58 @@ class CvsCheckbox extends CvsTextIcon {
 }
 //# sourceMappingURL=checkbox.js.map
 /**
- * <h2>Displays a layered image the same size or larger than the view.</h2>
+ * <h2>Displays a single or multiple layered images.</h2>
  *
- * <p><b>Scrolling:</b> if the image is larger than the control then it can
- * panned by dragging the mouse on the image. Alternatively the scrollbars,
- * which automatically appear when if needed, can be used to pane the image.</p>
- * <p><b>Zooming:</b> requires the user to request a scaler when creating
- * this control. When the mouse is near the centre a slider will appear
- * which can be used to zoom in to and out of te image.</p>
+ * <p>The size of the image does not have to be the same as the viewer
+ * and the <code>view(...)</code> method can be used to display any part of
+ * the image at any scale. In all cases the control will automatically adjust
+ * the view position and scale so that it fills the entire control surface.</p>
+ *
+ * <p><b>Scrolling:</b> if the size of image differs from the control then the
+ * view can be panned by dragging the mouse on the image. Alternatively the
+ * user can drag on the scrollpad or scrollbars which automatically appear
+ * when required.</p>
+ *
+ * <p><b>Zooming:</b> is achieved by changing the display scale. This can be
+ * done using the <code>scale(...)</code> method. Alternatively the user can
+ * drag on the scaler slider that appears when the mouse is near the center
+ * of the viewer. the scaler is <em>only</em> available if the user requests
+ * one when creating this control.</p>
  *
  * <p>This control also supports layers where multiple images can be layered
- * to make the final visual. Layers can be added, removed, hiiden and show
- * on an individual basis</p>
+ * to make the final visual. The control will resize all images to the same
+ * size as the first (base) image. The layers (images) will be displayed in
+ * the ordered they were added. The user can control which layers are to be
+ * hidden and shown.</p>
  *
  */
 class CvsViewer extends CvsBufferedControl {
     /** @hidden */
-    constructor(gui, name, x, y, w, h) {
+    constructor(gui, name, x, y, w, h, padSize = 0) {
         super(gui, name, x, y, w, h, true);
-        /** @hidden */ this._layers = [];
-        /** @hidden */ this._hidden = new Set();
-        // Layer width and height (pixels)
-        /** @hidden */ this._lw = 0;
-        /** @hidden */ this._lh = 0;
-        /** @hidden */ this._wcx = 0;
-        /** @hidden */ this._wcy = 0;
-        /** @hidden */ this._wscale = 1;
-        /** @hidden */ this._usedX = 0;
-        /** @hidden */ this._usedY = 0;
-        /** @hidden */ this._scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
-        /** @hidden */ this._frameWeight = 0;
+        this._layers = [];
+        this._lw = 0;
+        this._lh = 0;
+        this._wcx = 0;
+        this._wcy = 0;
+        this._wscale = 1;
+        this._fillViewScale = 1;
+        this._scalerZone = { x0: 0, y0: 0, x1: 0, y1: 0 };
         this._corners = [0, 0, 0, 0];
-        this._scrH = gui.__scroller(this._id + "-scrH", 4, h - 24, w - 28, 20);
-        this._scrH.hide()
-            .setAction((info) => {
-            this.view(info.value * this._lw, this._wcy);
-            this.invalidateBuffer();
-        });
-        this._scrV = gui.__scroller(this._id + "-scrV", w - 24, 4, h - 28, 20);
-        this._scrV.orient('south').hide()
-            .setAction((info) => {
-            this.view(this._wcx, info.value * this._lh);
-            this.invalidateBuffer();
-        });
-        this.addChild(this._scrH);
-        this.addChild(this._scrV);
+        this._frameWeight = 0;
+        if (padSize <= 0)
+            this._scroller = new ViewScrollBars(gui, this._id + '-scroller', this);
+        else
+            this._scroller = new ViewScrollPad(gui, this._id + '-scroller', this, padSize);
+        this._scroller.hide();
     }
+    get padSizeW() { return this._lw; }
+    get padV() { return this._lh; }
+    get lw() { return this._lw; }
+    get lh() { return this._lh; }
+    get wcx() { return this._wcx; }
+    get wcy() { return this._wcy; }
+    get wscale() { return this._wscale; }
     /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
      * and limits. The initial value will be constrained to the limits.</p>
@@ -5144,35 +5322,21 @@ class CvsViewer extends CvsBufferedControl {
      */
     scaler(v, l0, l1) {
         if (Number.isFinite(v) && Number.isFinite(l0) && Number.isFinite(l1)) {
-            let low = Math.min(l0, l1);
-            let high = Math.max(l0, l1);
-            let value = _constrain(v, low, high);
             // If we don't have a scaler then create it
-            if (!this._scaler) {
-                let [w, h] = [this._w, this._h];
-                let sclrX = 0.25 * w, sclrY = 0.5 * h - 10;
-                let sclrW = 0.5 * w, sclrH = 20;
-                this._scaler = this._gui.slider(this._id + "-scaler", sclrX, sclrY, sclrW, sclrH);
-                this._scaler.weight(12);
-                this._scaler.hide()
-                    .setAction((info) => {
-                    this._wscale = info.value;
-                    this.invalidateBuffer();
-                });
-                this.addChild(this._scaler);
-                this._scalerZone = {
-                    x0: 0.15 * w, y0: 0.4 * h - 10,
-                    x1: 0.85 * w, y1: 0.6 * h + 10
-                };
-            }
-            // Now update the scroller
-            this._scaler?.limits(low, high);
-            this._scaler?.value(value);
+            if (!this._scaler)
+                this._scaler = this._createScaler(this._w, this._h);
+            // Now update the scaler
+            let low = Math.max(this._fillViewScale, Math.min(l0, l1));
+            let high = Math.max(this._fillViewScale, Math.max(l0, l1));
+            let value = _constrain(v, low, high);
+            this._scaler.limits(low, high);
+            this._scaler.value(value);
             this._wscale = value;
             // If we already have layers then update centre position
             if (this._lw > 0 && this._lh > 0) {
-                this._wcx = this._lw * this._scrH.getValue();
-                this._wcy = this._lh * this._scrV.getValue();
+                const [valueH, valueV] = this._scroller.getValue();
+                this._wcx = this._lw * valueH;
+                this._wcy = this._lh * valueV;
                 this.invalidateBuffer();
             }
         }
@@ -5180,9 +5344,12 @@ class CvsViewer extends CvsBufferedControl {
     }
     /**
      * <p>Sets or gets the current scale in use.</p>
-     * <p>If no parameters are passed the the current scale is returned. A
-     * single parameter sets the current scale and three parameter sets the
-     * current scale and the limits for the zoom slider.</p>
+     * <p>If a parameter is passed it will be </p>
+     * <ul>
+     * <li>adjusted to ensure that the image fills the entire view, and</li>
+     * <li>constrained to the limits of the scaler if one has been requested by the user.</li>
+     * </ul>
+     * <p>If no parameters are passed the the current scale is returned.</p>
      *
      * @param v the scale to use
      * @returns this control or the current scale
@@ -5190,24 +5357,120 @@ class CvsViewer extends CvsBufferedControl {
     scale(v) {
         if (!Number.isFinite(v)) // no parameters
             return this._wscale;
-        if (this._scaler)
-            this._scaler.value(v);
-        this._wscale = v;
-        this.view(this._wcx, this._wcy, this._wscale);
-        this.invalidateBuffer();
+        if (this._updateScale(v)) {
+            this._updateView(this._wcx, this._wcy);
+            this.action(this.actionInfo());
+        }
         return this;
     }
     /**
-     * <p>The current status is an object with 3 fields <code>\{ cX, cY, scale \}</code>
-     * where -</p>
-     * <ul>
-     * <li><code>cX, cY</code> is the position in the image that correseponds to the view center and</li>
-     * <li><code>scale</code> is the current scale used to display the image.</li>
-     * </ul>
+     * Sets the scale after validation.
+     * @param v new scale value
+     * @returns true if the scale has been changed
+     */
+    _updateScale(v) {
+        v = this._scaler
+            ? _constrain(v, this._scaler.lowLimit, this._scaler.highLimit)
+            : Math.max(this._fillViewScale, v);
+        if (this._wscale != v) {
+            this._wscale = v;
+            this.invalidateBuffer();
+            return true;
+        }
+        return false;
+    }
+    /**
+     * Create a scaler if required.
+     * @param w
+     * @param h
+     * @hidden
+     */
+    _createScaler(w, h) {
+        let sclrX = 0.25 * w, sclrY = 0.5 * h - 10;
+        let sclrW = 0.5 * w, sclrH = 20;
+        let scaler = this._gui.slider(this._id + "-scaler", sclrX, sclrY, sclrW, sclrH);
+        scaler.weight(12);
+        scaler.hide()
+            .setAction((info) => {
+            if (this._updateScale(info.value)) {
+                this._updateView(this._wcx, this._wcy);
+                this.action(this.actionInfo());
+            }
+        });
+        this.addChild(scaler);
+        this._scalerZone = {
+            x0: 0.15 * w, y0: 0.4 * h - 10,
+            x1: 0.85 * w, y1: 0.6 * h + 10
+        };
+        return scaler;
+    }
+    /**
+     * <p>Sets the view and scale of the layer(s) to be displayed.</p>
+     *
+     * <p>The scale is adjusted so that it exceeds the minimum scale to fill
+     * the viewer and is constrained to the limits of the scaler, if one has
+     * been created with the <code>scaler(...)</code> method.</p>
+     *
+     * <p>The first two parameters define the pixel position within the layer
+     * that corresponds to the centre of the viewer. If neccessary the pixel
+     * position is adjusted to ensure the layer(s) fill the entire viewer.</p>
+     *
+     * @param wcx horizontal position in the layer coressponding to the viewport centre
+     * @param wcy vertical position in the layer coressponding to the viewport centre
+     * @param wscale the display scale (optional)
+     * @returns this control
+     */
+    view(wcx, wcy, wscale = this._wscale) {
+        if (Number.isFinite(wcx) && Number.isFinite(wcy) && Number.isFinite(wscale)) {
+            this._updateScale(wscale);
+            this._updateView(wcx, wcy);
+            this._updateScrollerThumb();
+        }
+        return this;
+    }
+    /**
+     *
+     * @param ncx horizontal centre location
+     * @param ncy vetical centre location
+     * @hidden
+     */
+    _updateView(ncx, ncy) {
+        const ww2 = Math.round(0.5 * this._w / this._wscale);
+        const wh2 = Math.round(0.5 * this._h / this._wscale);
+        const left = ncx - ww2, right = ncx + ww2;
+        const top = ncy - wh2, bottom = ncy + wh2;
+        // keep in view horizontally
+        if (left < 0)
+            ncx -= left;
+        else if (right > this._lw)
+            ncx += this._lw - right;
+        // keep in view vertically
+        if (top < 0)
+            ncy -= top;
+        else if (bottom > this._lh)
+            ncy += this._lh - bottom;
+        if (_neq(ncx, this._wcx) || _neq(ncy, this._wcy)) {
+            this._wcx = ncx;
+            this._wcy = ncy;
+            this.invalidateBuffer();
+            this.action(this.actionInfo());
+        }
+    }
+    /** @hidden */
+    _updateScrollerThumb() {
+        this._scroller.setValue(this._wcx / this._lw, this._wcy / this._lh);
+    }
+    /**
+     * <p>Get the action info object to be sent to the user-defined action
+     * function.</p>
+     * @param event the JS avent if any
      * @returns the current status
      */
-    status() {
-        return { cX: this._wcx, cY: this._wcy, scale: this._wscale };
+    actionInfo(event) {
+        return {
+            source: this, event: event,
+            cX: this._wcx, cY: this._wcy, scale: this._wscale
+        };
     }
     /**
      * <p>Make this control invisible</p>
@@ -5229,11 +5492,10 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     hideLayer(n) {
-        if (Number.isInteger(n))
-            if (n >= 0 && n < this._layers.length && !this._hidden.has(n)) {
-                this._hidden.add(n);
-                this.invalidateBuffer();
-            }
+        if (Number.isInteger(n) && n >= 0 && n < this._layers.length) {
+            this._layers[n].hide();
+            this.invalidateBuffer();
+        }
         return this;
     }
     /**
@@ -5242,41 +5504,9 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     showLayer(n) {
-        if (Number.isInteger(n))
-            if (n >= 0 && n < this._layers.length && this._hidden.has(n)) {
-                this._hidden.delete(n);
-                this.invalidateBuffer();
-            }
-        return this;
-    }
-    /**
-     * Sets the view of the image to be displayed. If you enter values outside the
-     * image or ar scale value outside scaler limts they will be constrained to legal
-     * action on the viewer to report back changes to the view centre and/or scale
-     * attributes.
-    */
-    view(wcx, wcy, wscale = this._wscale) {
-        function different(a, b) {
-            return Math.abs(a - b) >= 0.001;
-        }
-        if (Number.isFinite(wcx) && Number.isFinite(wcy)) {
-            if (different(this._wcx, wcx) || different(this._wcy, wcy)) {
-                this._wcx = _constrain(wcx, 0, this._lw);
-                this._wcy = _constrain(wcy, 0, this._lh);
-                this._scrH.update(wcx / this._lw);
-                this._scrV.update(wcy / this._lh);
-                this.invalidateBuffer();
-            }
-            if (different(this._wscale, wscale)) {
-                this._wscale = wscale;
-                if (this._scaler)
-                    this._scaler.value(wscale);
-                this.invalidateBuffer();
-            }
-            this.action({
-                source: this, event: undefined,
-                cX: this._wcx, cY: this._wcy, scale: this._wscale
-            });
+        if (Number.isInteger(n) && n >= 0 && n < this._layers.length) {
+            this._layers[n].show();
+            this.invalidateBuffer();
         }
         return this;
     }
@@ -5289,14 +5519,18 @@ class CvsViewer extends CvsBufferedControl {
      * @returns this control
      */
     layers(img) {
-        let imgList = (Array.isArray(img) ? Array.from(img) : [img]);
-        this._layers = [cvsGuiCanvas(imgList.shift())];
+        const imgList = (Array.isArray(img) ? Array.from(img) : [img]);
+        this._layers = [new Layer(imgList.shift())];
         this._lw = this._layers[0].width;
         this._lh = this._layers[0].height;
+        // Calculate the minimum scale to ensure viewer is always filled
+        this._fillViewScale = Math.max(this._w / this._lw, this._h / this._lh);
+        this._wscale = this._fillViewScale;
         // Now set the world centre based on scrollers
-        this._wcx = this._scrH.getValue() * this._lw;
-        this._wcy = this._scrV.getValue() * this._lh;
-        // Append any remiang images
+        const [valueH, valueV] = this._scroller.getValue();
+        this._wcx = this._lw * valueH;
+        this._wcy = this._lh * valueV;
+        // Append any remaining images
         if (imgList.length > 0)
             this.appendLayers(imgList);
         this.invalidateBuffer();
@@ -5317,8 +5551,12 @@ class CvsViewer extends CvsBufferedControl {
         if (this._layers.length === 0)
             return this.layers(img);
         // Ready to append to existing layers
-        let imgList = (Array.isArray(img) ? Array.from(img) : [img]);
-        imgList.forEach(image => this._layers.push(this._getImageToFit(image)));
+        const imgList = (Array.isArray(img) ? Array.from(img) : [img]);
+        imgList.forEach(image => {
+            const layer = new Layer(image);
+            layer.resize(this._lw, this._lh);
+            this._layers.push(layer);
+        });
         this.invalidateBuffer();
         return this;
     }
@@ -5330,22 +5568,27 @@ class CvsViewer extends CvsBufferedControl {
      * <p>All additional images will be resized to match the first (bottom)
      * layer.</p>
      *
-     * @param idx an image or an array of images
+     * @param idx position to insert an image or an array of images
      * @param img an image or an array of images
      * @returns this control
      */
     addLayers(idx, img) {
-        // If no existing layers then fresh start. 
-        if (this._layers.length === 0)
-            return this.layers(img);
-        // Constrain insertion point to valid array position
-        idx = Number.isFinite(idx) && idx >= 0 && idx < this._layers.length
-            ? idx : this._layers.length - 1;
-        // Create new list with images resized to fit
-        let imgList = (Array.isArray(img) ? Array.from(img) : [img]);
-        let imgFitList = imgList.map(image => this._getImageToFit(image));
-        this._layers.splice(idx, 0, ...imgFitList);
-        this.invalidateBuffer();
+        if (Number.isFinite(idx)) {
+            // If no existing layers then fresh start. 
+            if (this._layers.length === 0)
+                return this.layers(img);
+            // Constrain insertion point to valid array position
+            idx = _constrain(idx, 0, this._layers.length);
+            // Create new list with images resized to fit
+            const imgList = (Array.isArray(img) ? Array.from(img) : [img]);
+            const layerList = imgList.map(image => {
+                const layer = new Layer(image);
+                layer.resize(this._lw, this._lh);
+                return layer;
+            });
+            this._layers.splice(idx, 0, ...layerList);
+            this.invalidateBuffer();
+        }
         return this;
     }
     /**
@@ -5374,25 +5617,13 @@ class CvsViewer extends CvsBufferedControl {
         return this;
     }
     /** @hidden */
-    _getImageToFit(img) {
-        const [lw, lh] = [this._lw, this._lh];
-        img = cvsGuiCanvas(img);
-        if (img.width != lw || img.height != lh) {
-            let layer = new OffscreenCanvas(lw, lh);
-            const ctx = layer.getContext('2d');
-            ctx?.drawImage(img, 0, 0, img.width, img.height, 0, 0, lw, lh);
-            return layer;
-        }
-        return img;
-    }
-    /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
         const absPos = this.getAbsXY();
         const [mx, my] = [x - absPos.x, y - absPos.y];
+        const needScroller = this._lw != this.w || this._lh != this.h || this._wscale != 1;
         // Over this control, scrollbar or scaler?
         this.over = Boolean(over.control === this
-            || over.control === this._scrH
-            || over.control === this._scrV
+            || this._scroller.isSameControl(over.control)
             || (this._scaler && over.control === this._scaler));
         switch (e.type) {
             case 'mousedown':
@@ -5405,19 +5636,14 @@ class CvsViewer extends CvsBufferedControl {
                 this._my0 = this._pmy = my;
                 this._dcx = this._wcx;
                 this._dcy = this._wcy;
-                this._scrH.show();
-                this._scrV.show();
+                if (needScroller)
+                    this._scroller.show();
                 this.invalidateBuffer();
                 break;
             case 'mouseout':
-                this._scrH.hide();
-                this._scrV.hide();
+                this._scroller.hide();
             case 'mouseup':
             case 'touchend':
-                this.action({
-                    source: this, event: undefined,
-                    cX: this._wcx, cY: this._wcy, scale: this._wscale
-                });
                 this._active = false;
                 this._dragging = false;
                 this.over = false;
@@ -5427,8 +5653,9 @@ class CvsViewer extends CvsBufferedControl {
                 if (this.over) {
                     if (this._dragging) {
                         this._scaler?.hide();
-                        this._validateMouseDrag(this._dcx + (this._mx0 - mx) / this._wscale, this._dcy + (this._my0 - my) / this._wscale);
-                        this.invalidateBuffer();
+                        this._updateView(this._dcx + (this._mx0 - mx) / this._wscale, this._dcy + (this._my0 - my) / this._wscale);
+                        this.view(this._wcx, this._wcy, this._wscale);
+                        this._updateScrollerThumb();
                     }
                     else if (this._scaler) {
                         let a = this._scalerZone;
@@ -5438,13 +5665,11 @@ class CvsViewer extends CvsBufferedControl {
                         else
                             this._scaler.hide();
                     }
-                    this._scrH.show();
-                    this._scrV.show();
+                    if (needScroller)
+                        this._scroller.show();
                 }
                 else {
-                    CLOG(`Mouse off hide scrollbars ${Date.now() % 10000}`);
-                    this._scrH.hide();
-                    this._scrV.hide();
+                    this._scroller.hide();
                 }
                 break;
             case 'mouseover':
@@ -5452,36 +5677,7 @@ class CvsViewer extends CvsBufferedControl {
             case 'wheel':
                 break;
         }
-        return this.over ? this : null;
-    }
-    /** @hidden */
-    _validateMouseDrag(ncx, ncy) {
-        let ww2 = Math.round(0.5 * this._w / this._wscale);
-        let wh2 = Math.round(0.5 * this._h / this._wscale);
-        // See if the current display should be pinned
-        let cleft = this._wcx - ww2, cright = this._wcx + ww2;
-        let ctop = this._wcy - wh2, cbottom = this._wcy + wh2;
-        let pinnedH = (cleft < 0 && cright > this._lw);
-        let pinnedV = (ctop < 0 && cbottom > this._lh);
-        // Now cosnider the 'new' centre
-        let left = ncx - ww2, right = ncx + ww2;
-        let top = ncy - wh2, bottom = ncy + wh2;
-        if (pinnedH || left < 0 && right > this._lw) // Horizontal
-            ncx = this._lw / 2;
-        else if (_xor(left < 0, right > this._lw))
-            if (left < 0)
-                ncx -= left;
-            else
-                ncx += this._lw - right;
-        if (pinnedV || top < 0 && bottom > this._lh) // vertical
-            ncy = this._lh / 2;
-        else if (_xor(top < 0, bottom > this._lh))
-            if (top < 0)
-                ncy -= top;
-            else
-                ncy += this._lh - bottom;
-        this.view(ncx, ncy);
-        this.invalidateBuffer();
+        return this.isActive ? this : null;
     }
     /** @hidden */
     _updateControlVisual() {
@@ -5493,40 +5689,28 @@ class CvsViewer extends CvsBufferedControl {
         const cs = this.SCHEME;
         const [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
         const [w, h, lw, lh] = [this._w, this._h, this._lw, this._lh];
-        const OPAQUE = cs.C$(2, this._alpha);
+        const cnrs = this.CNRS;
         const FRAME = cs.C$(7);
-        uic.save();
-        if (this._opaque) {
-            uic.fillStyle = OPAQUE;
-            uic.fillRect(0, 0, this._w, this._h);
-        }
-        else {
-            uic.clearRect(0, 0, this._w, this._h);
-        }
         // Get corners of requested view
         const ww2 = Math.round(0.5 * w / ws);
         const wh2 = Math.round(0.5 * h / ws);
         const o = this._overlap(0, 0, lw, lh, // image corners
         wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2); // world corners
-        this._pkBox = [
-            Math.round(o.offsetX * ws),
-            Math.round(o.offsetY * ws),
-            Math.round(o.width * ws),
-            Math.round(o.height * ws)
-        ];
-        // If we have an offset then calculate the view image 
-        if (o.valid) { // Calculate display offset
-            for (let i = 0; i < this._layers.length; i++) {
-                if (!this._hidden.has(i) && this._layers[i]) {
-                    uic.drawImage(this._layers[i], o.left, o.top, o.width, o.height, o.offsetX * ws, o.offsetY * ws, o.width * ws, o.height * ws);
-                }
-            }
-        }
+        this._scroller.setUsed(o.usedH, o.usedV);
+        uic.save();
+        uic.beginPath();
+        uic.roundRect(0, 0, w, h, cnrs);
+        uic.clip();
+        this._layers.forEach(layer => {
+            if (layer.isVisible)
+                uic.drawImage(layer.image, o.left, o.top, o.width, o.height, 0, 0, o.width * ws, o.height * ws);
+        });
         if (this._frameWeight > 0) {
-            const fw = this._frameWeight;
-            uic.lineWidth = fw;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.lineWidth = 2 * this._frameWeight;
             uic.strokeStyle = FRAME;
-            uic.strokeRect(fw / 2, fw / 2, this._w - fw, this._h - fw);
+            uic.stroke();
         }
         this._updatePickBuffer();
         uic.restore();
@@ -5538,13 +5722,12 @@ class CvsViewer extends CvsBufferedControl {
         if (!pkc)
             return;
         this._clearBuffer(pkb, pkc);
-        const [x, y, w, h] = [...this._pkBox];
         const c = this._gui.pickColor(this);
         pkc.save();
-        pkc.fillStyle = 'white';
-        pkc.fillRect(0, 0, this._w, this._h);
+        pkc.beginPath();
+        pkc.roundRect(0, 0, this._w, this._h, this.CNRS);
         pkc.fillStyle = c.cssColor;
-        pkc.fillRect(x, y, w, h);
+        pkc.fill();
         pkc.restore();
     }
     /**
@@ -5562,34 +5745,134 @@ class CvsViewer extends CvsBufferedControl {
         let botB = Math.max(by0, by1);
         let leftB = Math.min(bx0, bx1);
         let rightB = Math.max(bx0, bx1); // world edges
-        if (botA <= topB || botB <= topA || rightA <= leftB || rightB <= leftA)
-            return {
-                valid: false, left: 0, right: 0, top: 0, bottom: 0,
-                width: 0, height: 0, offsetX: 0, offsetY: 0,
-            };
         let leftO = leftA < leftB ? leftB : leftA;
         let rightO = rightA > rightB ? rightB : rightA;
         let botO = botA > botB ? botB : botA;
         let topO = topA < topB ? topB : topA;
         let width = rightO - leftO;
         let height = botO - topO;
-        let offsetX = leftO - leftB;
-        let offsetY = topO - topB;
-        // Update scrollers
-        this._scrH.update(undefined, width / this._lw);
-        this._scrV.update(undefined, height / this._lh);
         return {
-            valid: true,
             left: leftO, right: rightO, top: topO, bottom: botO,
             width: width, height: height,
-            offsetX: offsetX, offsetY: offsetY,
+            usedH: width / this._lw, usedV: height / this._lh
         };
     }
     // Hide these methods from typeDoc
     /** @hidden */ orient(dir) { return this.warn$('orient'); }
     /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
-    /** @hidden */ corners(c) { return this.warn$('corners'); }
+    /** @hidden */ opaque(a) { return this.warn$('opaque'); }
+}
+/** @hidden */
+class Layer {
+    constructor(img) {
+        this._visible = true;
+        this._image = cvsGuiCanvas(img);
+    }
+    get isVisible() { return this._visible; }
+    ;
+    get image() { return this._image; }
+    ;
+    get width() { return this._image.width; }
+    get height() { return this._image.height; }
+    show() {
+        this._visible = true;
+    }
+    hide() {
+        this._visible = false;
+    }
+    resize(lw, lh) {
+        const [img, iw, ih] = [this._image, this._image.width, this._image.height];
+        if (iw != lw || ih != lh) {
+            const resizedImage = new OffscreenCanvas(lw, lh);
+            const ctx = resizedImage.getContext('2d');
+            ctx?.drawImage(img, 0, 0, iw, ih, 0, 0, lw, lh);
+            this._image = resizedImage;
+        }
+    }
+}
+/** @hidden */
+class ViewScrollPad {
+    constructor(gui, name, vwr, padSize) {
+        const pw = padSize > 1 ? padSize : vwr.w * padSize;
+        const ph = padSize > 1 ? padSize : vwr.h * padSize;
+        const px = vwr.w - pw - 4, py = vwr.h - ph - 4;
+        this._scrPad = gui.__scrollpad(vwr.id + "-scrPad", px, py, pw, ph);
+        this._scrPad.setAction((info) => {
+            vwr.view(info.value[0] * vwr.lw, info.value[1] * vwr.lh);
+            vwr.invalidateBuffer();
+        });
+        vwr.addChild(this._scrPad);
+    }
+    isSameControl(ctrl) {
+        return this._scrPad === ctrl;
+    }
+    getValue() {
+        return Array.from(this._scrPad.getValue());
+    }
+    setValue(hValue, vValue) {
+        this._scrPad.setValue(hValue, vValue);
+    }
+    getUsed() {
+        return Array.from(this._scrPad.getUsed());
+    }
+    setUsed(hValue, vValue) {
+        this._scrPad.setUsed(hValue, vValue);
+    }
+    show() {
+        this._scrPad.show();
+        // this._scrV.show();
+        return this;
+    }
+    hide() {
+        this._scrPad.hide();
+        // this._scrV.hide();
+        return this;
+    }
+}
+/** @hidden */
+class ViewScrollBars {
+    constructor(gui, name, vwr) {
+        this._scrH = gui.__scrollbar(vwr.id + "-scrH", 16, vwr.h - 20, vwr.w - 32, 20);
+        this._scrH.setAction((info) => {
+            vwr.view(info.value * vwr.lw, vwr.wcy);
+            vwr.invalidateBuffer();
+        });
+        this._scrV = gui.__scrollbar(vwr.id + "-scrV", vwr.w - 20, 10, vwr.h - 32, 20);
+        this._scrV.orient('south').setAction((info) => {
+            vwr.view(vwr.wcx, info.value * vwr.lh);
+            vwr.invalidateBuffer();
+        });
+        vwr.addChild(this._scrH);
+        vwr.addChild(this._scrV);
+    }
+    isSameControl(ctrl) {
+        return this._scrH === ctrl || this._scrV === ctrl;
+    }
+    getValue() {
+        return [this._scrH.getValue(), this._scrV.getValue()];
+    }
+    setValue(hValue, vValue) {
+        this._scrH.setValue(hValue);
+        this._scrV.setValue(vValue);
+    }
+    getUsed() {
+        return [this._scrH.getUsed(), this._scrV.getUsed()];
+    }
+    setUsed(hValue, vValue) {
+        this._scrH.setUsed(hValue);
+        this._scrV.setUsed(vValue);
+    }
+    show() {
+        this._scrH.show();
+        this._scrV.show();
+        return this;
+    }
+    hide() {
+        this._scrH.hide();
+        this._scrV.hide();
+        return this;
+    }
 }
 //# sourceMappingURL=viewer.js.map
 /**
@@ -5633,12 +5916,12 @@ class CvsTextField extends CvsText {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h, true);
-        /** @hidden */ this._linkOffset = 0;
-        /** @hidden */ this._prevCsrIdx = 0;
-        /** @hidden */ this._currCsrIdx = 0;
-        /** @hidden */ this._line = '';
-        /** @hidden */ this._cursorOn = false;
-        /** @hidden */ this._inputInvalid = false;
+        this._linkOffset = 0;
+        this._prevCsrIdx = 0;
+        this._currCsrIdx = 0;
+        this._line = '';
+        this._cursorOn = false;
+        this._inputInvalid = false;
         this.textAlign("left", "top");
         this.invalidateBuffer();
     }
@@ -6470,10 +6753,9 @@ class CvsKnob extends CvsSlider {
      */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h);
-        // Mouse / touch mode
-        /** @hidden */ this._mode = CvsKnob.X_MODE;
-        /** @hidden */ this._sensitivity = 0.005;
         this._size = Math.min(w, h);
+        this._mode = CvsKnob.X_MODE;
+        this._sensitivity = 0.005;
         this._turnArc = 2 * Math.PI; // Full turn of 360 degrees
         this._gapPos = 0.5 * Math.PI; // South
         this._tw = 0;
@@ -6841,10 +7123,10 @@ class CvsPanel extends CvsBufferedControl {
      */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h, true);
-        /** @hidden */ this._canDragX = true;
-        /** @hidden */ this._canDragY = true;
-        /** @hidden */ this._constrainX = true;
-        /** @hidden */ this._constrainY = true;
+        this._canDragX = true;
+        this._canDragY = true;
+        this._constrainX = true;
+        this._constrainY = true;
         this._opaque = true;
         this._z = PANEL_Z;
     }
@@ -7472,18 +7754,6 @@ class CvsPaneWest extends CvsPane {
     }
 }
 //# sourceMappingURL=panes.js.map
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
-    if (kind === "m") throw new TypeError("Private method is not writable");
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-};
-var _CvsPoster_taggedText, _CvsPoster_words, _CvsPoster_fonts, _CvsPoster_colors, _CvsPoster_wrapW, _CvsPoster_isetHorz, _CvsPoster_isetVert, _CvsPoster_icons, _CvsPoster_backStyle, _Poster_Icon_icon, _Poster_Icon_x, _Poster_Icon_y, _Poster_Line_words, _Poster_Line_align, _Poster_Line_lAscent, _Poster_Line_lHeight, _Poster_Line_gap, _Poster_Line_indent, _Poster_Line_wrapW, _Poster_Line_leading, _Poster_Para_tokens, _Poster_Para_align, _Poster_Para_gap, _Poster_Para_indent, _Poster_Para_wrapW, _Poster_Para_leading, _Poster_Ascii_ascii, _Poster_Ascii_x, _Poster_Ascii_y, _Poster_Ascii_w, _Poster_Ascii_h, _Poster_Ascii_a, _Poster_Ascii_cssFont, _Poster_Ascii_glyphStrokeWidth, _Poster_Ascii_glyphStroke, _Poster_Ascii_glyphFill, _Poster_Tag_id, _Poster_Tag_attrs, _Poster_State_font, _Poster_State_size, _Poster_State_style, _Poster_State_slant, _Poster_State_glyphStrokeWidth, _Poster_State_glyphStroke, _Poster_State_glyphFill, _Poster_Stack_stack;
 /**
  * <h2>Similar to the label contol but with much greater controls over text
  * rendering</h2>
@@ -7521,25 +7791,24 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h, false);
-        /** @hidden */ _CvsPoster_taggedText.set(this, '');
-        /** @hidden */ _CvsPoster_words.set(this, []);
-        /** @hidden */ _CvsPoster_fonts.set(this, FONT_FAMILIES());
-        /** @hidden */ _CvsPoster_colors.set(this, new Array(3));
-        /** @hidden */ _CvsPoster_wrapW.set(this, void 0);
-        /** @hidden */ _CvsPoster_isetHorz.set(this, 3);
-        /** @hidden */ _CvsPoster_isetVert.set(this, 2);
-        /** @hidden */ _CvsPoster_icons.set(this, []);
-        /** @hidden */ _CvsPoster_backStyle.set(this, 2);
-        __classPrivateFieldSet(this, _CvsPoster_wrapW, this._w - 2 * __classPrivateFieldGet(this, _CvsPoster_isetHorz, "f"), "f");
-        __classPrivateFieldGet(this, _CvsPoster_colors, "f")[0] = 'transparent';
-        __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = this.SCHEME.C$(8);
-        __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = this.SCHEME.C$(3, this._alpha);
+        this._taggedText = '';
+        this._words = [];
+        this._fonts = FONT_FAMILIES();
+        this._isetHorz = 3;
+        this._isetVert = 2;
+        this._wrapW = this._w - 2 * this._isetHorz;
+        this._icons = [];
+        this._backStyle = 2;
+        this._colors = new Array(3);
+        this._colors[0] = 'transparent';
+        this._colors[1] = this.SCHEME.C$(8);
+        this._colors[2] = this.SCHEME.C$(3, this._alpha);
         this.invalidateBuffer();
     }
     /** Get the number of fonts in this poster */
-    get fontCount() { return __classPrivateFieldGet(this, _CvsPoster_fonts, "f").length; }
+    get fontCount() { return this._fonts.length; }
     /** Get the number of colors in this poster */
-    get colorCount() { return __classPrivateFieldGet(this, _CvsPoster_colors, "f").length; }
+    get colorCount() { return this._colors.length; }
     /**
      * <p>If the name of a valid color scheme is provided then it will used
      * to display this control, non-existant scheme names will be ignored. In
@@ -7553,8 +7822,8 @@ class CvsPoster extends CvsBufferedControl {
     scheme(name, cascade) {
         if (name) { // setter
             super.scheme(name, false);
-            __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = this.SCHEME.C$(8);
-            __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = this.SCHEME.C$(3, this._alpha);
+            this._colors[1] = this.SCHEME.C$(8);
+            this._colors[2] = this.SCHEME.C$(3, this._alpha);
             return this;
         }
         return this._scheme;
@@ -7571,7 +7840,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     text(text, separator = '') {
-        __classPrivateFieldSet(this, _CvsPoster_taggedText, Array.isArray(text) ? text.join(separator) : text, "f");
+        this._taggedText = Array.isArray(text) ? text.join(separator) : text;
         this.invalidateText();
         return this;
     }
@@ -7583,7 +7852,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     icon(icon, x = 0, y = 0) {
-        __classPrivateFieldGet(this, _CvsPoster_icons, "f").push(new Poster_Icon(icon, x, y));
+        this._icons.push(new Poster_Icon(icon, x, y));
         return this;
     }
     /**
@@ -7591,7 +7860,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     removeIcons() {
-        __classPrivateFieldSet(this, _CvsPoster_icons, [], "f");
+        this._icons = [];
         return this;
     }
     /**
@@ -7617,14 +7886,14 @@ class CvsPoster extends CvsBufferedControl {
             let fontList = data.map(ff => cvsGuiFont(ff));
             if (fontList.length > 0) {
                 if (replace)
-                    __classPrivateFieldSet(this, _CvsPoster_fonts, fontList, "f");
+                    this._fonts = fontList;
                 else
-                    __classPrivateFieldSet(this, _CvsPoster_fonts, __classPrivateFieldGet(this, _CvsPoster_fonts, "f").concat(...fontList), "f");
+                    this._fonts = this._fonts.concat(...fontList);
                 this.invalidateText();
             }
             return this;
         }
-        return Array.from(__classPrivateFieldGet(this, _CvsPoster_fonts, "f"));
+        return Array.from(this._fonts);
     }
     /**
      * <p>By default the user can select one of the following colors  -</p>
@@ -7647,14 +7916,14 @@ class CvsPoster extends CvsBufferedControl {
             let colorList = data.map(ff => cvsGuiColor(ff));
             if (colorList.length > 0) {
                 if (replace)
-                    __classPrivateFieldSet(this, _CvsPoster_colors, colorList, "f");
+                    this._colors = colorList;
                 else
-                    __classPrivateFieldSet(this, _CvsPoster_colors, __classPrivateFieldGet(this, _CvsPoster_colors, "f").concat(...colorList), "f");
+                    this._colors = this._colors.concat(...colorList);
                 this.invalidateBuffer();
             }
             return this;
         }
-        return Array.from(__classPrivateFieldGet(this, _CvsPoster_colors, "f"));
+        return Array.from(this._colors);
     }
     /**
      * <p>This sets the background color to be used when the poster has been set
@@ -7668,7 +7937,7 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control
      */
     background(index = 2) {
-        __classPrivateFieldSet(this, _CvsPoster_backStyle, index % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length, "f");
+        this._backStyle = index % this._colors.length;
         return this;
     }
     /**
@@ -7678,9 +7947,9 @@ class CvsPoster extends CvsBufferedControl {
      * @returns this control;
      */
     margins(mgnX = 0, mgnY = mgnX) {
-        __classPrivateFieldSet(this, _CvsPoster_isetHorz, mgnX, "f");
-        __classPrivateFieldSet(this, _CvsPoster_isetVert, mgnY, "f");
-        __classPrivateFieldSet(this, _CvsPoster_wrapW, this._w - 2 * mgnX, "f");
+        this._isetHorz = mgnX;
+        this._isetVert = mgnY;
+        this._wrapW = this._w - 2 * mgnX;
         this.invalidateText();
         return this;
     }
@@ -7688,7 +7957,7 @@ class CvsPoster extends CvsBufferedControl {
      * The maximum line length (pixels) possible. The length depends on the
      * poster width and the horizontal margins.
      */
-    get wrapWidth() { return __classPrivateFieldGet(this, _CvsPoster_wrapW, "f"); }
+    get wrapWidth() { return this._wrapW; }
     /**
      * Parses the raw text into tokens (Tag and Ascii objects)
      * @returns the list of tokens
@@ -7714,8 +7983,8 @@ class CvsPoster extends CvsBufferedControl {
             });
             return tokens;
         }
-        const chunks = getChunks(__classPrivateFieldGet(this, _CvsPoster_taggedText, "f"));
-        const tokens = getTokens(chunks, __classPrivateFieldGet(this, _CvsPoster_wrapW, "f"));
+        const chunks = getChunks(this._taggedText);
+        const tokens = getTokens(chunks, this._wrapW);
         return tokens;
     }
     /** @hidden */
@@ -7723,7 +7992,7 @@ class CvsPoster extends CvsBufferedControl {
         const paras = [];
         let para;
         if (!tokens[0].isParaTag)
-            paras.push(para = new Poster_Para('pc', 0, 0, __classPrivateFieldGet(this, _CvsPoster_wrapW, "f"), 0));
+            paras.push(para = new Poster_Para('pc', 0, 0, this._wrapW, 0));
         tokens.forEach(tkn => {
             if (tkn.isParaTag)
                 paras.push(para = new Poster_Para(tkn.id, tkn.value, tkn.indent, tkn.wrapW, tkn.leading));
@@ -7761,7 +8030,7 @@ class CvsPoster extends CvsBufferedControl {
                             state.size = tkn.value;
                             break;
                         case 'ft':
-                            state.font = __classPrivateFieldGet(this, _CvsPoster_fonts, "f")[tkn.value % __classPrivateFieldGet(this, _CvsPoster_fonts, "f").length];
+                            state.font = this._fonts[tkn.value % this._fonts.length];
                             break;
                         case 'gsw':
                             state.strokeWidth = tkn.value;
@@ -7842,7 +8111,7 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */
     _positionWords(lines) {
         const words = [];
-        let py = lines[0].ascent + 2 * __classPrivateFieldGet(this, _CvsPoster_isetVert, "f");
+        let py = lines[0].ascent + 2 * this._isetVert;
         lines.forEach(line => {
             const ww = line.wrapW;
             const px = line.indent;
@@ -7863,7 +8132,7 @@ class CvsPoster extends CvsBufferedControl {
                     if (line.nbrWords >= 2 && line.length / ww > 0.75)
                         dx = (ww - line.length) / (line.nbrWords - 1);
             }
-            sx += __classPrivateFieldGet(this, _CvsPoster_isetHorz, "f");
+            sx += this._isetHorz;
             for (let i = 0; i < line.nbrWords; i++) {
                 line.words[i].x += sx + i * dx;
                 line.words[i].y = py;
@@ -7880,7 +8149,7 @@ class CvsPoster extends CvsBufferedControl {
         this._applyTextAttributes(paras);
         this._measureText(paras);
         const lines = this._splitIntoLines(paras);
-        __classPrivateFieldSet(this, _CvsPoster_words, this._positionWords(lines), "f");
+        this._words = this._positionWords(lines);
         this._textInvalid = false;
     }
     /** @hidden */
@@ -7894,11 +8163,11 @@ class CvsPoster extends CvsBufferedControl {
             this._formatText();
         const cs = this.SCHEME;
         // Color scheme fore and opaque colors
-        __classPrivateFieldGet(this, _CvsPoster_colors, "f")[1] = cs.C$(8);
-        __classPrivateFieldGet(this, _CvsPoster_colors, "f")[2] = cs.C$(3, this._alpha);
-        const OPAQUE = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[__classPrivateFieldGet(this, _CvsPoster_backStyle, "f")];
+        this._colors[1] = cs.C$(8);
+        this._colors[2] = cs.C$(3, this._alpha);
+        const OPAQUE = this._colors[this._backStyle];
         const cnrs = this.CNRS;
-        if (this._opaque && __classPrivateFieldGet(this, _CvsPoster_backStyle, "f") != 0) {
+        if (this._opaque && this._backStyle != 0) {
             uic.save();
             uic.fillStyle = OPAQUE;
             uic.beginPath();
@@ -7907,19 +8176,19 @@ class CvsPoster extends CvsBufferedControl {
             uic.restore();
         }
         // Display icons
-        __classPrivateFieldGet(this, _CvsPoster_icons, "f").forEach(i => uic.drawImage(i.icon, i.x, i.y));
+        this._icons.forEach(i => uic.drawImage(i.icon, i.x, i.y));
         uic.textBaseline = 'alphabetic';
-        __classPrivateFieldGet(this, _CvsPoster_words, "f").forEach(word => {
+        this._words.forEach(word => {
             uic.font = word.cssFont;
-            const fill = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[word.fill % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length];
+            const fill = this._colors[word.fill % this._colors.length];
             if (fill !== 'transparent') {
-                uic.fillStyle = fill; //this.#colors[word.fill % this.#colors.length];
+                uic.fillStyle = fill;
                 uic.fillText(word.ascii, word.x, word.y);
             }
-            const stroke = __classPrivateFieldGet(this, _CvsPoster_colors, "f")[word.stroke % __classPrivateFieldGet(this, _CvsPoster_colors, "f").length];
+            const stroke = this._colors[word.stroke % this._colors.length];
             if (stroke !== 'transparent') {
                 uic.lineWidth = word.strokeWidth;
-                uic.strokeStyle = stroke; //this.#colors[word.stroke % this.#colors.length];
+                uic.strokeStyle = stroke;
                 uic.strokeText(word.ascii, word.x, word.y);
             }
         });
@@ -7932,80 +8201,74 @@ class CvsPoster extends CvsBufferedControl {
     /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
     /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
 } // End of CvsPoster class
-_CvsPoster_taggedText = new WeakMap(), _CvsPoster_words = new WeakMap(), _CvsPoster_fonts = new WeakMap(), _CvsPoster_colors = new WeakMap(), _CvsPoster_wrapW = new WeakMap(), _CvsPoster_isetHorz = new WeakMap(), _CvsPoster_isetVert = new WeakMap(), _CvsPoster_icons = new WeakMap(), _CvsPoster_backStyle = new WeakMap();
 // ##################################################################
 //        Supporting classes for formating text & icons
 // ##################################################################
 class Poster_Icon {
     constructor(icon, x = 0, y = 0) {
-        _Poster_Icon_icon.set(this, void 0);
-        _Poster_Icon_x.set(this, void 0);
-        _Poster_Icon_y.set(this, void 0);
-        __classPrivateFieldSet(this, _Poster_Icon_icon, cvsGuiCanvas(icon), "f");
-        __classPrivateFieldSet(this, _Poster_Icon_x, x, "f");
-        __classPrivateFieldSet(this, _Poster_Icon_y, y, "f");
+        this._icon = cvsGuiCanvas(icon);
+        this._x = x;
+        this._y = y;
     }
-    get icon() { return __classPrivateFieldGet(this, _Poster_Icon_icon, "f"); }
-    get x() { return __classPrivateFieldGet(this, _Poster_Icon_x, "f"); }
-    get y() { return __classPrivateFieldGet(this, _Poster_Icon_y, "f"); }
+    get icon() { return this._icon; }
+    get x() { return this._x; }
+    get y() { return this._y; }
 }
-_Poster_Icon_icon = new WeakMap(), _Poster_Icon_x = new WeakMap(), _Poster_Icon_y = new WeakMap();
 /** @hidden */
 class Poster_Line {
     constructor(gap, para) {
-        _Poster_Line_words.set(this, []);
-        _Poster_Line_align.set(this, void 0);
-        _Poster_Line_lAscent.set(this, 0);
-        _Poster_Line_lHeight.set(this, 0);
-        _Poster_Line_gap.set(this, 0);
-        _Poster_Line_indent.set(this, 0);
-        _Poster_Line_wrapW.set(this, 0);
-        _Poster_Line_leading.set(this, 0);
-        __classPrivateFieldSet(this, _Poster_Line_gap, gap, "f");
-        __classPrivateFieldSet(this, _Poster_Line_align, para.align, "f");
-        __classPrivateFieldSet(this, _Poster_Line_indent, para.indent, "f");
-        __classPrivateFieldSet(this, _Poster_Line_wrapW, para.wrapW, "f");
-        __classPrivateFieldSet(this, _Poster_Line_leading, para.leading, "f");
+        this._words = [];
+        this._lAscent = 0;
+        this._lHeight = 0;
+        this._gap = 0;
+        this._indent = 0;
+        this._wrapW = 0;
+        this._leading = 0;
+        this._gap = gap;
+        this._align = para.align;
+        this._indent = para.indent;
+        this._wrapW = para.wrapW;
+        this._leading = para.leading;
     }
-    get words() { return __classPrivateFieldGet(this, _Poster_Line_words, "f"); }
+    get words() { return this._words; }
     ;
-    get nbrWords() { return __classPrivateFieldGet(this, _Poster_Line_words, "f").length; }
+    get nbrWords() { return this._words.length; }
     ;
-    set align(a) { __classPrivateFieldSet(this, _Poster_Line_align, a, "f"); }
+    set align(a) { this._align = a; }
     ;
-    get align() { return __classPrivateFieldGet(this, _Poster_Line_align, "f"); }
+    get align() { return this._align; }
     ;
-    set gap(n) { __classPrivateFieldSet(this, _Poster_Line_gap, n, "f"); }
+    set gap(n) { this._gap = n; }
     ;
-    get gap() { return __classPrivateFieldGet(this, _Poster_Line_gap, "f"); }
+    get gap() { return this._gap; }
     ;
-    set indent(n) { __classPrivateFieldSet(this, _Poster_Line_indent, n, "f"); }
+    set indent(n) { this._indent = n; }
     ;
-    get indent() { return __classPrivateFieldGet(this, _Poster_Line_indent, "f"); }
+    get indent() { return this._indent; }
     ;
-    set wrapW(n) { __classPrivateFieldSet(this, _Poster_Line_wrapW, n, "f"); }
+    set wrapW(n) { this._wrapW = n; }
     ;
-    get wrapW() { return __classPrivateFieldGet(this, _Poster_Line_wrapW, "f"); }
+    get wrapW() { return this._wrapW; }
     ;
-    set ascent(a) { __classPrivateFieldSet(this, _Poster_Line_lAscent, a, "f"); }
+    set ascent(a) { this._lAscent = a; }
     ;
-    get ascent() { return __classPrivateFieldGet(this, _Poster_Line_lAscent, "f"); }
+    get ascent() { return this._lAscent; }
     ;
-    set height(h) { __classPrivateFieldSet(this, _Poster_Line_lHeight, h, "f"); }
+    set height(h) { this._lHeight = h; }
     ;
-    get height() { return __classPrivateFieldGet(this, _Poster_Line_lHeight, "f"); }
+    get height() { return this._lHeight; }
     ;
-    set leading(ld) { __classPrivateFieldSet(this, _Poster_Line_leading, ld, "f"); }
-    get leading() { return __classPrivateFieldGet(this, _Poster_Line_leading, "f"); }
+    set leading(ld) { this._leading = ld; }
+    get leading() { return this._leading; }
     get length() {
-        if (__classPrivateFieldGet(this, _Poster_Line_words, "f").length > 0) {
-            let word = __classPrivateFieldGet(this, _Poster_Line_words, "f")[__classPrivateFieldGet(this, _Poster_Line_words, "f").length - 1];
+        if (this._words.length > 0) {
+            let word = this._words[this._words.length - 1];
             return word.x + word.width;
         }
         else
             return 0;
     }
-    addWord(word) { __classPrivateFieldGet(this, _Poster_Line_words, "f").push(word); }
+    addWord(word) { this._words.push(word); }
     toString() {
         const [aln, indent, wrapW, asc, hgt, len] = [this.align, this.indent, this.wrapW,
             Math.round(this.ascent), Math.round(this.height), Math.round(this.length)];
@@ -8013,85 +8276,82 @@ class Poster_Line {
             + `  Indent: ${indent}  Wrap: ${wrapW} \n`;
     }
 }
-_Poster_Line_words = new WeakMap(), _Poster_Line_align = new WeakMap(), _Poster_Line_lAscent = new WeakMap(), _Poster_Line_lHeight = new WeakMap(), _Poster_Line_gap = new WeakMap(), _Poster_Line_indent = new WeakMap(), _Poster_Line_wrapW = new WeakMap(), _Poster_Line_leading = new WeakMap();
 /** @hidden */
 class Poster_Para {
     constructor(tagId = 'pc', gap, indent, wrapW, leading) {
-        _Poster_Para_tokens.set(this, []);
-        _Poster_Para_align.set(this, 'center');
-        _Poster_Para_gap.set(this, 0);
-        _Poster_Para_indent.set(this, 0);
-        _Poster_Para_wrapW.set(this, 0);
-        _Poster_Para_leading.set(this, 0);
-        __classPrivateFieldSet(this, _Poster_Para_align, TAGS.get(tagId), "f");
-        __classPrivateFieldSet(this, _Poster_Para_gap, gap, "f");
-        __classPrivateFieldSet(this, _Poster_Para_indent, indent, "f");
-        __classPrivateFieldSet(this, _Poster_Para_wrapW, wrapW, "f");
-        __classPrivateFieldSet(this, _Poster_Para_leading, leading, "f");
+        this._tokens = [];
+        this._align = 'center';
+        this._gap = 0;
+        this._indent = 0;
+        this._wrapW = 0;
+        this._leading = 0;
+        this._align = TAGS.get(tagId);
+        this._gap = gap;
+        this._indent = indent;
+        this._wrapW = wrapW;
+        this._leading = leading;
     }
-    get tokens() { return __classPrivateFieldGet(this, _Poster_Para_tokens, "f"); }
-    set tokens(v) { __classPrivateFieldSet(this, _Poster_Para_tokens, v, "f"); }
-    get align() { return __classPrivateFieldGet(this, _Poster_Para_align, "f"); }
-    get gap() { return __classPrivateFieldGet(this, _Poster_Para_gap, "f"); }
-    get indent() { return __classPrivateFieldGet(this, _Poster_Para_indent, "f"); }
-    get wrapW() { return __classPrivateFieldGet(this, _Poster_Para_wrapW, "f"); }
-    get leading() { return __classPrivateFieldGet(this, _Poster_Para_leading, "f"); }
+    get tokens() { return this._tokens; }
+    set tokens(v) { this._tokens = v; }
+    get align() { return this._align; }
+    get gap() { return this._gap; }
+    get indent() { return this._indent; }
+    get wrapW() { return this._wrapW; }
+    get leading() { return this._leading; }
     toString() {
-        return `PARAGRAPH (${__classPrivateFieldGet(this, _Poster_Para_align, "f")})   Gap: ${this.gap}   `
+        return `PARAGRAPH (${this._align})   Gap: ${this.gap}   `
             + `Indent: ${this.indent}   wrapW: ${this.wrapW}    `
             + `leading: ${this.leading}`;
     }
 }
-_Poster_Para_tokens = new WeakMap(), _Poster_Para_align = new WeakMap(), _Poster_Para_gap = new WeakMap(), _Poster_Para_indent = new WeakMap(), _Poster_Para_wrapW = new WeakMap(), _Poster_Para_leading = new WeakMap();
 /** @hidden */
 class Poster_Ascii {
-    get x() { return __classPrivateFieldGet(this, _Poster_Ascii_x, "f"); }
+    get x() { return this._x; }
     ;
-    set x(n) { __classPrivateFieldSet(this, _Poster_Ascii_x, n, "f"); }
+    set x(n) { this._x = n; }
     ;
-    get y() { return __classPrivateFieldGet(this, _Poster_Ascii_y, "f"); }
+    get y() { return this._y; }
     ;
-    set y(n) { __classPrivateFieldSet(this, _Poster_Ascii_y, n, "f"); }
+    set y(n) { this._y = n; }
     ;
-    get width() { return __classPrivateFieldGet(this, _Poster_Ascii_w, "f"); }
+    get width() { return this._w; }
     ;
-    set width(n) { __classPrivateFieldSet(this, _Poster_Ascii_w, n, "f"); }
+    set width(n) { this._w = n; }
     ;
-    get height() { return __classPrivateFieldGet(this, _Poster_Ascii_h, "f"); }
+    get height() { return this._h; }
     ;
-    set height(n) { __classPrivateFieldSet(this, _Poster_Ascii_h, n, "f"); }
+    set height(n) { this._h = n; }
     ;
-    get ascent() { return __classPrivateFieldGet(this, _Poster_Ascii_a, "f"); }
+    get ascent() { return this._a; }
     ;
-    set ascent(n) { __classPrivateFieldSet(this, _Poster_Ascii_a, n, "f"); }
+    set ascent(n) { this._a = n; }
     ;
-    get ascii() { return __classPrivateFieldGet(this, _Poster_Ascii_ascii, "f"); }
+    get ascii() { return this._ascii; }
     get isAscii() { return !this.ascii.startsWith(' '); }
     get isSpace() { return this.ascii.startsWith(' '); }
-    get cssFont() { return __classPrivateFieldGet(this, _Poster_Ascii_cssFont, "f"); }
+    get cssFont() { return this._cssFont; }
     ;
-    set cssFont(v) { __classPrivateFieldSet(this, _Poster_Ascii_cssFont, v, "f"); }
+    set cssFont(v) { this._cssFont = v; }
     ;
-    get strokeWidth() { return __classPrivateFieldGet(this, _Poster_Ascii_glyphStrokeWidth, "f"); }
-    set strokeWidth(v) { __classPrivateFieldSet(this, _Poster_Ascii_glyphStrokeWidth, v, "f"); }
-    get stroke() { return __classPrivateFieldGet(this, _Poster_Ascii_glyphStroke, "f"); }
-    set stroke(v) { __classPrivateFieldSet(this, _Poster_Ascii_glyphStroke, v, "f"); }
-    get fill() { return __classPrivateFieldGet(this, _Poster_Ascii_glyphFill, "f"); }
-    set fill(v) { __classPrivateFieldSet(this, _Poster_Ascii_glyphFill, v, "f"); }
+    get strokeWidth() { return this._glyphStrokeWidth; }
+    set strokeWidth(v) { this._glyphStrokeWidth = v; }
+    get stroke() { return this._glyphStroke; }
+    set stroke(v) { this._glyphStroke = v; }
+    get fill() { return this._glyphFill; }
+    set fill(v) { this._glyphFill = v; }
     constructor(chunk) {
-        _Poster_Ascii_ascii.set(this, '');
-        _Poster_Ascii_x.set(this, 0);
-        _Poster_Ascii_y.set(this, 0);
-        _Poster_Ascii_w.set(this, 0);
-        _Poster_Ascii_h.set(this, 0);
-        _Poster_Ascii_a.set(this, 0);
-        _Poster_Ascii_cssFont.set(this, void 0);
-        _Poster_Ascii_glyphStrokeWidth.set(this, 0);
-        _Poster_Ascii_glyphStroke.set(this, 0);
-        _Poster_Ascii_glyphFill.set(this, 0);
-        __classPrivateFieldSet(this, _Poster_Ascii_cssFont, this.cssFont, "f");
+        this._ascii = '';
+        this._x = 0;
+        this._y = 0;
+        this._w = 0;
+        this._h = 0;
+        this._a = 0;
+        this._glyphStrokeWidth = 0;
+        this._glyphStroke = 0;
+        this._glyphFill = 0;
+        this._cssFont = this.cssFont;
         const ptn = /(&\w+;)/gu;
-        __classPrivateFieldSet(this, _Poster_Ascii_ascii, chunk.replace(ptn, m => CHAR_ENTITIES.get(m) || m), "f");
+        this._ascii = chunk.replace(ptn, m => CHAR_ENTITIES.get(m) || m);
     }
     applyState(state) {
         this.cssFont = state.cssFont;
@@ -8108,14 +8368,13 @@ class Poster_Ascii {
         return s;
     }
 }
-_Poster_Ascii_ascii = new WeakMap(), _Poster_Ascii_x = new WeakMap(), _Poster_Ascii_y = new WeakMap(), _Poster_Ascii_w = new WeakMap(), _Poster_Ascii_h = new WeakMap(), _Poster_Ascii_a = new WeakMap(), _Poster_Ascii_cssFont = new WeakMap(), _Poster_Ascii_glyphStrokeWidth = new WeakMap(), _Poster_Ascii_glyphStroke = new WeakMap(), _Poster_Ascii_glyphFill = new WeakMap();
 /** @hidden */
 class Poster_Tag {
     constructor(tag, line_length) {
-        _Poster_Tag_id.set(this, '');
-        _Poster_Tag_attrs.set(this, []);
+        this._id = '';
+        this._attrs = [];
         let m = tag.match(/[a-z]+|\S+/g);
-        __classPrivateFieldSet(this, _Poster_Tag_id, m ? String(m.shift()) : '?', "f");
+        this._id = m ? String(m.shift()) : '?';
         let tagParts = m ? m.shift()?.split(/:{1}/) : undefined;
         let attrs = !tagParts ? [0, 0, 0, 0] : tagParts.map(x => Number(x));
         attrs = attrs.concat([0, 0, 0, 0]);
@@ -8134,48 +8393,47 @@ class Poster_Tag {
                 attrs[2] = line_length - attrs[1];
             }
         }
-        __classPrivateFieldSet(this, _Poster_Tag_attrs, attrs, "f");
+        this._attrs = attrs;
     }
-    get id() { return __classPrivateFieldGet(this, _Poster_Tag_id, "f"); }
-    get value() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[0]; }
-    get indent() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[1]; }
-    get wrapW() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[2]; }
-    get leading() { return __classPrivateFieldGet(this, _Poster_Tag_attrs, "f")[3]; }
-    get isParaTag() { return Boolean(__classPrivateFieldGet(this, _Poster_Tag_id, "f").match(/^p[lrcj]/)); }
+    get id() { return this._id; }
+    get value() { return this._attrs[0]; }
+    get indent() { return this._attrs[1]; }
+    get wrapW() { return this._attrs[2]; }
+    get leading() { return this._attrs[3]; }
+    get isParaTag() { return Boolean(this._id.match(/^p[lrcj]/)); }
     toString() {
-        let s = `TAG id: "${__classPrivateFieldGet(this, _Poster_Tag_id, "f")}" (para tag? ${this.isParaTag})  `;
+        let s = `TAG id: "${this._id}" (para tag? ${this.isParaTag})  `;
         s += `Value: ${this.value}   Indent: ${this.indent}   Line length: ${this.wrapW}  Leading: ${this.leading}`;
         return s;
     }
 }
-_Poster_Tag_id = new WeakMap(), _Poster_Tag_attrs = new WeakMap();
 /** @hidden */
 class Poster_State {
     constructor() {
-        _Poster_State_font.set(this, 'sans-serif');
-        _Poster_State_size.set(this, 20);
-        _Poster_State_style.set(this, 'normal');
-        _Poster_State_slant.set(this, 14);
-        _Poster_State_glyphStrokeWidth.set(this, 0);
-        _Poster_State_glyphStroke.set(this, 0);
-        _Poster_State_glyphFill.set(this, 1);
+        this._font = 'sans-serif';
+        this._size = 20;
+        this._style = 'normal';
+        this._slant = 14;
+        this._glyphStrokeWidth = 0;
+        this._glyphStroke = 0;
+        this._glyphFill = 1;
     }
-    get font() { return __classPrivateFieldGet(this, _Poster_State_font, "f"); }
-    set font(v) { __classPrivateFieldSet(this, _Poster_State_font, v, "f"); }
-    get size() { return __classPrivateFieldGet(this, _Poster_State_size, "f"); }
-    set size(v) { __classPrivateFieldSet(this, _Poster_State_size, v, "f"); }
-    get style() { return __classPrivateFieldGet(this, _Poster_State_style, "f"); }
-    set style(v) { __classPrivateFieldSet(this, _Poster_State_style, v, "f"); }
-    get slant() { return __classPrivateFieldGet(this, _Poster_State_slant, "f"); }
-    set slant(v) { __classPrivateFieldSet(this, _Poster_State_slant, v, "f"); }
-    get strokeWidth() { return __classPrivateFieldGet(this, _Poster_State_glyphStrokeWidth, "f"); }
-    set strokeWidth(v) { __classPrivateFieldSet(this, _Poster_State_glyphStrokeWidth, v, "f"); }
-    get stroke() { return __classPrivateFieldGet(this, _Poster_State_glyphStroke, "f"); }
-    set stroke(v) { __classPrivateFieldSet(this, _Poster_State_glyphStroke, v, "f"); }
-    get fill() { return __classPrivateFieldGet(this, _Poster_State_glyphFill, "f"); }
-    set fill(v) { __classPrivateFieldSet(this, _Poster_State_glyphFill, v, "f"); }
+    get font() { return this._font; }
+    set font(v) { this._font = v; }
+    get size() { return this._size; }
+    set size(v) { this._size = v; }
+    get style() { return this._style; }
+    set style(v) { this._style = v; }
+    get slant() { return this._slant; }
+    set slant(v) { this._slant = v; }
+    get strokeWidth() { return this._glyphStrokeWidth; }
+    set strokeWidth(v) { this._glyphStrokeWidth = v; }
+    get stroke() { return this._glyphStroke; }
+    set stroke(v) { this._glyphStroke = v; }
+    get fill() { return this._glyphFill; }
+    set fill(v) { this._glyphFill = v; }
     get cssFont() {
-        return cssFont$(__classPrivateFieldGet(this, _Poster_State_font, "f"), __classPrivateFieldGet(this, _Poster_State_size, "f"), __classPrivateFieldGet(this, _Poster_State_style, "f"), __classPrivateFieldGet(this, _Poster_State_slant, "f"));
+        return cssFont$(this._font, this._size, this._style, this._slant);
     }
     clone() {
         let clone = new Poster_State();
@@ -8196,23 +8454,21 @@ class Poster_State {
         return s;
     }
 }
-_Poster_State_font = new WeakMap(), _Poster_State_size = new WeakMap(), _Poster_State_style = new WeakMap(), _Poster_State_slant = new WeakMap(), _Poster_State_glyphStrokeWidth = new WeakMap(), _Poster_State_glyphStroke = new WeakMap(), _Poster_State_glyphFill = new WeakMap();
 /** @hidden */
 class Poster_Stack {
     constructor() {
-        _Poster_Stack_stack.set(this, []);
+        this._stack = [];
     }
     push(state) {
-        __classPrivateFieldGet(this, _Poster_Stack_stack, "f").push(state.clone());
+        this._stack.push(state.clone());
     }
     pop() {
-        if (__classPrivateFieldGet(this, _Poster_Stack_stack, "f").length > 1)
-            return __classPrivateFieldGet(this, _Poster_Stack_stack, "f").pop();
+        if (this._stack.length > 1)
+            return this._stack.pop();
         else
-            return __classPrivateFieldGet(this, _Poster_Stack_stack, "f")[0].clone();
+            return this._stack[0].clone();
     }
 }
-_Poster_Stack_stack = new WeakMap();
 //# sourceMappingURL=poster.js.map
 /**
  * <h2>Aid to positioning and sizing of controls laid out in a grid</h2>
@@ -8258,12 +8514,6 @@ class GridLayout {
      * @hidden
      */
     constructor(x, y, w, h) {
-        /** @hidden */ this._x = 0;
-        /** @hidden */ this._y = 0;
-        /** @hidden */ this._w = 0;
-        /** @hidden */ this._h = 0;
-        /** @hidden */ this._ix = 2;
-        /** @hidden */ this._iy = 2;
         this._x = Math.round(x);
         this._y = Math.round(y);
         this._w = Math.round(w);

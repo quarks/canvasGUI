@@ -14,7 +14,7 @@ abstract class CvsBufferedControl extends CvsControl {
     /** @hidden */ protected _uicBuffer!: OffscreenCanvas;
     /** @hidden */ protected _pkcBuffer?: OffscreenCanvas;
 
-    /** @hidden */ protected _textInvalid = false;
+    /** @hidden */ protected _textInvalid: boolean;
 
     /**
      * CvsBufferedControl class 
@@ -28,6 +28,7 @@ abstract class CvsBufferedControl extends CvsControl {
      */
     constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number, pickable: boolean = false) {
         super(gui, id, x, y, w, h, pickable);
+        this._textInvalid = false;
         this._createBuffer = pickable ? this._createUIandPKbuffer : this._createUIbuffer;
         this._createBuffer(w, h);
         this.invalidateBuffer();
@@ -125,8 +126,10 @@ abstract class CvsBufferedControl extends CvsControl {
             }
         }
         // Display children
-        for (let c of this._children)
-            if (c._visible) c._draw(guiCtx, pkCtx);
+        for (let c of this._children) {
+            if (c._visible)
+                c._draw(guiCtx, pkCtx);
+        }
         guiCtx.restore();
     }
 

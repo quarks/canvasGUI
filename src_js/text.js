@@ -5,22 +5,22 @@
  */
 class CvsText extends CvsBufferedControl {
     /** @hidden */
+    constructor(gui, name, x, y, w, h, pickable) {
+        super(gui, name, x, y, w, h, pickable);
+        this._tLines = [];
+        this._tBox = [0, 0];
+        this._tAlignH = "center";
+        this._tAlignV = "center";
+        this._tSlant = 14;
+        this._tArea = [];
+        this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
+    }
+    /** @hidden */
     get T_SIZE() { return this._tSize || this._gui._tSize; }
     /** @hidden */
     get T_FACE() { return this._tFace || this._gui._tFace; }
     /** @hidden */
     get T_STYLE() { return this._tStyle || this._gui._tStyle; }
-    /** @hidden */
-    constructor(gui, name, x, y, w, h, pickable) {
-        super(gui, name, x, y, w, h, pickable);
-        /** @hidden */ this._tLines = [];
-        /** @hidden */ this._tBox = [0, 0];
-        /** @hidden */ this._tAlignH = "center";
-        /** @hidden */ this._tAlignV = "center";
-        /** @hidden */ this._tSlant = 14;
-        /** @hidden */ this._tArea = [];
-        this._tArea = [ISET_H, ISET_V, this._w - 2 * ISET_H, this._h - 2 * ISET_V];
-    }
     /**
      * <p>Gets or sets the current text.</p>
      * <p>Processing constants are used to define the alignment.</p>

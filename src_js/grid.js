@@ -42,12 +42,6 @@ class GridLayout {
      * @hidden
      */
     constructor(x, y, w, h) {
-        /** @hidden */ this._x = 0;
-        /** @hidden */ this._y = 0;
-        /** @hidden */ this._w = 0;
-        /** @hidden */ this._h = 0;
-        /** @hidden */ this._ix = 2;
-        /** @hidden */ this._iy = 2;
         this._x = Math.round(x);
         this._y = Math.round(y);
         this._w = Math.round(w);

@@ -13,26 +13,18 @@ abstract class CvsControl extends CvsPin {
     /** @hidden */
     static WEST = new OrientWest();
 
-    /** @hidden */ protected _w: number = 0;
-    /** @hidden */ protected _h: number = 0;
+    /** @hidden */ protected _w: number;
+    /** @hidden */ protected _h: number;
     /** @hidden */ protected _orientation: OrientNorth | OrientSouth | OrientEast | OrientWest;
     /** @hidden */ protected _corners: any;
     /** @hidden */ protected _dragging: boolean;
-    /** @hidden */ protected _isOver: boolean = false;
-    /** @hidden */ protected _active: boolean = false;
-    /** @hidden */ protected _alpha: number = 255;
-    /** @hidden */ protected _clickAllowed: boolean = false;
-    /** @hidden */ protected _opaque: boolean = true;
+    /** @hidden */ protected _isOver: boolean;
+    /** @hidden */ protected _active: boolean;
+    /** @hidden */ protected _alpha: number;
+    /** @hidden */ protected _clickAllowed: boolean;
+    /** @hidden */ protected _opaque: boolean;
     /** @hidden */ protected _scheme: any;
-    /** @hidden */ protected _tooltip: any = undefined;
-
-    /**
-     * <p>The event handler for this control. Although it is permitted to set this
-     * property directly it is recommended that the <code>setAction(...)</code>
-     * method is used to define the event handler actions.</p> 
-     * @hidden
-     */
-    // action: Function = function () { };
+    /** @hidden */ protected _tooltip: any;
 
     /**
      * CvsControl class
@@ -44,10 +36,16 @@ abstract class CvsControl extends CvsPin {
      * @param w width
      * @param h height
      */
-    constructor(gui: GUI, id: string, x: number, y: number, w: number, h: number, pickable: boolean) {
+    constructor(gui: GUI, id: string, x: number, y: number, w: number = 0, h: number = 0, pickable: boolean = false) {
         super(gui, id, x, y);
         this._w = Math.round(w);
         this._h = Math.round(h);
+        this._isOver = false;
+        this._active = false;
+        this._alpha = 255;
+        this._clickAllowed = false;
+        this._opaque = true;
+        this._tooltip = undefined;
         this._visible = true;
         this._enabled = true;
         this._scheme = undefined;
@@ -153,26 +151,6 @@ abstract class CvsControl extends CvsPin {
         }
         return this;
     }
-
-    /**
-     * <p>This sets the event handler to be used when this control fires
-     * an event. The parameter can take one of three forms:</p>
-     * <ol>
-     * <li>Arrow function definition</li>
-     * <li>Anonymous function definition</li>
-     * <li>Named function declaration</li>
-     * </ol>
-     * 
-     * @param event_handler  the function to handle this control's events.
-     * @returns this control
-     */
-    // setAction(event_handler: Function) {
-    //     if (typeof event_handler === 'function')
-    //         this.action = event_handler;
-    //     else
-    //         console.error(`The action for '$(this._id)' must be a function definition`);
-    //     return this;
-    // }
 
     /**
      * <p>Sets this controls display orientation to one of the four cardinal 
@@ -358,12 +336,5 @@ abstract class CvsControl extends CvsPin {
 
     /** @hidden */
     _doKeyEvent(e: KeyboardEvent) { return this; }
-
-    /**
-     * @param uic ui overlay buffer drawing context
-     * @param pkc picker buffer drawing context
-     * @hidden
-     */
-    _draw(uic: OffscreenCanvasRenderingContext2D, pkc: OffscreenCanvasRenderingContext2D) { }
 
 }

@@ -486,16 +486,23 @@ class GUI {
   }
 
   /**
-   * Create a viewer control
+   * <p>Create a viewer control.</p>
+   * <p>If the last parameter <code>padSize</code> =0 or is not provided then
+   * horizontal and vertical scrollbars are provided to scroll through the
+   * image. If it is in the range &gt;0 and &lt;1 then a single scrollpad
+   * is provided instead. The size of the pad is based on padSize and is 
+   * proprotional to the size of the viewer.</p>
+   * 
    * @param id unique id for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
    * @param h height
+   * @param padSize if &gt;0 and &le;1 a scrollpad is created
    * @returns an image viewer
    */
-  viewer(id: string, x: number, y: number, w: number, h: number) {
-    return new CvsViewer(this, id, x, y, w, h);
+  viewer(id: string, x: number, y: number, w: number, h: number, padSize = 0) {
+    return new CvsViewer(this, id, x, y, w, h, padSize);
   }
 
   /**
@@ -534,8 +541,22 @@ class GUI {
    * @returns scroller control
    * @hidden
    */
-  __scroller(id: string, x: number, y: number, w: number, h: number) {
-    return new CvsScroller(this, id, x, y, w, h);
+  __scrollbar(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsScrollbar(this, id, x, y, w, h);
+  }
+
+  /**
+   * Create a scrollpad control
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns scroller control
+   * @hidden
+   */
+  __scrollpad(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsScrollpad(this, id, x, y, w, h);
   }
 
   /**
@@ -800,6 +821,7 @@ class GUI {
     this._currOver = over.control;
     // Determine if we have entered current over control
     const enter = this._currOver && this._currOver != this._prevOver;
+
     if (this._activeCtrl) {
       this._activeCtrl = this._activeCtrl._doEvent(e, x, y, over, enter);
     }
@@ -888,19 +910,6 @@ class GUI {
   }
 
   /**
-   * Add an object so it can be detected using this pick buffer.
-   * @param control the object to add
-   * @hidden
-   */
-  // register(control: CvsBufferedControl) {
-  //   if (control && !this._control2color.has(control)) {
-  //     this._control2color.set(control, this._NEXT_COLOR);
-  //     this._color2control.set(this._NEXT_COLOR, control);
-  //     this._NEXT_COLOR += this._COLOR_STEP;
-  //   }
-  // }
-
-  /**
    * Sorts the controls so that they are rendered in order of their z
    * value (low z --> high z).
    * @hidden
@@ -986,6 +995,17 @@ class GUI {
       CLOG(`${id}    ui: ${uic}     pk: ${pkc}     pickable:${pickable}`);
     }
     CLOG('-----------------------------------------------------------------');
+  }
+
+  /** @hiddent */
+  listKids(ctrl: CvsPin) {
+    function add(ctrl: CvsPin, tab: string) {
+      result += `${tab}${ctrl.id}  ${ctrl.isVisible ? '+' : '-'}\n`;
+      ctrl.children.forEach(kid => add(kid, tab + '    '));
+    }
+    let result = '';
+    add(ctrl, '  ');
+    CLOG(result);
   }
 
   /**

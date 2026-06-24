@@ -13,7 +13,8 @@ texticon.js
 label.js
 button.js
 tooltip.js
-scroller.js
+scrollbar.js
+scrollpad.js
 option.js
 checkbox.js
 viewer.js

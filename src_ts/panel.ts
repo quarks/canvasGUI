@@ -15,11 +15,11 @@
  */
 class CvsPanel extends CvsBufferedControl {
 
-    /** @hidden */ protected _canDragX: boolean = true;
-    /** @hidden */ protected _canDragY: boolean = true;
+    /** @hidden */ protected _canDragX: boolean;
+    /** @hidden */ protected _canDragY: boolean;
     /** @hidden */ protected _dragData!: Array<number>;
-    /** @hidden */ protected _constrainX: boolean = true;
-    /** @hidden */ protected _constrainY: boolean = true;
+    /** @hidden */ protected _constrainX: boolean;
+    /** @hidden */ protected _constrainY: boolean;
 
     /**
      * @hidden
@@ -32,6 +32,10 @@ class CvsPanel extends CvsBufferedControl {
      */
     constructor(gui: GUI, name: string, x: number, y: number, w: number, h: number) {
         super(gui, name, x, y, w, h, true);
+        this._canDragX = true;
+        this._canDragY = true;
+        this._constrainX = true;
+        this._constrainY = true;
         this._opaque = true;
         this._z = PANEL_Z;
     }

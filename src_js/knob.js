@@ -21,10 +21,9 @@ class CvsKnob extends CvsSlider {
      */
     constructor(gui, name, x, y, w, h) {
         super(gui, name, x, y, w, h);
-        // Mouse / touch mode
-        /** @hidden */ this._mode = CvsKnob.X_MODE;
-        /** @hidden */ this._sensitivity = 0.005;
         this._size = Math.min(w, h);
+        this._mode = CvsKnob.X_MODE;
+        this._sensitivity = 0.005;
         this._turnArc = 2 * Math.PI; // Full turn of 360 degrees
         this._gapPos = 0.5 * Math.PI; // South
         this._tw = 0;

@@ -31,12 +31,12 @@
  */
 class GridLayout {
 
-    /** @hidden */ protected _x: number = 0;
-    /** @hidden */ protected _y: number = 0;
-    /** @hidden */ protected _w: number = 0;
-    /** @hidden */ protected _h: number = 0;
-    /** @hidden */ protected _ix: number = 2;
-    /** @hidden */ protected _iy: number = 2;
+    /** @hidden */ protected _x: number;
+    /** @hidden */ protected _y: number;
+    /** @hidden */ protected _w: number;
+    /** @hidden */ protected _h: number;
+    /** @hidden */ protected _ix: number;
+    /** @hidden */ protected _iy: number;
     /** @hidden */ protected _cx: Array<number>
     /** @hidden */ protected _cy: Array<number>
 

@@ -3,20 +3,20 @@
  * @hidden
  */
 class ColorScheme {
-    /** @hidden */
-    _colors: Array<Array<number>> = [];
-    /** @hidden */
-    _greys: Array<Array<number>> = [];
-    /** @hidden */
-    _tints: Array<Array<number>> = [];
-    /** @hidden */
-    _name: string = 'color scheme name';
-    /**@hidden */
-    _original = true;
+    /** @hidden */ protected _colors: Array<Array<number>>;
+    /** @hidden */ protected _greys: Array<Array<number>>;
+    /** @hidden */ protected _tints: Array<Array<number>>;
+    /** @hidden */ protected _name: string;
+    /** @hidden */ protected _original: boolean;
 
     /** @hidden */
     constructor(name = 'color scheme name') {
         this._name = name;
+        this._colors = [];
+        this._greys = [];
+        this._tints = [];
+        this._name = 'color scheme name';
+        this._original = true;
         this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
     }
