@@ -68,12 +68,15 @@ class CvsViewer extends CvsBufferedControl {
         this._scroller.hide();
     }
 
-    get padSizeW() { return this._lw }
-    get padV() { return this._lh }
+    /** @hidden */
     get lw() { return this._lw }
+    /** @hidden */
     get lh() { return this._lh }
+    /** @hidden */
     get wcx() { return this._wcx }
+    /** @hidden */
     get wcy() { return this._wcy }
+    /** @hidden */
     get wscale() { return this._wscale }
 
 
@@ -134,6 +137,7 @@ class CvsViewer extends CvsBufferedControl {
      * Sets the scale after validation.
      * @param v new scale value
      * @returns true if the scale has been changed
+     * @hidden
      */
     _updateScale(v: number): boolean {
         v = this._scaler
@@ -223,6 +227,7 @@ class CvsViewer extends CvsBufferedControl {
         if (_neq(ncx, this._wcx) || _neq(ncy, this._wcy)) {
             this._wcx = ncx;
             this._wcy = ncy;
+            this._scroller.setValue(this._wcx / this._lw, this._wcy / this._lh);
             this.invalidateBuffer();
             this.action(this.actionInfo());
         }

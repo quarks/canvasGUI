@@ -15,7 +15,6 @@ class ColorScheme {
         this._colors = [];
         this._greys = [];
         this._tints = [];
-        this._name = 'color scheme name';
         this._original = true;
         this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
@@ -25,6 +24,33 @@ class ColorScheme {
     get name() { return this._name }
     /** @hidden */
     set name(v) { CWARN(`Cannot change the name of a library color scheme.`) }
+
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getTints(): Array<Array<number>> {
+        return this._deepCopyArray2D(this._tints);
+    }
+
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getGreys(): Array<Array<number>> {
+        return this._deepCopyArray2D(this._greys);
+    }
+
+    /**
+     * <p>Get a deep copy of the colors array which can then be edited. Changes
+     * to the copy will not change the color scheme unless the matching set 
+     * method is called.</p>
+     */
+    getColors(): Array<Array<number>> {
+        return this._deepCopyArray2D(this._colors);
+    }
 
     /** 
      * <p>Returns true if this scheme is one of the canvasGUI library color 
@@ -88,9 +114,9 @@ class UserColorScheme extends ColorScheme {
     constructor(name: string, scheme: ColorScheme) {
         super(name);
         this._original = false;
-        this._tints = this._deepCopyArray2D(scheme._tints);
-        this._greys = this._deepCopyArray2D(scheme._greys);
-        this._colors = this._deepCopyArray2D(scheme._colors);
+        this._tints = this._deepCopyArray2D(scheme.getTints());
+        this._greys = this._deepCopyArray2D(scheme.getGreys());
+        this._colors = this._deepCopyArray2D(scheme.getColors());
     }
 
     /**
@@ -98,32 +124,32 @@ class UserColorScheme extends ColorScheme {
      */
     set name(n: string) { this._name = n }
 
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getTints(): Array<Array<number>> {
-        return this._deepCopyArray2D(this._tints);
-    }
+    // /**
+    //  * Get a deep copy of the tints array which can then be edited. Changes to
+    //  * the copy will not change the color scheme unless the matching setter is
+    //  * called.
+    //  */
+    // getTints(): Array<Array<number>> {
+    //     return this._deepCopyArray2D(this._tints);
+    // }
 
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getGreys(): Array<Array<number>> {
-        return this._deepCopyArray2D(this._greys);
-    }
+    // /**
+    //  * Get a deep copy of the tints array which can then be edited. Changes to
+    //  * the copy will not change the color scheme unless the matching setter is
+    //  * called.
+    //  */
+    // getGreys(): Array<Array<number>> {
+    //     return this._deepCopyArray2D(this._greys);
+    // }
 
-    /**
-     * <p>Get a deep copy of the colors array which can then be edited. Changes
-     * to the copy will not change the color scheme unless the matching set 
-     * method is called.</p>
-     */
-    getColors(): Array<Array<number>> {
-        return this._deepCopyArray2D(this._colors);
-    }
+    // /**
+    //  * <p>Get a deep copy of the colors array which can then be edited. Changes
+    //  * to the copy will not change the color scheme unless the matching set 
+    //  * method is called.</p>
+    //  */
+    // getColors(): Array<Array<number>> {
+    //     return this._deepCopyArray2D(this._colors);
+    // }
 
     /**
      * <p>Replaces the scheme's tints array.</p>

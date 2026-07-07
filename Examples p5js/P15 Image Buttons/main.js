@@ -89,12 +89,14 @@ function createConfigCtrls(gui) {
     gui.button('btnReset', ...grid.cell(0, 4, 6, 1), "RESTORE DEFAULTS")
         .setAction(info => {
             const [sdrW, sdrH] = [gui.$('sdrWidth'), gui.$('sdrHeight')];
-            gui.$('cbxAspect').select();
+
             sdrW.value(1);
             sdrH.value(1);
             example.sx = example.sy = 1;
             example.aspect = true;
             example.opaque = false;
+            gui.$('cbxAspect').select();
+            gui.$('cbxOpaque').deselect();
             changeOpacity();
             changeSize();
         });

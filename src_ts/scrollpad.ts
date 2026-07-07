@@ -193,6 +193,7 @@ class CvsScrollpad extends CvsBufferedControl {
                 }
                 break;
             case 'mouseout':
+                this?._parent?._scroller.hide();
             case 'mouseup':
             case 'touchend':
                 this.action(this.actionInfo(e, true));

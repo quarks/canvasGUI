@@ -907,18 +907,22 @@ class GUI {
     }
     /**
      * <p>Create a viewer control.</p>
-     * <p>If the last parameter <code>padSize</code> =0 or is not provided then
+     * <p>If the last parameter, <code>padSize</code> = 0 (default value) then
      * horizontal and vertical scrollbars are provided to scroll through the
-     * image. If it is in the range &gt;0 and &lt;1 then a single scrollpad
-     * is provided instead. The size of the pad is based on padSize and is
-     * proprotional to the size of the viewer.</p>
+     * image. </p>
+     * <p>If <code>padSize</code> is in the range &gt;0 and &lt;1 then a single
+     * scrollpad (2d scrollbar) is create instead of scrollbars. The visual size
+     * of the scrollpad is proportional to and has the same aspect ratio as the
+     * viewer.</p>
+     * <p>If <code>padSize</code> is &gt;1 then it represents the pixel size of
+     * a square scrollpad.</p>
      *
      * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
      * @param w width
      * @param h height
-     * @param padSize if &gt;0 and &le;1 a scrollpad is created
+     * @param padSize if &gt;0 a scrollpad is created instead of scrollbars.
      * @returns an image viewer
      */
     viewer(id, x, y, w, h, padSize = 0) {
@@ -1375,7 +1379,7 @@ class GUI {
         }
         CLOG('-----------------------------------------------------------------');
     }
-    /** @hiddent */
+    /** @hidden */
     listKids(ctrl) {
         function add(ctrl, tab) {
             result += `${tab}${ctrl.id}  ${ctrl.isVisible ? '+' : '-'}\n`;
@@ -1871,7 +1875,6 @@ class ColorScheme {
         this._colors = [];
         this._greys = [];
         this._tints = [];
-        this._name = 'color scheme name';
         this._original = true;
         this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
@@ -1880,6 +1883,30 @@ class ColorScheme {
     get name() { return this._name; }
     /** @hidden */
     set name(v) { CWARN(`Cannot change the name of a library color scheme.`); }
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getTints() {
+        return this._deepCopyArray2D(this._tints);
+    }
+    /**
+     * Get a deep copy of the tints array which can then be edited. Changes to
+     * the copy will not change the color scheme unless the matching setter is
+     * called.
+     */
+    getGreys() {
+        return this._deepCopyArray2D(this._greys);
+    }
+    /**
+     * <p>Get a deep copy of the colors array which can then be edited. Changes
+     * to the copy will not change the color scheme unless the matching set
+     * method is called.</p>
+     */
+    getColors() {
+        return this._deepCopyArray2D(this._colors);
+    }
     /**
      * <p>Returns true if this scheme is one of the canvasGUI library color
      * schemes and false for a user defined scheme.</p>
@@ -1932,38 +1959,38 @@ class UserColorScheme extends ColorScheme {
     constructor(name, scheme) {
         super(name);
         this._original = false;
-        this._tints = this._deepCopyArray2D(scheme._tints);
-        this._greys = this._deepCopyArray2D(scheme._greys);
-        this._colors = this._deepCopyArray2D(scheme._colors);
+        this._tints = this._deepCopyArray2D(scheme.getTints());
+        this._greys = this._deepCopyArray2D(scheme.getGreys());
+        this._colors = this._deepCopyArray2D(scheme.getColors());
     }
     /**
      * <p>Change the name of this user color scheme.</p>
      */
     set name(n) { this._name = n; }
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getTints() {
-        return this._deepCopyArray2D(this._tints);
-    }
-    /**
-     * Get a deep copy of the tints array which can then be edited. Changes to
-     * the copy will not change the color scheme unless the matching setter is
-     * called.
-     */
-    getGreys() {
-        return this._deepCopyArray2D(this._greys);
-    }
-    /**
-     * <p>Get a deep copy of the colors array which can then be edited. Changes
-     * to the copy will not change the color scheme unless the matching set
-     * method is called.</p>
-     */
-    getColors() {
-        return this._deepCopyArray2D(this._colors);
-    }
+    // /**
+    //  * Get a deep copy of the tints array which can then be edited. Changes to
+    //  * the copy will not change the color scheme unless the matching setter is
+    //  * called.
+    //  */
+    // getTints(): Array<Array<number>> {
+    //     return this._deepCopyArray2D(this._tints);
+    // }
+    // /**
+    //  * Get a deep copy of the tints array which can then be edited. Changes to
+    //  * the copy will not change the color scheme unless the matching setter is
+    //  * called.
+    //  */
+    // getGreys(): Array<Array<number>> {
+    //     return this._deepCopyArray2D(this._greys);
+    // }
+    // /**
+    //  * <p>Get a deep copy of the colors array which can then be edited. Changes
+    //  * to the copy will not change the color scheme unless the matching set 
+    //  * method is called.</p>
+    //  */
+    // getColors(): Array<Array<number>> {
+    //     return this._deepCopyArray2D(this._colors);
+    // }
     /**
      * <p>Replaces the scheme's tints array.</p>
      * <p>No error checking is performed so invalid parameter values
@@ -2193,8 +2220,7 @@ class CvsPin {
      * <p>Removing, adding or changing the order of the elements in this
      * array is ignored by canvasGUI so will not affect the GUI.</p>
      *
-     * @readonly
-     * @type {Array<any>}
+     * @hidden
      */
     get children() { return Array.from(this._children); }
     /**
@@ -4440,6 +4466,7 @@ class CvsScrollbar extends CvsBufferedControl {
                 }
                 break;
             case 'mouseout':
+                this?._parent?._scroller.hide();
             case 'mouseup':
             case 'touchend':
                 this.action(this.actionInfo(e, true));
@@ -4700,6 +4727,7 @@ class CvsScrollpad extends CvsBufferedControl {
                 }
                 break;
             case 'mouseout':
+                this?._parent?._scroller.hide();
             case 'mouseup':
             case 'touchend':
                 this.action(this.actionInfo(e, true));
@@ -5305,12 +5333,15 @@ class CvsViewer extends CvsBufferedControl {
             this._scroller = new ViewScrollPad(gui, this._id + '-scroller', this, padSize);
         this._scroller.hide();
     }
-    get padSizeW() { return this._lw; }
-    get padV() { return this._lh; }
+    /** @hidden */
     get lw() { return this._lw; }
+    /** @hidden */
     get lh() { return this._lh; }
+    /** @hidden */
     get wcx() { return this._wcx; }
+    /** @hidden */
     get wcy() { return this._wcy; }
+    /** @hidden */
     get wscale() { return this._wscale; }
     /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
@@ -5367,6 +5398,7 @@ class CvsViewer extends CvsBufferedControl {
      * Sets the scale after validation.
      * @param v new scale value
      * @returns true if the scale has been changed
+     * @hidden
      */
     _updateScale(v) {
         v = this._scaler
@@ -5452,6 +5484,7 @@ class CvsViewer extends CvsBufferedControl {
         if (_neq(ncx, this._wcx) || _neq(ncy, this._wcy)) {
             this._wcx = ncx;
             this._wcy = ncy;
+            this._scroller.setValue(this._wcx / this._lw, this._wcy / this._lh);
             this.invalidateBuffer();
             this.action(this.actionInfo());
         }

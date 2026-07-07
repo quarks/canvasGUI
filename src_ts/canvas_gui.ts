@@ -487,18 +487,22 @@ class GUI {
 
   /**
    * <p>Create a viewer control.</p>
-   * <p>If the last parameter <code>padSize</code> =0 or is not provided then
+   * <p>If the last parameter, <code>padSize</code> = 0 (default value) then
    * horizontal and vertical scrollbars are provided to scroll through the
-   * image. If it is in the range &gt;0 and &lt;1 then a single scrollpad
-   * is provided instead. The size of the pad is based on padSize and is 
-   * proprotional to the size of the viewer.</p>
+   * image. </p>
+   * <p>If <code>padSize</code> is in the range &gt;0 and &lt;1 then a single 
+   * scrollpad (2d scrollbar) is create instead of scrollbars. The visual size
+   * of the scrollpad is proportional to and has the same aspect ratio as the 
+   * viewer.</p>
+   * <p>If <code>padSize</code> is &gt;1 then it represents the pixel size of
+   * a square scrollpad.</p>
    * 
    * @param id unique id for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
    * @param h height
-   * @param padSize if &gt;0 and &le;1 a scrollpad is created
+   * @param padSize if &gt;0 a scrollpad is created instead of scrollbars.
    * @returns an image viewer
    */
   viewer(id: string, x: number, y: number, w: number, h: number, padSize = 0) {
@@ -997,7 +1001,7 @@ class GUI {
     CLOG('-----------------------------------------------------------------');
   }
 
-  /** @hiddent */
+  /** @hidden */
   listKids(ctrl: CvsPin) {
     function add(ctrl: CvsPin, tab: string) {
       result += `${tab}${ctrl.id}  ${ctrl.isVisible ? '+' : '-'}\n`;

@@ -65,8 +65,7 @@ class CvsPin {
      * <p>Removing, adding or changing the order of the elements in this 
      * array is ignored by canvasGUI so will not affect the GUI.</p>
      *
-     * @readonly
-     * @type {Array<any>}
+     * @hidden
      */
     get children() { return Array.from(this._children) }
 
