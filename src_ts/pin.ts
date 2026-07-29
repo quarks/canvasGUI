@@ -58,8 +58,6 @@ class CvsPin {
     /** @hidden */
     set z(v) { this._z = v; }
 
-
-
     /**
      * <p>Get an array of the child controls.</p>
      * <p>Removing, adding or changing the order of the elements in this 

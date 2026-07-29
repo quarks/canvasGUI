@@ -171,7 +171,8 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
-        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        const absPos = this.getAbsXY();
+        let [mx, my, w, h] = [x - absPos.x, y - absPos.y, this._w, this._h];
         mx -= w / 2;
         my -= h / 2; // Make relative to knob centre
         let next;

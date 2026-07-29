@@ -1,7 +1,7 @@
  /**
  * @preserve canvasGUI    (c) Peter Lager  2026
  * @license MIT
- * @version 3.1.0
+ * @version 3.1.1
  */
 // =================================================================
 // ====    canvasGUI control variables
@@ -494,7 +494,7 @@ HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
-const CANVAS_GUI_VERSION = '3.1.0';
+const CANVAS_GUI_VERSION = '3.1.1';
 /**
  * <h2>Core class for the canvasGUI library </h2>
  *
@@ -1044,12 +1044,12 @@ class GUI {
     get canvasWidth() { return this._canvas.width / this._pr; }
     /** @returns the display height   */
     get canvasHeight() { return this._canvas.height / this._pr; }
-    /** @returns true if the mouse is over a UI responsive control or if a
-     * control is active.
+    /** @returns true if there is an active control or the mouse is over a UI
+     * responsive control.
      */
     get isBusy() { return Boolean(this._currOver || this._activeCtrl); }
     /** @returns true if there is no active control and the mouse is not over
-     * any UI responsive control or if a control is active.
+     * any UI responsive control.
      */
     get isIdle() { return !Boolean(this._currOver || this._activeCtrl); }
     /**
@@ -1801,7 +1801,7 @@ class GUI {
     }
 }
 /** canvasGUI version */
-GUI.VERSION = '3.1.0';
+GUI.VERSION = '3.1.1';
 // Remember all GUIs created are accessible using gui's unique string
 // identifier.
 /** @hidden */ GUI._guis = new Map();
@@ -2566,18 +2566,23 @@ class CvsControl extends CvsPin {
     /** @hidden */
     get SCHEME() { return this._scheme || this._gui._scheme; }
     /**
-     * <p>If the name of a valid color scheme is provided then it will use it
-     * to display the control, non-existant scheme names will be ignored. In
-     * both cases this control is returned.</p>
-     * <p>If there is no parameter it returns the name of the current color
-     * scheme used by this control.</p>
-     * @param name the color scheme name e.g. 'blue'
+     * <p>If a valid color scheme or the name of a valid color scheme is
+     * provided then it will be used to display the control otherwise the
+     * control's color scheme remains unchanged. In both cases this control
+     * is returned.</p>
+     * <p>If there is no parameter it returns the current color scheme used
+     * by this control.</p>
+     * @param name a color scheme or the name of a color scheme e.g. 'blue'
      * @param cascade if true propogate scheme to all child controls.
      * @returns this control or the control's color scheme
      */
     scheme(name, cascade) {
-        if (name) { // setter
-            let next_scheme = this._gui.getScheme(name);
+        if (name) {
+            let next_scheme;
+            if (typeof name === 'string') // setter
+                next_scheme = this._gui.getScheme(name);
+            else if (name instanceof ColorScheme)
+                next_scheme = name;
             if (next_scheme && this._scheme != next_scheme) {
                 this._scheme = next_scheme;
                 this.invalidateBuffer();
@@ -4507,7 +4512,6 @@ class CvsScrollbar extends CvsBufferedControl {
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(5);
         let [w, h, inset, used] = [this._w, this._h, this._inset, this._used];
-        // let [tx0, tx1] = [inset, w - inset];
         let [tw, th] = [this._trackWidth, this._trackHeight];
         let tbW = Math.max(used * tw, this._minThumbWidth);
         let tbH = this._thumbHeight;
@@ -5344,6 +5348,34 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */
     get wscale() { return this._wscale; }
     /**
+     * <p>If a valid color scheme or the name of a valid color scheme is
+     * provided then it will be used to display the control otherwise the
+     * control's color scheme remains unchanged. In both cases this control
+     *  is returned.</p>
+     * <p>If there is no parameter it returns the current color scheme used
+     * by this control.</p>
+     * @param name a color scheme or the name of a color scheme e.g. 'blue'
+     * @param cascade if true propogate scheme to all child controls.
+     * @returns this control or the control's color scheme
+     */
+    scheme(name, cascade) {
+        if (name) {
+            let next_scheme;
+            if (typeof name === 'string') // setter
+                next_scheme = this._gui.getScheme(name);
+            else if (name instanceof ColorScheme)
+                next_scheme = name;
+            if (next_scheme && this._scheme != next_scheme) {
+                this._scheme = next_scheme;
+                this.invalidateBuffer();
+                this._scroller.setScheme(next_scheme);
+                this._scaler?.scheme(next_scheme);
+            }
+            return this;
+        }
+        return this._scheme;
+    }
+    /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
      * and limits. The initial value will be constrained to the limits.</p>
      * @param v the scale to use
@@ -5434,6 +5466,8 @@ class CvsViewer extends CvsBufferedControl {
             x0: 0.15 * w, y0: 0.4 * h - 10,
             x1: 0.85 * w, y1: 0.6 * h + 10
         };
+        if (this._scheme)
+            scaler.scheme(this._scheme);
         return scaler;
     }
     /**
@@ -5836,6 +5870,7 @@ class ViewScrollPad {
             vwr.invalidateBuffer();
         });
         vwr.addChild(this._scrPad);
+        this._parent = vwr;
     }
     isSameControl(ctrl) {
         return this._scrPad === ctrl;
@@ -5854,13 +5889,14 @@ class ViewScrollPad {
     }
     show() {
         this._scrPad.show();
-        // this._scrV.show();
         return this;
     }
     hide() {
         this._scrPad.hide();
-        // this._scrV.hide();
         return this;
+    }
+    setScheme(cs) {
+        this._scrPad.scheme(cs);
     }
 }
 /** @hidden */
@@ -5878,6 +5914,7 @@ class ViewScrollBars {
         });
         vwr.addChild(this._scrH);
         vwr.addChild(this._scrV);
+        this._parent = vwr;
     }
     isSameControl(ctrl) {
         return this._scrH === ctrl || this._scrV === ctrl;
@@ -5905,6 +5942,10 @@ class ViewScrollBars {
         this._scrH.hide();
         this._scrV.hide();
         return this;
+    }
+    setScheme(cs) {
+        this._scrH.scheme(cs);
+        this._scrV.scheme(cs);
     }
 }
 //# sourceMappingURL=viewer.js.map
@@ -6579,7 +6620,8 @@ class CvsJoystick extends CvsBufferedControl {
                 angle: source._ang, dir: source._dir, dead: source._dead,
             };
         }
-        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        const absPos = this.getAbsXY();
+        let [mx, my, w, h] = [x - absPos.x, y - absPos.y, this._w, this._h];
         mx -= w / 2;
         my -= h / 2; // Make relative to joystick centre
         switch (e.type) {
@@ -6936,7 +6978,8 @@ class CvsKnob extends CvsSlider {
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
-        let [mx, my, w, h] = this._orientation.xy(x - this._x, y - this._y, this.w, this.h);
+        const absPos = this.getAbsXY();
+        let [mx, my, w, h] = [x - absPos.x, y - absPos.y, this._w, this._h];
         mx -= w / 2;
         my -= h / 2; // Make relative to knob centre
         let next;

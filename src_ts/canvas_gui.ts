@@ -633,13 +633,13 @@ class GUI {
   /** @returns the display height   */
   get canvasHeight() { return this._canvas.height / this._pr; }
 
-  /** @returns true if the mouse is over a UI responsive control or if a 
-   * control is active.
+  /** @returns true if there is an active control or the mouse is over a UI 
+   * responsive control.
    */
   get isBusy() { return Boolean(this._currOver || this._activeCtrl) }
 
   /** @returns true if there is no active control and the mouse is not over 
-   * any UI responsive control or if a control is active. 
+   * any UI responsive control. 
    */
   get isIdle() { return !Boolean(this._currOver || this._activeCtrl) }
 

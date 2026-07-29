@@ -547,4 +547,5 @@ interface __ViewScroller {
     setUsed(hValue: number, vValue: number): void;
     show(): void;
     hide(): void;
+    setScheme(cs: string | ColorScheme): void;
 }

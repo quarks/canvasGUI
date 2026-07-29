@@ -127,7 +127,6 @@ class CvsScrollbar extends CvsBufferedControl {
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(5);
         let [w, h, inset, used] = [this._w, this._h, this._inset, this._used];
-        // let [tx0, tx1] = [inset, w - inset];
         let [tw, th] = [this._trackWidth, this._trackHeight];
         let tbW = Math.max(used * tw, this._minThumbWidth);
         let tbH = this._thumbHeight;

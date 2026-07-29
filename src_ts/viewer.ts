@@ -79,6 +79,34 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */
     get wscale() { return this._wscale }
 
+    /**
+     * <p>If a valid color scheme or the name of a valid color scheme is 
+     * provided then it will be used to display the control otherwise the
+     * control's color scheme remains unchanged. In both cases this control
+     *  is returned.</p>
+     * <p>If there is no parameter it returns the current color scheme used 
+     * by this control.</p>
+     * @param name a color scheme or the name of a color scheme e.g. 'blue'
+     * @param cascade if true propogate scheme to all child controls.
+     * @returns this control or the control's color scheme
+     */
+    scheme(name?: string | ColorScheme, cascade?: boolean): ColorScheme | CvsControl {
+        if (name) {
+            let next_scheme;
+            if (typeof name === 'string')   // setter
+                next_scheme = this._gui.getScheme(name);
+            else if (name instanceof ColorScheme)
+                next_scheme = name;
+            if (next_scheme && this._scheme != next_scheme) {
+                this._scheme = next_scheme;
+                this.invalidateBuffer();
+                this._scroller.setScheme(next_scheme);
+                this._scaler?.scheme(next_scheme);
+            }
+            return this;
+        }
+        return this._scheme;
+    }
 
     /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
@@ -175,6 +203,8 @@ class CvsViewer extends CvsBufferedControl {
             x0: 0.15 * w, y0: 0.4 * h - 10,
             x1: 0.85 * w, y1: 0.6 * h + 10
         };
+        if (this._scheme)
+            scaler.scheme(this._scheme);
         return scaler;
     }
 
@@ -601,6 +631,7 @@ class Layer {
 /** @hidden */
 class ViewScrollPad implements __ViewScroller {
     /** @hidden */ protected _scrPad: CvsScrollpad;
+    /** @hidden */ protected _parent: CvsViewer;
 
     constructor(gui: GUI, name: string, vwr: CvsViewer, padSize: number) {
         const pw = padSize > 1 ? padSize : vwr.w * padSize;
@@ -612,6 +643,7 @@ class ViewScrollPad implements __ViewScroller {
             vwr.invalidateBuffer();
         });
         vwr.addChild(this._scrPad);
+        this._parent = vwr;
     }
 
     isSameControl(ctrl: any) {
@@ -636,14 +668,16 @@ class ViewScrollPad implements __ViewScroller {
 
     show() {
         this._scrPad.show();
-        // this._scrV.show();
         return this;
     }
 
     hide() {
         this._scrPad.hide();
-        // this._scrV.hide();
         return this;
+    }
+
+    setScheme(cs: any) {
+        this._scrPad.scheme(cs);
     }
 }
 
@@ -651,6 +685,7 @@ class ViewScrollPad implements __ViewScroller {
 class ViewScrollBars implements __ViewScroller {
     /** @hidden */ protected _scrH: CvsScrollbar;
     /** @hidden */ protected _scrV: CvsScrollbar;
+    /** @hidden */ protected _parent: CvsViewer;
 
     constructor(gui: GUI, name: string, vwr: CvsViewer) {
         this._scrH = gui.__scrollbar(vwr.id + "-scrH", 16, vwr.h - 20, vwr.w - 32, 20)
@@ -665,6 +700,7 @@ class ViewScrollBars implements __ViewScroller {
         });
         vwr.addChild(this._scrH);
         vwr.addChild(this._scrV);
+        this._parent = vwr;
     }
 
     isSameControl(ctrl: any) {
@@ -699,5 +735,10 @@ class ViewScrollBars implements __ViewScroller {
         this._scrH.hide();
         this._scrV.hide();
         return this;
+    }
+
+    setScheme(cs: any) {
+        this._scrH.scheme(cs);
+        this._scrV.scheme(cs);
     }
 }

@@ -55,6 +55,34 @@ class CvsViewer extends CvsBufferedControl {
     /** @hidden */
     get wscale() { return this._wscale; }
     /**
+     * <p>If a valid color scheme or the name of a valid color scheme is
+     * provided then it will be used to display the control otherwise the
+     * control's color scheme remains unchanged. In both cases this control
+     *  is returned.</p>
+     * <p>If there is no parameter it returns the current color scheme used
+     * by this control.</p>
+     * @param name a color scheme or the name of a color scheme e.g. 'blue'
+     * @param cascade if true propogate scheme to all child controls.
+     * @returns this control or the control's color scheme
+     */
+    scheme(name, cascade) {
+        if (name) {
+            let next_scheme;
+            if (typeof name === 'string') // setter
+                next_scheme = this._gui.getScheme(name);
+            else if (name instanceof ColorScheme)
+                next_scheme = name;
+            if (next_scheme && this._scheme != next_scheme) {
+                this._scheme = next_scheme;
+                this.invalidateBuffer();
+                this._scroller.setScheme(next_scheme);
+                this._scaler?.scheme(next_scheme);
+            }
+            return this;
+        }
+        return this._scheme;
+    }
+    /**
      * <p>Sets the existing scaler value (if there is no scaler it will be created)
      * and limits. The initial value will be constrained to the limits.</p>
      * @param v the scale to use
@@ -145,6 +173,8 @@ class CvsViewer extends CvsBufferedControl {
             x0: 0.15 * w, y0: 0.4 * h - 10,
             x1: 0.85 * w, y1: 0.6 * h + 10
         };
+        if (this._scheme)
+            scaler.scheme(this._scheme);
         return scaler;
     }
     /**
@@ -547,6 +577,7 @@ class ViewScrollPad {
             vwr.invalidateBuffer();
         });
         vwr.addChild(this._scrPad);
+        this._parent = vwr;
     }
     isSameControl(ctrl) {
         return this._scrPad === ctrl;
@@ -565,13 +596,14 @@ class ViewScrollPad {
     }
     show() {
         this._scrPad.show();
-        // this._scrV.show();
         return this;
     }
     hide() {
         this._scrPad.hide();
-        // this._scrV.hide();
         return this;
+    }
+    setScheme(cs) {
+        this._scrPad.scheme(cs);
     }
 }
 /** @hidden */
@@ -589,6 +621,7 @@ class ViewScrollBars {
         });
         vwr.addChild(this._scrH);
         vwr.addChild(this._scrV);
+        this._parent = vwr;
     }
     isSameControl(ctrl) {
         return this._scrH === ctrl || this._scrV === ctrl;
@@ -616,6 +649,10 @@ class ViewScrollBars {
         this._scrH.hide();
         this._scrV.hide();
         return this;
+    }
+    setScheme(cs) {
+        this._scrH.scheme(cs);
+        this._scrV.scheme(cs);
     }
 }
 //# sourceMappingURL=viewer.js.map

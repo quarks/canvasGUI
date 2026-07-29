@@ -97,18 +97,23 @@ abstract class CvsControl extends CvsPin {
     get SCHEME(): ColorScheme { return this._scheme || this._gui._scheme; }
 
     /**
-     * <p>If the name of a valid color scheme is provided then it will use it
-     * to display the control, non-existant scheme names will be ignored. In 
-     * both cases this control is returned.</p>
-     * <p>If there is no parameter it returns the name of the current color 
-     * scheme used by this control.</p>
-     * @param name the color scheme name e.g. 'blue'
+     * <p>If a valid color scheme or the name of a valid color scheme is 
+     * provided then it will be used to display the control otherwise the
+     * control's color scheme remains unchanged. In both cases this control
+     * is returned.</p>
+     * <p>If there is no parameter it returns the current color scheme used 
+     * by this control.</p>
+     * @param name a color scheme or the name of a color scheme e.g. 'blue'
      * @param cascade if true propogate scheme to all child controls.
      * @returns this control or the control's color scheme
      */
-    scheme(name?: string, cascade?: boolean): ColorScheme | CvsControl {
-        if (name) {  // setter
-            let next_scheme = this._gui.getScheme(name);
+    scheme(name?: string | ColorScheme, cascade?: boolean): ColorScheme | CvsControl {
+        if (name) {
+            let next_scheme;
+            if (typeof name === 'string')   // setter
+                next_scheme = this._gui.getScheme(name);
+            else if (name instanceof ColorScheme)
+                next_scheme = name;
             if (next_scheme && this._scheme != next_scheme) {
                 this._scheme = next_scheme;
                 this.invalidateBuffer();
