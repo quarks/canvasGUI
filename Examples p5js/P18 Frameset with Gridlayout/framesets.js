@@ -11,7 +11,6 @@
 
 function setup() {
     const p5canvas = createCanvas(640, 480);
-    p5canvas.parent('sketch');
     cursor(CROSS);
 
     // Converter frameset initial display location

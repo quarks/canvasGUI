@@ -782,6 +782,7 @@ class GUI {
     $(id) {
         return (typeof id === "string") ? this._controls.get(id) : id;
     }
+    /** @hidden */
     registerID(control) {
         CASSERT(!this._controls.has(control.id), `Control '${control.id}' already exists and will be replaced.`);
         // Map control by ID
@@ -796,6 +797,7 @@ class GUI {
      * <p>If the control has already been registered it will be unchanged.</p>
      *
      * @param control the control to make pickable
+     * @hidden
      */
     registerPickable(control) {
         if (control && !this._control2color.has(control)) {
@@ -1243,6 +1245,7 @@ class GUI {
      * @param x horizontal pixel location
      * @param y vertical pixel location
      * @returns an object containing the control hit and the control part number
+     * @hidden
      */
     getPicked(x, y) {
         x *= this._pr;
@@ -1257,6 +1260,7 @@ class GUI {
         }
         return result;
     }
+    /** @hidden */
     getPickColor(x, y) {
         const imgData = this._pkBuffer.getContext('2d')?.getImageData(x, y, 1, 1);
         const r = imgData?.data[0] ?? 255;
