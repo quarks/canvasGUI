@@ -24,4 +24,7 @@ knob.ts
 panel.ts
 panes.ts
 poster.ts
+frameset.ts
 grid.ts
+
+

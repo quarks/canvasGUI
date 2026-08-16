@@ -1,7 +1,7 @@
  /**
  * @preserve canvasGUI    (c) Peter Lager  2026
  * @license MIT
- * @version 3.1.1
+ * @version 3.2.0
  */
 // =================================================================
 // ====    canvasGUI control variables
@@ -14,9 +14,11 @@ const START_TIME = Date.now();
 const MILLIS = function () { return Date.now() - START_TIME; };
 // =================================================================
 // ====    Poster and text attributes
+/** @hidden */
 const FONT_FAMILIES = function () {
     return Array.of('serif', 'sans-serif', 'monospace', 'fantasy', 'cursive');
 };
+/** @hidden */
 const TAGS = function () {
     let m = new Map();
     // Alignment
@@ -163,6 +165,20 @@ const _validateTextStyle = function (style) {
 /** @hidden */
 const ISET_H = 3, ISET_V = 2, GUTTER = 3;
 // =================================================================
+// ====   Functions that can be executed by the 'format' method
+/** @hidden */
+const FORMAT_FUNCTIONS = new Set([
+    'colors', 'constrain', 'corners', 'deselect', 'disable',
+    'draggable', 'enable', 'fonts', 'frame', 'gap', 'group',
+    'hide', 'icon', 'iconAlign', 'iconSize', 'icons', 'limits',
+    'margins', 'mode', 'opaque', 'orient', 'parent', 'scheme',
+    'select', 'sensitivity', 'setAction', 'setEnabled',
+    'setSelected', 'setVisible', 'show', 'shrink', 'text',
+    'textAlign', 'textFont', 'textSize', 'textStyle', 'thumbSize',
+    'ticks', 'track', 'transparent', 'turnAngle', 'validation',
+    'value', 'values', 'weight'
+]);
+// =================================================================
 // ====    p5js utility functions
 /**
  * Used to convert p5js image objects to one that can be used
@@ -221,6 +237,7 @@ const cvsGuiColor = function (color) {
 };
 // =================================================================
 // ====    General utility functions
+/** @hidden */
 const _neq = function (a, b, epsilon = 1e-6) {
     return Math.abs(a - b) > epsilon;
 };
@@ -271,6 +288,7 @@ const _map = function (n, low1, high1, low2, high2, keepInRange = false) {
 };
 // =================================================================
 // ====    HTML Character Entities
+/** @hidden */
 const CHAR_ENTITIES = function () {
     let c = [
         // ISO-8859-1 Symbols
@@ -479,22 +497,26 @@ Taken from:
 and then modified by Quark for this project.
 */
 // Store the original 'getContext' function  
+/** @hidden */
 HTMLCanvasElement.prototype["_getContext"] =
     HTMLCanvasElement.prototype.getContext;
 // Field to store the requested context type 
+/** @hidden */
 HTMLCanvasElement.prototype["_contextType"] = '';
 // Create new 'getContext' method that stores the context type
 // before calling the original function getContext wrapper method 
+/** @hidden */
 HTMLCanvasElement.prototype.getContext = function (type) {
     this["_contextType"] = type;
     return this["_getContext"](type);
 };
 // Retrieve the context type used when creating the context
+/** @hidden */
 HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
-const CANVAS_GUI_VERSION = '3.1.1';
+const CANVAS_GUI_VERSION = '3.2.0';
 /**
  * <h2>Core class for the canvasGUI library </h2>
  *
@@ -952,40 +974,8 @@ class GUI {
     knob(id, x, y, w, h) {
         return new CvsKnob(this, id, x, y, w, h);
     }
-    /**
-     * Create a scroller control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns scroller control
-     * @hidden
-     */
-    __scrollbar(id, x, y, w, h) {
-        return new CvsScrollbar(this, id, x, y, w, h);
-    }
-    /**
-     * Create a scrollpad control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns scroller control
-     * @hidden
-     */
-    __scrollpad(id, x, y, w, h) {
-        return new CvsScrollpad(this, id, x, y, w, h);
-    }
-    /**
-     * Description placeholder
-     * @param {string} id
-     * @returns {CvsTooltip}
-     * @hidden
-     */
-    __tooltip(id) {
-        return new CvsTooltip(this, id);
+    frameset(id, x, y) {
+        return new CvsFrameSet(this, id, x, y);
     }
     /**
      * Create a side pane. The pane location is either 'north', 'south',
@@ -1022,6 +1012,41 @@ class GUI {
         if (icon)
             ctrl.icon(icon);
         return ctrl;
+    }
+    /**
+     * Create a scroller control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns scroller control
+     * @hidden
+     */
+    __scrollbar(id, x, y, w, h) {
+        return new CvsScrollbar(this, id, x, y, w, h);
+    }
+    /**
+     * Create a scrollpad control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns scroller control
+     * @hidden
+     */
+    __scrollpad(id, x, y, w, h) {
+        return new CvsScrollpad(this, id, x, y, w, h);
+    }
+    /**
+     * Description placeholder
+     * @param {string} id
+     * @returns {CvsTooltip}
+     * @hidden
+     */
+    __tooltip(id) {
+        return new CvsTooltip(this, id);
     }
     // ######           End of control factory methods             ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
@@ -1801,7 +1826,7 @@ class GUI {
     }
 }
 /** canvasGUI version */
-GUI.VERSION = '3.1.1';
+GUI.VERSION = '3.2.0';
 // Remember all GUIs created are accessible using gui's unique string
 // identifier.
 /** @hidden */ GUI._guis = new Map();
@@ -2255,7 +2280,7 @@ class CvsPin {
         if (typeof event_handler === 'function')
             this.action = event_handler;
         else
-            console.error(`The action for '$(this._id)' must be a function definition`);
+            CERROR(`Action for '$(this.id)' must be a function definition`);
         return this;
     }
     /**
@@ -2281,8 +2306,8 @@ class CvsPin {
         return this;
     }
     /**
-     * <p>Calculates the absolute position on the canvas taking into account
-     * any ancestors.</p>
+     * <p>Calculates the absolute position on the canvas taking into
+     * account any ancestors.</p>
      * @returns the actual position in the canvas
      * @hidden
      */
@@ -2298,15 +2323,20 @@ class CvsPin {
         }
     }
     /**
-     * <p>Adds this control to another control which becomes its parent.</p>
-     * @param parent is the parental control or its id
+     * <p>If the new parent control does not exist then return immediately
+     * leaving this control unchanged. If it does exist, then remove the
+     * control from any current parent before adding it to the new parent./p>
+     *
+     * @param parent the new parental control or its id
      * @param rx x position relative to parent
      * @param ry  y position relative to parent
      * @returns this control
      */
     parent(parent, rx, ry) {
         const prnt = this._gui.$(parent);
-        if (prnt) {
+        if (prnt && prnt != this._parent) {
+            if (this._parent)
+                this.leaveParent();
             prnt.addChild(this, rx, ry);
             this.z = prnt.z + DELTA_Z;
             this._gui.setRenderOrder();
@@ -2315,7 +2345,8 @@ class CvsPin {
     }
     /**
      * <p>Add a child to this control using its relative position [rx, ry].
-     * If rx and ry are not provided then it uses the values set in the child.</p>
+     * If rx and ry are not provided then it uses the values set in the
+     * child.</p>
      * @param child is the actual control or its id
      * @returns this control
      */
@@ -2324,7 +2355,7 @@ class CvsPin {
         if (control) {
             rx = !Number.isFinite(rx) ? control.x : Number(rx);
             ry = !Number.isFinite(ry) ? control.y : Number(ry);
-            // If the control already has a parent remove it ready for new parent.
+            // Remove from any existing parent so it is ready for new parent.
             if (!control._parent)
                 control.leaveParent();
             // Position and add parent to control control
@@ -2338,7 +2369,8 @@ class CvsPin {
         return this;
     }
     /**
-     * <p>Remove a child control from this one so that it stays in same screen position.</p>
+     * <p>Remove a child control from this one so that it stays in same
+     * screen position.</p>
      * @param child the control to remove or its id
      * @returns this control
      */
@@ -2758,36 +2790,67 @@ class CvsControl extends CvsPin {
         return this._orientation;
     }
     /**
-     * <p>Execute one or more configuration methods on this control.</p>
-     * <p>The parameter is a user defined object where each field is the
-     * name of a configuration method and its value is the method's
-     * parameter(s). Multiple parameters should be in an array and use
-     * 'undefined' if the method expects no parameters.</p>
+     * <p>This executes multiple formatting functions on this control by
+     * passing one of more user defined configuration objects as
+     * parameter(s).</p>
+     *
+     * <p>The fields in each configuartion object represent </p>
+     * <ul>
+     * <li>the name of the formating function to be executed, and</li>
+     * <li>the actual parameter values to be passed to the function.</li>
+     * </ul>
+     *
+     * <p>If the formatting function expects multiple parameters they should
+     * be in an array. Single parameters can be passed either as-is or as a
+     * single element array and pass <code>undefined</code> for any method
+     * that requires no parameters.</p>
+     *
      * <p>This object will change the color scheme, text size and alignment,
      * it will also make sure it is visible.</p>
+     *
      * <pre>
      * { scheme : 'red', textSize : 12, textAlign: ['left', 'top'], show : undefined }
      * </pre>
-     * If the field name does not exist or not a valid function of this
-     * control it will be silently ignored.</p>
-     * <p>There is <em>no error checking</em> on the parameters, it is up to
-     * the user to ensure they are valid for the control method.</p>
      *
-     * @param cfg the configuration object
+     * <p>Attempting to call a non-existent or unsupported function on this
+     * control will display a warning in the console window and the program
+     * will continue execution.</p>
+     *
+     * <p>No error checking on the parameter types and  values, it is up to
+     * the user to ensure they are valid for the formatting method.</p>
+     *
+     * @param cfgs the formatting object
      * @returns this control
      */
-    config(cfg) {
-        const ctrl = this;
-        if (typeof cfg === 'object') {
-            Object.keys(cfg).forEach(p => {
-                if (typeof ctrl[p] === 'function') {
-                    Array.isArray(cfg[p])
-                        ? ctrl[p].call(this, ...cfg[p])
-                        : ctrl[p].call(this, cfg[p]);
-                }
-            });
+    format(...cfgs) {
+        function parseConfig(ctrl, cfg) {
+            const members = Object.keys(cfg);
+            if (typeof cfg === 'object') {
+                members.forEach(mbr => {
+                    if (!FORMAT_FUNCTIONS.has(mbr)) {
+                        CWARN(`The '${mbr}' method cannot be executed from the 'format' method.`);
+                    }
+                    else if (typeof ctrl[mbr] !== 'function') {
+                        CWARN(`${ctrl.type}'s do not support the '${mbr}' method.`);
+                    }
+                    else {
+                        Array.isArray(cfg[mbr])
+                            ? ctrl[mbr].call(ctrl, ...cfg[mbr])
+                            : ctrl[mbr].call(ctrl, cfg[mbr]);
+                    }
+                });
+            }
         }
+        cfgs.forEach(c => parseConfig(this, c));
         return this;
+    }
+    /**
+     * Replaced by 'format' method in 3.1.2 and will be removed in a major update.
+     * @deprecated
+     * @hidden
+     */
+    config(cfg) {
+        return this.format(cfg);
     }
     /** @hidden */
     _updateControlVisual() { }
@@ -5189,6 +5252,19 @@ class CvsCheckbox extends CvsTextIcon {
      */
     isSelected() {
         return this._selected;
+    }
+    /**
+     * <p>Sets the requiredstate for this checkbox.</p>
+     * @param state true or false.
+     * @returns this control
+     */
+    setSelected(state) {
+        if (this._selected != state) {
+            this._selected = state;
+            this._icon = this._icons[Number(this._selected)];
+            this.invalidateBuffer();
+        }
+        return this;
     }
     /** @hidden */
     _doEvent(e, x = 0, y = 0, over, enter) {
@@ -8547,6 +8623,151 @@ class Poster_Stack {
 }
 //# sourceMappingURL=poster.js.map
 /**
+ * <p>This class defines the top-left position, width, height and border
+ * weight of a rectangular frame to be added to a frameset control.</p>
+ *
+ * <p>Simply creating a frame does not cause it to be draw, it must be
+ * added to a frameset to do that.</p>
+ *
+ */
+class Frame {
+    /**
+     *
+     * @param x left x position for the frame
+     * @param y top y position for the frame
+     * @param w frame width
+     * @param h frame height
+     * @param weight border stroke weight
+     *
+     */
+    constructor(x = 0, y = 0, w = 0, h = 0, weight = 1) {
+        this._x = x;
+        this._y = y;
+        this._w = w;
+        this._h = h;
+        this._weight = weight;
+    }
+    /** left position */
+    get x() { return this._x; }
+    /** top position */
+    get y() { return this._y; }
+    /** width */
+    get w() { return this._w; }
+    /** height */
+    get h() { return this._h; }
+    /**
+     * <p>Gets or sets the current frame weight.</p>
+     * <p>If no parameter is passed then the current weight is returned else
+     * the weight is updated and this frame is returned.</p>
+     * @param weight
+     * @returns this frame or current weight
+     */
+    weight(weight) {
+        if (!Number.isFinite(weight))
+            return this._weight;
+        this._weight = weight;
+        return this;
+    }
+}
+/**
+ *
+ * <p>The frameset is a collection of controls and then display rectangular
+ * frames surrounding of one of more controls. Can be used to give a
+ * visual guide when organising controls by function.</p>
+ * <p>Although it is possible for the user to create the frames manually it
+ * is anticipated they will be created using a gridlayout.</>
+ *
+ */
+class CvsFrameSet extends CvsControl {
+    constructor(gui, id, x, y) {
+        super(gui, id, x, y);
+        this._frames = [];
+        this._corners = [0, 0, 0, 0];
+        this._stroke = undefined;
+        this._fill = undefined;
+        this._opaque = false;
+    }
+    /**
+     * Add one or more frames to this frameset.
+     *
+     * @param frames a single or array of frames
+     * @returns this control
+     */
+    addFrames(frames) {
+        frames = Array.isArray(frames) ? frames : [frames];
+        frames.forEach(f => this._frames.push(f));
+        this._setFrameOrder();
+        return this;
+    }
+    /**
+     * <p>The color to be used for the frame borders. This overrides the
+     * frameset's color scheme.</p>
+     * <p>Call the method with no parameter to revert back to the control's
+     * color scheme.</p>
+     *
+     * @param color either css color or p5js p5.Color object
+     */
+    stroke(color = undefined) {
+        this._stroke = undefined;
+        if (color)
+            this._stroke = cvsGuiColor(color);
+    }
+    /**
+     * <p>The color to be used for the frame backgrounds. This overrides the
+     * frameset's color scheme.</p>
+     * <p>Call the method with no parameter to revert back to the control's
+     * color scheme.</p>
+     *
+     * @param color either css color or p5js p5.Color object
+     */
+    fill(color = undefined) {
+        this._fill = undefined;
+        if (color)
+            this._fill = cvsGuiColor(color);
+    }
+    /** @hidden */
+    _setFrameOrder() {
+        this._frames.sort((a, b) => { return b.w * b.h - a.w * a.h; });
+    }
+    /** @hidden */
+    _draw(guiCtx, pkCtx) {
+        const cs = this.SCHEME;
+        const FORE = this._stroke ?? cs.C$(8);
+        const BACK = this._fill ?? cs.C$(1);
+        guiCtx.save();
+        guiCtx.strokeStyle = FORE;
+        guiCtx.fillStyle = BACK;
+        guiCtx.translate(this._x, this._y);
+        if (this._visible) {
+            if (this._opaque) {
+                this._frames.forEach(frm => {
+                    guiCtx.fillRect(frm.x, frm.y, frm.w, frm.h);
+                });
+            }
+            this._frames.forEach(frm => {
+                guiCtx.lineWidth = frm.weight();
+                guiCtx.strokeRect(frm.x, frm.y, frm.w, frm.h);
+            });
+            for (let c of this._children)
+                if (c._visible)
+                    c._draw(guiCtx, pkCtx);
+        }
+        guiCtx.restore();
+    }
+    /** @hidden */ orient(a) { return this.warn$('orient'); }
+    /** @hidden */ setEnabled() { return this.warn$('setEnabled'); }
+    /** @hidden */ enable() { return this.warn$('enable'); }
+    /** @hidden */ disable() { return this.warn$('disable'); }
+    /** @hidden */ setAction() { return this.warn$('setAction'); }
+    /** @hidden */ format() { return this.warn$('format'); }
+    /** @hidden */ sortChildren() { return this.warn$('sortChildren'); }
+    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
+    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
+    /** @hidden */ corners(a) { return this.warn$('corners'); }
+    /** @hidden */ shrink(a, b) { return this.warn$('shrink'); }
+}
+//# sourceMappingURL=frameset.js.map
+/**
  * <h2>Aid to positioning and sizing of controls laid out in a grid</h2>
  * <p>This class represents a rectangular grid layout of cells that can be
  * used to specify the position and size of canvasGUI controls. </p>
@@ -8709,6 +8930,13 @@ class GridLayout {
         return this._calcRect(px, py, pw, ph, this._ix, this._iy);
     }
     /**
+     * Shorthand alias for the <code>cell</cpde> method.
+     * @see <a href="#cell">cell</a>
+     */
+    C(px, py, pw = 1, ph = 1) {
+        return this.cell(px, py, pw, ph);
+    }
+    /**
      * <p>Get the position and size for the specified cells ignoring insets.
      * This can be used to define rectangles that surround groups of
      * controls.<p>
@@ -8721,6 +8949,37 @@ class GridLayout {
      */
     border(px, py, pw = 1, ph = 1) {
         return this._calcRect(px, py, pw, ph);
+    }
+    /**
+     * Shorthand alias for the <code>cell</cpde> method.
+     * @see <a href="#cell">border</code></a>
+     */
+    B(px, py, pw = 1, ph = 1) {
+        return this.border(px, py, pw, ph);
+    }
+    /**
+     * <p>Calculate the position and size for the specified cells ignoring
+     * insets. Use this information to create a frame that can be added to
+     * a frameset.</p>
+     * <The frameset will be used to draw the frames.<p>
+     * <p>The top-left cell number is [0, 0]</p>
+     * @param px horizontal cell number
+     * @param py vertical cell number
+     * @param pw number of hrizontal cells to span
+     * @param ph number of vertical cells to span
+     * @param weight the stroke weight for this frame
+     * @returns a frame control to be added to a frameset
+     */
+    frame(px, py, pw = 1, ph = 1, weight = 1) {
+        const [fx, fy, fw, fh] = this._calcRect(px, py, pw, ph);
+        return new Frame(fx, fy, fw, fh, weight);
+    }
+    /**
+     * Shorthand alias for the <code>frame</cpde> method.
+     * @see <a href="#cell">border</code></a>
+     */
+    F(px, py, pw = 1, ph = 1, weight = 1) {
+        return this.frame(px, py, pw, ph, weight);
     }
     /**
      * <p>The gap (pixels) between the cell border and the control.</p>

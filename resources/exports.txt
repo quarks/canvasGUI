@@ -5,6 +5,6 @@ export { CvsControl, CvsBufferedControl, CvsText, CvsTextIcon, CvsImage };
 export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
 export { CvsTextField, CvsJoystick, CvsKnob, CvsPanel, CvsPoster, CvsViewer };
 export { CvsScrollbar, CvsScrollpad, CvsTooltip, CvsOptionGroup };
-export { GridLayout};
+export { Frame, CvsFrameSet, GridLayout};
 
 

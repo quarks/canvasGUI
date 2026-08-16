@@ -24,4 +24,6 @@ knob.js
 panel.js
 panes.js
 poster.js
+frameset.js
 grid.js
+

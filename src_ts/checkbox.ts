@@ -135,6 +135,20 @@ class CvsCheckbox extends CvsTextIcon {
         return this._selected;
     }
 
+    /**
+     * <p>Sets the requiredstate for this checkbox.</p>
+     * @param state true or false.
+     * @returns this control
+     */
+    setSelected(state: boolean) {
+        if (this._selected != state) {
+            this._selected = state;
+            this._icon = this._icons[Number(this._selected)];
+            this.invalidateBuffer();
+        }
+        return this;
+    }
+
     /** @hidden */
     _doEvent(e: MouseEvent | TouchEvent, x = 0, y = 0, over: any, enter: boolean): any {
         switch (e.type) {

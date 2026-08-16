@@ -456,40 +456,8 @@ class GUI {
     knob(id, x, y, w, h) {
         return new CvsKnob(this, id, x, y, w, h);
     }
-    /**
-     * Create a scroller control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns scroller control
-     * @hidden
-     */
-    __scrollbar(id, x, y, w, h) {
-        return new CvsScrollbar(this, id, x, y, w, h);
-    }
-    /**
-     * Create a scrollpad control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns scroller control
-     * @hidden
-     */
-    __scrollpad(id, x, y, w, h) {
-        return new CvsScrollpad(this, id, x, y, w, h);
-    }
-    /**
-     * Description placeholder
-     * @param {string} id
-     * @returns {CvsTooltip}
-     * @hidden
-     */
-    __tooltip(id) {
-        return new CvsTooltip(this, id);
+    frameset(id, x, y) {
+        return new CvsFrameSet(this, id, x, y);
     }
     /**
      * Create a side pane. The pane location is either 'north', 'south',
@@ -526,6 +494,41 @@ class GUI {
         if (icon)
             ctrl.icon(icon);
         return ctrl;
+    }
+    /**
+     * Create a scroller control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns scroller control
+     * @hidden
+     */
+    __scrollbar(id, x, y, w, h) {
+        return new CvsScrollbar(this, id, x, y, w, h);
+    }
+    /**
+     * Create a scrollpad control
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns scroller control
+     * @hidden
+     */
+    __scrollpad(id, x, y, w, h) {
+        return new CvsScrollpad(this, id, x, y, w, h);
+    }
+    /**
+     * Description placeholder
+     * @param {string} id
+     * @returns {CvsTooltip}
+     * @hidden
+     */
+    __tooltip(id) {
+        return new CvsTooltip(this, id);
     }
     // ######           End of control factory methods             ######
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######

@@ -301,36 +301,69 @@ abstract class CvsControl extends CvsPin {
     }
 
     /**
-     * <p>Execute one or more configuration methods on this control.</p>
-     * <p>The parameter is a user defined object where each field is the 
-     * name of a configuration method and its value is the method's 
-     * parameter(s). Multiple parameters should be in an array and use 
-     * 'undefined' if the method expects no parameters.</p>
+     * <p>This executes multiple formatting functions on this control by 
+     * passing one of more user defined configuration objects as 
+     * parameter(s).</p>
+     * 
+     * <p>The fields in each configuartion object represent </p>
+     * <ul>
+     * <li>the name of the formating function to be executed, and</li>
+     * <li>the actual parameter values to be passed to the function.</li>
+     * </ul>
+     * 
+     * <p>If the formatting function expects multiple parameters they should 
+     * be in an array. Single parameters can be passed either as-is or as a 
+     * single element array and pass <code>undefined</code> for any method 
+     * that requires no parameters.</p>
+     * 
      * <p>This object will change the color scheme, text size and alignment,
      * it will also make sure it is visible.</p>
+     * 
      * <pre>
      * { scheme : 'red', textSize : 12, textAlign: ['left', 'top'], show : undefined }
      * </pre>
-     * If the field name does not exist or not a valid function of this 
-     * control it will be silently ignored.</p>
-     * <p>There is <em>no error checking</em> on the parameters, it is up to
-     * the user to ensure they are valid for the control method.</p>
      * 
-     * @param cfg the configuration object
+     * <p>Attempting to call a non-existent or unsupported function on this 
+     * control will display a warning in the console window and the program 
+     * will continue execution.</p>
+     * 
+     * <p>No error checking on the parameter types and  values, it is up to 
+     * the user to ensure they are valid for the formatting method.</p>
+     * 
+     * @param cfgs the formatting object
      * @returns this control
      */
-    config(cfg: any) {
-        const ctrl: any = this;
-        if (typeof cfg === 'object') {
-            Object.keys(cfg).forEach(p => {
-                if (typeof ctrl[p] === 'function') {
-                    Array.isArray(cfg[p])
-                        ? ctrl[p].call(this, ...cfg[p])
-                        : ctrl[p].call(this, cfg[p]);
-                }
-            });
+    format(...cfgs: Array<any>) {
+        function parseConfig(ctrl: any, cfg: any) {
+            const members: Array<string> = Object.keys(cfg);
+            if (typeof cfg === 'object') {
+                members.forEach(mbr => {
+                    if (!FORMAT_FUNCTIONS.has(mbr)) {
+                        CWARN(`The '${mbr}' method cannot be executed from the 'format' method.`);
+                    }
+                    else if (typeof ctrl[mbr] !== 'function') {
+                        CWARN(`${ctrl.type}'s do not support the '${mbr}' method.`);
+                    }
+                    else {
+                        Array.isArray(cfg[mbr])
+                            ? ctrl[mbr].call(ctrl, ...cfg[mbr])
+                            : ctrl[mbr].call(ctrl, cfg[mbr]);
+                    }
+                });
+            }
         }
+
+        cfgs.forEach(c => parseConfig(this, c));
         return this;
+    }
+
+    /** 
+     * Replaced by 'format' method in 3.1.2 and will be removed in a major update.
+     * @deprecated
+     * @hidden 
+     */
+    config(cfg: any) {
+        return this.format(cfg);
     }
 
     /** @hidden */

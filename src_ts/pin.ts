@@ -110,7 +110,7 @@ class CvsPin {
         if (typeof event_handler === 'function')
             this.action = event_handler;
         else
-            console.error(`The action for '$(this._id)' must be a function definition`);
+            CERROR(`Action for '$(this.id)' must be a function definition`);
         return this;
     }
 
@@ -139,8 +139,8 @@ class CvsPin {
     }
 
     /**
-     * <p>Calculates the absolute position on the canvas taking into account
-     * any ancestors.</p>
+     * <p>Calculates the absolute position on the canvas taking into 
+     * account any ancestors.</p>
      * @returns the actual position in the canvas
      * @hidden
      */
@@ -155,15 +155,20 @@ class CvsPin {
     }
 
     /**
-     * <p>Adds this control to another control which becomes its parent.</p>
-     * @param parent is the parental control or its id
+     * <p>If the new parent control does not exist then return immediately
+     * leaving this control unchanged. If it does exist, then remove the 
+     * control from any current parent before adding it to the new parent./p>
+     * 
+     * @param parent the new parental control or its id
      * @param rx x position relative to parent
      * @param ry  y position relative to parent
      * @returns this control
      */
     parent(parent: any, rx?: number, ry?: number): CvsPin {
         const prnt = this._gui.$(parent);
-        if (prnt) {
+        if (prnt && prnt != this._parent) {
+            if (this._parent)
+                this.leaveParent();
             prnt.addChild(this, rx, ry);
             this.z = prnt.z + DELTA_Z;
             this._gui.setRenderOrder();
@@ -173,7 +178,8 @@ class CvsPin {
 
     /**
      * <p>Add a child to this control using its relative position [rx, ry].
-     * If rx and ry are not provided then it uses the values set in the child.</p> 
+     * If rx and ry are not provided then it uses the values set in the 
+     * child.</p> 
      * @param child is the actual control or its id
      * @returns this control
      */
@@ -182,7 +188,7 @@ class CvsPin {
         if (control) {
             rx = !Number.isFinite(rx) ? control.x : Number(rx);
             ry = !Number.isFinite(ry) ? control.y : Number(ry);
-            // If the control already has a parent remove it ready for new parent.
+            // Remove from any existing parent so it is ready for new parent.
             if (!control._parent) control.leaveParent();
             // Position and add parent to control control
             control.x = rx;
@@ -196,7 +202,8 @@ class CvsPin {
     }
 
     /**
-     * <p>Remove a child control from this one so that it stays in same screen position.</p>
+     * <p>Remove a child control from this one so that it stays in same 
+     * screen position.</p>
      * @param child the control to remove or its id
      * @returns this control
      */

@@ -188,6 +188,14 @@ class GridLayout {
     }
 
     /**
+     * Shorthand alias for the <code>cell</cpde> method.
+     * @see <a href="#cell">cell</a>
+     */
+    C(px: number, py: number, pw = 1, ph = 1) {
+        return this.cell(px, py, pw, ph);
+    }
+
+    /**
      * <p>Get the position and size for the specified cells ignoring insets.
      * This can be used to define rectangles that surround groups of 
      * controls.<p>
@@ -200,6 +208,40 @@ class GridLayout {
      */
     border(px: number, py: number, pw = 1, ph = 1) {
         return this._calcRect(px, py, pw, ph);
+    }
+
+    /**
+     * Shorthand alias for the <code>cell</cpde> method.
+     * @see <a href="#cell">border</code></a>
+     */
+    B(px: number, py: number, pw = 1, ph = 1) {
+        return this.border(px, py, pw, ph);
+    }
+
+    /**
+     * <p>Calculate the position and size for the specified cells ignoring 
+     * insets. Use this information to create a frame that can be added to
+     * a frameset.</p>
+     * <The frameset will be used to draw the frames.<p>
+     * <p>The top-left cell number is [0, 0]</p>
+     * @param px horizontal cell number
+     * @param py vertical cell number
+     * @param pw number of hrizontal cells to span
+     * @param ph number of vertical cells to span 
+     * @param weight the stroke weight for this frame
+     * @returns a frame control to be added to a frameset
+     */
+    frame(px: number, py: number, pw = 1, ph = 1, weight = 1) {
+        const [fx, fy, fw, fh] = this._calcRect(px, py, pw, ph);
+        return new Frame(fx, fy, fw, fh, weight);
+    }
+
+    /**
+     * Shorthand alias for the <code>frame</cpde> method.
+     * @see <a href="#cell">border</code></a>
+     */
+    F(px: number, py: number, pw = 1, ph = 1, weight = 1) {
+        return this.frame(px, py, pw, ph, weight);
     }
 
     /**

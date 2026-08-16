@@ -9,9 +9,11 @@ const START_TIME = Date.now();
 const MILLIS = function () { return Date.now() - START_TIME; };
 // =================================================================
 // ====    Poster and text attributes
+/** @hidden */
 const FONT_FAMILIES = function () {
     return Array.of('serif', 'sans-serif', 'monospace', 'fantasy', 'cursive');
 };
+/** @hidden */
 const TAGS = function () {
     let m = new Map();
     // Alignment
@@ -158,6 +160,20 @@ const _validateTextStyle = function (style) {
 /** @hidden */
 const ISET_H = 3, ISET_V = 2, GUTTER = 3;
 // =================================================================
+// ====   Functions that can be executed by the 'format' method
+/** @hidden */
+const FORMAT_FUNCTIONS = new Set([
+    'colors', 'constrain', 'corners', 'deselect', 'disable',
+    'draggable', 'enable', 'fonts', 'frame', 'gap', 'group',
+    'hide', 'icon', 'iconAlign', 'iconSize', 'icons', 'limits',
+    'margins', 'mode', 'opaque', 'orient', 'parent', 'scheme',
+    'select', 'sensitivity', 'setAction', 'setEnabled',
+    'setSelected', 'setVisible', 'show', 'shrink', 'text',
+    'textAlign', 'textFont', 'textSize', 'textStyle', 'thumbSize',
+    'ticks', 'track', 'transparent', 'turnAngle', 'validation',
+    'value', 'values', 'weight'
+]);
+// =================================================================
 // ====    p5js utility functions
 /**
  * Used to convert p5js image objects to one that can be used
@@ -216,6 +232,7 @@ const cvsGuiColor = function (color) {
 };
 // =================================================================
 // ====    General utility functions
+/** @hidden */
 const _neq = function (a, b, epsilon = 1e-6) {
     return Math.abs(a - b) > epsilon;
 };
@@ -266,6 +283,7 @@ const _map = function (n, low1, high1, low2, high2, keepInRange = false) {
 };
 // =================================================================
 // ====    HTML Character Entities
+/** @hidden */
 const CHAR_ENTITIES = function () {
     let c = [
         // ISO-8859-1 Symbols
@@ -474,17 +492,21 @@ Taken from:
 and then modified by Quark for this project.
 */
 // Store the original 'getContext' function  
+/** @hidden */
 HTMLCanvasElement.prototype["_getContext"] =
     HTMLCanvasElement.prototype.getContext;
 // Field to store the requested context type 
+/** @hidden */
 HTMLCanvasElement.prototype["_contextType"] = '';
 // Create new 'getContext' method that stores the context type
 // before calling the original function getContext wrapper method 
+/** @hidden */
 HTMLCanvasElement.prototype.getContext = function (type) {
     this["_contextType"] = type;
     return this["_getContext"](type);
 };
 // Retrieve the context type used when creating the context
+/** @hidden */
 HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };

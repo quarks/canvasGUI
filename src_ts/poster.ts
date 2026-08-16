@@ -77,7 +77,7 @@ class CvsPoster extends CvsBufferedControl {
      * @param cascade if true propogate scheme to all child controls.
      * @returns this control or the control's color scheme
      */
-    scheme(name?: string, cascade?: boolean): ColorScheme | CvsControl {
+    scheme(name?: string | ColorScheme, cascade?: boolean): ColorScheme | CvsControl {
         if (name) {  // setter
             super.scheme(name, false);
             this._colors[1] = this.SCHEME.C$(8);

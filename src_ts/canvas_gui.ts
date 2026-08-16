@@ -535,6 +535,40 @@ class GUI {
     return new CvsKnob(this, id, x, y, w, h);
   }
 
+  frameset(id: string, x: number, y: number) {
+    return new CvsFrameSet(this, id, x, y);
+  }
+
+  /**
+   * Create a side pane. The pane location is either 'north', 'south',
+   * 'east' or 'west'.
+   * 
+   * The pane will fill the whole width/height of the canvas depending on its 
+   * position. The user controls how far the pane extends into the canvas 
+   * when open.
+   * @param id unique id for this control
+   * @param location the pane position ('north', 'south', 'east' or 'west')
+   * @param depth the maximum depth the pane expands into the canvas
+   * @param text optional text for the tab button
+   * @param icon optional icon for the tab button
+   * @returns a side pane
+   */
+  pane(id: string, location: string, depth: number, text?: string, icon?: cvsIcon): CvsPane {
+    let ctrl: CvsPane;
+    depth = Math.round(depth);
+    switch (location) {
+      case 'north': ctrl = new CvsPaneNorth(this, id, depth); break;
+      case 'south': ctrl = new CvsPaneSouth(this, id, depth); break;
+      case 'west': ctrl = new CvsPaneWest(this, id, depth); break;
+      case 'east':
+      default: ctrl = new CvsPaneEast(this, id, depth);
+    }
+    if (text) ctrl.text(text);
+    if (icon) ctrl.icon(icon);
+    return ctrl;
+  }
+
+
   /**
    * Create a scroller control
    * @param id unique id for this control
@@ -571,35 +605,6 @@ class GUI {
    */
   __tooltip(id: string): CvsTooltip {
     return new CvsTooltip(this, id);
-  }
-
-  /**
-   * Create a side pane. The pane location is either 'north', 'south',
-   * 'east' or 'west'.
-   * 
-   * The pane will fill the whole width/height of the canvas depending on its 
-   * position. The user controls how far the pane extends into the canvas 
-   * when open.
-   * @param id unique id for this control
-   * @param location the pane position ('north', 'south', 'east' or 'west')
-   * @param depth the maximum depth the pane expands into the canvas
-   * @param text optional text for the tab button
-   * @param icon optional icon for the tab button
-   * @returns a side pane
-   */
-  pane(id: string, location: string, depth: number, text?: string, icon?: cvsIcon): CvsPane {
-    let ctrl: CvsPane;
-    depth = Math.round(depth);
-    switch (location) {
-      case 'north': ctrl = new CvsPaneNorth(this, id, depth); break;
-      case 'south': ctrl = new CvsPaneSouth(this, id, depth); break;
-      case 'west': ctrl = new CvsPaneWest(this, id, depth); break;
-      case 'east':
-      default: ctrl = new CvsPaneEast(this, id, depth);
-    }
-    if (text) ctrl.text(text);
-    if (icon) ctrl.icon(icon);
-    return ctrl;
   }
 
   // ######           End of control factory methods             ######
@@ -887,6 +892,7 @@ class GUI {
     return (typeof id === "string") ? this._controls.get(id) : id;
   }
 
+  /** @hidden */
   registerID(control: CvsPin) {
     CASSERT(!this._controls.has(control.id),
       `Control '${control.id}' already exists and will be replaced.`);
@@ -904,6 +910,7 @@ class GUI {
    * <p>If the control has already been registered it will be unchanged.</p>
    * 
    * @param control the control to make pickable
+   * @hidden
    */
   registerPickable(control: CvsControl) {
     if (control && !this._control2color.has(control)) {
@@ -1362,6 +1369,7 @@ class GUI {
    * @param x horizontal pixel location
    * @param y vertical pixel location
    * @returns an object containing the control hit and the control part number
+   * @hidden
    */
   getPicked(x: number, y: number) {
     x *= this._pr; y *= this._pr;
@@ -1376,6 +1384,7 @@ class GUI {
     return result;
   }
 
+  /** @hidden */
   getPickColor(x: number, y: number) {
     const imgData = this._pkBuffer.getContext('2d')?.getImageData(x, y, 1, 1);
     const r = imgData?.data[0] ?? 255;
