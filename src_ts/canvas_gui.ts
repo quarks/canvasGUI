@@ -28,7 +28,7 @@ class GUI {
   // Remember all GUIs created are accessible using gui's unique string
   // identifier.
   /** @hidden */ private static _guis: Map<string, GUI> = new Map();
-  // Vertices used in shader program to reneder gui over WebGL2 canvas
+  // Vertices used in shader program to render gui over WebGL2 canvas
   /** @hidden */ private static VERTS
     = new Float32Array([-1, -1, 0, -1, 1, 0, 1, 1, 0, 1, -1, 0]);
   // Instance 
@@ -121,8 +121,14 @@ class GUI {
     this._canvasContext =       // Drawing context for canvas
       this._canvas.getContext(this._canvas["hasContext"]());
     this._is3D = this._canvas["hasContext"]() === 'webgl2';
-    if (this._is3D)
+    // Decide on GUI display method based on 2D/3D and mode
+    if (this._is3D) {
       this._guiShader = this._createGuiShaderProgram();
+      this._showUI = this._mode === 'JS' ? this._showOverWebgl : this._showOverWebglP5;
+    }
+    else {
+      this._showUI = this._showOver2d;
+    }
     // Pick buffer
     this._COLOR_STEP = 8;
     this._PART_MASK = this._COLOR_STEP - 1;
@@ -140,11 +146,11 @@ class GUI {
     this._activeCtrl = null;
     this._activePart = 0;
 
-    // Choose 2D / 3D rendering methods  
-    this._showUI = this._is3D ? this._showOverWebGL : this._showOver2d;
-
     // Create buffers
     this._createGuiBuffers(this._canvas.width, this._canvas.height);
+
+    // Remeber this gui
+    GUI._guis.set(this._uid, this);
   }
 
   /** @hidden */
@@ -189,8 +195,8 @@ class GUI {
    * @hidden
    */
   draw() {
-    const uic = this._uiBuffer.getContext('2d');
-    const pkc = this._pkBuffer.getContext('2d');
+    const uic = this._uiBuffer?.getContext('2d');
+    const pkc = this._pkBuffer?.getContext('2d');
     if (!uic || !pkc) return;
     this._validateGuiBuffers();
     this._clearGuiBuffers();
@@ -221,11 +227,52 @@ class GUI {
   }
 
   /**
-   * Show GUI over a 'webgl2' canvas
+   * For sketches using p5.js - show GUI over a 'webgl2' canvas.
+   * Based on code provided by 'scudly' (Processing forum)
    * @hidden
    */
-  _showOverWebGL() {
+  _showOverWebglP5() {
     const gl = this._canvasContext;
+
+    // =================================================================== 
+    //      Save current webgl2 attributes as set by p5.js
+    const prevShaderProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+    const vertexBuffer = gl.getVertexAttrib(0, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING);
+
+    // Save current active texture
+    const prevActiveTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
+
+    // Switch to texture slot 0 and save texture bound to it
+    gl.activeTexture(gl.TEXTURE0);
+    const prevTexture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+
+    // =================================================================== 
+    //          Draw the GUI 
+    this._showOverWebgl();
+
+    // =================================================================== 
+    //          Restore the previous webgl2 attributes
+    // Restore original texture to slot 0
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, prevTexture2D);
+
+    // Restore the orginal texture slot
+    gl.activeTexture(prevActiveTexture);
+
+    // Restore webgl2 attributes
+    if (prevShaderProgram)
+      gl.useProgram(prevShaderProgram);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  }
+
+  /**
+   * Show GUI over a 'webgl2' canvas
+   * Based on code provided by 'scudly' (Processing forum)
+   * @hidden
+   */
+  _showOverWebgl() {
+    const gl = this._canvasContext;
+
     // Create texture from 2D canvas
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -249,15 +296,17 @@ class GUI {
     const uSampler = gl.getUniformLocation(this._guiShader, 'uSampler');
     gl.uniform1i(uSampler, 0);
 
-    gl.clear(gl.DEPTH_BUFFER_BIT);
+    gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
     gl.disable(gl.BLEND);
+    gl.enable(gl.DEPTH_TEST);
   }
 
   /**
    * Create the shader program to overlay a 2D HUD over a 3D canvas
+   * Based on code provided by 'scudly' (Processing forum)
    * @hidden
    */
   _createGuiShaderProgram() {
@@ -267,7 +316,6 @@ class GUI {
     const vsSource = `
     precision mediump float;
 
-    uniform vec2 uScale;
     attribute vec3 aVertexPosition;
     varying vec2 vTextureCoord;
 
@@ -535,6 +583,13 @@ class GUI {
     return new CvsKnob(this, id, x, y, w, h);
   }
 
+  /**
+   * Create a frameset control
+   * @param id unique id for this control
+   * @param x left x position for the frame
+   * @param y top y position for the frame
+   * @returns 
+   */
   frameset(id: string, x: number, y: number) {
     return new CvsFrameSet(this, id, x, y);
   }
@@ -1398,7 +1453,7 @@ class GUI {
   static ANNOUNCE_CANVAS_GUI() {
     if (GUI._guis.size == 0) {
       CLOG('================================================');
-      CLOG(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2025 Peter Lager`);
+      CLOG(`  canvasGUI (${CANVAS_GUI_VERSION})   \u00A9 2026 Peter Lager`);
       CLOG('================================================');
     }
   }
@@ -1426,17 +1481,18 @@ class GUI {
    * @returns a GUI controller existing or new GUI with the given id.
    * @hidden
    */
-  static _create(id: any, canvas: HTMLCanvasElement, pr: number, mode: string) {
-    GUI.ANNOUNCE_CANVAS_GUI();
-    if (GUI._guis.has(id)) {
-      CWARN(`You already have a GUI called '${id} it will not be replaced.`);
-      return GUI._guis.get(id);
-    }
-    // Need to create a GUI for this canvas
-    let gui = new GUI(id, canvas, pr, mode);
-    GUI._guis.set(id, gui);
-    return gui;
-  }
+  // static _create(id: any, canvas: HTMLCanvasElement, pr: number, mode: string) {
+  //   GUI.ANNOUNCE_CANVAS_GUI();
+  //   if (GUI._guis.has(id)) {
+  //     CWARN(`You already have a GUI called '${id} it will not be replaced.`);
+  //     return GUI._guis.get(id);
+  //   }
+  //   // Need to create a GUI for this canvas
+  //   let gui = new GUI(id, canvas, pr, mode);
+  //   GUI._guis.set(id, gui);
+  //   return gui;
+  // }
+
 }
 
 /**
@@ -1463,32 +1519,47 @@ class GUI {
  * @returns a GUI controller with the given id.
  */
 const createGUI = function (id: string, display: any) {
+  GUI.ANNOUNCE_CANVAS_GUI();
+  // Validate arguments
   if (arguments.length === 1) {
     display = arguments[0];
-    id = `#${Math.floor(1111 + 8888 * Math.random())}`;
-    CWARN(`Since no 'id' was provided this GUI will be called '${id}'.`)
+    id = `#${performance.now()}`;
+    CWARN(`This GUI will be called '${id}'.`)
   }
+
+  // Stop if this GUI id is already in use
+  let gui = GUI.$$(id);
+  if (gui) {
+    CWARN(`A GUI called '${id} already exists.`);
+    return gui;
+  }
+
+  // Interpret the 'display' argumant
   const elt = typeof display === 'string'
     ? document.getElementById(display)
     : display;
-  // The canvas element exists.
+
+  // If if is an HTMLCanvasElement.
   if (elt instanceof HTMLCanvasElement) {
     const is_p5js = elt.className.startsWith('p5Canvas');
     const dp = is_p5js ? devicePixelRatio : 1;
     const mode = is_p5js ? 'p5js' : 'JS';
-    return GUI._create(id, elt, dp, mode);
+    // return GUI._create(id, elt, dp, mode);
+    return new GUI(id, elt, dp, mode);
   }
-  // See if p5js
+  // An HTMLCanvasElement was not passed so see if p5js.
   if (typeof display === 'object') {
     const ctor = display.constructor.name;
     if (ctor == 'Renderer2D' || ctor == 'RendererGL')
-      return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
+      return new GUI(id, display.canvas, devicePixelRatio, 'p5js');
+    // return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
   }
+  // Not 
   throw new Error(`Cannot find the canvas element for the GUI '${id}'`);
 }
 
 /**
- * <p>Get the GUI with the given unique id. If no such GUI exists then the 
+ * <p>Get the GUI with the given unique id. If no such GUI exists then the
  * function returns undefined. </p>
  * @param id the GUI id
  * @returns the matching GUI controller or undefined if not found.

@@ -14,13 +14,13 @@ class Frame {
     /** @hidden */ private _weight: any;
 
     /**
-     * 
+     * Create a frameset control
      * @param x left x position for the frame
      * @param y top y position for the frame
      * @param w frame width
      * @param h frame height
      * @param weight border stroke weight
-     * 
+     * @hidden
      */
     constructor(x = 0, y = 0, w = 0, h = 0, weight = 1) {
         this._x = x;

@@ -1,4 +1,4 @@
-# canvasGUI   3.2.0 
+# canvasGUI   3.2.1 
 ### (c) Peter Lager  2026 
 A JavaScript library to create a GUI (Graphical User Interface) directly on an HTML canvas element.
 
