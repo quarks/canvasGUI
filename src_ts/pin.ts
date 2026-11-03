@@ -8,7 +8,7 @@ class CvsPin {
 
     /** @hidden */ protected _gui: GUI;
     /** @hidden */ protected _id: string;
-    /** @hidden */ protected _children: Array<any> = [];
+    /** @hidden */ protected _children: Array<any>;
     /** @hidden */ protected _parent: any;
 
 
@@ -21,10 +21,11 @@ class CvsPin {
 
     /** @hidden */ protected _bufferInvalid: boolean;
 
+    /** @hidden */
     constructor(gui: GUI, id: string, x: number, y: number) {
         this._gui = gui;
         this._id = id;
-        // this._children = [];
+        this._children = [];
         this._x = Math.round(x);
         this._y = Math.round(y);
         this._z = 0;

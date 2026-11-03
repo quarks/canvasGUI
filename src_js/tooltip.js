@@ -57,8 +57,6 @@ class CvsTooltip extends CvsText {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();

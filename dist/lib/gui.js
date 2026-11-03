@@ -1,7 +1,7 @@
  /**
  * @preserve canvasGUI    (c) Peter Lager  2026
  * @license MIT
- * @version 3.2.1
+ * @version 3.3.0
  */
 // =================================================================
 // ====    canvasGUI control variables
@@ -12,6 +12,8 @@ const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
 /** @hidden */
 const START_TIME = Date.now();
 const MILLIS = function () { return Date.now() - START_TIME; };
+/** @hidden */
+const NOW = function () { return performance.now(); };
 // =================================================================
 // ====    Poster and text attributes
 /** @hidden */
@@ -101,7 +103,7 @@ const cssFont$ = function (fontface, size, style = 'normal', slant = 14) {
  */
 const textMetrics = function (ctx, str) {
     ctx.save();
-    let tm = ctx.measureText(str);
+    const tm = ctx.measureText(str);
     ctx.restore();
     return {
         tWidth: tm.actualBoundingBoxRight + tm.actualBoundingBoxLeft,
@@ -114,6 +116,7 @@ const textMetrics = function (ctx, str) {
         fHeight: tm.fontBoundingBoxAscent + tm.fontBoundingBoxDescent,
         left: tm.actualBoundingBoxLeft,
         right: tm.actualBoundingBoxRight,
+        alphaBL: tm.alphabeticBaseline,
     };
 };
 /**
@@ -273,18 +276,22 @@ const _rgba$ = function (r, g, b, a = 255) {
     return `rgb(${r} ${g} ${b} / ${alpha}%)`;
 };
 /** @hidden */
+const _sign = function (n) {
+    return n < 0 ? -1 : n > 0 ? 1 : 0;
+};
+/** @hidden */
 const _constrain = function (n, low, high) {
     return Math.max(Math.min(n, high), low);
 };
 /** @hidden */
-const _map = function (n, low1, high1, low2, high2, keepInRange = false) {
-    const newval = (n - low1) / (high1 - low1) * (high2 - low2) + low2;
+const _map = function (value, v0, v1, nv0, nv1, keepInRange = false) {
+    const newval = (value - v0) / (v1 - v0) * (nv1 - nv0) + nv0;
     if (!keepInRange)
         return newval;
-    if (low2 < high2)
-        return _constrain(newval, low2, high2);
+    if (nv0 < nv1)
+        return _constrain(newval, nv0, nv1);
     else
-        return _constrain(newval, high2, low2);
+        return _constrain(newval, nv1, nv0);
 };
 // =================================================================
 // ====    HTML Character Entities
@@ -516,7 +523,7 @@ HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
-const CANVAS_GUI_VERSION = '3.2.1';
+const CANVAS_GUI_VERSION = '3.3.0';
 /**
  * <h2>Core class for the canvasGUI library </h2>
  *
@@ -537,7 +544,7 @@ const CANVAS_GUI_VERSION = '3.2.1';
  * </ul>
  *
  * <p>Any other value will result the program being terminated with an
- * error</p>
+ * error.</p>
  */
 class GUI {
     /**
@@ -602,7 +609,7 @@ class GUI {
             this._showUI = this._showOver2d;
         }
         // Pick buffer
-        this._COLOR_STEP = 8;
+        this._COLOR_STEP = 16;
         this._PART_MASK = this._COLOR_STEP - 1;
         this._COLOR_MASK = 0x00FFFFFF ^ this._PART_MASK;
         this._NEXT_COLOR = this._COLOR_STEP;
@@ -617,7 +624,7 @@ class GUI {
         this._activePart = 0;
         // Create buffers
         this._createGuiBuffers(this._canvas.width, this._canvas.height);
-        // Remeber this gui
+        // Remember this gui
         GUI._guis.set(this._uid, this);
     }
     /** @hidden */
@@ -688,6 +695,44 @@ class GUI {
         this._canvasContext.drawImage(this._uiBuffer, 0, 0); // Display GUI controls
         this._canvasContext.restore();
     }
+    /** @hidden */
+    _restoreWebglState(gl, state) {
+        // Switch to texture slot 0 and restore original texture
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, state.prevTexture2D);
+        // Restore webgl2 shader program
+        if (state.prevShaderProgram)
+            gl.useProgram(state.prevShaderProgram);
+        // Restore vertex buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, state.vertexBuffer);
+        // Restore belnd mode attributes
+        if (state.enabled)
+            gl.enable(gl.BLEND);
+        else
+            gl.disable(gl.BLEND);
+        gl.blendFuncSeparate(state.srcRGB, state.dstRGB, state.srcAlpha, state.dstAlpha);
+        gl.blendEquationSeparate(state.equationRGB, state.equationAlpha);
+        gl.blendColor(...state.color);
+    }
+    /** @hidden */
+    _saveWebglState(gl) {
+        // Switch to texture slot 0 
+        gl.activeTexture(gl.TEXTURE0);
+        return {
+            prevShaderProgram: gl.getParameter(gl.CURRENT_PROGRAM),
+            vertexBuffer: gl.getVertexAttrib(0, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING),
+            prevTexture2D: gl.getParameter(gl.TEXTURE_BINDING_2D),
+            prevActiveTexture: gl.getParameter(gl.ACTIVE_TEXTURE),
+            enabled: gl.isEnabled(gl.BLEND),
+            srcRGB: gl.getParameter(gl.BLEND_SRC_RGB),
+            dstRGB: gl.getParameter(gl.BLEND_DST_RGB),
+            srcAlpha: gl.getParameter(gl.BLEND_SRC_ALPHA),
+            dstAlpha: gl.getParameter(gl.BLEND_DST_ALPHA),
+            equationRGB: gl.getParameter(gl.BLEND_EQUATION_RGB),
+            equationAlpha: gl.getParameter(gl.BLEND_EQUATION_ALPHA),
+            color: Array.from(gl.getParameter(gl.BLEND_COLOR)),
+        };
+    }
     /**
      * For sketches using p5.js - show GUI over a 'webgl2' canvas.
      * Based on code provided by 'scudly' (Processing forum)
@@ -696,28 +741,14 @@ class GUI {
     _showOverWebglP5() {
         const gl = this._canvasContext;
         // =================================================================== 
-        //      Save current webgl2 attributes as set by p5.js
-        const prevShaderProgram = gl.getParameter(gl.CURRENT_PROGRAM);
-        const vertexBuffer = gl.getVertexAttrib(0, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING);
-        // Save current active texture
-        const prevActiveTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
-        // Switch to texture slot 0 and save texture bound to it
-        gl.activeTexture(gl.TEXTURE0);
-        const prevTexture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+        // Save current webgl state set by p5
+        const saved = this._saveWebglState(gl);
         // =================================================================== 
         //          Draw the GUI 
         this._showOverWebgl();
         // =================================================================== 
-        //          Restore the previous webgl2 attributes
-        // Restore original texture to slot 0
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, prevTexture2D);
-        // Restore the orginal texture slot
-        gl.activeTexture(prevActiveTexture);
-        // Restore webgl2 attributes
-        if (prevShaderProgram)
-            gl.useProgram(prevShaderProgram);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        // Restore Webgl state previously set by p5
+        this._restoreWebglState(gl, saved);
     }
     /**
      * Show GUI over a 'webgl2' canvas
@@ -800,38 +831,8 @@ class GUI {
     // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
     // ##################################################################
     /**
-     * <p>Create a pin control.</p>
-     * <p>The Pin control is a simple place holder for containing child controls
-     * relative to each other.</p>
-     * @param id
-     * @param x
-     * @param y
-     * @returns
-     */
-    pin(id, x, y) {
-        return new CvsPin(this, id, x, y);
-    }
-    /**
-     * Create a label control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @param text optional face text
-     * @param icon optional face icon
-     * @returns a label
-     */
-    label(id, x, y, w, h, text, icon) {
-        const ctrl = new CvsLabel(this, id, x, y, w, h);
-        if (text)
-            ctrl.text(text);
-        if (icon)
-            ctrl.icon(icon);
-        return ctrl;
-    }
-    /**
-     * Create a button control
+     * <p>Create a button control.
+     * {@link CvsButton | Properties and Methods}</p>
      * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
@@ -850,7 +851,36 @@ class GUI {
         return ctrl;
     }
     /**
-     * <p>Create an image button control.</p>
+     * <p>Create a checkbox control.
+     * {@link CvsCheckbox | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param text optional face text
+     * @returns a checkbox
+     */
+    checkbox(id, x, y, w, h, text) {
+        const ctrl = new CvsCheckbox(this, id, x, y, w, h);
+        if (text)
+            ctrl.text(text);
+        return ctrl;
+    }
+    /**
+     * <p>Create a frameset control.
+     * {@link CvsFrameSet | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left x position for the frame
+     * @param y top y position for the frame
+     * @returns
+     */
+    frameset(id, x, y) {
+        return new CvsFrameSet(this, id, x, y);
+    }
+    /**
+     * <p>Create an image button control.
+     * {@link CvsImage | Properties and Methods}</p>
      * <p>The button size is determined by the size of the off-button image. If
      * a second image is provided (optional) then it will be used for the
      * over-button state. In the absence of the second image otherwise a border
@@ -874,60 +904,54 @@ class GUI {
         return ctrl;
     }
     /**
-     * Create a slider control
+     * <p>Create a joystick control.
+     * {@link CvsJoystick | Properties and Methods}</p>
      * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
      * @param w width
      * @param h height
-     * @returns slider control
+     * @returns a joystick control
      */
-    slider(id, x, y, w, h) {
-        return new CvsSlider(this, id, x, y, w, h);
+    joystick(id, x, y, w, h) {
+        return new CvsJoystick(this, id, x, y, w, h);
     }
     /**
-     * Create a ranger control
+     * <p>Create a knob control.
+     * {@link CvsKnob | Properties and Methods}</p>
      * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
      * @param w width
      * @param h height
-     * @returns ranger control
+     * @returns a knob control
      */
-    ranger(id, x, y, w, h) {
-        return new CvsRanger(this, id, x, y, w, h);
+    knob(id, x, y, w, h) {
+        return new CvsKnob(this, id, x, y, w, h);
     }
     /**
-     * Create a single line text input control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a textfield
-     */
-    textfield(id, x, y, w, h) {
-        this._addKeyEventHandlers();
-        return new CvsTextField(this, id, x, y, w, h);
-    }
-    /**
-     * Create a checkbox control
+     * <p>Create a label control.
+     * {@link CvsLabel | Properties and Methods}</p>
      * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
      * @param w width
      * @param h height
      * @param text optional face text
-     * @returns a checkbox
+     * @param icon optional face icon
+     * @returns a label
      */
-    checkbox(id, x, y, w, h, text) {
-        const ctrl = new CvsCheckbox(this, id, x, y, w, h);
+    label(id, x, y, w, h, text, icon) {
+        const ctrl = new CvsLabel(this, id, x, y, w, h);
         if (text)
             ctrl.text(text);
+        if (icon)
+            ctrl.icon(icon);
         return ctrl;
     }
     /**
-     * Create an option (radio button) control
+     * <p>Create an option button control.
+     * {@link CvsOption | Properties and Methods}</p>
      * @param id unique id for this control
      * @param x left-hand pixel position
      * @param y top pixel position
@@ -943,89 +967,9 @@ class GUI {
         return ctrl;
     }
     /**
-     * Create a poster control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a label
-     */
-    poster(id, x, y, w, h) {
-        return new CvsPoster(this, id, x, y, w, h);
-    }
-    /**
-     * Create a label control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a label
-     */
-    panel(id, x, y, w, h) {
-        return new CvsPanel(this, id, x, y, w, h);
-    }
-    /**
-     * <p>Create a viewer control.</p>
-     * <p>If the last parameter, <code>padSize</code> = 0 (default value) then
-     * horizontal and vertical scrollbars are provided to scroll through the
-     * image. </p>
-     * <p>If <code>padSize</code> is in the range &gt;0 and &lt;1 then a single
-     * scrollpad (2d scrollbar) is create instead of scrollbars. The visual size
-     * of the scrollpad is proportional to and has the same aspect ratio as the
-     * viewer.</p>
-     * <p>If <code>padSize</code> is &gt;1 then it represents the pixel size of
-     * a square scrollpad.</p>
-     *
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @param padSize if &gt;0 a scrollpad is created instead of scrollbars.
-     * @returns an image viewer
-     */
-    viewer(id, x, y, w, h, padSize = 0) {
-        return new CvsViewer(this, id, x, y, w, h, padSize);
-    }
-    /**
-     * Create a joystick control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a joystick control
-     */
-    joystick(id, x, y, w, h) {
-        return new CvsJoystick(this, id, x, y, w, h);
-    }
-    /**
-     * Create a knob control
-     * @param id unique id for this control
-     * @param x left-hand pixel position
-     * @param y top pixel position
-     * @param w width
-     * @param h height
-     * @returns a knob control
-     */
-    knob(id, x, y, w, h) {
-        return new CvsKnob(this, id, x, y, w, h);
-    }
-    /**
-     * Create a frameset control
-     * @param id unique id for this control
-     * @param x left x position for the frame
-     * @param y top y position for the frame
-     * @returns
-     */
-    frameset(id, x, y) {
-        return new CvsFrameSet(this, id, x, y);
-    }
-    /**
-     * Create a side pane. The pane location is either 'north', 'south',
-     * 'east' or 'west'.
+     * <p>Create a side pane. The pane location is either 'north', 'south',
+     * 'east' or 'west'.</p>
+     * <p>{@link CvsPane | Properties and Methods}</p>
      *
      * The pane will fill the whole width/height of the canvas depending on its
      * position. The user controls how far the pane extends into the canvas
@@ -1058,6 +1002,153 @@ class GUI {
         if (icon)
             ctrl.icon(icon);
         return ctrl;
+    }
+    /**
+     * <p>Create a floating panel control.
+     * {@link CvsPanel | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a floating panel
+     */
+    panel(id, x, y, w, h) {
+        return new CvsPanel(this, id, x, y, w, h);
+    }
+    /**
+     * <p>Create a pin control.
+     * {@link CvsPin | Properties and Methods}</p>
+     * <p>The Pin control is a simple place holder for containing child controls
+     * relative to each other.</p>
+     * @param id
+     * @param x
+     * @param y
+     * @returns
+     */
+    pin(id, x, y) {
+        return new CvsPin(this, id, x, y);
+    }
+    /**
+     * <p>Create a poster control.
+     * {@link CvsPoster | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a label
+     */
+    poster(id, x, y, w, h) {
+        return new CvsPoster(this, id, x, y, w, h);
+    }
+    /**
+     * <p>Create a progress meter control.
+     * {@link CvsProgress | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param icon optional face icon
+     * @returns a progress
+     */
+    progress(id, x, y, w, h, icon) {
+        const ctrl = new CvsProgress(this, id, x, y, w, h);
+        if (icon)
+            ctrl.icon(icon);
+        return ctrl;
+    }
+    /**
+     * <p>Create a ranger control.
+     * {@link CvsRanger | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns ranger control
+     */
+    ranger(id, x, y, w, h) {
+        return new CvsRanger(this, id, x, y, w, h);
+    }
+    /**
+     * <p>Create a slider control.
+     * {@link CvsSlider | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns slider control
+     */
+    slider(id, x, y, w, h) {
+        return new CvsSlider(this, id, x, y, w, h);
+    }
+    /**
+     * <p>Create a spinner control.
+     * {@link CvsSpinner | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param nbrReels number of reels
+     * @returns a spinner control
+     */
+    spinner(id, x, y, w, h, nbrReels = 1) {
+        return new CvsSpinner(this, id, x, y, w, h, nbrReels);
+    }
+    /**
+     * <p>Create a single line text input control.
+     * {@link CvsTextField | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a textfield
+     */
+    textfield(id, x, y, w, h) {
+        this._addKeyEventHandlers();
+        return new CvsTextField(this, id, x, y, w, h);
+    }
+    /**
+     * <p>Create a viewer control.
+     * {@link CvsViewer | Properties and Methods}</p>
+     * <p>If the last parameter, <code>padSize</code> = 0 (default value) then
+     * horizontal and vertical scrollbars are provided to scroll through the
+     * image. </p>
+     * <p>If <code>padSize</code> is in the range &gt;0 and &lt;1 then a single
+     * scrollpad (2d scrollbar) is create instead of scrollbars. The visual size
+     * of the scrollpad is proportional to and has the same aspect ratio as the
+     * viewer.</p>
+     * <p>If <code>padSize</code> is &gt;1 then it represents the pixel size of
+     * a square scrollpad.</p>
+     *
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @param padSize if &gt;0 a scrollpad is created instead of scrollbars.
+     * @returns an image viewer
+     */
+    viewer(id, x, y, w, h, padSize = 0) {
+        return new CvsViewer(this, id, x, y, w, h, padSize);
+    }
+    /**
+     * <p>Create a timer control.
+     * {@link CvsTimer | Properties and Methods}</p>
+     * @param id unique id for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @returns a timer control
+     */
+    timer(id, x, y, w, h) {
+        return new CvsTimer(this, id, x, y, w, h);
     }
     /**
      * Create a scroller control
@@ -1220,7 +1311,7 @@ class GUI {
             canvas.addEventListener('mousedown', (e) => { this._processMouseEvent(e); });
             canvas.addEventListener('mouseup', (e) => { this._processMouseEvent(e); });
             canvas.addEventListener('mousemove', (e) => { this._processMouseEvent(e); });
-            canvas.addEventListener('wheel', (e) => { this._processMouseEvent(e); });
+            canvas.addEventListener('wheel', (e) => { this._processWheelEvent(e); });
             // Leave and enter canvas
             canvas.addEventListener('mouseout', (e) => { this._processMouseEvent(e); });
             canvas.addEventListener('mouseenter', (e) => { this._processMouseEvent(e); });
@@ -1253,6 +1344,14 @@ class GUI {
     //     Event handlers
     /** @hidden */
     _processMouseEvent(e) {
+        if (this._visible && this._enabled) {
+            const rect = this._canvas.getBoundingClientRect();
+            this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
+            // e.preventDefault();
+        }
+    }
+    /** @hidden */
+    _processWheelEvent(e) {
         if (this._visible && this._enabled) {
             const rect = this._canvas.getBoundingClientRect();
             this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
@@ -1852,16 +1951,15 @@ class GUI {
     static $$(id) {
         return GUI._guis.get(id);
     }
-}
+} //  end of GUI class definition
 /** canvasGUI version */
-GUI.VERSION = '3.2.1';
+GUI.VERSION = '3.3.0';
 // Remember all GUIs created are accessible using gui's unique string
 // identifier.
 /** @hidden */ GUI._guis = new Map();
 // Vertices used in shader program to render gui over WebGL2 canvas
 /** @hidden */ GUI.VERTS = new Float32Array([-1, -1, 0, -1, 1, 0, 1, 1, 0, 1, -1, 0]);
 /**
- *
  * <h2>Creates and returns a GUI controller.</h2>
  * <p><b><em>This function must be used when creating a GUI.</em></b></p>
  *
@@ -1906,7 +2004,6 @@ const createGUI = function (id, display) {
         const is_p5js = elt.className.startsWith('p5Canvas');
         const dp = is_p5js ? devicePixelRatio : 1;
         const mode = is_p5js ? 'p5js' : 'JS';
-        // return GUI._create(id, elt, dp, mode);
         return new GUI(id, elt, dp, mode);
     }
     // An HTMLCanvasElement was not passed so see if p5js.
@@ -1914,9 +2011,8 @@ const createGUI = function (id, display) {
         const ctor = display.constructor.name;
         if (ctor == 'Renderer2D' || ctor == 'RendererGL')
             return new GUI(id, display.canvas, devicePixelRatio, 'p5js');
-        // return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
     }
-    // Not 
+    // Not able to create GUI - unrecognised canvas element
     throw new Error(`Cannot find the canvas element for the GUI '${id}'`);
 };
 /**
@@ -1941,7 +2037,7 @@ class ColorScheme {
         this._greys = [];
         this._tints = [];
         this._original = true;
-        this._tints = [[0, 13], [0, 19], [0, 77], [0, 153]];
+        this._tints = [[0, 13], [0, 19], [0, 30], [0, 50], [0, 77], [0, 153]];
         this._greys = [[255], [204], [179], [153], [128], [102], [77], [51], [26], [0]];
     }
     /** Get the name of this color scheme e.g. 'green', 'blue' ...  */
@@ -2172,7 +2268,7 @@ class DarkScheme extends ColorScheme {
             [127, 127, 127], [152, 152, 152], [177, 177, 177], [203, 203, 203],
             [228, 228, 228]
         ];
-        this._tints = [[102, 160], [131, 172], [191, 204], [226, 230]];
+        this._tints = [[102, 160], [131, 172], [151, 182], [171, 193], [191, 204], [226, 230]];
         this._greys = this._greys.reverse();
     }
 }
@@ -2240,8 +2336,8 @@ class OrientWest {
  * shown relative to the pin's xy position.</p>
  */
 class CvsPin {
+    /** @hidden */
     constructor(gui, id, x, y) {
-        /** @hidden */ this._children = [];
         /**
          * <p>The event handler for this control. Although it is permitted to set this
          * property directly it is recommended that the <code>setAction(...)</code>
@@ -2251,7 +2347,7 @@ class CvsPin {
         this.action = function () { };
         this._gui = gui;
         this._id = id;
-        // this._children = [];
+        this._children = [];
         this._x = Math.round(x);
         this._y = Math.round(y);
         this._z = 0;
@@ -3030,12 +3126,10 @@ class CvsBufferedControl extends CvsControl {
     /** @hidden */
     _disable_highlight(cs, x, y, w, h) {
         const uic = this._uicBuffer.getContext('2d');
-        if (uic) {
-            uic.fillStyle = cs.T$(2);
-            uic.beginPath();
-            uic.roundRect(x, y, w, h, this.CNRS);
-            uic.fill();
-        }
+        uic.fillStyle = cs.T$(4);
+        uic.beginPath();
+        uic.roundRect(x, y, w, h, this.CNRS);
+        uic.fill();
     }
     /** @hidden */
     _getUseableFaceRegion() {
@@ -3144,8 +3238,6 @@ class CvsImage extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const [w, h] = [this._w, this._h];
         const cs = this.SCHEME;
@@ -3183,9 +3275,7 @@ class CvsImage extends CvsBufferedControl {
     }
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkb || !pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         const [w, h] = [pkb.width, pkb.height];
         const mask = this._maskImg;
@@ -3234,6 +3324,7 @@ class CvsImage extends CvsBufferedControl {
 //# sourceMappingURL=image.js.map
 /**
  * <h2>A slider with a draggable thumb</h2>
+ *
  * <p>This control has a single thumb that can be dragged along a track. The
  * thumb's position represents a value within user defined limits.</p>
  *
@@ -3431,8 +3522,6 @@ class CvsSlider extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -3505,8 +3594,6 @@ class CvsSlider extends CvsBufferedControl {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         const c = this._gui.pickColor(this);
         const [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
@@ -3668,8 +3755,6 @@ class CvsRanger extends CvsSlider {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
@@ -3745,8 +3830,6 @@ class CvsRanger extends CvsSlider {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         const [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
         const tx0 = Math.round(tLen * Math.min(this._t[0], this._t[1]));
@@ -4254,8 +4337,6 @@ class CvsLabel extends CvsTextIcon {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
@@ -4305,8 +4386,6 @@ class CvsButton extends CvsTextIcon {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
@@ -4355,9 +4434,7 @@ class CvsButton extends CvsTextIcon {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -4461,8 +4538,6 @@ class CvsTooltip extends CvsText {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
@@ -4604,8 +4679,6 @@ class CvsScrollbar extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -4655,8 +4728,6 @@ class CvsScrollbar extends CvsBufferedControl {
     _updateScrollerPickBuffer(tbX, tby, tbw, tbh) {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -4693,8 +4764,6 @@ class CvsScrollpad extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -4751,8 +4820,6 @@ class CvsScrollpad extends CvsBufferedControl {
     _updateScrollerPickBuffer(inset, tx, ty, tw, th) {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -5108,8 +5175,6 @@ class CvsOption extends CvsTextIcon {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
@@ -5152,9 +5217,7 @@ class CvsOption extends CvsTextIcon {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -5347,8 +5410,6 @@ class CvsCheckbox extends CvsTextIcon {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
@@ -5391,9 +5452,7 @@ class CvsCheckbox extends CvsTextIcon {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -5866,8 +5925,6 @@ class CvsViewer extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
@@ -5902,8 +5959,6 @@ class CvsViewer extends CvsBufferedControl {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         const c = this._gui.pickColor(this);
         pkc.save();
@@ -6476,8 +6531,6 @@ class CvsTextField extends CvsText {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
@@ -6566,8 +6619,6 @@ class CvsTextField extends CvsText {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -6785,13 +6836,11 @@ class CvsJoystick extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
-        const OPAQUE = cs.C$(3, this._alpha); //cs.C(3, this._alpha);
+        const OPAQUE = cs.C$(3, this._alpha);
         const DIAL_FACE = cs.C$(1);
         const DIAL_TINT = cs.T$(0);
         const DIAL_BORDER = cs.C$(9);
@@ -6800,7 +6849,7 @@ class CvsJoystick extends CvsBufferedControl {
         const THUMB_OVER = cs.C$(6);
         const ROD = cs.C$(7);
         const MARKERS = cs.C$(8);
-        const DEAD_ZONE = cs.T$(2);
+        const DEAD_ZONE = cs.T$(4);
         uic.save();
         if (this._opaque) {
             uic.beginPath();
@@ -6905,9 +6954,7 @@ class CvsJoystick extends CvsBufferedControl {
     /** @hidden */
     _updatePickBuffer(tx, ty, tSize) {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -7145,8 +7192,6 @@ class CvsKnob extends CvsSlider {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -7159,7 +7204,7 @@ class CvsKnob extends CvsSlider {
         const TRACK_ARC = cs.C$(1);
         const TICKS = cs.G$(8);
         const USED_TRACK = cs.G$(2);
-        const UNUSED_TRACK = cs.T$(2);
+        const UNUSED_TRACK = cs.T$(4);
         uic.save();
         if (this._opaque) {
             uic.fillStyle = OPAQUE;
@@ -7269,9 +7314,7 @@ class CvsKnob extends CvsSlider {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -7410,8 +7453,6 @@ class CvsPanel extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
@@ -7439,9 +7480,7 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();
@@ -8348,8 +8387,6 @@ class CvsPoster extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
@@ -8662,6 +8699,1246 @@ class Poster_Stack {
     }
 }
 //# sourceMappingURL=poster.js.map
+/**
+ * <h2>Performs a user-defined action after a specified time.</h2>
+ *
+ * <p>This control is invisible when it is created and waits until it is
+ * needed. Before starting the control the user-defined action must be
+ * specified using the <code>setAction</code> method.</p>
+ * <p>The timer is reusable and the user-defined action can be changed
+ * between uses.</p>
+ *
+ * <p>The <code>start</code> method initiaties the timer and sets its duration.
+ * It also allows the user to set the time the control is visible before
+ * (lead-time) and after (lag-time) the timer runs (ticks).<p>
+ *
+ * <p>The shape of the timer is <b>round</b> if the user sets the control's
+ * width and height equal otherwise it will display as a horizontal
+ * <b>bar</b>.</b>
+ *
+ * <p>By default the timer does not respond to ui events but the can be
+ * changed with the <code>uiResponse</code> method.</p>
+ */
+class CvsTimer extends CvsBufferedControl {
+    /**
+     *
+     * @param gui the gui controller
+     * @param name unique name for this control
+     * @param x left-hand pixel position
+     * @param y top pixel position
+     * @param w width
+     * @param h height
+     * @hidden
+     */
+    constructor(gui, name, x, y, w, h) {
+        super(gui, name, x, y, w, h, true);
+        this.corners(Math.min(w, h) / 3);
+        this._dir = CvsTimer.FORWARD;
+        this._timer = 0;
+        this._uiReaction = CvsTimer.IGNORE;
+        this._cssFont = this._getFont();
+        this._reset();
+    }
+    /**
+     * <p>Returns the proportion of the duration time used in the range
+     * 0.0 to 1.0</p>
+     *
+     * @readonly
+     * @type {number}
+     */
+    get t() { return this._t; }
+    /** <p>A string indicating the current state of the timer </p>
+     * <ul>
+     * <li><b>idle</b> the timer is waiting to be initiated.</li>
+     * <li><b>initiated</b> the timer has been initiated and is ready to start ticking.</li>
+     * <li><b>ticking</b> the timer is ticking.</li>
+     * <li><b>paused</b> the ticking has been paused until resumed.</li>
+     * <li><b>finished</b> the timer has finished ticking.</li>
+     * </ul>
+    */
+    get status() { return this._status; }
+    /**
+     * Describes the shape of the timer and returns either "round" or "bar".
+     *
+     * @readonly
+     * @type {("round" | "bar")}
+     */
+    get shape() { return this._w === this._h ? 'round' : 'bar'; }
+    /**
+     * Describes what happens when the user clicks on the timer.
+     *
+     * @readonly
+     * @type {string}
+     */
+    get ui_mode() { return this._uiReaction; }
+    /**
+     * The control fills with a dark color as the timer runs.
+     *
+     * @returns this control
+     */
+    forward() {
+        if (this._status === CvsTimer.IDLE)
+            this._dir = CvsTimer.FORWARD;
+        return this;
+    }
+    /**
+     * The control starts filled with a darker color buts empties as the timer
+     * runs.
+     *
+     * @returns this control
+     */
+    reverse() {
+        if (this._status === CvsTimer.IDLE)
+            this._dir = CvsTimer.REVERSE;
+        return this;
+    }
+    /**
+     * <p>Sets the response when the user clicks on the timer.</p>
+     * <ul>
+     * <li><b>ignore</b> do nothing.</li>
+     * <li><b>pause</b> pause the timer, the next click will resume the timer.</li>
+     * <li><b>cancal</b> immediately cancel the timer making it invisible. No
+     * event will be fired.</li>
+     * </ul>
+     * @param response 'ignore', 'pause' or 'cancel;
+     * @returns this control
+     */
+    uiReaction(response = 'ignore') {
+        if (this._status === CvsTimer.IDLE) {
+            switch (response) {
+                case 'pause':
+                case 'cancel':
+                    this._uiReaction = response;
+                    break;
+                default:
+                    this._uiReaction = CvsTimer.IGNORE;
+            }
+        }
+        return this;
+    }
+    /**
+     * <p>This will initiate the timer and make it visible. The user must
+     * specify the duration but the time to remain visible before and after
+     * the timer is running (ticking) is optional, the default being 0ms.</p>
+     *
+     * @param duration the timer duration (millisecnds)
+     * @param leadTime time the control is visible before the timer starts
+     * @param lagTime time the control is visible after the timer ends
+     */
+    start(duration, leadTime = 0, lagTime = 0) {
+        this._runTime = duration;
+        this._leadTime = leadTime;
+        this._lagTime = lagTime;
+        if (this._status === CvsTimer.IDLE) {
+            this._status = CvsTimer.INITIATED;
+            this.invalidateBuffer();
+            this.show(true);
+            this._t = 0;
+            this._startedAt = performance.now();
+            this._timer = setInterval(() => { this._update(); }, 12);
+        }
+        return this;
+    }
+    /**
+     * <p>Will pause the control if the timer is ticking and the ui response
+     * type allows for pausing.</p>
+     *
+     * @returns this control
+     */
+    pause() {
+        if (this._uiReaction == CvsTimer.PAUSE && this._status === CvsTimer.TICKING) {
+            this._status = CvsTimer.PAUSED;
+            this._pausedAt = performance.now();
+        }
+        return this;
+    }
+    /**
+     * <p>Will resume a paused timer.</p>
+     *
+     * @returns this control
+     */
+    resume() {
+        if (this._uiReaction == CvsTimer.PAUSE && this._status === CvsTimer.PAUSED) {
+            this._status = CvsTimer.TICKING;
+            this._startedAt += (performance.now() - this._pausedAt);
+        }
+        return this;
+    }
+    /**
+     * <p>Will cancel and hide the timer if it is <em>not idle</em> and the
+     * ui response type allows for cancelling.</p>
+     *
+     * @returns this control
+     */
+    cancel() {
+        if (this._uiReaction == CvsTimer.CANCEL && this._status !== CvsTimer.IDLE) {
+            this._reset();
+        }
+        return this;
+    }
+    /**
+     * Resets the timer attributes to make it idle.
+     * @returns this control
+     * @hidden
+     */
+    _reset() {
+        clearInterval(this._timer);
+        this._t = 0;
+        this._startedAt = 0;
+        this._pausedAt = 0;
+        this._leadTime = 0;
+        this._runTime = 0;
+        this._lagTime = 0;
+        this._status = CvsTimer.IDLE;
+        this._uiText = '';
+        this.hide(true);
+        this.invalidateBuffer();
+        return this;
+    }
+    /**
+     * Calculate a suitable font height based on the controls width and
+     * height and create a CSS font descriptor string.
+     * @hidden
+     */
+    _getFont() {
+        const uic = this._uicBuffer.getContext('2d');
+        uic.save();
+        let font;
+        let ts = 0.6 * this._h;
+        let found = false;
+        do {
+            font = cssFont$('sans-serif', ts, 'bold');
+            uic.font = font;
+            found = textMetrics(uic, 'RESUME').tWidth < 0.8 * this._w;
+            ts *= 0.90;
+        } while (!found);
+        uic.restore();
+        return font;
+    }
+    /**
+     * This returns the ui resposes prompt text (if any) based on
+     * the times current status.
+     * @hidden
+     */
+    _getUiResponseString() {
+        let str = '';
+        switch (this._status) {
+            case CvsTimer.PAUSED:
+                str = 'RESUME';
+                break;
+            case CvsTimer.TICKING:
+                if (this._uiReaction == CvsTimer.CANCEL)
+                    str = 'CANCEL';
+                else if (this._uiReaction == CvsTimer.PAUSE)
+                    str = 'PAUSE';
+                break;
+        }
+        return str;
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        function drawBar(status, t) {
+            uic.fillStyle = BACK;
+            uic.beginPath();
+            uic.roundRect(0, 0, w, h, cnrs);
+            uic.fill();
+            if (status !== CvsTimer.IDLE) {
+                const bw = Math.min(3, w * 0.1), barW = w - 2 * bw;
+                const bh = Math.min(3, h * 0.1), barH = h - 2 * bh;
+                const p = _map(t, 0, 1, 0, barW, true);
+                uic.fillStyle = FORE;
+                uic.beginPath();
+                uic.roundRect(bw, bh, p, barH, cnrs);
+                uic.fill();
+            }
+        }
+        function barHighlight() {
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2.5;
+            uic.beginPath();
+            uic.roundRect(1, 1, w - 2, h - 2, cnrs);
+            uic.stroke();
+        }
+        function roundHighlight() {
+            const cp = w / 2, r = w / 2;
+            uic.strokeStyle = HIGHLIGHT;
+            uic.lineWidth = 2.5;
+            uic.beginPath();
+            uic.arc(cp, cp, r - 2, 0, 2 * Math.PI);
+            uic.stroke();
+        }
+        function drawRound(status, t) {
+            const cp = w / 2, r = w / 2;
+            uic.fillStyle = BACK;
+            uic.beginPath();
+            uic.arc(cp, cp, r, 0, 2 * Math.PI);
+            uic.fill();
+            if (status !== CvsTimer.IDLE) {
+                const sa = 1.5 * Math.PI;
+                const ea = sa + t * 2 * Math.PI;
+                uic.fillStyle = FORE;
+                uic.beginPath();
+                uic.moveTo(cp, cp);
+                uic.arc(cp, cp, r - 4, sa, ea);
+                uic.moveTo(cp, cp);
+                uic.fill();
+            }
+        }
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        this._clearBuffer(uib, uic);
+        const cs = this.SCHEME;
+        const cnrs = this.CNRS;
+        const BACK = cs.C$(1);
+        const FORE = cs.C$(4);
+        const TEXT = cs.C$(9);
+        const HIGHLIGHT = cs.C$(9);
+        const [w, h] = [this._w, this._h];
+        uic.save();
+        // Draw control background
+        const t = this._dir === CvsTimer.FORWARD ? this._t : 1 - this._t;
+        if (w !== h)
+            drawBar(this._status, t);
+        else
+            drawRound(this._status, t);
+        // Draw status text
+        let str = this._getUiResponseString();
+        if (str.length > 0) {
+            uic.save();
+            const tm = textMetrics(uic, str);
+            let px = w / 2;
+            let py = (tm.fHeight + h) / 2;
+            uic.font = this._cssFont;
+            uic.textAlign = 'center';
+            uic.textBaseline = 'alphabetic';
+            uic.lineWidth = 3;
+            uic.strokeStyle = BACK;
+            uic.fillStyle = TEXT;
+            uic.strokeText(str, px, py);
+            uic.fillText(str, px, py);
+            uic.restore();
+        }
+        // Mouse over border highlight
+        if (this.isActive || this.over) {
+            if (w !== h)
+                barHighlight();
+            else
+                roundHighlight();
+        }
+        // Update pick buffer before restoring
+        if (this._uiReaction != CvsTimer.IGNORE)
+            this._updatePickBuffer(w, h);
+        uic.restore();
+        // The last line in this method should be
+        this._bufferInvalid = false;
+    }
+    /** @hidden */
+    _updatePickBuffer(w, h) {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb.getContext('2d');
+        this._clearBuffer(pkb, pkc);
+        let c = this._gui.pickColor(this);
+        CLOG(c.cssColor);
+        pkc.save();
+        pkc.fillStyle = c.cssColor;
+        pkc.beginPath();
+        if (w != h)
+            pkc.roundRect(0, 0, w, h, this.CNRS);
+        else
+            pkc.arc(w / 2, w / 2, w / 2, 0, 2 * Math.PI);
+        pkc.fill();
+        pkc.restore();
+    }
+    /** @hidden */
+    _doEvent(e, x = 0, y = 0, over, enter) {
+        if (this._uiReaction == CvsTimer.IGNORE) {
+            this._active = false;
+            return null;
+        }
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                this._active = true;
+                this._clickAllowed = true; // false if mouse moves
+                this.over = true;
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                if (this.isActive) {
+                    if (this._clickAllowed) {
+                        if (this._uiReaction == CvsTimer.PAUSE) {
+                            if (this._status === CvsTimer.PAUSED)
+                                this.resume();
+                            else if (this._status === CvsTimer.TICKING)
+                                this.pause();
+                        }
+                        else {
+                            this.cancel();
+                        }
+                    }
+                    this._active = false;
+                }
+                this._clickAllowed = false;
+                this.over = false;
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                this._clickAllowed = false;
+                this.over = (this == over.control);
+                this._tooltip?._updateState(enter);
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                break;
+        }
+        return this.isActive ? this : null;
+    }
+    /**
+     * When the timer is not idle this method is called approximately
+     * every 12 ms to update the timers runtime and status.
+     * @hidden
+     */
+    _update() {
+        const time = performance.now();
+        let et = time - this._startedAt;
+        switch (this._status) {
+            case CvsTimer.INITIATED:
+                if (et > this._leadTime) {
+                    this._startedAt += et;
+                    this._status = CvsTimer.TICKING;
+                    this.invalidateBuffer();
+                }
+                break;
+            case CvsTimer.TICKING:
+                if (et > this._runTime) {
+                    this._startedAt += et;
+                    this._status = CvsTimer.FINISHED;
+                    this.action({ source: this, event: undefined });
+                }
+                this.invalidateBuffer();
+                this._t = Math.min(et / this._runTime, 1);
+                break;
+            case CvsTimer.FINISHED:
+                if (et > this._lagTime)
+                    this._reset();
+                this.invalidateBuffer();
+                break;
+        }
+    }
+    // Hide these methods from typeDoc
+    /** @hidden */ transparent() { return this.warn$('tansparent'); }
+    /** @hidden */ opaque() { return this.warn$('opaque'); }
+    /** @hidden */ shrink(a, b) { return this.warn$('shrink'); }
+    /** @hidden */ enable() { return this.warn$('enable'); }
+    /** @hidden */ disable() { return this.warn$('disable'); }
+}
+// Status constants
+/** @hidden */ CvsTimer.IDLE = 'idle';
+/** @hidden */ CvsTimer.INITIATED = 'initiated';
+/** @hidden */ CvsTimer.FINISHED = 'finished';
+/** @hidden */ CvsTimer.TICKING = 'ticking';
+/** @hidden */ CvsTimer.PAUSED = 'paused';
+// Direction constants
+/** @hidden */ CvsTimer.FORWARD = 1;
+/** @hidden */ CvsTimer.REVERSE = 2;
+// User interaction
+/** @hidden */ CvsTimer.IGNORE = 'ignore';
+/** @hidden */ CvsTimer.PAUSE = 'pause';
+/** @hidden */ CvsTimer.CANCEL = 'cancel';
+//# sourceMappingURL=timer.js.map
+/**
+ * <h2>A progress bar showing what proportion of a user-defined task has
+ * been completed.</h2>
+ *
+ * <p>The most likely scenario for using this control would be complex or
+ * lengthy tasks involving Promises or Web Workers. </p>
+ */
+class CvsProgress extends CvsTextIcon {
+    /** @hidden */
+    constructor(gui, name, x, y, w, h) {
+        super(gui, name, x, y, w, h, false);
+        this._t = 0;
+    }
+    /**
+     * <p>The first parmeter is required and indictaes the proportion of the
+     * task completed so far. The value supplied will be constrained to the
+     * range 0.0 to 1.0</p>
+     * <p>The second paremeter is optional and is the text to appear on the
+     * progress bar. The user can change the text as the task is progressed
+     * and an empty string can be used to leave the bar unadorned.</p>
+     * <p>If there is no second parameter (undefined) then the bar will show
+     * the percentage progress based on the first parameter.</p>
+     *
+     * @param t  progress made so far (0.0 to 1.0)
+     * @param desc the text to appear on the progress bar
+     * @returns this control
+     */
+    progress(t, desc) {
+        t = _constrain(t, 0, 1);
+        desc = desc === undefined ? `${Math.round(t * 100)}%` : desc;
+        if (this._t != t || desc !== this._tLines[0].txt) {
+            this._t = t;
+            super.text(desc);
+            this.invalidateBuffer();
+        }
+        return this;
+    }
+    /**
+     * <p>Reset the progress meter to its initial state.<p>
+     *
+     * @returns this control
+     */
+    reset() {
+        this._t = 0;
+        super.text('');
+        this.invalidateBuffer();
+        return this;
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        this._clearBuffer(uib, uic);
+        if (this._textInvalid)
+            this._formatText();
+        this._updateFaceElements();
+        const cs = this.SCHEME;
+        const cnrs = this.CNRS;
+        const BACK = cs.C$(1);
+        const FORE = cs.C$(4);
+        const TEXT = cs.C$(8);
+        const OPAQUE = cs.C$(3, this._alpha);
+        const [w, h] = [this._w, this._h];
+        let [tx, ty, tw, th] = this._tArea;
+        uic.save();
+        uic.font = this._cssFont;
+        // Background
+        if (this._opaque) {
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, w, h, cnrs);
+            uic.fill();
+        }
+        if (this._icon)
+            uic.drawImage(this._icon, this._ix, this._iy);
+        uic.fillStyle = BACK;
+        uic.beginPath();
+        uic.roundRect(tx, ty, tw, th, cnrs);
+        uic.fill();
+        tx += 3;
+        tw -= 6;
+        ty += 3;
+        th -= 6;
+        const pw = _map(this._t, 0, 1, 0, tw);
+        // console.log(`tx ${tx}  ty ${ty}  tw ${tw}  th ${th}     p ${p}  `);
+        uic.fillStyle = FORE;
+        uic.beginPath();
+        uic.roundRect(tx, ty, pw, th, cnrs);
+        uic.fill();
+        this._renderTextArea(TEXT);
+        uic.restore();
+        // last line in this method should be
+        this._bufferInvalid = false;
+    }
+    /** @hidden */ get isEnabled() { return this.warn$('isEnabled'); }
+    /** @hidden */ setAction() { return this.warn$('setAction'); }
+    /** @hidden */ text(a) { return this.warn$('text'); }
+    /** @hidden */ tooltip(a) { return this.warn$('tooltip'); }
+    /** @hidden */ tipTextSize(a) { return this.warn$('tipTextSize'); }
+    /** @hidden */ enable() { return this.warn$('enable'); }
+    /** @hidden */ disable() { return this.warn$('disable'); }
+    /** @hidden */ shrink() { return this.warn$('shrink'); }
+}
+//# sourceMappingURL=progress.js.map
+/**
+ * <h2>A control that displays a positive integer where each digit can be
+ * changed independently through user-interaction.</h2>
+ *
+ * <p>A spinner can have between 1 and 15 reels do can display any integer in
+ * the range &ge;0 and &le;999,999,999,999,999 depending on the number of
+ * reels specified when creating the spinner control.</p>
+ *
+ * <p>Individual digits can be changed by moving the mouse over a reel and </p>
+ * <ul>
+ * <li>dragging the mouse, or</li>
+ * <li>scrolling the mouse wheel</li>
+ * </ul>
+ *
+ * <p>Alternatively the displayed number can be changed with these three
+ * methods </p>
+ * <ol>
+ * <li><code>setTo(n)</code> immdediately change the displayed value.</li>
+ * <li><code>rollTo(n, speed)</code> scroll the individual reels to display
+ * a new value. </li>
+ * <li><code>countTo(n, speed)</code> scroll the reels by counting (up / down)
+ *  to a new value.</li>
+ * </ol>
+ * <p>In the last 2 methods the second parameter determines how fast the wheels
+ * spin the wheels and the user can set an action wfor when the desired value
+ * is reached. </p>
+ *
+ */
+class CvsSpinner extends CvsBufferedControl {
+    /** @hidden */
+    constructor(gui, id, x, y, w, h, nbrReels) {
+        super(gui, id, x, y, w, h, true);
+        this._tmrID = 0;
+        this._status = CvsSpinner.IDLE;
+        this._gap = 0;
+        this._inset = 2;
+        this._ti = 33; // timer interval
+        this.speed(3);
+        this._stride = 8;
+        this.wheel();
+        nbrReels = _constrain(Math.floor(nbrReels), 1, 15);
+        this._max = Number('9'.repeat(nbrReels));
+        this._reels = [];
+        // Creates an enpty buffer
+        [this._rBfr, this._dBfr] = (this._createReelGraphicBuffer(this._uicBuffer));
+        // Paints the reel using scheme colour
+        this._paintReelGraphic();
+        this._paintShading();
+        // Create the reels
+        this._createReels(nbrReels);
+        this.gap(this._gap);
+        this._endValue = 0;
+        this._startValue = 0;
+        this._startTime = 0;
+        this._tmrID = 0;
+        this._status = CvsSpinner.IDLE;
+        // This is set to true when the reel graphic need updating
+        this._reelInvalid = true;
+    }
+    /**
+     * Get the spinner's current value. If the status is 'working' then this
+     * value can change rapidily.
+     *
+     * @readonly
+     * @type {number}
+     */
+    get value() { return this._valueFromReels(); }
+    /**
+     * Get the spinner's current status description. It will return either
+     * 'idle' or 'working'.
+     * @readonly
+     * @type {string}
+     */
+    get status() { return this._status; }
+    /**
+     * Get the maximum integer value that this spinner can use and display.
+     * @readonly
+     * @type {number}
+     */
+    get maxValue() { return this._max; }
+    /**
+     * Get the mouse wheel event handling attributes.
+     *
+     * @readonly
+     * @type {{ enabled: boolean; stride: number; dir: number; }}
+     */
+    get wheelDetail() {
+        return {
+            enabled: this._wEnabled, stride: this._wStride, dir: this._wDir
+        };
+    }
+    get isIdle() { return this._status == CvsSpinner.IDLE; }
+    get isRolling() { return this._status == CvsSpinner.ROLLING; }
+    get isCounting() { return this._status == CvsSpinner.COUNTING; }
+    get isWorking() { return this._status != CvsSpinner.IDLE; }
+    /**
+     * <p>Changes the display value with immediate effect provided the statys
+     * is 'idle' otherwise it has no effect.</p>
+     *
+     * @param v the new initial value to display
+     * @returns this control
+     */
+    setTo(v = 0) {
+        if (Number.isFinite(v) && this._status === CvsSpinner.IDLE) {
+            v = Math.abs(v);
+            this._setReels(v);
+            this.invalidateBuffer();
+        }
+        return this;
+    }
+    /**
+     * <p>Change the current display value by rolling the reels independently.
+     * </p>
+     * <p>If the spinner's status is not 'idle' then this instruction will be
+     * silently ignored.</p>
+     *
+     * @param n the number to roll to
+     * @param speed the roll speed (&ge;1 and &le;9)
+     * @returns this control
+     */
+    rollTo(n, speed) {
+        if (Number.isFinite(n) && this._status === CvsSpinner.IDLE) {
+            if (Number.isFinite(speed))
+                this.speed(speed);
+            n = Math.floor(_constrain(n, 0, this._max));
+            this._startValue = this._valueFromReels();
+            if (n != this._startValue) {
+                this._endValue = n;
+                this._setReels(this._startValue);
+                this._setTargets(this._endValue);
+                this._tmrID = setInterval(() => this._rollEvent(this._dV), this._ti);
+                this._status = CvsSpinner.ROLLING;
+            }
+        }
+        return this;
+    }
+    /**
+     * <p>Change the current display value by counting from the current value
+     * to the requested value. The display value will continuously increase
+     * or decrease by 1 until the requested value is reached or the spinner
+     * is forced to stop.</p>
+     * <p>If the spinner's status is not 'idle' then this instruction will be
+     * silently ignored.</p>
+     *
+     * @param n the number to roll to
+     * @param speed the roll speed (&ge;1 and &le;9)
+     * @returns this control
+     */
+    countTo(n, speed) {
+        if (Number.isFinite(n) && this._status === CvsSpinner.IDLE) {
+            n = Math.floor(_constrain(n, 0, this._max));
+            this._startValue = this._valueFromReels();
+            if (n != this._startValue) {
+                if (Number.isFinite(speed))
+                    this.speed(speed);
+                this._endValue = n;
+                this._setReels(this._startValue);
+                this._setTargets(this._startValue);
+                const dir = _sign(n - this._startValue);
+                this._startTime = NOW();
+                this._tmrID =
+                    setInterval(() => this._countEvent(this._dV, dir), this._ti);
+                this._status = CvsSpinner.COUNTING;
+            }
+        }
+        return this;
+    }
+    /**
+     * <p>Stops the spinner at the current value and makes its status 'idle'.
+     * </p>
+     * @returns this control
+     */
+    stop() {
+        clearInterval(this._tmrID);
+        this._tmrID = 0;
+        this._status = CvsSpinner.IDLE;
+        this._setReels(this._valueFromReels());
+        return this;
+    }
+    /**
+     *
+     * @param s Any value in the range 1.0 to 10.0
+     * @returns
+     */
+    speed(s) {
+        if (Number.isFinite(s)) {
+            this._speed = _constrain(s, 1, 9);
+            this._dV = _map(this._speed, 1, 9, 0.00499999, 0.99999);
+            return this;
+        }
+        return this._speed;
+    }
+    /**
+     * <p>Use this method to change the mouse wheel's behaviour. </p>
+     * <p>The first parameter determines whether the reels can be changed
+     * using the mouse wheel. The stride how rapidly the reel's digit changes
+     * based the controls the sensitivity of the wheel scroll amount.</p>
+     *
+     *
+     * @param enabled true / false
+     * @param stride &gt;0  (number of wheel-pixels per digit change)
+     * @param dir -1 or +1
+     * @returns this control
+     */
+    wheel(enabled = true, stride = 16, dir = 1) {
+        this._wEnabled = enabled;
+        this._wStride = stride;
+        this._wDir = dir;
+        this._wCount = 0;
+        return this;
+    }
+    /**
+     * <p>When dragging the mouse the stride is the pixel drag distance
+     * needed to change  by one digit.</p>
+     * <p>If the parameter is missing or invalid then the current stride
+     * distance is returned.</p>
+     *
+     * @param n nust be &gt;1 to be valid
+     * @returns this control or the current stride distance
+     */
+    stride(n) {
+        if (n && Number.isFinite(n) && n > 1) {
+            this._stride = n;
+            return this;
+        }
+        return this._stride;
+    }
+    /**
+     * <p>If a valid color scheme or the name of a valid color scheme is
+     * provided then it will be used to display the control otherwise the
+     * control's color scheme remains unchanged. In both cases this control
+     * is returned.</p>
+     * <p>If there is no parameter it returns the current color scheme used
+     * by this control.</p>
+     * @param name a color scheme or the name of a color scheme e.g. 'blue'
+     * @param cascade if true propogate scheme to all child controls.
+     * @returns this control or the control's color scheme
+     */
+    scheme(name, cascade) {
+        const result = super.scheme(name);
+        if (result === this) {
+            this._reelInvalid = true;
+            this.invalidateBuffer();
+        }
+        return result;
+    }
+    /**
+     * <p>This controls the spacing between reels. it is the user's
+     * responsiblity to ensure the control is wide enough to display all the
+     * reels.</p>
+     * <p>If no valid parameter is provided then the current gap value is
+     * returned.</p>
+     * @param v the pixel gap between reels (&ge;0)
+     * @returns this control ro the current gap value.
+     */
+    gap(v) {
+        if (Number.isFinite(v)) {
+            this._gap = v < 0 ? 0 : v;
+            const [dw, gap, nr] = [this._dW, this._gap, this._reels.length];
+            const stride = dw + gap;
+            const sx = (this._w - nr * stride + gap) / 2;
+            for (let i = 0; i < nr; i++)
+                this._reels[i].x = sx + stride * (nr - 1 - i);
+            this.invalidateBuffer();
+            return this;
+        }
+        return this._gap;
+    }
+    /**
+     * Interval event to roll reels to desired value.
+     * @param dV the change to make in the reel value (<<1)
+     * @hidden
+     */
+    _rollEvent(dV) {
+        let todo = this._reels.length;
+        this._reels.forEach(reel => {
+            if (reel.roll(dV))
+                todo--;
+        });
+        if (todo == 0) {
+            this._stopSpinning('roll');
+        }
+        this.invalidateBuffer();
+    }
+    /**
+     * Interval event to count to desired value.
+     * @param dV the change to make in the reel value (<<1)
+     * @hidden
+     */
+    _countEvent(dV, dir) {
+        const reels = this._reels;
+        // test for carry on reel 0
+        if (reels[0].count(dV, dir)) { // See if we have a carry
+            for (let rn = 1; rn < reels.length; rn++) {
+                const reel = reels[rn];
+                let carryOver = false;
+                if (dir > 0 && reel.digit == 9) { // forward
+                    reel.target = 0;
+                    carryOver = true;
+                }
+                else if (dir < 0 && reel.digit == 0) {
+                    reel.v = 10;
+                    reel.target = 9;
+                    carryOver = true;
+                }
+                else {
+                    reel.target += dir;
+                }
+                if (!carryOver)
+                    break;
+            }
+        }
+        // Have we reached the final value if not Now spin the other reels
+        if (this._valueFromReels() != this._endValue) {
+            for (let rn = 1; rn < reels.length; rn++) {
+                const reel = reels[rn];
+                if (reel.digit != reel.target)
+                    reel.count(dV, dir);
+                else
+                    reel.v = reel.digit;
+            }
+        }
+        else {
+            this._stopSpinning('count');
+        }
+        this.invalidateBuffer();
+    }
+    /**
+     * Convert the number into an array of digits starting with the 1's
+     * @hidden
+     */
+    _toArray(v) {
+        const array = (new Array(this._reels.length)).fill(0);
+        for (let i = 0; i < array.length; i++) {
+            if (v > 0) {
+                array[i] = v % 10;
+                v = Math.floor(v / 10);
+            }
+            else
+                break;
+        }
+        return array;
+    }
+    /** @hidden */
+    _setTargets(n) {
+        const a = this._toArray(n);
+        for (let rn = 0; rn < a.length; rn++)
+            this._reels[rn].target = a[rn];
+    }
+    /** @hidden */
+    _stopTimer() {
+        clearInterval(this._tmrID);
+        this._tmrID = 0;
+        this._status = CvsSpinner.IDLE;
+    }
+    /** @hidden */
+    _stopSpinning(reason) {
+        clearInterval(this._tmrID);
+        this._tmrID = 0;
+        this._status = CvsSpinner.IDLE;
+        this._setReels(this._endValue);
+        this._setTargets(this._endValue);
+        const dT = NOW() - this._startTime;
+        const range = Math.abs(this._endValue - this._startValue);
+        this.action({
+            source: this, event: undefined,
+            type: reason,
+            startValue: this._startValue, endValue: this._endValue,
+        });
+    }
+    /** @hidden */
+    _setReels(v) {
+        const a = this._toArray(v);
+        for (let rn = 0; rn < a.length; rn++) {
+            this._reels[rn].v = a[rn];
+            this._reels[rn].digit = a[rn];
+        }
+        this.invalidateBuffer();
+    }
+    /** @hidden */
+    _valueFromReels() {
+        let v = 0;
+        this._reels.forEach(r => v += r.value);
+        return v;
+    }
+    /** @hidden */
+    _createReelGraphicBuffer(uic) {
+        const digits = '01234567890';
+        const digitH = Math.floor(this._h - 2 * this._inset);
+        const fontSize = Math.floor(digitH - 2);
+        const cssFont = cssFont$('sans-serif', fontSize, 'normal');
+        // Use canvasGUI UI buffer to calculate text metrics
+        let uiCtx = uic.getContext('2d');
+        uiCtx.font = cssFont;
+        uiCtx.textBaseline = 'top';
+        const tm = textMetrics(uiCtx, digits);
+        const digitW = 2 + Math.round(tm.fWidth / digits.length);
+        uiCtx.restore();
+        // Save reel metrics and return buffer for reel garphics
+        this._dW = digitW;
+        this._dH = digitH;
+        this._offY = tm.tAscent + (digitH - tm.tHeight) / 2;
+        this._cssFont = cssFont;
+        return [new OffscreenCanvas(digitW, digitH * digits.length),
+            new OffscreenCanvas(digitW, digitH)];
+    }
+    /** @hidden */
+    _paintShading(bfr = this._dBfr) {
+        const [w, h] = [bfr.width, bfr.height];
+        const ctx = bfr.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+        const cs = this.SCHEME;
+        const clr = cs.T$(3);
+        let fade = ctx.createLinearGradient(0, 0, 0, h);
+        fade.addColorStop(0.0, clr);
+        fade.addColorStop(0.2, 'transparent');
+        fade.addColorStop(0.8, 'transparent');
+        fade.addColorStop(1.0, clr);
+        ctx.fillStyle = fade;
+        ctx.fillRect(0, 0, w, h);
+    }
+    /** @hidden */
+    _paintReelGraphic(bfr = this._rBfr) {
+        const rctx = bfr.getContext('2d');
+        const cs = this.SCHEME;
+        const TEXT = cs.C$(8);
+        const BACK = cs.C$(1);
+        // Fill background
+        rctx.save();
+        rctx.fillStyle = BACK;
+        rctx.fillRect(0, 0, bfr.width, bfr.height);
+        // Draw digits
+        const digits = '01234567890';
+        rctx.font = this._cssFont;
+        rctx.textBaseline = 'top';
+        rctx.translate(1, this._offY);
+        rctx.fillStyle = TEXT;
+        for (let i = 0; i < digits.length; i++) {
+            let dgt = digits.charAt(i);
+            rctx.fillText(dgt, 0, i * this._dH);
+        }
+        rctx.restore();
+    }
+    /** @hidden */
+    _createReels(nbrReels) {
+        for (let i = 0; i < nbrReels; i++) {
+            const reel = new Reel(i, 0, this._inset);
+            this._reels.push(reel);
+        }
+    }
+    /** @hidden */
+    printReels(nbr = this._reels.length) {
+        const [currV, destV] = [this._valueFromReels(), this._endValue];
+        console.log(`Curr value: ${currV}     Target value: ${destV}`);
+        for (let i = 0; i < nbr; i++)
+            console.log(`   ${this._reels[i].toString()}`);
+    }
+    /**
+     *       \3/       segment determines which axis
+     *      2 X 0      to use for changing reel value
+     *       /1\
+     * Segs: 0 & 1: increments digit
+     *       2 & 3: decrements digit
+     *
+     * @hidden
+     */
+    _doEvent(e, x = 0, y = 0, over, enter) {
+        let absPos = this.getAbsXY();
+        let [mx, my, w, h] = this._orientation.xy(x - absPos.x, y - absPos.y, this._w, this._h);
+        switch (e.type) {
+            case 'mousedown':
+            case 'touchstart':
+                this._active = true;
+                this._overReelNumber = over.part; // Which reel is the mouse over
+                this.over = true;
+                this._sX = mx;
+                this._sY = my;
+                this._sD = this._reels[over.part].digit;
+                break;
+            case 'mouseout':
+            case 'mouseup':
+            case 'touchend':
+                if (this.isActive) {
+                    const reel = this._reels[this._overReelNumber];
+                    this.action({
+                        source: this, event: undefined, type: 'ui',
+                        reelIdx: this._overReelNumber, digit: reel.digit,
+                        value: this.value, final: true
+                    });
+                    this._active = false;
+                    this.invalidateBuffer();
+                }
+                break;
+            case 'mousemove':
+            case 'touchmove':
+                if (this.isActive) {
+                    let reel = this._reels[this._overReelNumber];
+                    if (reel) {
+                        const [dx, dy] = [mx - this._sX, my - this._sY];
+                        let seg = 4 * Math.atan2(dy, dx) / Math.PI;
+                        seg = Math.floor(((seg + 9) % 8) / 2);
+                        const sgn = (seg == 0 || seg == 1) ? 1 : -1;
+                        const dv = Math.abs(seg == 0 || seg == 2 ? dx : dy);
+                        const nD = Math.round(100 + this._sD + sgn * dv
+                            / this._stride) % 10;
+                        if (reel.digit != nD) {
+                            reel.v = nD;
+                            reel.digit = nD;
+                            this.action({
+                                source: this, event: undefined, type: 'ui',
+                                reelIdx: this._overReelNumber, digit: reel.digit,
+                                value: this.value, final: false
+                            });
+                        }
+                        this.invalidateBuffer();
+                    }
+                }
+                else {
+                    this._overReelNumber = over.part;
+                }
+                this.over = (this == over.control); // Spinner control
+                this.invalidateBuffer();
+                break;
+            case 'mouseover':
+                break;
+            case 'wheel':
+                if (e instanceof WheelEvent) {
+                    e.preventDefault();
+                    const reel = this._reels[this._overReelNumber];
+                    if (this._wEnabled && reel) {
+                        const delta = e.deltaY;
+                        if (delta * this._wCount < 0) // reverse direction
+                            this._wCount = 0;
+                        else
+                            this._wCount += delta;
+                        const mag = Math.abs(this._wCount);
+                        const sgn = _sign(this._wCount);
+                        if (mag >= this._wStride) {
+                            const change = Math.floor(mag / this._wStride);
+                            const remain = mag % this._wStride;
+                            this._wCount = remain * sgn;
+                            const nD = (reel.digit + sgn * change + 1000) % 10;
+                            reel.digit = nD;
+                            reel.v = nD;
+                            this.action({
+                                source: this, event: undefined, type: 'ui',
+                                reelIdx: this._overReelNumber, digit: reel.digit,
+                                value: this.value, final: false
+                            });
+                            this.invalidateBuffer();
+                        }
+                    }
+                }
+                break;
+        }
+        return this.isActive ? this : null;
+    }
+    /** @hidden */
+    _updateControlVisual() {
+        const uib = this._uicBuffer;
+        const uic = uib.getContext('2d');
+        this._clearBuffer(uib, uic);
+        const cs = this.SCHEME;
+        const cnrs = this.CNRS;
+        const OPAQUE = cs.C$(3, this._alpha);
+        const EDGE = cs.C$(6);
+        const HIGHLIGHT = cs.C$(9);
+        if (this._reelInvalid) {
+            this._paintReelGraphic();
+            // this._paintShading();
+            this._reelInvalid = false;
+        }
+        uic.save();
+        // Background
+        if (this._opaque) {
+            uic.fillStyle = OPAQUE;
+            uic.beginPath();
+            uic.roundRect(0, 0, this._w, this._h, cnrs);
+            uic.fill();
+        }
+        // Reels
+        uic.strokeStyle = EDGE;
+        uic.lineWidth = 1;
+        this._reels.forEach(r => {
+            uic.drawImage(this._rBfr, 0, r.v * this._dH, this._dW, this._dH, // Source
+            r.x, r.y, this._dW, this._dH // Destination
+            );
+            // Add shading and border
+            uic.drawImage(this._dBfr, r.x, r.y);
+            uic.strokeRect(r.x, r.y, this._dW, this._dH);
+        });
+        // Mouse over border highlight
+        if (this.isActive || this.over) {
+            const reel = this._reels[this._overReelNumber];
+            if (reel) {
+                uic.strokeStyle = HIGHLIGHT;
+                uic.lineWidth = 2;
+                uic.strokeRect(reel.x, reel.y, this._dW, this._dH);
+            }
+        }
+        // Update pick buffer before restoring
+        this._updatePickBuffer();
+        uic.restore();
+        // The last line in this method should be
+        this._bufferInvalid = false;
+    }
+    /** @hidden */
+    _updatePickBuffer() {
+        const pkb = this._pkcBuffer;
+        const pkc = pkb.getContext('2d');
+        this._clearBuffer(pkb, pkc);
+        if (this._status === CvsSpinner.IDLE) {
+            const c = this._gui.pickColor(this);
+            let rn = 0;
+            pkc.save();
+            this._reels.forEach(reel => {
+                pkc.fillStyle = _rgb$(c.r, c.g, c.b + rn);
+                pkc.fillRect(reel.x, reel.y, this._dW, this._dH);
+                rn++;
+            });
+            pkc.restore();
+        }
+    }
+}
+/** @hidden */ CvsSpinner.IDLE = 'idle';
+/** @hidden */ CvsSpinner.ROLLING = 'rolling';
+/** @hidden */ CvsSpinner.COUNTING = 'counting';
+/**
+ * A single reel
+ * @hidden
+ */
+class Reel {
+    constructor(id, x, y) {
+        this._id = id;
+        this._mag = (10 ** id);
+        this._x = x;
+        this._y = y;
+        this._v = 0;
+        this._target = 0;
+        this._digit = 0;
+    }
+    set x(n) { this._x = n; }
+    set v(n) { this._v = n; }
+    get x() { return this._x; }
+    get y() { return this._y; }
+    get id() { return this._id; }
+    set target(n) { this._target = n; }
+    set digit(n) { this._digit = n; }
+    get v() { return this._v; }
+    get target() { return this._target; }
+    get value() { return this._digit * this._mag; }
+    get digit() { return this._digit; }
+    count(dv, dir) {
+        function hit(tgt, t0, t1) {
+            return (tgt - t0) * (tgt - t1) < 0;
+        }
+        const nv = this._v + dv * dir;
+        const ct = dir < 0 ? 0 : 9;
+        const carry = hit(ct, this._v, nv);
+        this._v = (nv + 10) % 10;
+        this._digit = dir < 0 ? Math.ceil(this._v) % 10 : Math.floor(this._v);
+        return carry;
+    }
+    roll(dv) {
+        function hit(tgt, t0, t1) {
+            return (tgt - t0) * (tgt - t1) < 0;
+        }
+        const dir = _sign(this._target - this._v);
+        const nv = this._v + dv * dir;
+        const onTarget = dir == 0 || hit(this._target, this._v, nv);
+        if (onTarget) {
+            this._digit = this._target;
+            this._v = this._target;
+        }
+        else {
+            this._v = (nv + 10) % 10;
+            this._digit = dir < 0 ? Math.ceil(this._v) % 10 : Math.floor(this._v);
+        }
+        return onTarget;
+    }
+    /** @hidden */
+    toString() {
+        const [id, v, tgt, dgt] = [this._id, this._v, this.target, this.digit];
+        return `Reel-${id}  digit: ${dgt}   target: ${tgt}     v: ${v}`;
+    }
+}
+//# sourceMappingURL=spinner.js.map
 /**
  * <p>This class defines the top-left position, width, height and border
  * weight of a rectangular frame to be added to a frameset control.</p>

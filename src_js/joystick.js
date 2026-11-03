@@ -203,13 +203,11 @@ class CvsJoystick extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
         let [tx, ty] = [this._mag * Math.cos(this._ang), this._mag * Math.sin(this._ang)];
-        const OPAQUE = cs.C$(3, this._alpha); //cs.C(3, this._alpha);
+        const OPAQUE = cs.C$(3, this._alpha);
         const DIAL_FACE = cs.C$(1);
         const DIAL_TINT = cs.T$(0);
         const DIAL_BORDER = cs.C$(9);
@@ -218,7 +216,7 @@ class CvsJoystick extends CvsBufferedControl {
         const THUMB_OVER = cs.C$(6);
         const ROD = cs.C$(7);
         const MARKERS = cs.C$(8);
-        const DEAD_ZONE = cs.T$(2);
+        const DEAD_ZONE = cs.T$(4);
         uic.save();
         if (this._opaque) {
             uic.beginPath();
@@ -323,9 +321,7 @@ class CvsJoystick extends CvsBufferedControl {
     /** @hidden */
     _updatePickBuffer(tx, ty, tSize) {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();

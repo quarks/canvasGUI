@@ -365,4 +365,3 @@ abstract class CvsText extends CvsBufferedControl {
         uic!.restore();
     }
 }
-

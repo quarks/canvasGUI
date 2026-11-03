@@ -147,8 +147,7 @@ class CvsRanger extends CvsSlider {
     _updateControlVisual() { // CvsRanger
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
@@ -163,63 +162,63 @@ class CvsRanger extends CvsSlider {
         const HIGHLIGHT = cs.C$(9);
         const THUMB = cs.C$(6);
 
-        uic.save();
+        uic!.save();
         if (this._opaque) {
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, cnrs);
-            uic.fill();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, this._w, this._h, cnrs);
+            uic!.fill();
         }
         // Now translate to track left edge - track centre
-        uic.translate(this._inset, Math.round(this._h / 2));
+        uic!.translate(this._inset, Math.round(this._h / 2));
         // Now draw ticks
-        uic.strokeStyle = TICKS;
-        uic.lineWidth = 1;
+        uic!.strokeStyle = TICKS;
+        uic!.lineWidth = 1;
         let dT: number, n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             dT = tLen / n;
-            uic.beginPath();
+            uic!.beginPath();
             for (let i = 0; i <= n; i++) { // minor ticks
                 let tickX = i * dT;
-                uic.moveTo(tickX, -minT);
-                uic.lineTo(tickX, minT);
+                uic!.moveTo(tickX, -minT);
+                uic!.lineTo(tickX, minT);
             }
-            uic.stroke();
+            uic!.stroke();
         }
         n = this._majorTicks;
         if (n >= 2) {
             dT = tLen / this._majorTicks;
-            uic.beginPath();
+            uic!.beginPath();
             for (let i = 0; i <= n; i++) {  // major ticks
                 let tickX = i * dT;
-                uic.moveTo(tickX, -majT);
-                uic.lineTo(tickX, majT);
+                uic!.moveTo(tickX, -majT);
+                uic!.lineTo(tickX, majT);
             }
-            uic.stroke();
+            uic!.stroke();
         }
         // draw unused track
-        uic.fillStyle = UNUSED_TRACK;
-        uic.fillRect(0, -tWgt / 2, tLen, tWgt);
+        uic!.fillStyle = UNUSED_TRACK;
+        uic!.fillRect(0, -tWgt / 2, tLen, tWgt);
         // draw used track
         const tx0 = tLen * Math.min(this._t[0], this._t[1]);
         const tx1 = tLen * Math.max(this._t[0], this._t[1]);
-        uic.fillStyle = USED_TRACK;
-        uic.fillRect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
+        uic!.fillStyle = USED_TRACK;
+        uic!.fillRect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
         // Draw thumbs
         for (let tnbr = 0; tnbr < 2; tnbr++) {
-            uic.beginPath();
-            uic.roundRect(this._t[tnbr] * tLen - tbSize / 2,
+            uic!.beginPath();
+            uic!.roundRect(this._t[tnbr] * tLen - tbSize / 2,
                 -tbSize / 2, tbSize, tbSize, this._thumbCnrs);
-            uic.fillStyle = THUMB;
-            uic.fill()
+            uic!.fillStyle = THUMB;
+            uic!.fill()
             if ((this.isActive || this.over)) {
-                uic.lineWidth = 2;
-                uic.strokeStyle = HIGHLIGHT;
-                uic.stroke();
+                uic!.lineWidth = 2;
+                uic!.strokeStyle = HIGHLIGHT;
+                uic!.stroke();
             }
         }
         this._updatePickBuffer();
-        uic.restore();
+        uic!.restore();
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, this._w, this._h);
 
@@ -230,8 +229,7 @@ class CvsRanger extends CvsSlider {
     _updatePickBuffer() { //tx0?: number, tx1?: number) {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        this._clearBuffer(pkb, pkc!);
 
         const [tLen, tWgt, tbSize] =
             [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
@@ -239,20 +237,20 @@ class CvsRanger extends CvsSlider {
         const tx1 = Math.round(tLen * Math.max(this._t[0], this._t[1]));
         const c = this._gui.pickColor(this);
 
-        pkc.save();
+        pkc!.save();
         // Now translate to track left edge - track centre
-        pkc.translate(this._inset, Math.round(this._h / 2));
+        pkc!.translate(this._inset, Math.round(this._h / 2));
         // Track
-        pkc.fillStyle = _rgb$(c.r, c.g, c.b + 5);
-        pkc.fillRect(0, -tWgt / 2, tLen, tWgt);
-        pkc.fillStyle = _rgb$(c.r, c.g, c.b + 6);
-        pkc.fillRect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
+        pkc!.fillStyle = _rgb$(c.r, c.g, c.b + 5);
+        pkc!.fillRect(0, -tWgt / 2, tLen, tWgt);
+        pkc!.fillStyle = _rgb$(c.r, c.g, c.b + 6);
+        pkc!.fillRect(tx0, -tWgt / 2, tx1 - tx0, tWgt);
         // Thumb
-        pkc.fillStyle = c.cssColor;
-        pkc.fillRect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
-        pkc.fillStyle = _rgb$(c.r, c.g, c.b + 1);
-        pkc.fillRect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
-        pkc.restore();
+        pkc!.fillStyle = c.cssColor;
+        pkc!.fillRect(tx0 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
+        pkc!.fillStyle = _rgb$(c.r, c.g, c.b + 1);
+        pkc!.fillRect(tx1 - tbSize / 2, -tbSize / 2, tbSize, tbSize);
+        pkc!.restore();
     }
 
     /** @hidden */ value(v: any) { return this.warn$('value') }

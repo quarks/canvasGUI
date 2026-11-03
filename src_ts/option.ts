@@ -259,9 +259,7 @@ class CvsOption extends CvsTextIcon {
     _updateControlVisual() { //  CvsCheckbox
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
-
+        this._clearBuffer(uib, uic!);
 
         if (this._textInvalid)
             this._formatText();
@@ -275,31 +273,31 @@ class CvsOption extends CvsTextIcon {
         const FORE = cs.C$(8);
         const HIGHLIGHT = cs.C$(9);
 
-        uic.save();
-        uic.font = this._cssFont;
+        uic!.save();
+        uic!.font = this._cssFont;
         // Background
         if (this._opaque) {
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, cnrs);
-            uic.fill();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, this._w, this._h, cnrs);
+            uic!.fill();
         }
         if (this._icon)
-            uic.drawImage(this._icon, this._ix, this._iy);
+            uic!.drawImage(this._icon, this._ix, this._iy);
         this._renderTextArea(FORE);
         // Mouse over add border highlight
         if (this.isActive || this.over) {
-            uic.strokeStyle = HIGHLIGHT;
-            uic.lineWidth = 2;
-            uic.beginPath();
-            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
-            uic.stroke();
+            uic!.strokeStyle = HIGHLIGHT;
+            uic!.lineWidth = 2;
+            uic!.beginPath();
+            uic!.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+            uic!.stroke();
         }
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, this._w, this._h);
         // Update pick buffer before restoring
         this._updatePickBuffer();
-        uic.restore();
+        uic!.restore();
         // The last line in this method should be
         this._bufferInvalid = false;
     }
@@ -307,16 +305,16 @@ class CvsOption extends CvsTextIcon {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        const pkc = pkb!.getContext('2d');
+        this._clearBuffer(pkb, pkc!);
+
         let c = this._gui.pickColor(this);
-        pkc.save();
-        pkc.fillStyle = c.cssColor;
-        pkc.beginPath();
-        pkc.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
-        pkc.fill();
-        pkc.restore();
+        pkc!.save();
+        pkc!.fillStyle = c.cssColor;
+        pkc!.beginPath();
+        pkc!.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
+        pkc!.fill();
+        pkc!.restore();
     }
 
     /** @hidden */ icon(a: any, b: any, c: any) { return this.warn$('icon'); }

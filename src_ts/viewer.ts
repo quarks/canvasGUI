@@ -504,8 +504,7 @@ class CvsViewer extends CvsBufferedControl {
     _updateControlVisual() { // CvsViewer
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         const cs = this.SCHEME;
         const [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
@@ -520,39 +519,38 @@ class CvsViewer extends CvsBufferedControl {
             wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2);  // world corners
         this._scroller.setUsed(o.usedH, o.usedV);
 
-        uic.save();
-        uic.beginPath();
-        uic.roundRect(0, 0, w, h, cnrs);
-        uic.clip();
+        uic!.save();
+        uic!.beginPath();
+        uic!.roundRect(0, 0, w, h, cnrs);
+        uic!.clip();
         this._layers.forEach(layer => {
             if (layer.isVisible)
-                uic.drawImage(layer.image, o.left, o.top, o.width, o.height,
+                uic!.drawImage(layer.image, o.left, o.top, o.width, o.height,
                     0, 0, o.width * ws, o.height * ws);
         });
         if (this._frameWeight > 0) {
-            uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, cnrs);
-            uic.lineWidth = 2 * this._frameWeight;
-            uic.strokeStyle = FRAME;
-            uic.stroke();
+            uic!.beginPath();
+            uic!.roundRect(0, 0, this._w, this._h, cnrs);
+            uic!.lineWidth = 2 * this._frameWeight;
+            uic!.strokeStyle = FRAME;
+            uic!.stroke();
         }
         this._updatePickBuffer();
-        uic.restore();
+        uic!.restore();
     }
 
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        this._clearBuffer(pkb, pkc!);
         const c = this._gui.pickColor(this);
-        pkc.save();
-        pkc.beginPath();
-        pkc.roundRect(0, 0, this._w, this._h, this.CNRS);
-        pkc.fillStyle = c.cssColor;
-        pkc.fill();
-        pkc.restore();
+        pkc!.save();
+        pkc!.beginPath();
+        pkc!.roundRect(0, 0, this._w, this._h, this.CNRS);
+        pkc!.fillStyle = c.cssColor;
+        pkc!.fill();
+        pkc!.restore();
     }
 
     /** 

@@ -140,8 +140,6 @@ class CvsRanger extends CvsSlider {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
@@ -217,8 +215,6 @@ class CvsRanger extends CvsSlider {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         const [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];
         const tx0 = Math.round(tLen * Math.min(this._t[0], this._t[1]));

@@ -3,7 +3,8 @@ export { ColorScheme };
 export { CvsPin, CvsPane, CvsPaneEast, CvsPaneNorth, CvsPaneSouth, CvsPaneWest };
 export { CvsControl, CvsBufferedControl, CvsText, CvsTextIcon, CvsImage };
 export { CvsOption, CvsCheckbox, CvsSlider, CvsRanger, CvsButton, CvsLabel };
-export { CvsTextField, CvsJoystick, CvsKnob, CvsPanel, CvsPoster, CvsViewer };
+export { CvsTextField, CvsTimer, CvsProgress, CvsSpinner };
+export { CvsJoystick, CvsKnob, CvsPanel, CvsPoster, CvsViewer };
 export { CvsScrollbar, CvsScrollpad, CvsTooltip, CvsOptionGroup };
 export { Frame, CvsFrameSet, GridLayout};
 

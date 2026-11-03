@@ -30,7 +30,6 @@ function draw() {
     push();
     background(240, 240, 240);
     gui.draw();
-    // gui.showBuffer('pickbuffer');
 }
 
 

@@ -24,7 +24,9 @@ knob.ts
 panel.ts
 panes.ts
 poster.ts
+timer.ts
+progress.ts
+spinner.ts
 frameset.ts
 grid.ts
-
 

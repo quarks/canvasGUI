@@ -65,4 +65,3 @@ class OrientWest {
         return [w, h];
     }
 }
-

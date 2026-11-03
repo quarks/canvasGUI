@@ -20,8 +20,6 @@ class CvsScrollpad extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -78,8 +76,6 @@ class CvsScrollpad extends CvsBufferedControl {
     _updateScrollerPickBuffer(inset, tx, ty, tw, th) {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();

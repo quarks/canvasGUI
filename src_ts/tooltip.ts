@@ -65,8 +65,7 @@ class CvsTooltip extends CvsText {
     _updateControlVisual() { // CvsTooltip
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         if (this._textInvalid)
             this._formatText();
@@ -80,14 +79,14 @@ class CvsTooltip extends CvsText {
         const BACK = cs.C$(3);
         const FORE = cs.C$(9);
 
-        uic.save();
-        uic.font = this._cssFont;
-        uic.strokeStyle = FORE;
-        uic.fillStyle = BACK;
-        uic.fillRect(0, 0, this._w - 1, this._h - 1);
-        uic.strokeRect(0, 0, this._w - 1, this._h - 1);
+        uic!.save();
+        uic!.font = this._cssFont;
+        uic!.strokeStyle = FORE;
+        uic!.fillStyle = BACK;
+        uic!.fillRect(0, 0, this._w - 1, this._h - 1);
+        uic!.strokeRect(0, 0, this._w - 1, this._h - 1);
         this._renderTextArea(FORE);
-        uic.restore();
+        uic!.restore();
         this._bufferInvalid = false;    // buffer is now valid
     }
 }

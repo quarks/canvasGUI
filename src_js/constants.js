@@ -7,6 +7,8 @@ const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
 /** @hidden */
 const START_TIME = Date.now();
 const MILLIS = function () { return Date.now() - START_TIME; };
+/** @hidden */
+const NOW = function () { return performance.now(); };
 // =================================================================
 // ====    Poster and text attributes
 /** @hidden */
@@ -96,7 +98,7 @@ const cssFont$ = function (fontface, size, style = 'normal', slant = 14) {
  */
 const textMetrics = function (ctx, str) {
     ctx.save();
-    let tm = ctx.measureText(str);
+    const tm = ctx.measureText(str);
     ctx.restore();
     return {
         tWidth: tm.actualBoundingBoxRight + tm.actualBoundingBoxLeft,
@@ -109,6 +111,7 @@ const textMetrics = function (ctx, str) {
         fHeight: tm.fontBoundingBoxAscent + tm.fontBoundingBoxDescent,
         left: tm.actualBoundingBoxLeft,
         right: tm.actualBoundingBoxRight,
+        alphaBL: tm.alphabeticBaseline,
     };
 };
 /**
@@ -268,18 +271,22 @@ const _rgba$ = function (r, g, b, a = 255) {
     return `rgb(${r} ${g} ${b} / ${alpha}%)`;
 };
 /** @hidden */
+const _sign = function (n) {
+    return n < 0 ? -1 : n > 0 ? 1 : 0;
+};
+/** @hidden */
 const _constrain = function (n, low, high) {
     return Math.max(Math.min(n, high), low);
 };
 /** @hidden */
-const _map = function (n, low1, high1, low2, high2, keepInRange = false) {
-    const newval = (n - low1) / (high1 - low1) * (high2 - low2) + low2;
+const _map = function (value, v0, v1, nv0, nv1, keepInRange = false) {
+    const newval = (value - v0) / (v1 - v0) * (nv1 - nv0) + nv0;
     if (!keepInRange)
         return newval;
-    if (low2 < high2)
-        return _constrain(newval, low2, high2);
+    if (nv0 < nv1)
+        return _constrain(newval, nv0, nv1);
     else
-        return _constrain(newval, high2, low2);
+        return _constrain(newval, nv1, nv0);
 };
 // =================================================================
 // ====    HTML Character Entities

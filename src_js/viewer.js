@@ -457,8 +457,6 @@ class CvsViewer extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const [ws, wcx, wcy] = [this._wscale, this._wcx, this._wcy];
@@ -493,8 +491,6 @@ class CvsViewer extends CvsBufferedControl {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         const c = this._gui.pickColor(this);
         pkc.save();

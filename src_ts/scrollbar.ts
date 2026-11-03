@@ -138,8 +138,7 @@ class CvsScrollbar extends CvsBufferedControl {
     _updateControlVisual() { // CvsScroller
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -156,39 +155,39 @@ class CvsScrollbar extends CvsBufferedControl {
         let tbH = this._thumbHeight;
         let tx = this._dvalue * this._trackWidth;
 
-        uic.save();
+        uic!.save();
         if (this._opaque) { // Background
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, w, h, cnrs);
-            uic.fill();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, w, h, cnrs);
+            uic!.fill();
         }
 
         // Now translate to track left edge - track centre
-        uic.translate(inset, h / 2);
+        uic!.translate(inset, h / 2);
 
         // draw track
-        uic.fillStyle = UNUSED_TRACK;
-        uic.strokeStyle = BORDER;
-        uic.lineWidth = 1;
-        uic.fillRect(0, -th / 2, tw, th);
-        uic.strokeRect(0, -th / 2, tw, th);
+        uic!.fillStyle = UNUSED_TRACK;
+        uic!.strokeStyle = BORDER;
+        uic!.lineWidth = 1;
+        uic!.fillRect(0, -th / 2, tw, th);
+        uic!.strokeRect(0, -th / 2, tw, th);
 
         // Draw thumb
-        uic.fillStyle = THUMB;
+        uic!.fillStyle = THUMB;
         if (this.isActive || this.over) {
-            uic.lineWidth = 2.5;
-            uic.strokeStyle = HIGHLIGHT;
+            uic!.lineWidth = 2.5;
+            uic!.strokeStyle = HIGHLIGHT;
         }
-        uic.beginPath();
-        uic.roundRect(tx - tbW / 2, -tbH / 2, tbW, tbH, cnrs);
-        uic.fill();
-        uic.stroke();
+        uic!.beginPath();
+        uic!.roundRect(tx - tbW / 2, -tbH / 2, tbW, tbH, cnrs);
+        uic!.fill();
+        uic!.stroke();
 
         if (!this._enabled)
             this._disable_highlight(cs, 0, -h / 2, w - 20, h);
         this._updateScrollerPickBuffer(tx - tbW / 2, -tbH / 2, tbW, tbH);
-        uic.restore();
+        uic!.restore();
         // last line in this method should be
         this._bufferInvalid = false;
     }
@@ -197,16 +196,15 @@ class CvsScrollbar extends CvsBufferedControl {
     _updateScrollerPickBuffer(tbX: number, tby: number, tbw: number, tbh: number) {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        this._clearBuffer(pkb, pkc!);
 
         let c = this._gui.pickColor(this);
-        pkc.save();
-        pkc.fillStyle = c.cssColor;
+        pkc!.save();
+        pkc!.fillStyle = c.cssColor;
         // Now translate to track left edge - track centre
-        pkc.translate(this._inset, this._h / 2);
-        pkc.fillRect(Math.round(tbX), Math.round(tby), tbw, tbh);
-        pkc.restore();
+        pkc!.translate(this._inset, this._h / 2);
+        pkc!.fillRect(Math.round(tbX), Math.round(tby), tbw, tbh);
+        pkc!.restore();
     }
 
     /** @hidden */ tooltip(a: any) { return this.warn$('tooltip') }

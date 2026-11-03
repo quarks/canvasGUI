@@ -1,5 +1,6 @@
 /**
  * <h2>A slider with a draggable thumb</h2>
+ *
  * <p>This control has a single thumb that can be dragged along a track. The
  * thumb's position represents a value within user defined limits.</p>
  *
@@ -197,8 +198,6 @@ class CvsSlider extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -271,8 +270,6 @@ class CvsSlider extends CvsBufferedControl {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         const c = this._gui.pickColor(this);
         const [tLen, tWgt, tbSize] = [this._w - 2 * this._inset, this._trackWeight, this._thumbSize];

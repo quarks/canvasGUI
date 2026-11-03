@@ -11,6 +11,8 @@ const TT_SHOW_TIME = 1600, TT_REPEAT_TIME = 10000;
 const START_TIME = Date.now();
 const MILLIS = function () { return Date.now() - START_TIME; }
 
+/** @hidden */
+const NOW = function () { return performance.now() }
 
 // =================================================================
 // ====    Poster and text attributes
@@ -89,7 +91,7 @@ const cssFont$ = function (fontface: string, size: number, style = 'normal', sla
  */
 const textMetrics = function (ctx: OffscreenCanvasRenderingContext2D, str: string) {
     ctx.save();
-    let tm = ctx.measureText(str);
+    const tm = ctx.measureText(str);
     ctx.restore();
     return {
         tWidth: tm.actualBoundingBoxRight + tm.actualBoundingBoxLeft,
@@ -102,6 +104,7 @@ const textMetrics = function (ctx: OffscreenCanvasRenderingContext2D, str: strin
         fHeight: tm.fontBoundingBoxAscent + tm.fontBoundingBoxDescent,
         left: tm.actualBoundingBoxLeft,
         right: tm.actualBoundingBoxRight,
+        alphaBL: tm.alphabeticBaseline,
     };
 }
 
@@ -279,21 +282,28 @@ const _rgba$ = function (r: number, g: number, b: number, a = 255) {
 }
 
 /** @hidden */
-const _constrain = function (n: number, low: number, high: number) {
-    return Math.max(Math.min(n, high), low);
-};
+const _sign = function (n: number) {
+    return n < 0 ? -1 : n > 0 ? 1 : 0;
+}
 
 /** @hidden */
-const _map = function (n: number, low1: number, high1: number,
-    low2: number, high2: number, keepInRange = false) {
-    const newval = (n - low1) / (high1 - low1) * (high2 - low2) + low2;
+const _constrain = function (n: number, low: number, high: number) {
+    return Math.max(Math.min(n, high), low);
+}
+
+/** @hidden */
+const _map = function (value: number,
+    v0: number, v1: number,
+    nv0: number, nv1: number,
+    keepInRange = false) {
+    const newval = (value - v0) / (v1 - v0) * (nv1 - nv0) + nv0;
     if (!keepInRange)
         return newval;
-    if (low2 < high2)
-        return _constrain(newval, low2, high2);
+    if (nv0 < nv1)
+        return _constrain(newval, nv0, nv1);
     else
-        return _constrain(newval, high2, low2);
-};
+        return _constrain(newval, nv1, nv0);
+}
 
 
 // =================================================================

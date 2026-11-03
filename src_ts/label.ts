@@ -14,8 +14,7 @@ class CvsLabel extends CvsTextIcon {
     _updateControlVisual() { // CvsLabel
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         if (this._textInvalid)
             this._formatText();
@@ -28,19 +27,19 @@ class CvsLabel extends CvsTextIcon {
         const OPAQUE = cs.C$(3, this._alpha);
         const FORE = cs.C$(8);
 
-        uic.save();
-        uic.font = this._cssFont;
+        uic!.save();
+        uic!.font = this._cssFont;
         // Background
         if (this._opaque) {
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, cnrs);
-            uic.fill();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, this._w, this._h, cnrs);
+            uic!.fill();
         }
         if (this._icon)
-            uic.drawImage(this._icon, this._ix, this._iy);
+            uic!.drawImage(this._icon, this._ix, this._iy);
         this._renderTextArea(FORE);
-        uic.restore();
+        uic!.restore();
         // last line in this method should be
         this._bufferInvalid = false;
     }

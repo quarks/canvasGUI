@@ -177,8 +177,6 @@ class CvsCheckbox extends CvsTextIcon {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         if (this._textInvalid)
             this._formatText();
@@ -221,9 +219,7 @@ class CvsCheckbox extends CvsTextIcon {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();

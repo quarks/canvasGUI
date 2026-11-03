@@ -108,8 +108,7 @@ class CvsImage extends CvsBufferedControl {
     _updateControlVisual() { // CvsImage
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         const [w, h] = [this._w, this._h];
         const cs = this.SCHEME;
@@ -117,53 +116,52 @@ class CvsImage extends CvsBufferedControl {
         const OPAQUE = cs.C$(2, this._alpha);
         const HIGHLIGHT = cs.C$(9);
 
-        uic.save();
+        uic!.save();
         // Image clipped for corners
-        uic.save();
-        uic.beginPath();
-        uic.roundRect(0, 0, w, h, cnrs);
-        uic.clip();
+        uic!.save();
+        uic!.beginPath();
+        uic!.roundRect(0, 0, w, h, cnrs);
+        uic!.clip();
         if (this._opaque) {
-            uic.fillStyle = OPAQUE;
-            uic.fillRect(0, 0, w, h);
+            uic!.fillStyle = OPAQUE;
+            uic!.fillRect(0, 0, w, h);
         }
         const highlight = (this.isActive || this.over);
         const icon = highlight && this._overImg ? this._overImg : this._offImg;
-        uic.drawImage(icon, 0, 0, icon.width, icon.height, 0, 0, w, h);
-        uic.restore();
+        uic!.drawImage(icon, 0, 0, icon.width, icon.height, 0, 0, w, h);
+        uic!.restore();
         // End of clipped region
         // Mouse over and no over-image then add border highlight
         if (highlight && !this._overImg) {
-            uic.strokeStyle = HIGHLIGHT;
-            uic.lineWidth = 2;
-            uic.beginPath();
-            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
-            uic.stroke();
+            uic!.strokeStyle = HIGHLIGHT;
+            uic!.lineWidth = 2;
+            uic!.beginPath();
+            uic!.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+            uic!.stroke();
         }
         // Update pick buffer before restoring
         this._updatePickBuffer();
-        uic.restore();
+        uic!.restore();
         // last line in this method should be
         this._bufferInvalid = false;
     }
 
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkb || !pkc) return;
-        this._clearBuffer(pkb, pkc);
+        const pkc = pkb!.getContext('2d');
+        this._clearBuffer(pkb, pkc!);
 
-        const [w, h] = [pkb.width, pkb.height];
+        const [w, h] = [pkb!.width, pkb!.height];
         const mask = this._maskImg;
         const cnrs = this.CNRS;
 
-        pkc.save();
-        pkc.beginPath();
-        pkc.roundRect(0, 0, w, h, cnrs);
-        pkc.clip();
+        pkc!.save();
+        pkc!.beginPath();
+        pkc!.roundRect(0, 0, w, h, cnrs);
+        pkc!.clip();
 
-        pkc.drawImage(mask, 0, 0, mask.width, mask.height, 0, 0, w, h);
-        pkc.restore();
+        pkc!.drawImage(mask, 0, 0, mask.width, mask.height, 0, 0, w, h);
+        pkc!.restore();
     }
 
 

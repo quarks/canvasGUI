@@ -24,6 +24,8 @@ knob.js
 panel.js
 panes.js
 poster.js
+timer.js
+progress.js
+spinner.js
 frameset.js
 grid.js
-

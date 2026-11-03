@@ -136,12 +136,10 @@ abstract class CvsBufferedControl extends CvsControl {
     /** @hidden */
     protected _disable_highlight(cs: ColorScheme, x: number, y: number, w: number, h: number) {
         const uic = this._uicBuffer.getContext('2d');
-        if (uic) {
-            uic.fillStyle = cs.T$(2);
-            uic.beginPath();
-            uic.roundRect(x, y, w, h, this.CNRS);
-            uic.fill();
-        }
+        uic!.fillStyle = cs.T$(4);
+        uic!.beginPath();
+        uic!.roundRect(x, y, w, h, this.CNRS);
+        uic!.fill();
     }
 
     /** @hidden */

@@ -440,8 +440,7 @@ class CvsTextField extends CvsText {
     _updateControlVisual() { // CvsTextField
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
@@ -455,37 +454,37 @@ class CvsTextField extends CvsText {
         const ACTIVE_BACK = cs.G$(0);
         let FORE = DARK;
 
-        uic.save();
-        uic.font = this._cssFont;
-        uic.textBaseline = 'top';
+        uic!.save();
+        uic!.font = this._cssFont;
+        uic!.textBaseline = 'top';
 
         // Draw background based on whether active or not
         if (this.isActive) {
-            uic.fillStyle = ACTIVE_BACK;
-            uic.strokeStyle = DARK;
+            uic!.fillStyle = ACTIVE_BACK;
+            uic!.strokeStyle = DARK;
         }
         else { // Control is inactive so colors depend on text validity
             if (!this._inputInvalid) {
-                uic.fillStyle = LIGHT;
-                uic.strokeStyle = DARK;
+                uic!.fillStyle = LIGHT;
+                uic!.strokeStyle = DARK;
             }
             else {
-                uic.fillStyle = DARK;
-                uic.strokeStyle = LIGHT;
+                uic!.fillStyle = DARK;
+                uic!.strokeStyle = LIGHT;
                 FORE = LIGHT;
             }
         }
-        uic.lineWidth = 2;
-        uic.beginPath();
-        uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
-        uic.fill();
-        uic.stroke();
+        uic!.lineWidth = 2;
+        uic!.beginPath();
+        uic!.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+        uic!.fill();
+        uic!.stroke();
 
         // Clip to textArea
-        uic.save();
-        uic.beginPath();
-        uic.rect(taX - 2, taY, taW + 4, taH);
-        uic.clip();
+        uic!.save();
+        uic!.beginPath();
+        uic!.rect(taX - 2, taY, taW + 4, taH);
+        uic!.clip();
 
         // Current cursor pixel position
         const cx = this._cursorX(this._currCsrIdx);
@@ -494,42 +493,42 @@ class CvsTextField extends CvsText {
         if (this.isActive) {
             const offsetX = cx - taW;
             // If tx > 0 then cursor is outside visible area
-            if (offsetX > 0) uic.translate(-offsetX, 0);
+            if (offsetX > 0) uic!.translate(-offsetX, 0);
             // Show any selected text
             if (this._currCsrIdx != this._prevCsrIdx) {
                 const px = this._cursorX(this._prevCsrIdx);
                 const cx0 = taX + Math.min(px, cx), cx1 = Math.abs(px - cx);
-                uic.fillStyle = SELECT;
-                uic.fillRect(cx0, 1.5, cx1, this._h - 3);
+                uic!.fillStyle = SELECT;
+                uic!.fillRect(cx0, 1.5, cx1, this._h - 3);
             }
         }
         if (this._line.length > 0) {
-            uic.fillStyle = FORE;
+            uic!.fillStyle = FORE;
             const tm = this._textMetrics(this._line);
             const fh = tm.fHeight;
-            uic.fillText(this._line, taX, taY + (taH - fh) / 2);
+            uic!.fillText(this._line, taX, taY + (taH - fh) / 2);
         }
 
         // Draw cursor
         if (this._active && this._cursorOn) {
-            uic.fillStyle = CURSOR;
-            uic.fillRect(taX + cx - 0.9, 0, 1.8, this._h);
+            uic!.fillStyle = CURSOR;
+            uic!.fillRect(taX + cx - 0.9, 0, 1.8, this._h);
         }
-        uic.restore(); // Clipping ends
+        uic!.restore(); // Clipping ends
 
         // Mouse over control highlight
         if (this.over) {
-            uic.strokeStyle = FORE;
-            uic.lineWidth = 3;
-            uic.beginPath();
-            uic.roundRect(1.5, 1.5, this._w - 3, this._h - 3, cnrs);
-            uic.stroke();
+            uic!.strokeStyle = FORE;
+            uic!.lineWidth = 3;
+            uic!.beginPath();
+            uic!.roundRect(1.5, 1.5, this._w - 3, this._h - 3, cnrs);
+            uic!.stroke();
         }
         // Control disabled highlight
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, this._w, this._h);
         this._updatePickBuffer();
-        uic.restore();
+        uic!.restore();
         // last line in this method should be
         this._bufferInvalid = false;
     }
@@ -538,16 +537,15 @@ class CvsTextField extends CvsText {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        this._clearBuffer(pkb, pkc!);
 
         let c = this._gui.pickColor(this);
-        pkc.save();
-        pkc.fillStyle = c.cssColor;
-        pkc.beginPath();
-        pkc.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
-        pkc.fill();
-        pkc.restore();
+        pkc!.save();
+        pkc!.fillStyle = c.cssColor;
+        pkc!.beginPath();
+        pkc!.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
+        pkc!.fill();
+        pkc!.restore();
     }
 
     /** @hidden */ orient(a: any) { return this.warn$('orient'); }

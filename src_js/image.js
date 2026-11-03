@@ -98,8 +98,6 @@ class CvsImage extends CvsBufferedControl {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const [w, h] = [this._w, this._h];
         const cs = this.SCHEME;
@@ -137,9 +135,7 @@ class CvsImage extends CvsBufferedControl {
     }
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkb || !pkc)
-            return;
+        const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         const [w, h] = [pkb.width, pkb.height];
         const mask = this._maskImg;

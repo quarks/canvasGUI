@@ -243,8 +243,7 @@ class CvsKnob extends CvsSlider {
     _updateControlVisual(): void { // CvsKnob
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -258,113 +257,113 @@ class CvsKnob extends CvsSlider {
         const TRACK_ARC = cs.C$(1);
         const TICKS = cs.G$(8);
         const USED_TRACK = cs.G$(2);
-        const UNUSED_TRACK = cs.T$(2);
+        const UNUSED_TRACK = cs.T$(4);
 
-        uic.save();
+        uic!.save();
         if (this._opaque) {
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, cnrs);
-            uic.fill();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, this._w, this._h, cnrs);
+            uic!.fill();
         }
         let arc = this._turnArc, gap = 2 * Math.PI - arc, lowA = gap / 2;
         let rTrack = (this._kRad + this._gRad) / 2;
-        uic.save();
-        uic.translate(uib.width / 2, uib.height / 2);
-        uic.rotate(this._gapPos + lowA);
+        uic!.save();
+        uic!.translate(uib.width / 2, uib.height / 2);
+        uic!.rotate(this._gapPos + lowA);
         // Draw full background 
-        uic.fillStyle = TRACK_BACK;
-        uic.beginPath();
-        uic.ellipse(0, 0, this._kRad, this._kRad, 0, 0, 2 * Math.PI);
-        uic.fill();
+        uic!.fillStyle = TRACK_BACK;
+        uic!.beginPath();
+        uic!.ellipse(0, 0, this._kRad, this._kRad, 0, 0, 2 * Math.PI);
+        uic!.fill();
 
-        uic.fillStyle = TRACK_ARC;
-        uic.beginPath();
-        uic.moveTo(0, 0);
-        uic.arc(0, 0, this._kRad, 0, this._turnArc, false);
-        uic.closePath();
-        uic.fill();
+        uic!.fillStyle = TRACK_ARC;
+        uic!.beginPath();
+        uic!.moveTo(0, 0);
+        uic!.arc(0, 0, this._kRad, 0, this._turnArc, false);
+        uic!.closePath();
+        uic!.fill();
 
         // Unused track
-        uic.fillStyle = UNUSED_TRACK;
-        uic.beginPath();
-        uic.moveTo(0, 0);
-        uic.arc(0, 0, rTrack, 0, this._turnArc, false);
-        uic.closePath();
-        uic.fill();
+        uic!.fillStyle = UNUSED_TRACK;
+        uic!.beginPath();
+        uic!.moveTo(0, 0);
+        uic!.arc(0, 0, rTrack, 0, this._turnArc, false);
+        uic!.closePath();
+        uic!.fill();
         // Used track
-        uic.fillStyle = USED_TRACK;
-        uic.beginPath();
-        uic.moveTo(0, 0);
-        uic.arc(0, 0, rTrack, 0, this._t01 * arc, false);
-        uic.closePath();
-        uic.fill();
+        uic!.fillStyle = USED_TRACK;
+        uic!.beginPath();
+        uic!.moveTo(0, 0);
+        uic!.arc(0, 0, rTrack, 0, this._t01 * arc, false);
+        uic!.closePath();
+        uic!.fill();
         // Draw ticks? 
         let n = this._majorTicks * this._minorTicks;
         if (n >= 2) {
             let mjrTickLen = this._kRad;
             let mnrTickLen = this._gRad + 0.65 * (this._kRad - this._gRad);
-            uic.strokeStyle = TICKS;
+            uic!.strokeStyle = TICKS;
             let da = arc / n;
-            uic.save();
-            uic.lineWidth = 1;
+            uic!.save();
+            uic!.lineWidth = 1;
             // minor ticks
-            uic.beginPath();
+            uic!.beginPath();
             for (let i = 0; i <= n; i++) {
-                uic.moveTo(0, 0);
-                uic.lineTo(mnrTickLen, 0);
-                uic.rotate(da);
+                uic!.moveTo(0, 0);
+                uic!.lineTo(mnrTickLen, 0);
+                uic!.rotate(da);
             }
-            uic.stroke();
-            uic.restore();
+            uic!.stroke();
+            uic!.restore();
             n = this._majorTicks;
             if (n >= 2) {
                 let da = arc / n;
-                uic.save();
-                uic.beginPath();
-                uic.lineWidth = 1.2;
+                uic!.save();
+                uic!.beginPath();
+                uic!.lineWidth = 1.2;
                 // major ticks
                 for (let i = 0; i <= n; i++) {
-                    uic.moveTo(0, 0);
-                    uic.lineTo(mjrTickLen, 0);
-                    uic.rotate(da);
+                    uic!.moveTo(0, 0);
+                    uic!.lineTo(mjrTickLen, 0);
+                    uic!.rotate(da);
                 }
-                uic.stroke();
-                uic.restore();
+                uic!.stroke();
+                uic!.restore();
             }
         }
         // Grip section
-        uic.strokeStyle = GRIP_STROKE;
-        uic.lineWidth = 1.5;
-        uic.fillStyle = GRIP_OFF;
-        uic.beginPath();
-        uic.ellipse(0, 0, this._gRad, this._gRad, 0, 0, 2 * Math.PI);
-        uic.fill();
-        uic.stroke();
+        uic!.strokeStyle = GRIP_STROKE;
+        uic!.lineWidth = 1.5;
+        uic!.fillStyle = GRIP_OFF;
+        uic!.beginPath();
+        uic!.ellipse(0, 0, this._gRad, this._gRad, 0, 0, 2 * Math.PI);
+        uic!.fill();
+        uic!.stroke();
         // Grip arrow marker
-        uic.save();
-        uic.rotate(this._t01 * arc);
+        uic!.save();
+        uic!.rotate(this._t01 * arc);
         let ms = 0.2 * this._gRad;
-        uic.fillStyle = MARKER;
-        uic.beginPath();
-        uic.moveTo(-ms, 0);
-        uic.lineTo(0, -ms);
-        uic.lineTo(this._gRad, 0);
-        uic.lineTo(0, ms);
-        uic.closePath();
-        uic.fill();
-        uic.restore();
+        uic!.fillStyle = MARKER;
+        uic!.beginPath();
+        uic!.moveTo(-ms, 0);
+        uic!.lineTo(0, -ms);
+        uic!.lineTo(this._gRad, 0);
+        uic!.lineTo(0, ms);
+        uic!.closePath();
+        uic!.fill();
+        uic!.restore();
 
         // Is over highlight?
         if (this.over) {
-            uic.strokeStyle = HIGHLIGHT;
-            uic.lineWidth = 3;
-            uic.beginPath();
-            uic.arc(0, 0, this._kRad, 0, arc);
-            uic.stroke();
+            uic!.strokeStyle = HIGHLIGHT;
+            uic!.lineWidth = 3;
+            uic!.beginPath();
+            uic!.arc(0, 0, this._kRad, 0, arc);
+            uic!.stroke();
         }
         this._updatePickBuffer();
-        uic.restore();
+        uic!.restore();
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, this._w, this._h);
         this._bufferInvalid = false; // Now the buffer is valid
@@ -373,18 +372,17 @@ class CvsKnob extends CvsSlider {
     /** @hidden */
     _updatePickBuffer() { // CvsKnob
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        const pkc = pkb!.getContext('2d');
+        this._clearBuffer(pkb, pkc!);
 
         let c = this._gui.pickColor(this);
-        pkc.save();
-        pkc.translate(this._w / 2, this._h / 2);
+        pkc!.save();
+        pkc!.translate(this._w / 2, this._h / 2);
         // Background
-        pkc.fillStyle = c.cssColor;
-        pkc.ellipse(0, 0, this._kRad, this._kRad, 0, 0, 2 * Math.PI);
-        pkc.fill();
-        pkc.restore();
+        pkc!.fillStyle = c.cssColor;
+        pkc!.ellipse(0, 0, this._kRad, this._kRad, 0, 0, 2 * Math.PI);
+        pkc!.fill();
+        pkc!.restore();
     }
 
     /** @hidden */ orient(a: any) { return this.warn$('orient'); }

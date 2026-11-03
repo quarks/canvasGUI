@@ -5,8 +5,8 @@
  * shown relative to the pin's xy position.</p>
  */
 class CvsPin {
+    /** @hidden */
     constructor(gui, id, x, y) {
-        /** @hidden */ this._children = [];
         /**
          * <p>The event handler for this control. Although it is permitted to set this
          * property directly it is recommended that the <code>setAction(...)</code>
@@ -16,7 +16,7 @@ class CvsPin {
         this.action = function () { };
         this._gui = gui;
         this._id = id;
-        // this._children = [];
+        this._children = [];
         this._x = Math.round(x);
         this._y = Math.round(y);
         this._z = 0;

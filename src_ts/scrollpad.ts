@@ -37,8 +37,7 @@ class CvsScrollpad extends CvsBufferedControl {
     _updateControlVisual() { // CvsScrollpad
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         let cs = this.SCHEME;
         let cnrs = this.CNRS;
@@ -53,48 +52,48 @@ class CvsScrollpad extends CvsBufferedControl {
         const [padW, padH] = [this._padW, this._padH];
         const [value, used] = [this._value, this._used];
 
-        uic.save();
+        uic!.save();
         if (this._opaque) { // Background
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, w, h, cnrs);
-            uic.fill();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, w, h, cnrs);
+            uic!.fill();
         }
 
         // Thumb paddock
-        uic.fillStyle = UNUSED_TRACK;
-        uic.strokeStyle = BORDER
-        uic.lineWidth = 1;
-        uic.beginPath();
-        uic.roundRect(inset, inset, padW, padH, cnrs);
-        uic.fill();
-        uic.stroke();
+        uic!.fillStyle = UNUSED_TRACK;
+        uic!.strokeStyle = BORDER
+        uic!.lineWidth = 1;
+        uic!.beginPath();
+        uic!.roundRect(inset, inset, padW, padH, cnrs);
+        uic!.fill();
+        uic!.stroke();
 
         // Draw thumb
-        uic.save();
+        uic!.save();
         const tw = 2 + Math.max(this._minThumbSize, padW * used[0]);
         const th = 2 + Math.max(this._minThumbSize, padH * used[1]);
         const tx = padW * value[0];
         const ty = padH * value[1];
-        uic.translate(inset + tx, inset + ty);
-        uic.fillStyle = THUMB;
-        uic.strokeStyle = BORDER;
-        uic.lineWidth = 1;
+        uic!.translate(inset + tx, inset + ty);
+        uic!.fillStyle = THUMB;
+        uic!.strokeStyle = BORDER;
+        uic!.lineWidth = 1;
         if (this.isActive || this.over) {
-            uic.strokeStyle = HIGHLIGHT;
-            uic.lineWidth = 2.5;
+            uic!.strokeStyle = HIGHLIGHT;
+            uic!.lineWidth = 2.5;
         }
-        uic.beginPath();
-        uic.roundRect(-tw / 2, - th / 2, tw, th, [4, 4, 4, 4]);
-        uic.fill();
-        uic.stroke();
-        uic.restore();
+        uic!.beginPath();
+        uic!.roundRect(-tw / 2, - th / 2, tw, th, [4, 4, 4, 4]);
+        uic!.fill();
+        uic!.stroke();
+        uic!.restore();
 
         if (!this._enabled)
             this._disable_highlight(cs, 0, 0, w, h);
         this._updateScrollerPickBuffer(inset, tx, ty, tw, th);
 
-        uic.restore();
+        uic!.restore();
         // last line in this method should be
         this._bufferInvalid = false;
     }
@@ -103,17 +102,16 @@ class CvsScrollpad extends CvsBufferedControl {
     _updateScrollerPickBuffer(inset: number, tx: number, ty: number, tw: number, th: number) {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        this._clearBuffer(pkb, pkc!);
 
         let c = this._gui.pickColor(this);
-        pkc.save();
-        pkc.fillStyle = c.cssColor;
-        pkc.translate(inset + tx, inset + ty);
-        pkc.beginPath();
-        pkc.roundRect(-tw / 2, - th / 2, tw, th, [4, 4, 4, 4]);
-        pkc.fill();
-        pkc.restore();
+        pkc!.save();
+        pkc!.fillStyle = c.cssColor;
+        pkc!.translate(inset + tx, inset + ty);
+        pkc!.beginPath();
+        pkc!.roundRect(-tw / 2, - th / 2, tw, th, [4, 4, 4, 4]);
+        pkc!.fill();
+        pkc!.restore();
     }
 
     /** @hidden */

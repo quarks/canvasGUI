@@ -133,27 +133,26 @@ class CvsPanel extends CvsBufferedControl {
     _updateControlVisual(): void { // CvsPanel
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
         const OPAQUE = cs.C$(4, this._alpha);
         const HIGHLIGHT = cs.C$(9);
 
-        uic.save();
+        uic!.save();
         if (this._opaque) {
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, cnrs);
-            uic.fill();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, this._w, this._h, cnrs);
+            uic!.fill();
         }
         if (this.isDraggable && this.over) {
-            uic.strokeStyle = HIGHLIGHT;
-            uic.lineWidth = 2;
-            uic.beginPath();
-            uic.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
-            uic.stroke();
+            uic!.strokeStyle = HIGHLIGHT;
+            uic!.lineWidth = 2;
+            uic!.beginPath();
+            uic!.roundRect(1, 1, this._w - 2, this._h - 2, cnrs);
+            uic!.stroke();
         }
         // Update pick buffer before restoring
         this._updatePickBuffer();
@@ -164,17 +163,16 @@ class CvsPanel extends CvsBufferedControl {
     /** @hidden */
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
-        const pkc = pkb?.getContext('2d');
-        if (!pkc) return;
-        this._clearBuffer(pkb, pkc);
+        const pkc = pkb!.getContext('2d');
+        this._clearBuffer(pkb, pkc!);
 
         let c = this._gui.pickColor(this);
-        pkc.save();
-        pkc.fillStyle = c.cssColor;
-        pkc.beginPath();
-        pkc.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
-        pkc.fill();
-        pkc.restore();
+        pkc!.save();
+        pkc!.fillStyle = c.cssColor;
+        pkc!.beginPath();
+        pkc!.roundRect(1, 1, this._w - 1, this._h - 1, this.CNRS);
+        pkc!.fill();
+        pkc!.restore();
     }
 
     // Hide these methods from typeDoc

@@ -340,7 +340,7 @@ class CvsPoster extends CvsBufferedControl {
                 para.tokens.forEach((tkn: any) => {
                     uic.save();
                     uic.font = tkn.cssFont;
-                    let tm = textMetrics(uic, tkn.ascii);
+                    let tm = textMetrics(uic!, tkn.ascii);
                     tkn.width = tm.fWidth;
                     tkn.height = tm.fHeight;
                     tkn.ascent = tm.fAscent;
@@ -433,8 +433,7 @@ class CvsPoster extends CvsBufferedControl {
     _updateControlVisual() { // CvsLabel
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic) return;
-        this._clearBuffer(uib, uic);
+        this._clearBuffer(uib, uic!);
 
         if (this._textInvalid)
             this._formatText();
@@ -446,30 +445,30 @@ class CvsPoster extends CvsBufferedControl {
         const cnrs = this.CNRS;
 
         if (this._opaque && this._backStyle != 0) {
-            uic.save();
-            uic.fillStyle = OPAQUE;
-            uic.beginPath();
-            uic.roundRect(0, 0, this._w, this._h, ...cnrs);
-            uic.fill();
-            uic.restore();
+            uic!.save();
+            uic!.fillStyle = OPAQUE;
+            uic!.beginPath();
+            uic!.roundRect(0, 0, this._w, this._h, ...cnrs);
+            uic!.fill();
+            uic!.restore();
         }
 
         // Display icons
-        this._icons.forEach(i => uic.drawImage(i.icon, i.x, i.y));
+        this._icons.forEach(i => uic!.drawImage(i.icon, i.x, i.y));
 
-        uic.textBaseline = 'alphabetic';
+        uic!.textBaseline = 'alphabetic';
         this._words.forEach(word => {
-            uic.font = word.cssFont;
+            uic!.font = word.cssFont;
             const fill = this._colors[word.fill % this._colors.length];
             if (fill !== 'transparent') {
-                uic.fillStyle = fill;
-                uic.fillText(word.ascii, word.x, word.y);
+                uic!.fillStyle = fill;
+                uic!.fillText(word.ascii, word.x, word.y);
             }
             const stroke = this._colors[word.stroke % this._colors.length];
             if (stroke !== 'transparent') {
-                uic.lineWidth = word.strokeWidth;
-                uic.strokeStyle = stroke;
-                uic.strokeText(word.ascii, word.x, word.y);
+                uic!.lineWidth = word.strokeWidth;
+                uic!.strokeStyle = stroke;
+                uic!.strokeText(word.ascii, word.x, word.y);
             }
         });
         this._bufferInvalid = false;  // buffer is now valid

@@ -409,8 +409,6 @@ class CvsTextField extends CvsText {
     _updateControlVisual() {
         const uib = this._uicBuffer;
         const uic = uib.getContext('2d');
-        if (!uic)
-            return;
         this._clearBuffer(uib, uic);
         const cs = this.SCHEME;
         const cnrs = this.CNRS;
@@ -499,8 +497,6 @@ class CvsTextField extends CvsText {
     _updatePickBuffer() {
         const pkb = this._pkcBuffer;
         const pkc = pkb?.getContext('2d');
-        if (!pkc)
-            return;
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
         pkc.save();

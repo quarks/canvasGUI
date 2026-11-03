@@ -20,7 +20,7 @@ const CANVAS_GUI_VERSION: string = '!!VERSION!!';
  * </ul>
  * 
  * <p>Any other value will result the program being terminated with an 
- * error</p>
+ * error.</p>
  */
 class GUI {
   /** canvasGUI version */
@@ -130,7 +130,7 @@ class GUI {
       this._showUI = this._showOver2d;
     }
     // Pick buffer
-    this._COLOR_STEP = 8;
+    this._COLOR_STEP = 16;
     this._PART_MASK = this._COLOR_STEP - 1;
     this._COLOR_MASK = 0x00FFFFFF ^ this._PART_MASK;
     this._NEXT_COLOR = this._COLOR_STEP;
@@ -149,7 +149,7 @@ class GUI {
     // Create buffers
     this._createGuiBuffers(this._canvas.width, this._canvas.height);
 
-    // Remeber this gui
+    // Remember this gui
     GUI._guis.set(this._uid, this);
   }
 
@@ -226,6 +226,48 @@ class GUI {
     this._canvasContext.restore();
   }
 
+  /** @hidden */
+  _restoreWebglState(gl: any, state: any) {
+    // Switch to texture slot 0 and restore original texture
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, state.prevTexture2D);
+
+    // Restore webgl2 shader program
+    if (state.prevShaderProgram)
+      gl.useProgram(state.prevShaderProgram);
+    // Restore vertex buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.vertexBuffer);
+    // Restore belnd mode attributes
+    if (state.enabled)
+      gl.enable(gl.BLEND);
+    else
+      gl.disable(gl.BLEND);
+    gl.blendFuncSeparate(state.srcRGB, state.dstRGB, state.srcAlpha, state.dstAlpha);
+    gl.blendEquationSeparate(state.equationRGB, state.equationAlpha);
+    gl.blendColor(...state.color);
+  }
+
+  /** @hidden */
+  _saveWebglState(gl: any) {
+    // Switch to texture slot 0 
+    gl.activeTexture(gl.TEXTURE0);
+    return {
+      prevShaderProgram: gl.getParameter(gl.CURRENT_PROGRAM),
+      vertexBuffer: gl.getVertexAttrib(0, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING),
+      prevTexture2D: gl.getParameter(gl.TEXTURE_BINDING_2D),
+      prevActiveTexture: gl.getParameter(gl.ACTIVE_TEXTURE),
+      enabled: gl.isEnabled(gl.BLEND),
+      srcRGB: gl.getParameter(gl.BLEND_SRC_RGB),
+      dstRGB: gl.getParameter(gl.BLEND_DST_RGB),
+      srcAlpha: gl.getParameter(gl.BLEND_SRC_ALPHA),
+      dstAlpha: gl.getParameter(gl.BLEND_DST_ALPHA),
+      equationRGB: gl.getParameter(gl.BLEND_EQUATION_RGB),
+      equationAlpha: gl.getParameter(gl.BLEND_EQUATION_ALPHA),
+      color: Array.from(gl.getParameter(gl.BLEND_COLOR)),
+    };
+  }
+
+
   /**
    * For sketches using p5.js - show GUI over a 'webgl2' canvas.
    * Based on code provided by 'scudly' (Processing forum)
@@ -235,34 +277,16 @@ class GUI {
     const gl = this._canvasContext;
 
     // =================================================================== 
-    //      Save current webgl2 attributes as set by p5.js
-    const prevShaderProgram = gl.getParameter(gl.CURRENT_PROGRAM);
-    const vertexBuffer = gl.getVertexAttrib(0, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING);
-
-    // Save current active texture
-    const prevActiveTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
-
-    // Switch to texture slot 0 and save texture bound to it
-    gl.activeTexture(gl.TEXTURE0);
-    const prevTexture2D = gl.getParameter(gl.TEXTURE_BINDING_2D);
+    // Save current webgl state set by p5
+    const saved = this._saveWebglState(gl);
 
     // =================================================================== 
     //          Draw the GUI 
     this._showOverWebgl();
 
     // =================================================================== 
-    //          Restore the previous webgl2 attributes
-    // Restore original texture to slot 0
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, prevTexture2D);
-
-    // Restore the orginal texture slot
-    gl.activeTexture(prevActiveTexture);
-
-    // Restore webgl2 attributes
-    if (prevShaderProgram)
-      gl.useProgram(prevShaderProgram);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    // Restore Webgl state previously set by p5
+    this._restoreWebglState(gl, saved);
   }
 
   /**
@@ -361,39 +385,10 @@ class GUI {
   // ###### ++++++++++++++++++++++++++++++++++++++++++++++++++++ ######
   // ##################################################################
 
-  /**
-   * <p>Create a pin control.</p>
-   * <p>The Pin control is a simple place holder for containing child controls
-   * relative to each other.</p>
-   * @param id 
-   * @param x 
-   * @param y 
-   * @returns 
-   */
-  pin(id: string, x: number, y: number) {
-    return new CvsPin(this, id, x, y);
-  }
 
   /**
-   * Create a label control
-   * @param id unique id for this control
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @param text optional face text 
-   * @param icon optional face icon
-   * @returns a label
-   */
-  label(id: string, x: number, y: number, w: number, h: number, text?: string, icon?: cvsIcon) {
-    const ctrl = new CvsLabel(this, id, x, y, w, h);
-    if (text) ctrl.text(text);
-    if (icon) ctrl.icon(icon);
-    return ctrl;
-  }
-
-  /**
-   * Create a button control
+   * <p>Create a button control. 
+   * {@link CvsButton | Properties and Methods}</p>
    * @param id unique id for this control
    * @param x left-hand pixel position
    * @param y top pixel position
@@ -411,7 +406,37 @@ class GUI {
   }
 
   /**
-   * <p>Create an image button control.</p>
+   * <p>Create a checkbox control. 
+   * {@link CvsCheckbox | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @param text optional face text
+   * @returns a checkbox
+   */
+  checkbox(id: string, x: number, y: number, w: number, h: number, text?: string) {
+    const ctrl = new CvsCheckbox(this, id, x, y, w, h);
+    if (text) ctrl.text(text);
+    return ctrl;
+  }
+
+  /**
+   * <p>Create a frameset control. 
+   * {@link CvsFrameSet | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left x position for the frame
+   * @param y top y position for the frame
+   * @returns 
+   */
+  frameset(id: string, x: number, y: number) {
+    return new CvsFrameSet(this, id, x, y);
+  }
+
+  /**
+   * <p>Create an image button control. 
+   * {@link CvsImage | Properties and Methods}</p>
    * <p>The button size is determined by the size of the off-button image. If
    * a second image is provided (optional) then it will be used for the 
    * over-button state. In the absence of the second image otherwise a border 
@@ -436,63 +461,56 @@ class GUI {
   }
 
   /**
-   * Create a slider control
+   * <p>Create a joystick control. 
+   * {@link CvsJoystick | Properties and Methods}</p>
    * @param id unique id for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
    * @param h height
-   * @returns slider control
+   * @returns a joystick control
    */
-  slider(id: string, x: number, y: number, w: number, h: number): CvsSlider {
-    return new CvsSlider(this, id, x, y, w, h);
+  joystick(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsJoystick(this, id, x, y, w, h);
   }
 
   /**
-   * Create a ranger control
+   * <p>Create a knob control. 
+   * {@link CvsKnob | Properties and Methods}</p>
    * @param id unique id for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
    * @param h height
-   * @returns ranger control
+   * @returns a knob control
    */
-  ranger(id: string, x: number, y: number, w: number, h: number) {
-    return new CvsRanger(this, id, x, y, w, h);
+  knob(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsKnob(this, id, x, y, w, h);
   }
 
   /**
-   * Create a single line text input control
+   * <p>Create a label control. 
+   * {@link CvsLabel | Properties and Methods}</p>
    * @param id unique id for this control
    * @param x left-hand pixel position
    * @param y top pixel position
    * @param w width
    * @param h height
-   * @returns a textfield
+   * @param text optional face text 
+   * @param icon optional face icon
+   * @returns a label
    */
-  textfield(id: string, x: number, y: number, w: number, h: number) {
-    this._addKeyEventHandlers();
-    return new CvsTextField(this, id, x, y, w, h);
-  }
-
-  /**
-   * Create a checkbox control
-   * @param id unique id for this control
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @param text optional face text
-   * @returns a checkbox
-   */
-  checkbox(id: string, x: number, y: number, w: number, h: number, text?: string) {
-    const ctrl = new CvsCheckbox(this, id, x, y, w, h);
+  label(id: string, x: number, y: number, w: number, h: number, text?: string, icon?: cvsIcon) {
+    const ctrl = new CvsLabel(this, id, x, y, w, h);
     if (text) ctrl.text(text);
+    if (icon) ctrl.icon(icon);
     return ctrl;
   }
 
+
   /**
-   * Create an option (radio button) control
+   * <p>Create an option button control. 
+   * {@link CvsOption | Properties and Methods}</p>
    * @param id unique id for this control
    * @param x left-hand pixel position
    * @param y top pixel position
@@ -508,95 +526,9 @@ class GUI {
   }
 
   /**
-   * Create a poster control
-   * @param id unique id for this control
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @returns a label
-   */
-  poster(id: string, x: number, y: number, w: number, h: number) {
-    return new CvsPoster(this, id, x, y, w, h);
-  }
-
-  /**
-   * Create a label control
-   * @param id unique id for this control
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @returns a label
-   */
-  panel(id: string, x: number, y: number, w: number, h: number) {
-    return new CvsPanel(this, id, x, y, w, h);
-  }
-
-  /**
-   * <p>Create a viewer control.</p>
-   * <p>If the last parameter, <code>padSize</code> = 0 (default value) then
-   * horizontal and vertical scrollbars are provided to scroll through the
-   * image. </p>
-   * <p>If <code>padSize</code> is in the range &gt;0 and &lt;1 then a single 
-   * scrollpad (2d scrollbar) is create instead of scrollbars. The visual size
-   * of the scrollpad is proportional to and has the same aspect ratio as the 
-   * viewer.</p>
-   * <p>If <code>padSize</code> is &gt;1 then it represents the pixel size of
-   * a square scrollpad.</p>
-   * 
-   * @param id unique id for this control
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @param padSize if &gt;0 a scrollpad is created instead of scrollbars.
-   * @returns an image viewer
-   */
-  viewer(id: string, x: number, y: number, w: number, h: number, padSize = 0) {
-    return new CvsViewer(this, id, x, y, w, h, padSize);
-  }
-
-  /**
-   * Create a joystick control
-   * @param id unique id for this control
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @returns a joystick control
-   */
-  joystick(id: string, x: number, y: number, w: number, h: number) {
-    return new CvsJoystick(this, id, x, y, w, h);
-  }
-
-  /**
-   * Create a knob control
-   * @param id unique id for this control
-   * @param x left-hand pixel position
-   * @param y top pixel position
-   * @param w width
-   * @param h height
-   * @returns a knob control
-   */
-  knob(id: string, x: number, y: number, w: number, h: number) {
-    return new CvsKnob(this, id, x, y, w, h);
-  }
-
-  /**
-   * Create a frameset control
-   * @param id unique id for this control
-   * @param x left x position for the frame
-   * @param y top y position for the frame
-   * @returns 
-   */
-  frameset(id: string, x: number, y: number) {
-    return new CvsFrameSet(this, id, x, y);
-  }
-
-  /**
-   * Create a side pane. The pane location is either 'north', 'south',
-   * 'east' or 'west'.
+   * <p>Create a side pane. The pane location is either 'north', 'south',
+   * 'east' or 'west'.</p>
+   * <p>{@link CvsPane | Properties and Methods}</p>
    * 
    * The pane will fill the whole width/height of the canvas depending on its 
    * position. The user controls how far the pane extends into the canvas 
@@ -623,6 +555,163 @@ class GUI {
     return ctrl;
   }
 
+  /**
+   * <p>Create a floating panel control. 
+   * {@link CvsPanel | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns a floating panel
+   */
+  panel(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsPanel(this, id, x, y, w, h);
+  }
+
+  /**
+   * <p>Create a pin control. 
+   * {@link CvsPin | Properties and Methods}</p>
+   * <p>The Pin control is a simple place holder for containing child controls
+   * relative to each other.</p>
+   * @param id 
+   * @param x 
+   * @param y 
+   * @returns 
+   */
+  pin(id: string, x: number, y: number) {
+    return new CvsPin(this, id, x, y);
+  }
+
+
+  /**
+   * <p>Create a poster control. 
+   * {@link CvsPoster | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns a label
+   */
+  poster(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsPoster(this, id, x, y, w, h);
+  }
+
+  /**
+   * <p>Create a progress meter control. 
+   * {@link CvsProgress | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @param icon optional face icon
+   * @returns a progress
+   */
+  progress(id: string, x: number, y: number, w: number, h: number, icon?: cvsIcon) {
+    const ctrl = new CvsProgress(this, id, x, y, w, h);
+    if (icon) ctrl.icon(icon);
+    return ctrl;
+  }
+
+  /**
+   * <p>Create a ranger control. 
+   * {@link CvsRanger | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns ranger control
+   */
+  ranger(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsRanger(this, id, x, y, w, h);
+  }
+
+  /**
+   * <p>Create a slider control. 
+   * {@link CvsSlider | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns slider control
+   */
+  slider(id: string, x: number, y: number, w: number, h: number): CvsSlider {
+    return new CvsSlider(this, id, x, y, w, h);
+  }
+
+
+  /**
+   * <p>Create a spinner control. 
+   * {@link CvsSpinner | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @param nbrReels number of reels
+   * @returns a spinner control
+   */
+  spinner(id: string, x: number, y: number, w: number, h: number, nbrReels = 1) {
+    return new CvsSpinner(this, id, x, y, w, h, nbrReels);
+  }
+
+  /**
+   * <p>Create a single line text input control. 
+   * {@link CvsTextField | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns a textfield
+   */
+  textfield(id: string, x: number, y: number, w: number, h: number) {
+    this._addKeyEventHandlers();
+    return new CvsTextField(this, id, x, y, w, h);
+  }
+
+  /**
+   * <p>Create a viewer control. 
+   * {@link CvsViewer | Properties and Methods}</p>
+   * <p>If the last parameter, <code>padSize</code> = 0 (default value) then
+   * horizontal and vertical scrollbars are provided to scroll through the
+   * image. </p>
+   * <p>If <code>padSize</code> is in the range &gt;0 and &lt;1 then a single 
+   * scrollpad (2d scrollbar) is create instead of scrollbars. The visual size
+   * of the scrollpad is proportional to and has the same aspect ratio as the 
+   * viewer.</p>
+   * <p>If <code>padSize</code> is &gt;1 then it represents the pixel size of
+   * a square scrollpad.</p>
+   * 
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @param padSize if &gt;0 a scrollpad is created instead of scrollbars.
+   * @returns an image viewer
+   */
+  viewer(id: string, x: number, y: number, w: number, h: number, padSize = 0) {
+    return new CvsViewer(this, id, x, y, w, h, padSize);
+  }
+
+  /**
+   * <p>Create a timer control. 
+   * {@link CvsTimer | Properties and Methods}</p>
+   * @param id unique id for this control
+   * @param x left-hand pixel position
+   * @param y top pixel position
+   * @param w width
+   * @param h height
+   * @returns a timer control
+   */
+  timer(id: string, x: number, y: number, w: number, h: number) {
+    return new CvsTimer(this, id, x, y, w, h);
+  }
 
   /**
    * Create a scroller control
@@ -809,7 +898,7 @@ class GUI {
       canvas.addEventListener('mousedown', (e) => { this._processMouseEvent(e) });
       canvas.addEventListener('mouseup', (e) => { this._processMouseEvent(e) });
       canvas.addEventListener('mousemove', (e) => { this._processMouseEvent(e) });
-      canvas.addEventListener('wheel', (e) => { this._processMouseEvent(e) });
+      canvas.addEventListener('wheel', (e) => { this._processWheelEvent(e) });
       // Leave and enter canvas
       canvas.addEventListener('mouseout', (e) => { this._processMouseEvent(e) });
       canvas.addEventListener('mouseenter', (e) => { this._processMouseEvent(e); });
@@ -848,7 +937,16 @@ class GUI {
   private _processMouseEvent(e: MouseEvent) {
     if (this._visible && this._enabled) {
       const rect = this._canvas.getBoundingClientRect();
-      this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top)
+      this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
+      // e.preventDefault();
+    }
+  }
+
+  /** @hidden */
+  private _processWheelEvent(e: WheelEvent) {
+    if (this._visible && this._enabled) {
+      const rect = this._canvas.getBoundingClientRect();
+      this._processEvent(e, e.clientX - rect.left, e.clientY - rect.top);
       // e.preventDefault();
     }
   }
@@ -1493,10 +1591,9 @@ class GUI {
   //   return gui;
   // }
 
-}
+} //  end of GUI class definition
 
 /**
- * 
  * <h2>Creates and returns a GUI controller.</h2>
  * <p><b><em>This function must be used when creating a GUI.</em></b></p>
  * 
@@ -1544,7 +1641,6 @@ const createGUI = function (id: string, display: any) {
     const is_p5js = elt.className.startsWith('p5Canvas');
     const dp = is_p5js ? devicePixelRatio : 1;
     const mode = is_p5js ? 'p5js' : 'JS';
-    // return GUI._create(id, elt, dp, mode);
     return new GUI(id, elt, dp, mode);
   }
   // An HTMLCanvasElement was not passed so see if p5js.
@@ -1552,9 +1648,8 @@ const createGUI = function (id: string, display: any) {
     const ctor = display.constructor.name;
     if (ctor == 'Renderer2D' || ctor == 'RendererGL')
       return new GUI(id, display.canvas, devicePixelRatio, 'p5js');
-    // return GUI._create(id, display.canvas, devicePixelRatio, 'p5js');
   }
-  // Not 
+  // Not able to create GUI - unrecognised canvas element
   throw new Error(`Cannot find the canvas element for the GUI '${id}'`);
 }
 
