@@ -337,7 +337,6 @@ class CvsTimer extends CvsBufferedControl {
         const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        CLOG(c.cssColor);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();

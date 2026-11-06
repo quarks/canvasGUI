@@ -42,7 +42,7 @@ function draw() {
 
     gui.draw();
     // Delete or comment out the next line to hide the pick buffer.
-    gui.showBuffer();
+    // gui.showBuffer();
 }
 
 function startTimer() {

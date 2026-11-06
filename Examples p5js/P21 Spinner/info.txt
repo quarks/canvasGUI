@@ -1,0 +1,6 @@
+<pj6:6:460:2 fs17>The top spinner has the maximum 15 reels permitted and every 
+6 seconds will <bi>roll<n> to a randomly generated number. 
+<pj8:6:460:2 fs17>The spinner below will <bi>count<n> from the start to the 
+target values and at the speed set on the sliders.
+<pj8:6:460:2>When a spinner is <bi>idle<n> you can change individual reels by 
+dragging the mose or rotating the mouse wheel over the reel.

@@ -89,12 +89,14 @@ class CvsSpinner extends CvsBufferedControl {
             enabled: this._wEnabled, stride: this._wStride, dir: this._wDir
         };
     }
-    get isIdle() { return this._status == CvsSpinner.IDLE; }
-    get isRolling() { return this._status == CvsSpinner.ROLLING; }
-    get isCounting() { return this._status == CvsSpinner.COUNTING; }
-    get isWorking() { return this._status != CvsSpinner.IDLE; }
+    get isIdle() { return this._status === CvsSpinner.IDLE; }
+    get isRolling() { return this._status === CvsSpinner.ROLLING; }
+    get isCounting() { return this._status === CvsSpinner.COUNTING; }
+    get isWorking() {
+        return this._status === CvsSpinner.ROLLING || this._status === CvsSpinner.COUNTING;
+    }
     /**
-     * <p>Changes the display value with immediate effect provided the statys
+     * <p>Changes the display value with immediate effect provided the status
      * is 'idle' otherwise it has no effect.</p>
      *
      * @param v the new initial value to display
@@ -364,7 +366,7 @@ class CvsSpinner extends CvsBufferedControl {
         const range = Math.abs(this._endValue - this._startValue);
         this.action({
             source: this, event: undefined,
-            type: reason,
+            type: reason, // 'roll' or 'count'
             startValue: this._startValue, endValue: this._endValue,
         });
     }
@@ -483,7 +485,7 @@ class CvsSpinner extends CvsBufferedControl {
                 if (this.isActive) {
                     const reel = this._reels[this._overReelNumber];
                     this.action({
-                        source: this, event: undefined, type: 'ui',
+                        source: this, event: e, type: 'ui',
                         reelIdx: this._overReelNumber, digit: reel.digit,
                         value: this.value, final: true
                     });
@@ -507,7 +509,7 @@ class CvsSpinner extends CvsBufferedControl {
                             reel.v = nD;
                             reel.digit = nD;
                             this.action({
-                                source: this, event: undefined, type: 'ui',
+                                source: this, event: e, type: 'ui',
                                 reelIdx: this._overReelNumber, digit: reel.digit,
                                 value: this.value, final: false
                             });
@@ -543,7 +545,7 @@ class CvsSpinner extends CvsBufferedControl {
                             reel.digit = nD;
                             reel.v = nD;
                             this.action({
-                                source: this, event: undefined, type: 'ui',
+                                source: this, event: e, type: 'ui',
                                 reelIdx: this._overReelNumber, digit: reel.digit,
                                 value: this.value, final: false
                             });

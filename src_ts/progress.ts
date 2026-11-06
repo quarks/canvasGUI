@@ -20,7 +20,7 @@ class CvsProgress extends CvsTextIcon {
      * task completed so far. The value supplied will be constrained to the
      * range 0.0 to 1.0</p>
      * <p>The second paremeter is optional and is the text to appear on the
-     * progress bar. The user can change the text as the task is progressed
+     * progress bar. The user can change the text as the task progresses
      * and an empty string can be used to leave the bar unadorned.</p>
      * <p>If there is no second parameter (undefined) then the bar will show
      * the percentage progress based on the first parameter.</p> 
@@ -91,10 +91,7 @@ class CvsProgress extends CvsTextIcon {
         uic!.fill();
 
         tx += 3; tw -= 6; ty += 3; th -= 6;
-
         const pw = _map(this._t, 0, 1, 0, tw);
-
-        // console.log(`tx ${tx}  ty ${ty}  tw ${tw}  th ${th}     p ${p}  `);
 
         uic!.fillStyle = FORE;
         uic!.beginPath();

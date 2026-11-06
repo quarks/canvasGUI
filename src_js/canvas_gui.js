@@ -894,7 +894,6 @@ class GUI {
     }
     /** @hidden */
     _processFocusEvent(e) {
-        // CLOG(`Focus event ${this._activeCtrl?.id}`);
         switch (e.type) {
             case 'focusout':
                 if (this._activeCtrl instanceof CvsTextField) {

@@ -403,7 +403,6 @@ class CvsTimer extends CvsBufferedControl {
         this._clearBuffer(pkb, pkc!);
 
         let c = this._gui.pickColor(this);
-        CLOG(c.cssColor)
         pkc!.save();
         pkc!.fillStyle = c.cssColor;
         pkc!.beginPath();

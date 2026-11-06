@@ -1419,7 +1419,6 @@ class GUI {
     }
     /** @hidden */
     _processFocusEvent(e) {
-        // CLOG(`Focus event ${this._activeCtrl?.id}`);
         switch (e.type) {
             case 'focusout':
                 if (this._activeCtrl instanceof CvsTextField) {
@@ -9038,7 +9037,6 @@ class CvsTimer extends CvsBufferedControl {
         const pkc = pkb.getContext('2d');
         this._clearBuffer(pkb, pkc);
         let c = this._gui.pickColor(this);
-        CLOG(c.cssColor);
         pkc.save();
         pkc.fillStyle = c.cssColor;
         pkc.beginPath();
@@ -9166,7 +9164,7 @@ class CvsProgress extends CvsTextIcon {
      * task completed so far. The value supplied will be constrained to the
      * range 0.0 to 1.0</p>
      * <p>The second paremeter is optional and is the text to appear on the
-     * progress bar. The user can change the text as the task is progressed
+     * progress bar. The user can change the text as the task progresses
      * and an empty string can be used to leave the bar unadorned.</p>
      * <p>If there is no second parameter (undefined) then the bar will show
      * the percentage progress based on the first parameter.</p>
@@ -9232,7 +9230,6 @@ class CvsProgress extends CvsTextIcon {
         ty += 3;
         th -= 6;
         const pw = _map(this._t, 0, 1, 0, tw);
-        // console.log(`tx ${tx}  ty ${ty}  tw ${tw}  th ${th}     p ${p}  `);
         uic.fillStyle = FORE;
         uic.beginPath();
         uic.roundRect(tx, ty, pw, th, cnrs);
@@ -9343,12 +9340,14 @@ class CvsSpinner extends CvsBufferedControl {
             enabled: this._wEnabled, stride: this._wStride, dir: this._wDir
         };
     }
-    get isIdle() { return this._status == CvsSpinner.IDLE; }
-    get isRolling() { return this._status == CvsSpinner.ROLLING; }
-    get isCounting() { return this._status == CvsSpinner.COUNTING; }
-    get isWorking() { return this._status != CvsSpinner.IDLE; }
+    get isIdle() { return this._status === CvsSpinner.IDLE; }
+    get isRolling() { return this._status === CvsSpinner.ROLLING; }
+    get isCounting() { return this._status === CvsSpinner.COUNTING; }
+    get isWorking() {
+        return this._status === CvsSpinner.ROLLING || this._status === CvsSpinner.COUNTING;
+    }
     /**
-     * <p>Changes the display value with immediate effect provided the statys
+     * <p>Changes the display value with immediate effect provided the status
      * is 'idle' otherwise it has no effect.</p>
      *
      * @param v the new initial value to display
@@ -9618,7 +9617,7 @@ class CvsSpinner extends CvsBufferedControl {
         const range = Math.abs(this._endValue - this._startValue);
         this.action({
             source: this, event: undefined,
-            type: reason,
+            type: reason, // 'roll' or 'count'
             startValue: this._startValue, endValue: this._endValue,
         });
     }
@@ -9737,7 +9736,7 @@ class CvsSpinner extends CvsBufferedControl {
                 if (this.isActive) {
                     const reel = this._reels[this._overReelNumber];
                     this.action({
-                        source: this, event: undefined, type: 'ui',
+                        source: this, event: e, type: 'ui',
                         reelIdx: this._overReelNumber, digit: reel.digit,
                         value: this.value, final: true
                     });
@@ -9761,7 +9760,7 @@ class CvsSpinner extends CvsBufferedControl {
                             reel.v = nD;
                             reel.digit = nD;
                             this.action({
-                                source: this, event: undefined, type: 'ui',
+                                source: this, event: e, type: 'ui',
                                 reelIdx: this._overReelNumber, digit: reel.digit,
                                 value: this.value, final: false
                             });
@@ -9797,7 +9796,7 @@ class CvsSpinner extends CvsBufferedControl {
                             reel.digit = nD;
                             reel.v = nD;
                             this.action({
-                                source: this, event: undefined, type: 'ui',
+                                source: this, event: e, type: 'ui',
                                 reelIdx: this._overReelNumber, digit: reel.digit,
                                 value: this.value, final: false
                             });
