@@ -180,7 +180,7 @@ class GUI {
             gl.useProgram(state.prevShaderProgram);
         // Restore vertex buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, state.vertexBuffer);
-        // Restore belnd mode attributes
+        // Restore blend mode attributes
         if (state.enabled)
             gl.enable(gl.BLEND);
         else

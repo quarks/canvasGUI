@@ -176,6 +176,13 @@ class CvsTimer extends CvsBufferedControl {
         return this;
     }
     /**
+     * Makes the timer idle sets the attributes back to its initial state.
+     * @returns this control
+     */
+    reset() {
+        return this._reset();
+    }
+    /**
      * Resets the timer attributes to make it idle.
      * @returns this control
      * @hidden

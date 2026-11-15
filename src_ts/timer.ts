@@ -228,6 +228,14 @@ class CvsTimer extends CvsBufferedControl {
     }
 
     /**
+     * Makes the timer idle sets the attributes back to its initial state.
+     * @returns this control
+     */
+    reset() {
+        return this._reset();
+    }
+
+    /**
      * Resets the timer attributes to make it idle.
      * @returns this control
      * @hidden
@@ -246,6 +254,7 @@ class CvsTimer extends CvsBufferedControl {
         this.invalidateBuffer();
         return this;
     }
+
 
     /**
      * Calculate a suitable font height based on the controls width and 

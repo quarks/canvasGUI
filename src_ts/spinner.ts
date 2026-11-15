@@ -534,9 +534,9 @@ class CvsSpinner extends CvsBufferedControl {
     /** @hidden */
     printReels(nbr = this._reels.length) {
         const [currV, destV] = [this._valueFromReels(), this._endValue];
-        console.log(`Curr value: ${currV}     Target value: ${destV}`)
+        CLOG(`Curr value: ${currV}     Target value: ${destV}`)
         for (let i = 0; i < nbr; i++)
-            console.log(`   ${this._reels[i].toString()}`);
+            CLOG(`   ${this._reels[i].toString()}`);
     }
 
     /**

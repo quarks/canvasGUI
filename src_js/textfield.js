@@ -158,7 +158,6 @@ class CvsTextField extends CvsText {
     _performValidation() {
         this._inputInvalid = false; // Assume it is valid
         if (this._validation) {
-            // CLOG(`Applying validation`)
             let r = this._validation(this._line);
             if (Array.isArray(r) && r.length > 0) {
                 this._inputInvalid = !Boolean(r[0]);
