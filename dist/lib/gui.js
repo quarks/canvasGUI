@@ -1,8 +1,8 @@
-/**
-* @preserve canvasGUI    (c) Peter Lager  2026
-* @license MIT
-* @version 3.3.0
-*/
+ /**
+ * @preserve canvasGUI    (c) Peter Lager  2026
+ * @license MIT
+ * @version 3.3.1
+ */
 // =================================================================
 // ====    canvasGUI control variables
 /** @hidden */
@@ -229,7 +229,7 @@ const cvsGuiColor = function (color) {
         return color;
     if (color && color["_getRed"] && color["_getGreen"] && color["_getBlue"] && color["_getAlpha"]) {
         let [r, g, b, a] = [color['_getRed'](255), color['_getGreen'](255),
-        color['_getBlue'](255), color['_getAlpha'](100)];
+            color['_getBlue'](255), color['_getAlpha'](100)];
         if (a < 100)
             return `rgb(${r} ${g} ${b} / ${a}%)`;
         else
@@ -523,7 +523,7 @@ HTMLCanvasElement.prototype["hasContext"] = function () {
     return this["_contextType"];
 };
 //# sourceMappingURL=constants.js.map
-const CANVAS_GUI_VERSION = '3.3.0';
+const CANVAS_GUI_VERSION = '3.3.1';
 /**
  * <h2>Core class for the canvasGUI library </h2>
  *
@@ -1952,7 +1952,7 @@ class GUI {
     }
 } //  end of GUI class definition
 /** canvasGUI version */
-GUI.VERSION = '3.3.0';
+GUI.VERSION = '3.3.1';
 // Remember all GUIs created are accessible using gui's unique string
 // identifier.
 /** @hidden */ GUI._guis = new Map();
@@ -5630,11 +5630,11 @@ class CvsViewer extends CvsBufferedControl {
         scaler.weight(12);
         scaler.hide()
             .setAction((info) => {
-                if (this._updateScale(info.value)) {
-                    this._updateView(this._wcx, this._wcy);
-                    this.action(this.actionInfo());
-                }
-            });
+            if (this._updateScale(info.value)) {
+                this._updateView(this._wcx, this._wcy);
+                this.action(this.actionInfo());
+            }
+        });
         this.addChild(scaler);
         this._scalerZone = {
             x0: 0.15 * w, y0: 0.4 * h - 10,
@@ -5934,7 +5934,7 @@ class CvsViewer extends CvsBufferedControl {
         const ww2 = Math.round(0.5 * w / ws);
         const wh2 = Math.round(0.5 * h / ws);
         const o = this._overlap(0, 0, lw, lh, // image corners
-            wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2); // world corners
+        wcx - ww2, wcy - wh2, wcx + ww2, wcy + wh2); // world corners
         this._scroller.setUsed(o.usedH, o.usedV);
         uic.save();
         uic.beginPath();
@@ -8498,7 +8498,7 @@ class Poster_Line {
     addWord(word) { this._words.push(word); }
     toString() {
         const [aln, indent, wrapW, asc, hgt, len] = [this.align, this.indent, this.wrapW,
-        Math.round(this.ascent), Math.round(this.height), Math.round(this.length)];
+            Math.round(this.ascent), Math.round(this.height), Math.round(this.length)];
         return `LINE  "${aln}"  Len: ${len}  Height: ${hgt}  Ascent: ${asc}`
             + `  Indent: ${indent}  Wrap: ${wrapW} \n`;
     }
@@ -8875,8 +8875,7 @@ class CvsTimer extends CvsBufferedControl {
         return this;
     }
     /**
-     * This will stop the timer (if not idle) and returns the timer to its 
-     * initial state so it can be used again.
+     * Makes the timer idle sets the attributes back to its initial state.
      * @returns this control
      */
     reset() {
@@ -9662,7 +9661,7 @@ class CvsSpinner extends CvsBufferedControl {
         this._offY = tm.tAscent + (digitH - tm.tHeight) / 2;
         this._cssFont = cssFont;
         return [new OffscreenCanvas(digitW, digitH * digits.length),
-        new OffscreenCanvas(digitW, digitH)];
+            new OffscreenCanvas(digitW, digitH)];
     }
     /** @hidden */
     _paintShading(bfr = this._dBfr) {
@@ -9843,7 +9842,7 @@ class CvsSpinner extends CvsBufferedControl {
         uic.lineWidth = 1;
         this._reels.forEach(r => {
             uic.drawImage(this._rBfr, 0, r.v * this._dH, this._dW, this._dH, // Source
-                r.x, r.y, this._dW, this._dH // Destination
+            r.x, r.y, this._dW, this._dH // Destination
             );
             // Add shading and border
             uic.drawImage(this._dBfr, r.x, r.y);
